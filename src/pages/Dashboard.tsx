@@ -4,6 +4,7 @@ import QuickActions from "@/components/QuickActions";
 import GroupCard from "@/components/GroupCard";
 import BottomNav from "@/components/BottomNav";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
+import RecordPaymentSheet from "@/components/RecordPaymentSheet";
 import { toast } from "sonner";
 
 // Mock data - will be replaced with real data from database
@@ -23,6 +24,7 @@ const mockMembers = [
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("home");
   const [showAddExpense, setShowAddExpense] = useState(false);
+  const [showRecordPayment, setShowRecordPayment] = useState(false);
 
   const totalReceive = mockGroups.filter((g) => g.balance > 0).reduce((sum, g) => sum + g.balance, 0);
   const totalOwe = Math.abs(mockGroups.filter((g) => g.balance < 0).reduce((sum, g) => sum + g.balance, 0));
@@ -37,9 +39,7 @@ const Dashboard = () => {
 
   const handleAddExpense = () => setShowAddExpense(true);
   
-  const handleReceivedMoney = () => {
-    toast.info("Record received payment feature coming soon!");
-  };
+  const handleReceivedMoney = () => setShowRecordPayment(true);
   
   const handleNewGroup = () => {
     toast.info("Create group feature coming soon!");
@@ -58,6 +58,17 @@ const Dashboard = () => {
   }) => {
     console.log("Expense added:", data);
     toast.success(`Added expense of Rs ${data.amount}`);
+  };
+
+  const handlePaymentSubmit = (data: {
+    fromMember: string;
+    amount: number;
+    method: "cash" | "online";
+    note: string;
+  }) => {
+    const memberName = mockMembers.find((m) => m.id === data.fromMember)?.name;
+    console.log("Payment recorded:", data);
+    toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
   };
 
   return (
@@ -140,6 +151,14 @@ const Dashboard = () => {
         onClose={() => setShowAddExpense(false)}
         members={mockMembers}
         onSubmit={handleExpenseSubmit}
+      />
+
+      {/* Record Payment Sheet */}
+      <RecordPaymentSheet
+        open={showRecordPayment}
+        onClose={() => setShowRecordPayment(false)}
+        members={mockMembers}
+        onSubmit={handlePaymentSubmit}
       />
     </div>
   );
