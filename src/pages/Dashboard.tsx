@@ -5,10 +5,11 @@ import GroupCard from "@/components/GroupCard";
 import BottomNav from "@/components/BottomNav";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
 import RecordPaymentSheet from "@/components/RecordPaymentSheet";
+import CreateGroupSheet from "@/components/CreateGroupSheet";
 import { toast } from "sonner";
 
 // Mock data - will be replaced with real data from database
-const mockGroups = [
+const initialGroups = [
   { id: "1", name: "Roommates", emoji: "🏠", balance: 450, memberCount: 4 },
   { id: "2", name: "Mess Group", emoji: "🍽️", balance: -300, memberCount: 6 },
   { id: "3", name: "Trip Friends", emoji: "✈️", balance: 1200, memberCount: 5 },
@@ -25,9 +26,11 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("home");
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [groups, setGroups] = useState(initialGroups);
 
-  const totalReceive = mockGroups.filter((g) => g.balance > 0).reduce((sum, g) => sum + g.balance, 0);
-  const totalOwe = Math.abs(mockGroups.filter((g) => g.balance < 0).reduce((sum, g) => sum + g.balance, 0));
+  const totalReceive = groups.filter((g) => g.balance > 0).reduce((sum, g) => sum + g.balance, 0);
+  const totalOwe = Math.abs(groups.filter((g) => g.balance < 0).reduce((sum, g) => sum + g.balance, 0));
 
   const handleTabChange = (tab: typeof activeTab) => {
     if (tab === "add") {
@@ -41,9 +44,7 @@ const Dashboard = () => {
   
   const handleReceivedMoney = () => setShowRecordPayment(true);
   
-  const handleNewGroup = () => {
-    toast.info("Create group feature coming soon!");
-  };
+  const handleNewGroup = () => setShowCreateGroup(true);
 
   const handleGroupClick = (groupId: string) => {
     toast.info(`Opening group ${groupId}...`);
@@ -69,6 +70,23 @@ const Dashboard = () => {
     const memberName = mockMembers.find((m) => m.id === data.fromMember)?.name;
     console.log("Payment recorded:", data);
     toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
+  };
+
+  const handleGroupSubmit = (data: {
+    name: string;
+    emoji: string;
+    members: string[];
+  }) => {
+    const newGroup = {
+      id: String(groups.length + 1),
+      name: data.name,
+      emoji: data.emoji,
+      balance: 0,
+      memberCount: data.members.length,
+    };
+    setGroups([...groups, newGroup]);
+    console.log("Group created:", data);
+    toast.success(`Created group "${data.name}"`);
   };
 
   return (
@@ -106,7 +124,7 @@ const Dashboard = () => {
           </div>
           
           <div className="space-y-3">
-            {mockGroups.map((group, index) => (
+            {groups.map((group, index) => (
               <div
                 key={group.id}
                 className="animate-slide-up"
@@ -125,7 +143,7 @@ const Dashboard = () => {
         </section>
 
         {/* Empty state for no groups */}
-        {mockGroups.length === 0 && (
+        {groups.length === 0 && (
           <div className="text-center py-12 animate-fade-in">
             <div className="text-6xl mb-4">👥</div>
             <h3 className="text-lg font-semibold text-foreground mb-2">No groups yet</h3>
@@ -159,6 +177,13 @@ const Dashboard = () => {
         onClose={() => setShowRecordPayment(false)}
         members={mockMembers}
         onSubmit={handlePaymentSubmit}
+      />
+
+      {/* Create Group Sheet */}
+      <CreateGroupSheet
+        open={showCreateGroup}
+        onClose={() => setShowCreateGroup(false)}
+        onSubmit={handleGroupSubmit}
       />
     </div>
   );
