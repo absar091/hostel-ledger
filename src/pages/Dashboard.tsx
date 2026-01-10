@@ -8,7 +8,7 @@ import RecordPaymentSheet from "@/components/RecordPaymentSheet";
 import CreateGroupSheet from "@/components/CreateGroupSheet";
 import { toast } from "sonner";
 
-// Mock data - will be replaced with real data from database
+// Mock data - replaced with real data from database later
 const initialGroups = [
   { id: "1", name: "Roommates", emoji: "🏠", balance: 450, memberCount: 4 },
   { id: "2", name: "Mess Group", emoji: "🍽️", balance: -300, memberCount: 6 },
