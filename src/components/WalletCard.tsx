@@ -1,16 +1,16 @@
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
-
 interface WalletCardProps {
   toReceive: number;
   toOwe: number;
   currency?: string;
 }
-
-const WalletCard = ({ toReceive, toOwe, currency = "Rs" }: WalletCardProps) => {
+const WalletCard = ({
+  toReceive,
+  toOwe,
+  currency = "Rs"
+}: WalletCardProps) => {
   const netBalance = toReceive - toOwe;
-  
-  return (
-    <div className="gradient-wallet rounded-2xl p-6 shadow-wallet animate-fade-in">
+  return <div className="gradient-wallet rounded-2xl p-6 shadow-wallet animate-fade-in text-muted-foreground bg-destructive-foreground">
       <div className="text-primary-foreground/80 text-sm font-medium mb-1">
         Your Balance
       </div>
@@ -19,7 +19,7 @@ const WalletCard = ({ toReceive, toOwe, currency = "Rs" }: WalletCardProps) => {
       </div>
       
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-primary-foreground/15 backdrop-blur-sm rounded-xl p-4">
+        <div className="backdrop-blur-sm rounded-xl p-4 bg-secondary-foreground">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
               <ArrowDownLeft className="w-4 h-4 text-primary-foreground" />
@@ -31,7 +31,7 @@ const WalletCard = ({ toReceive, toOwe, currency = "Rs" }: WalletCardProps) => {
           </div>
         </div>
         
-        <div className="bg-primary-foreground/15 backdrop-blur-sm rounded-xl p-4">
+        <div className="backdrop-blur-sm rounded-xl p-4 bg-red-700">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
               <ArrowUpRight className="w-4 h-4 text-primary-foreground" />
@@ -43,8 +43,6 @@ const WalletCard = ({ toReceive, toOwe, currency = "Rs" }: WalletCardProps) => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default WalletCard;
