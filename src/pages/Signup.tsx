@@ -2,13 +2,13 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/contexts/AuthContext";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
 import { Mail, Lock, Eye, EyeOff, Wallet, User, Phone } from "lucide-react";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { signup } = useAuth();
+  const { signup } = useFirebaseAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");

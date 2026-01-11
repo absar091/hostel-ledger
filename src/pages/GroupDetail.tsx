@@ -36,37 +36,42 @@ const GroupDetail = () => {
     return transactions
       .filter((t) => {
         if (t.type === "payment") {
+          // Only show payments directly between current user and selected member
           return (
             (t.from === selectedMember.id && t.to === currentUser.id) ||
             (t.from === currentUser.id && t.to === selectedMember.id)
           );
         }
         if (t.type === "expense") {
+          // Only show expenses where both current user and selected member were involved
           const memberInvolved = t.participants?.some((p) => p.id === selectedMember.id);
-          const youPaid = t.paidBy === currentUser.id;
-          const memberPaid = t.paidBy === selectedMember.id;
           const youInvolved = t.participants?.some((p) => p.id === currentUser.id);
           
-          return (youPaid && memberInvolved) || (memberPaid && youInvolved);
+          // Must involve both parties (either as payer or participant)
+          const bothInvolved = memberInvolved && youInvolved;
+          const memberPaidForYou = t.paidBy === selectedMember.id && youInvolved;
+          const youPaidForMember = t.paidBy === currentUser.id && memberInvolved;
+          
+          return bothInvolved || memberPaidForYou || youPaidForMember;
         }
         return false;
       })
       .map((t) => {
         let direction: "gave" | "received" = "received";
-        let balanceChange = 0; // positive = they owe more (good), negative = you owe more (bad)
+        let balanceChange = 0; // positive = they owe you more, negative = you owe them more
         
         if (t.type === "payment") {
-          if (t.from === selectedMember.id) {
-            // They paid you
+          if (t.from === selectedMember.id && t.to === currentUser.id) {
+            // They paid you - they owe you less now
             direction = "received";
-            balanceChange = -t.amount; // They owe you less now
-          } else {
-            // You paid them
+            balanceChange = -t.amount; // Their debt to you decreased
+          } else if (t.from === currentUser.id && t.to === selectedMember.id) {
+            // You paid them - you owe them less now
             direction = "gave";
-            balanceChange = t.amount; // You reduced your debt
+            balanceChange = t.amount; // Your debt to them decreased
           }
         } else if (t.type === "expense") {
-          if (t.paidBy === currentUser?.id) {
+          if (t.paidBy === currentUser.id) {
             // You paid, they owe you their share
             direction = "received";
             const theirShare = t.participants?.find((p) => p.id === selectedMember.id)?.amount || 0;
@@ -74,17 +79,20 @@ const GroupDetail = () => {
           } else if (t.paidBy === selectedMember.id) {
             // They paid, you owe them your share
             direction = "gave";
-            const yourShare = t.participants?.find((p) => p.id === currentUser?.id)?.amount || 0;
+            const yourShare = t.participants?.find((p) => p.id === currentUser.id)?.amount || 0;
             balanceChange = -yourShare; // You owe them more
           }
         }
         
+        // Calculate display amount based on transaction type
         let amount = t.amount;
         if (t.type === "expense") {
-          if (t.paidBy === currentUser?.id) {
+          if (t.paidBy === currentUser.id) {
+            // Show their share when you paid
             amount = t.participants?.find((p) => p.id === selectedMember.id)?.amount || 0;
-          } else {
-            amount = t.participants?.find((p) => p.id === currentUser?.id)?.amount || 0;
+          } else if (t.paidBy === selectedMember.id) {
+            // Show your share when they paid
+            amount = t.participants?.find((p) => p.id === currentUser.id)?.amount || 0;
           }
         }
         

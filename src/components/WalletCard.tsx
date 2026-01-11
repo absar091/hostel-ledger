@@ -1,21 +1,52 @@
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Plus } from "lucide-react";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+
 interface WalletCardProps {
   toReceive: number;
   toOwe: number;
   currency?: string;
+  onAddMoney?: () => void;
 }
+
 const WalletCard = ({
   toReceive,
   toOwe,
-  currency = "Rs"
+  currency = "Rs",
+  onAddMoney
 }: WalletCardProps) => {
-  const netBalance = toReceive - toOwe;
-  return <div className="gradient-wallet rounded-2xl p-6 shadow-wallet animate-fade-in text-muted-foreground bg-destructive-foreground">
-      <div className="text-primary-foreground/80 text-sm font-medium mb-1">
-        Your Balance
+  const { getWalletBalance } = useFirebaseAuth();
+  const walletBalance = getWalletBalance();
+  
+  return (
+    <div className="gradient-wallet rounded-2xl p-6 shadow-wallet animate-fade-in text-muted-foreground bg-destructive-foreground">
+      {/* Wallet Balance Section */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="text-primary-foreground/80 text-sm font-medium mb-1">
+            Wallet Balance
+          </div>
+          <div className="text-primary-foreground text-3xl font-bold">
+            {currency} {walletBalance.toLocaleString()}
+          </div>
+        </div>
+        {onAddMoney && (
+          <button
+            onClick={onAddMoney}
+            className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center hover:bg-primary-foreground/30 transition-colors"
+          >
+            <Plus className="w-5 h-5 text-primary-foreground" />
+          </button>
+        )}
       </div>
-      <div className="text-primary-foreground text-4xl font-bold mb-6">
-        {netBalance >= 0 ? "+" : ""}{currency} {Math.abs(netBalance).toLocaleString()}
+
+      {/* Net Balance Section */}
+      <div className="border-t border-primary-foreground/20 pt-4 mb-4">
+        <div className="text-primary-foreground/80 text-sm font-medium mb-1">
+          Net Balance (Group Settlements)
+        </div>
+        <div className="text-primary-foreground text-2xl font-bold">
+          {toReceive - toOwe >= 0 ? "+" : ""}{currency} {Math.abs(toReceive - toOwe).toLocaleString()}
+        </div>
       </div>
       
       <div className="grid grid-cols-2 gap-4">
@@ -26,7 +57,7 @@ const WalletCard = ({
             </div>
             <span className="text-primary-foreground/80 text-sm">You'll Receive</span>
           </div>
-          <div className="text-primary-foreground text-2xl font-bold">
+          <div className="text-primary-foreground text-xl font-bold">
             {currency} {toReceive.toLocaleString()}
           </div>
         </div>
@@ -38,11 +69,13 @@ const WalletCard = ({
             </div>
             <span className="text-primary-foreground/80 text-sm">You Owe</span>
           </div>
-          <div className="text-primary-foreground text-2xl font-bold">
+          <div className="text-primary-foreground text-xl font-bold">
             {currency} {toOwe.toLocaleString()}
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default WalletCard;

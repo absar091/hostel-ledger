@@ -64,7 +64,15 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
       return { perPerson: 0, toReceive: 0, toGive: 0, othersCount: 0 };
     }
 
-    const perPerson = Math.round(totalAmount / splitCount);
+    // Use same calculation as backend for consistency
+    const baseAmount = Math.floor(totalAmount / splitCount);
+    const remainder = totalAmount % splitCount;
+    
+    // Most people get baseAmount, first 'remainder' people get baseAmount + 1
+    const perPersonAmounts = Array.from({ length: splitCount }, (_, index) => 
+      baseAmount + (index < remainder ? 1 : 0)
+    );
+    
     const paidByMember = members.find((m) => m.id === paidBy);
     const isPaidByYou = paidByMember?.name === "You";
     const youParticipated = participants.some(
@@ -73,15 +81,38 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
 
     if (isPaidByYou) {
       // You paid, so you receive from others
+      const payerIndex = participants.findIndex(id => members.find(m => m.id === id)?.name === "You");
+      const yourShare = payerIndex >= 0 ? perPersonAmounts[payerIndex] : 0;
+      const othersTotal = totalAmount - yourShare;
       const othersCount = youParticipated ? splitCount - 1 : splitCount;
-      const toReceive = perPerson * othersCount;
-      return { perPerson, toReceive, toGive: 0, othersCount };
+      
+      return { 
+        perPerson: baseAmount, // Show base amount for display
+        actualAmounts: perPersonAmounts,
+        toReceive: othersTotal, 
+        toGive: 0, 
+        othersCount 
+      };
     } else {
       // Someone else paid, you may owe them
       if (youParticipated) {
-        return { perPerson, toReceive: 0, toGive: perPerson, othersCount: 0 };
+        const yourIndex = participants.findIndex(id => members.find(m => m.id === id)?.name === "You");
+        const yourShare = yourIndex >= 0 ? perPersonAmounts[yourIndex] : baseAmount;
+        return { 
+          perPerson: baseAmount, 
+          actualAmounts: perPersonAmounts,
+          toReceive: 0, 
+          toGive: yourShare, 
+          othersCount: 0 
+        };
       }
-      return { perPerson, toReceive: 0, toGive: 0, othersCount: 0 };
+      return { 
+        perPerson: baseAmount, 
+        actualAmounts: perPersonAmounts,
+        toReceive: 0, 
+        toGive: 0, 
+        othersCount: 0 
+      };
     }
   }, [amount, paidBy, participants, members]);
 
@@ -97,13 +128,50 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
   };
 
   const handleSubmit = () => {
+    // Final validation before submission
+    const amountValue = parseFloat(amount);
+    
+    if (!selectedGroup) {
+      console.error("No group selected");
+      return;
+    }
+    
+    if (isNaN(amountValue) || amountValue <= 0) {
+      console.error("Invalid amount");
+      return;
+    }
+    
+    if (!paidBy) {
+      console.error("No payer selected");
+      return;
+    }
+    
+    if (participants.length === 0) {
+      console.error("No participants selected");
+      return;
+    }
+
+    // Check if payer exists in members
+    const payerExists = members.some(m => m.id === paidBy);
+    if (!payerExists) {
+      console.error("Invalid payer ID");
+      return;
+    }
+
+    // Check if all participants exist in members
+    const invalidParticipants = participants.filter(p => !members.some(m => m.id === p));
+    if (invalidParticipants.length > 0) {
+      console.error("Invalid participant IDs:", invalidParticipants);
+      return;
+    }
+
     onSubmit({
       groupId: selectedGroup,
-      amount: parseFloat(amount),
+      amount: amountValue,
       paidBy,
       participants,
-      note,
-      place,
+      note: note.trim(),
+      place: place.trim(),
     });
     handleClose();
   };
@@ -116,7 +184,10 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
 
   const canProceed = () => {
     if (step === 1) return selectedGroup !== "";
-    if (step === 2) return parseFloat(amount) > 0;
+    if (step === 2) {
+      const amountValue = parseFloat(amount);
+      return amountValue > 0 && !isNaN(amountValue);
+    }
     if (step === 3) return paidBy !== "";
     if (step === 4) return participants.length > 0;
     return true;

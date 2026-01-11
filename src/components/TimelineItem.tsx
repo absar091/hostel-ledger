@@ -1,5 +1,5 @@
 import Avatar from "./Avatar";
-import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car } from "lucide-react";
+import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car, Wallet, Plus } from "lucide-react";
 
 interface Participant {
   name: string;
@@ -7,7 +7,7 @@ interface Participant {
 }
 
 interface TimelineItemProps {
-  type: "expense" | "payment";
+  type: "expense" | "payment" | "wallet_add" | "wallet_deduct";
   title: string;
   amount: number;
   date: string;
@@ -41,7 +41,61 @@ const TimelineItem = ({
   category = "other",
   onClick,
 }: TimelineItemProps) => {
-  const Icon = type === "payment" ? HandCoins : categoryIcons[category];
+  const Icon = type === "payment" ? HandCoins : 
+               type === "wallet_add" ? Plus :
+               type === "wallet_deduct" ? Wallet :
+               categoryIcons[category];
+
+  // Wallet transactions
+  if (type === "wallet_add") {
+    return (
+      <button
+        onClick={onClick}
+        className="w-full bg-positive-soft rounded-xl p-4 text-left hover:opacity-90 transition-opacity"
+      >
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full bg-positive/20 flex items-center justify-center shrink-0">
+            <Plus className="w-5 h-5 text-positive" />
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-foreground">{title}</div>
+            <div className="text-sm text-muted-foreground">Added to wallet</div>
+          </div>
+          
+          <div className="text-right shrink-0">
+            <div className="font-bold text-positive">+Rs {amount.toLocaleString()}</div>
+            <div className="text-xs text-muted-foreground">{date}</div>
+          </div>
+        </div>
+      </button>
+    );
+  }
+
+  if (type === "wallet_deduct") {
+    return (
+      <button
+        onClick={onClick}
+        className="w-full bg-negative-soft rounded-xl p-4 text-left hover:opacity-90 transition-opacity"
+      >
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full bg-negative/20 flex items-center justify-center shrink-0">
+            <Wallet className="w-5 h-5 text-negative" />
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-foreground">{title}</div>
+            <div className="text-sm text-muted-foreground">Deducted from wallet</div>
+          </div>
+          
+          <div className="text-right shrink-0">
+            <div className="font-bold text-negative">-Rs {amount.toLocaleString()}</div>
+            <div className="text-xs text-muted-foreground">{date}</div>
+          </div>
+        </div>
+      </button>
+    );
+  }
 
   if (type === "payment") {
     return (

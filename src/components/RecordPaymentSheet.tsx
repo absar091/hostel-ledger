@@ -64,12 +64,37 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
   };
 
   const handleSubmit = () => {
+    // Final validation before submission
+    const amountValue = parseFloat(amount);
+    
+    if (!selectedGroup) {
+      console.error("No group selected");
+      return;
+    }
+    
+    if (!fromMember) {
+      console.error("No payer selected");
+      return;
+    }
+    
+    if (isNaN(amountValue) || amountValue <= 0) {
+      console.error("Invalid amount");
+      return;
+    }
+
+    // Check if fromMember exists in otherMembers
+    const memberExists = otherMembers.some(m => m.id === fromMember);
+    if (!memberExists) {
+      console.error("Invalid member ID");
+      return;
+    }
+
     onSubmit({
       groupId: selectedGroup,
       fromMember,
-      amount: parseFloat(amount),
+      amount: amountValue,
       method,
-      note,
+      note: note.trim(),
     });
     handleClose();
   };
@@ -77,7 +102,10 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
   const canProceed = () => {
     if (step === 1) return selectedGroup !== "";
     if (step === 2) return fromMember !== "";
-    if (step === 3) return parseFloat(amount) > 0;
+    if (step === 3) {
+      const amountValue = parseFloat(amount);
+      return amountValue > 0 && !isNaN(amountValue);
+    }
     return true;
   };
 

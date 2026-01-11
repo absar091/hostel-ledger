@@ -3,8 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { DataProvider } from "@/contexts/DataContext";
+import { FirebaseAuthProvider, useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { FirebaseDataProvider } from "@/contexts/FirebaseDataContext";
+import FirebaseTest from "@/components/FirebaseTest";
 import Index from "./pages/Index";
 import GroupDetail from "./pages/GroupDetail";
 import Login from "./pages/Login";
@@ -17,7 +18,7 @@ const queryClient = new QueryClient();
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading } = useFirebaseAuth();
 
   if (isLoading) {
     return (
@@ -36,7 +37,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Public Route wrapper (redirect to home if already logged in)
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading } = useFirebaseAuth();
 
   if (isLoading) {
     return (
@@ -70,12 +71,13 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner position="top-center" />
+      <FirebaseTest />
       <BrowserRouter>
-        <AuthProvider>
-          <DataProvider>
+        <FirebaseAuthProvider>
+          <FirebaseDataProvider>
             <AppRoutes />
-          </DataProvider>
-        </AuthProvider>
+          </FirebaseDataProvider>
+        </FirebaseAuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

@@ -7,20 +7,32 @@ import BottomNav from "@/components/BottomNav";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
 import RecordPaymentSheet from "@/components/RecordPaymentSheet";
 import CreateGroupSheet from "@/components/CreateGroupSheet";
+import AddMoneySheet from "@/components/AddMoneySheet";
+import PaymentConfirmationSheet from "@/components/PaymentConfirmationSheet";
 import TimelineItem from "@/components/TimelineItem";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
-import { useData } from "@/contexts/DataContext";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { groups, transactions, createGroup, addExpense, recordPayment } = useData();
+  const { user, getWalletBalance } = useFirebaseAuth();
+  const { groups, transactions, isLoading, createGroup, addExpense, recordPayment, addMoneyToWallet, markPaymentAsPaid, getAllTransactions } = useFirebaseData();
   
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("home");
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showAddMoney, setShowAddMoney] = useState(false);
+  const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
+  const [selectedMemberForPayment, setSelectedMemberForPayment] = useState<{
+    id: string;
+    name: string;
+    balance: number;
+  } | null>(null);
+
+  // Get all transactions including wallet transactions
+  const allTransactions = getAllTransactions();
 
   // Calculate totals from all groups
   const { totalReceive, totalOwe } = useMemo(() => {
@@ -90,7 +102,7 @@ const Dashboard = () => {
     navigate(`/group/${groupId}`);
   };
 
-  const handleExpenseSubmit = (data: {
+  const handleExpenseSubmit = async (data: {
     groupId: string;
     amount: number;
     paidBy: string;
@@ -98,7 +110,7 @@ const Dashboard = () => {
     note: string;
     place: string;
   }) => {
-    addExpense({
+    const result = await addExpense({
       groupId: data.groupId,
       amount: data.amount,
       paidBy: data.paidBy,
@@ -106,42 +118,48 @@ const Dashboard = () => {
       note: data.note,
       place: data.place,
     });
-    toast.success(`Added expense of Rs ${data.amount}`);
+    
+    if (result.success) {
+      toast.success(`Added expense of Rs ${data.amount}`);
+    } else {
+      toast.error(result.error || "Failed to add expense");
+    }
   };
 
-  const handlePaymentSubmit = (data: {
+  const handlePaymentSubmit = async (data: {
     groupId: string;
     fromMember: string;
     amount: number;
     method: "cash" | "online";
     note: string;
   }) => {
-    const group = groups.find((g) => g.id === data.groupId);
-    if (!group) return;
+    if (!user) return;
     
-    const currentUser = group.members.find((m) => m.isCurrentUser);
-    if (!currentUser) return;
-
-    recordPayment({
+    const result = await recordPayment({
       groupId: data.groupId,
       fromMember: data.fromMember,
-      toMember: currentUser.id,
+      toMember: user.uid,
       amount: data.amount,
       method: data.method,
       note: data.note,
     });
     
-    const memberName = group.members.find((m) => m.id === data.fromMember)?.name || "Unknown";
-    toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
+    if (result.success) {
+      const group = groups.find((g) => g.id === data.groupId);
+      const memberName = group?.members.find((m) => m.id === data.fromMember)?.name;
+      toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
+    } else {
+      toast.error(result.error || "Failed to record payment");
+    }
   };
 
 
-  const handleGroupSubmit = (data: {
+  const handleGroupSubmit = async (data: {
     name: string;
     emoji: string;
     members: { name: string; phone?: string; paymentDetails?: { jazzCash?: string; easypaisa?: string; bankName?: string; accountNumber?: string; raastId?: string } }[];
   }) => {
-    createGroup({
+    const result = await createGroup({
       name: data.name,
       emoji: data.emoji,
       members: data.members.map((m) => ({
@@ -150,8 +168,69 @@ const Dashboard = () => {
         paymentDetails: m.paymentDetails,
       })),
     });
-    toast.success(`Created group "${data.name}"`);
+    
+    if (result.success) {
+      toast.success(`Created group "${data.name}"`);
+    } else {
+      toast.error(result.error || "Failed to create group");
+    }
   };
+
+  const handleAddMoney = async (amount: number, method: string, note?: string) => {
+    const result = await addMoneyToWallet(amount, note);
+    if (result.success) {
+      toast.success(`Added Rs ${amount} to wallet`);
+    } else {
+      toast.error(result.error || "Failed to add money");
+    }
+  };
+
+  const handlePaymentConfirmation = async (memberId: string, amount: number) => {
+    // Find the group and member
+    let targetGroup = null;
+    let targetMember = null;
+
+    for (const group of groups) {
+      const member = group.members.find(m => m.id === memberId);
+      if (member) {
+        targetGroup = group;
+        targetMember = member;
+        break;
+      }
+    }
+
+    if (!targetGroup || !targetMember) {
+      return { success: false, error: "Member not found" };
+    }
+
+    const result = markPaymentAsPaid(targetGroup.id, memberId, amount);
+    if (result.success) {
+      toast.success(`Paid Rs ${amount} to ${targetMember.name}`);
+    } else {
+      toast.error(result.error || "Payment failed");
+    }
+    return result;
+  };
+
+  // Find members you owe money to (for quick pay buttons)
+  const membersYouOwe = useMemo(() => {
+    const owedMembers: Array<{ id: string; name: string; balance: number; groupId: string }> = [];
+    
+    groups.forEach(group => {
+      group.members.forEach(member => {
+        if (!member.isCurrentUser && member.balance < 0) {
+          owedMembers.push({
+            id: member.id,
+            name: member.name,
+            balance: member.balance,
+            groupId: group.id
+          });
+        }
+      });
+    });
+    
+    return owedMembers.sort((a, b) => a.balance - b.balance); // Most owed first
+  }, [groups]);
 
   // Get greeting based on time
   const getGreeting = () => {
@@ -179,7 +258,11 @@ const Dashboard = () => {
         </div>
 
         {/* Wallet Card */}
-        <WalletCard toReceive={totalReceive} toOwe={totalOwe} />
+        <WalletCard 
+          toReceive={totalReceive} 
+          toOwe={totalOwe} 
+          onAddMoney={() => setShowAddMoney(true)}
+        />
       </header>
 
       {/* Main Content */}
@@ -194,9 +277,36 @@ const Dashboard = () => {
         {/* Home Tab - Recent Transactions */}
         {activeTab === "home" && (
           <section className="animate-fade-in">
+            {/* Quick Pay Section */}
+            {membersYouOwe.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-foreground mb-3">Quick Pay</h3>
+                <div className="space-y-2">
+                  {membersYouOwe.slice(0, 3).map((member) => (
+                    <button
+                      key={member.id}
+                      onClick={() => {
+                        setSelectedMemberForPayment(member);
+                        setShowPaymentConfirmation(true);
+                      }}
+                      className="w-full bg-card rounded-xl p-3 shadow-card hover:shadow-card-hover transition-all flex items-center justify-between"
+                    >
+                      <div className="text-left">
+                        <div className="font-medium">{member.name}</div>
+                        <div className="text-sm text-negative">You owe Rs {Math.abs(member.balance)}</div>
+                      </div>
+                      <div className="bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm font-medium">
+                        Pay Now
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-foreground">Recent Transactions</h2>
-              {transactions.length > 0 && (
+              {allTransactions.length > 0 && (
                 <button 
                   onClick={() => setActiveTab("activity")}
                   className="text-sm text-primary font-medium"
@@ -206,9 +316,9 @@ const Dashboard = () => {
               )}
             </div>
             
-            {transactions.length > 0 ? (
+            {allTransactions.length > 0 ? (
               <div className="space-y-3">
-                {transactions.slice(0, 5).map((transaction, index) => (
+                {allTransactions.slice(0, 5).map((transaction, index) => (
                   <div
                     key={transaction.id}
                     className="animate-slide-up"
@@ -310,9 +420,9 @@ const Dashboard = () => {
               <h2 className="text-lg font-semibold text-foreground">All Activity</h2>
             </div>
             
-            {transactions.length > 0 ? (
+            {allTransactions.length > 0 ? (
               <div className="space-y-3">
-                {transactions.map((transaction, index) => (
+                {allTransactions.map((transaction, index) => (
                   <div
                     key={transaction.id}
                     className="animate-slide-up"
@@ -373,6 +483,24 @@ const Dashboard = () => {
         open={showCreateGroup}
         onClose={() => setShowCreateGroup(false)}
         onSubmit={handleGroupSubmit}
+      />
+
+      {/* Add Money Sheet */}
+      <AddMoneySheet
+        open={showAddMoney}
+        onClose={() => setShowAddMoney(false)}
+        onSubmit={handleAddMoney}
+      />
+
+      {/* Payment Confirmation Sheet */}
+      <PaymentConfirmationSheet
+        open={showPaymentConfirmation}
+        onClose={() => {
+          setShowPaymentConfirmation(false);
+          setSelectedMemberForPayment(null);
+        }}
+        member={selectedMemberForPayment}
+        onConfirmPayment={handlePaymentConfirmation}
       />
     </div>
   );

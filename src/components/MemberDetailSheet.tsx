@@ -42,8 +42,10 @@ const calculateBalanceHistory = (transactions: Transaction[], currentBalance: nu
   let runningBalance = currentBalance;
   
   // Transactions are in reverse chronological order (newest first)
+  // So we work backwards to calculate the balance progression
   for (const transaction of transactions) {
     const balanceAfter = runningBalance;
+    // FIXED: Subtract the balance change to get the previous balance
     const balanceBefore = runningBalance - transaction.balanceChange;
     
     history.push({
@@ -52,6 +54,7 @@ const calculateBalanceHistory = (transactions: Transaction[], currentBalance: nu
       balanceAfter,
     });
     
+    // Move to the previous balance for next iteration
     runningBalance = balanceBefore;
   }
   
