@@ -54,12 +54,12 @@ const RecordPaymentSheet = ({ open, onClose, members, onSubmit }: RecordPaymentS
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
-        <SheetHeader className="mb-6">
+      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col">
+        <SheetHeader className="flex-shrink-0 mb-4">
           <SheetTitle className="text-center">Record Payment Received</SheetTitle>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-6">
+        <div className="flex-1 overflow-y-auto space-y-6 pb-4">
           {/* Who paid you */}
           <div className="animate-fade-in">
             <label className="text-sm font-medium text-muted-foreground mb-3 block">
@@ -186,7 +186,7 @@ const RecordPaymentSheet = ({ open, onClose, members, onSubmit }: RecordPaymentS
           )}
         </div>
 
-        <div className="pt-4 border-t mt-auto">
+        <div className="flex-shrink-0 pt-4 border-t bg-background">
           <Button
             onClick={handleSubmit}
             disabled={!canSubmit}
