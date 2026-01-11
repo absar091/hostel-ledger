@@ -7,6 +7,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
 import RecordPaymentSheet from "@/components/RecordPaymentSheet";
 import MemberDetailSheet from "@/components/MemberDetailSheet";
+import GroupSettingsSheet from "@/components/GroupSettingsSheet";
 import { toast } from "sonner";
 import { Plus, HandCoins } from "lucide-react";
 import { useData } from "@/contexts/DataContext";
@@ -14,14 +15,14 @@ import { useData } from "@/contexts/DataContext";
 const GroupDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { getGroupById, getTransactionsByGroup, getTransactionsByMember, addExpense, recordPayment } = useData();
+  const { getGroupById, getTransactionsByGroup, addExpense, recordPayment, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup } = useData();
   
   const [activeTab, setActiveTab] = useState<"ledger" | "members" | "summary">("ledger");
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
+  const [showGroupSettings, setShowGroupSettings] = useState(false);
   const [selectedMember, setSelectedMember] = useState<{ id: string; name: string; balance: number; paymentDetails?: any; phone?: string } | null>(null);
   const [showMemberDetail, setShowMemberDetail] = useState(false);
-
   const group = id ? getGroupById(id) : undefined;
   const transactions = id ? getTransactionsByGroup(id) : [];
 
@@ -211,7 +212,10 @@ const GroupDetail = () => {
               </p>
             </div>
             
-            <button className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+            <button 
+              onClick={() => setShowGroupSettings(true)}
+              className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center"
+            >
               <Settings className="w-5 h-5 text-foreground" />
             </button>
           </div>
@@ -422,6 +426,36 @@ const GroupDetail = () => {
           }}
         />
       )}
+
+      {/* Group Settings Sheet */}
+      <GroupSettingsSheet
+        open={showGroupSettings}
+        onClose={() => setShowGroupSettings(false)}
+        group={{
+          id: group.id,
+          name: group.name,
+          emoji: group.emoji,
+          members: group.members,
+        }}
+        onAddMember={(name) => {
+          addMemberToGroup(group.id, { name });
+          toast.success(`Added ${name} to the group`);
+        }}
+        onRemoveMember={(memberId) => {
+          const memberName = group.members.find((m) => m.id === memberId)?.name;
+          removeMemberFromGroup(group.id, memberId);
+          toast.success(`Removed ${memberName} from the group`);
+        }}
+        onUpdateGroup={(data) => {
+          updateGroup(group.id, data);
+          toast.success("Group updated");
+        }}
+        onDeleteGroup={() => {
+          deleteGroup(group.id);
+          toast.success("Group deleted");
+          navigate("/");
+        }}
+      />
     </div>
   );
 };
