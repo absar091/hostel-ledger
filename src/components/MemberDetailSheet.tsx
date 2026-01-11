@@ -1,7 +1,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import Avatar from "./Avatar";
-import { ArrowDownLeft, ArrowUpRight, HandCoins, Calendar, MapPin, CreditCard, Banknote } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, HandCoins, Calendar, MapPin, CreditCard, Banknote, ArrowRight } from "lucide-react";
 
 interface Transaction {
   id: string;
@@ -12,6 +12,7 @@ interface Transaction {
   place?: string;
   method?: string;
   direction: "gave" | "received";
+  balanceChange: number; // positive = they owe more, negative = you owe more
 }
 
 interface MemberDetailSheetProps {
@@ -33,6 +34,36 @@ interface MemberDetailSheetProps {
   onRecordPayment: () => void;
 }
 
+// Calculate running balances for ledger view
+const calculateBalanceHistory = (transactions: Transaction[], currentBalance: number) => {
+  // Work backwards from current balance
+  const history: { transaction: Transaction; balanceBefore: number; balanceAfter: number }[] = [];
+  
+  let runningBalance = currentBalance;
+  
+  // Transactions are in reverse chronological order (newest first)
+  for (const transaction of transactions) {
+    const balanceAfter = runningBalance;
+    const balanceBefore = runningBalance - transaction.balanceChange;
+    
+    history.push({
+      transaction,
+      balanceBefore,
+      balanceAfter,
+    });
+    
+    runningBalance = balanceBefore;
+  }
+  
+  return history;
+};
+
+const formatBalance = (amount: number, memberName: string) => {
+  if (amount === 0) return "Settled";
+  if (amount > 0) return `${memberName} owes Rs ${amount}`;
+  return `You owe Rs ${Math.abs(amount)}`;
+};
+
 const MemberDetailSheet = ({ 
   open, 
   onClose, 
@@ -49,11 +80,13 @@ const MemberDetailSheet = ({
     ? `${member.name} owes you`
     : `You owe ${member.name}`;
 
+  const balanceHistory = calculateBalanceHistory(transactions, member.balance);
+
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
         <SheetHeader className="mb-6">
-          <SheetTitle className="text-center">Transaction History</SheetTitle>
+          <SheetTitle className="text-center">Balance History</SheetTitle>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto">
@@ -123,21 +156,18 @@ const MemberDetailSheet = ({
             )}
           </div>
 
-          {/* Transaction History */}
+          {/* Balance History Ledger */}
           <div className="space-y-3">
-            <h3 className="font-semibold text-foreground mb-3">History with {member.name}</h3>
+            <h3 className="font-semibold text-foreground mb-3">Balance Ledger with {member.name}</h3>
             
-            {transactions.length > 0 ? (
-              transactions.map((transaction) => (
+            {balanceHistory.length > 0 ? (
+              balanceHistory.map(({ transaction, balanceBefore, balanceAfter }) => (
                 <div
                   key={transaction.id}
-                  className={`rounded-xl p-4 ${
-                    transaction.direction === "received"
-                      ? "bg-positive/10 border border-positive/20"
-                      : "bg-negative/10 border border-negative/20"
-                  }`}
+                  className="rounded-xl p-4 bg-card border border-border"
                 >
-                  <div className="flex items-start gap-3">
+                  {/* Transaction Header */}
+                  <div className="flex items-start gap-3 mb-3">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
                       transaction.direction === "received"
                         ? "bg-positive/20"
@@ -182,6 +212,32 @@ const MemberDetailSheet = ({
                       transaction.direction === "received" ? "text-positive" : "text-negative"
                     }`}>
                       {transaction.direction === "received" ? "+" : "-"}Rs {transaction.amount}
+                    </div>
+                  </div>
+
+                  {/* Balance Change Ledger */}
+                  <div className="bg-muted/50 rounded-lg p-3 mt-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="text-center flex-1">
+                        <p className="text-muted-foreground text-xs mb-1">Previous</p>
+                        <p className={`font-medium ${balanceBefore > 0 ? "text-positive" : balanceBefore < 0 ? "text-negative" : "text-muted-foreground"}`}>
+                          {balanceBefore === 0 ? "Settled" : balanceBefore > 0 ? `+Rs ${balanceBefore}` : `-Rs ${Math.abs(balanceBefore)}`}
+                        </p>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-muted-foreground mx-2" />
+                      <div className="text-center flex-1">
+                        <p className="text-muted-foreground text-xs mb-1">Change</p>
+                        <p className={`font-medium ${transaction.balanceChange > 0 ? "text-positive" : transaction.balanceChange < 0 ? "text-negative" : "text-muted-foreground"}`}>
+                          {transaction.balanceChange > 0 ? `+Rs ${transaction.balanceChange}` : transaction.balanceChange < 0 ? `-Rs ${Math.abs(transaction.balanceChange)}` : "Rs 0"}
+                        </p>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-muted-foreground mx-2" />
+                      <div className="text-center flex-1">
+                        <p className="text-muted-foreground text-xs mb-1">Updated</p>
+                        <p className={`font-medium ${balanceAfter > 0 ? "text-positive" : balanceAfter < 0 ? "text-negative" : "text-muted-foreground"}`}>
+                          {balanceAfter === 0 ? "Settled" : balanceAfter > 0 ? `+Rs ${balanceAfter}` : `-Rs ${Math.abs(balanceAfter)}`}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
