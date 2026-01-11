@@ -17,6 +17,19 @@ export default {
         sans: ["'Plus Jakarta Sans'", "system-ui", "sans-serif"],
       },
       colors: {
+        // Enterprise Design System Colors
+        'bg-app': '#0F172A',
+        'bg-card': '#111827',
+        'bg-surface': '#020617',
+        'border-subtle': '#1F2937',
+        'text-primary': '#E5E7EB',
+        'text-secondary': '#9CA3AF',
+        'text-muted': '#6B7280',
+        'signal-positive': '#16A34A',
+        'signal-negative': '#DC2626',
+        'signal-neutral': '#2563EB',
+        
+        // Keep existing shadcn colors for compatibility
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -69,10 +82,22 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+      fontSize: {
+        // Enterprise Typography System
+        'heading-l': ['20px', { lineHeight: '28px', fontWeight: '600' }],
+        'heading-m': ['16px', { lineHeight: '24px', fontWeight: '600' }],
+        'body': ['14px', { lineHeight: '20px', fontWeight: '400' }],
+        'caption': ['12px', { lineHeight: '16px', fontWeight: '400' }],
+        'amount-l': ['40px', { lineHeight: '48px', fontWeight: '600' }],
+        'amount-m': ['28px', { lineHeight: '36px', fontWeight: '600' }],
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 4px)",
         sm: "calc(var(--radius) - 8px)",
+        // Enterprise system
+        'card': '14px',
+        'button': '12px',
       },
       boxShadow: {
         'wallet': 'var(--shadow-wallet)',

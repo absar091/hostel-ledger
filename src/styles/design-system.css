@@ -1,0 +1,121 @@
+/* Enterprise Expense Tracker Design System */
+/* Based on production Figma blueprint */
+
+:root {
+  /* Backgrounds */
+  --bg-app: #0F172A;
+  --bg-card: #111827;
+  --bg-surface: #020617;
+  
+  /* Borders / Dividers */
+  --border-subtle: #1F2937;
+  
+  /* Text */
+  --text-primary: #E5E7EB;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+  
+  /* Financial Signals */
+  --signal-positive: #16A34A;
+  --signal-negative: #DC2626;
+  --signal-neutral: #2563EB;
+  
+  /* Spacing System (8px grid) */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+}
+
+/* Typography Styles */
+.heading-l {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.heading-m {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.body {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.caption {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.amount-l {
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 48px;
+}
+
+.amount-m {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 36px;
+}
+
+/* Base Card Component */
+.card-base {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Metric Card Variants */
+.metric-card-default .amount { color: var(--text-primary); }
+.metric-card-positive .amount { color: var(--signal-positive); }
+.metric-card-negative .amount { color: var(--signal-negative); }
+.metric-card-neutral .amount { color: var(--signal-neutral); }
+
+/* Button Components */
+.btn-primary {
+  height: 48px;
+  border-radius: 12px;
+  background: var(--signal-neutral);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  height: 48px;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Transaction Item */
+.transaction-item {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}

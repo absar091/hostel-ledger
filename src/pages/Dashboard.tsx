@@ -1,24 +1,24 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import WalletCard from "@/components/WalletCard";
-import QuickActions from "@/components/QuickActions";
-import GroupCard from "@/components/GroupCard";
+import MetricCard from "@/components/enterprise/MetricCard";
+import EnterpriseButton from "@/components/enterprise/EnterpriseButton";
+import TransactionItem from "@/components/enterprise/TransactionItem";
 import BottomNav from "@/components/BottomNav";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
 import RecordPaymentSheet from "@/components/RecordPaymentSheet";
 import CreateGroupSheet from "@/components/CreateGroupSheet";
 import AddMoneySheet from "@/components/AddMoneySheet";
 import PaymentConfirmationSheet from "@/components/PaymentConfirmationSheet";
-import TimelineItem from "@/components/TimelineItem";
 import ErrorAlert from "@/components/ErrorAlert";
 import SuccessAlert from "@/components/SuccessAlert";
 import { toast } from "sonner";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
+import "@/styles/design-system.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, getWalletBalance, getSettlements } = useFirebaseAuth();
+  const { user, getWalletBalance, getSettlements, getTotalToReceive, getTotalToPay, getSettlementDelta } = useFirebaseAuth();
   const { groups, transactions, isLoading, createGroup, addExpense, recordPayment, addMoneyToWallet, payMyDebt, getAllTransactions } = useFirebaseData();
   
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("home");
@@ -39,6 +39,12 @@ const Dashboard = () => {
   // Get all transactions including wallet transactions
   const allTransactions = getAllTransactions();
   const settlements = getSettlements();
+
+  // Calculate totals using new settlement system
+  const walletBalance = getWalletBalance();
+  const settlementDelta = getSettlementDelta();
+  const totalToReceive = getTotalToReceive();
+  const totalToPay = getTotalToPay();
 
   // Calculate totals from all groups (keeping for backward compatibility)
   const { totalReceive, totalOwe } = useMemo(() => {
@@ -281,20 +287,12 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
+    <div className="min-h-screen bg-bg-app pb-24">
+      {/* Header Section */}
       <header className="px-4 pt-8 pb-4">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <div className="text-muted-foreground text-sm">{getGreeting()}</div>
-            <h1 className="text-2xl font-bold text-foreground">{user?.name || "Hostel Wallet"}</h1>
-          </div>
-          <button 
-            onClick={() => navigate("/profile")}
-            className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center"
-          >
-            <span className="text-lg">👋</span>
-          </button>
+        <div className="mb-4">
+          <div className="text-caption text-text-secondary">{getGreeting()}</div>
+          <h1 className="text-heading-l text-text-primary">{user?.name || "User"}</h1>
         </div>
 
         {/* Error and Success Alerts */}
@@ -317,205 +315,107 @@ const Dashboard = () => {
             onDismiss={() => setSuccess(null)}
           />
         )}
-
-        {/* Wallet Card */}
-        <WalletCard onAddMoney={() => setShowAddMoney(true)} />
       </header>
 
       {/* Main Content */}
-      <main className="px-4 space-y-6">
-        {/* Quick Actions */}
-        <QuickActions
-          onAddExpense={handleAddExpense}
-          onReceivedMoney={handleReceivedMoney}
-          onNewGroup={handleNewGroup}
+      <main className="px-4 space-y-4">
+        {/* Available Budget - Primary Metric */}
+        <MetricCard
+          label="Available Budget"
+          amount={walletBalance}
+          helperText="Actual money you have right now"
+          variant="default"
+          size="large"
         />
 
-        {/* Home Tab - Recent Transactions */}
-        {activeTab === "home" && (
-          <section className="animate-fade-in">
-            {/* Quick Pay Section */}
-            {membersYouOwe.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-foreground mb-3">Quick Pay</h3>
-                <div className="space-y-2">
-                  {membersYouOwe.slice(0, 3).map((member) => (
-                    <button
-                      key={member.id}
-                      onClick={() => {
-                        setSelectedMemberForPayment(member);
-                        setShowPaymentConfirmation(true);
-                      }}
-                      className="w-full bg-card rounded-xl p-3 shadow-card hover:shadow-card-hover transition-all flex items-center justify-between"
-                    >
-                      <div className="text-left">
-                        <div className="font-medium">{member.name}</div>
-                        <div className="text-sm text-negative">You owe Rs {member.amount.toLocaleString()}</div>
-                      </div>
-                      <div className="bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm font-medium">
-                        Pay Now
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+        {/* Settlement Delta */}
+        <MetricCard
+          label="Settlement Delta"
+          amount={settlementDelta}
+          helperText="Pending group settlements"
+          variant={settlementDelta !== 0 ? "neutral" : "default"}
+          size="medium"
+        />
 
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-foreground">Recent Transactions</h2>
-              {allTransactions.length > 0 && (
-                <button 
-                  onClick={() => setActiveTab("activity")}
-                  className="text-sm text-primary font-medium"
-                >
-                  See all
-                </button>
-              )}
+        {/* Receive / Owe Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          <MetricCard
+            label="You'll Receive"
+            amount={totalToReceive}
+            helperText="Money others owe you"
+            variant="positive"
+            size="medium"
+          />
+          <MetricCard
+            label="You Owe"
+            amount={totalToPay}
+            helperText="Money you need to pay"
+            variant="negative"
+            size="medium"
+          />
+        </div>
+
+        {/* Action Buttons Row */}
+        <div className="flex gap-3">
+          <EnterpriseButton
+            variant="primary"
+            onClick={handleAddExpense}
+            className="flex-1"
+          >
+            Add Expense
+          </EnterpriseButton>
+          <EnterpriseButton
+            variant="secondary"
+            onClick={handleReceivedMoney}
+            className="flex-1"
+          >
+            Received
+          </EnterpriseButton>
+          <EnterpriseButton
+            variant="secondary"
+            onClick={handleNewGroup}
+            className="flex-1"
+          >
+            New Group
+          </EnterpriseButton>
+        </div>
+
+        {/* Recent Transactions */}
+        <div className="mt-6">
+          <h2 className="text-heading-m text-text-primary mb-4">Recent Transactions</h2>
+          
+          {allTransactions.length > 0 ? (
+            <div className="bg-bg-card border border-border-subtle rounded-card overflow-hidden">
+              {allTransactions.slice(0, 5).map((transaction, index) => (
+                <TransactionItem
+                  key={transaction.id}
+                  title={transaction.title}
+                  metaLine1={`${transaction.date} • ${transaction.type}`}
+                  metaLine2={transaction.type === "expense" ? `Paid by ${transaction.paidByName}` : 
+                           transaction.type === "payment" ? `${transaction.fromName} → ${transaction.toName}` : undefined}
+                  amount={transaction.amount}
+                  isLast={index === Math.min(allTransactions.length, 5) - 1}
+                />
+              ))}
             </div>
-            
-            {allTransactions.length > 0 ? (
-              <div className="space-y-3">
-                {allTransactions.slice(0, 5).map((transaction, index) => (
-                  <div
-                    key={transaction.id}
-                    className="animate-slide-up"
-                    style={{ animationDelay: `${0.1 + index * 0.05}s` }}
-                  >
-                    <TimelineItem
-                      type={transaction.type}
-                      title={transaction.title}
-                      amount={transaction.amount}
-                      date={transaction.date}
-                      paidBy={transaction.type === "expense" ? transaction.paidByName : undefined}
-                      participants={transaction.type === "expense" ? transaction.participants : undefined}
-                      from={transaction.type === "payment" ? transaction.fromName : undefined}
-                      to={transaction.type === "payment" ? transaction.toName : undefined}
-                      method={transaction.type === "payment" ? transaction.method : undefined}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 animate-fade-in">
-                <div className="text-6xl mb-4">📝</div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">No transactions yet</h3>
-                <p className="text-muted-foreground text-sm mb-4">
-                  {groups.length === 0 
-                    ? "Create a group to start tracking expenses"
-                    : "Add an expense or record a payment to get started"
-                  }
-                </p>
-                <button
-                  onClick={groups.length === 0 ? handleNewGroup : handleAddExpense}
-                  className="text-primary font-medium"
-                >
-                  {groups.length === 0 ? "+ Create your first group" : "+ Add your first expense"}
-                </button>
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* Groups Tab */}
-        {activeTab === "groups" && (
-          <section className="animate-fade-in">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-foreground">Your Groups</h2>
-              <button 
-                onClick={handleNewGroup}
-                className="text-sm text-primary font-medium"
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-text-muted text-body mb-4">No transactions yet</div>
+              <EnterpriseButton
+                variant="secondary"
+                onClick={groups.length === 0 ? handleNewGroup : handleAddExpense}
               >
-                + New Group
-              </button>
+                {groups.length === 0 ? "Create your first group" : "Add your first expense"}
+              </EnterpriseButton>
             </div>
-            
-            {groups.length > 0 ? (
-              <div className="space-y-3">
-                {groups.map((group, index) => {
-                  const currentUser = group.members.find((m) => m.isCurrentUser);
-                  const balance = currentUser?.balance || 0;
-                  
-                  return (
-                    <div
-                      key={group.id}
-                      className="animate-slide-up"
-                      style={{ animationDelay: `${0.1 + index * 0.05}s` }}
-                    >
-                      <GroupCard
-                        name={group.name}
-                        emoji={group.emoji}
-                        balance={balance}
-                        memberCount={group.members.length}
-                        onClick={() => handleGroupClick(group.id)}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-12 animate-fade-in">
-                <div className="text-6xl mb-4">👥</div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">No groups yet</h3>
-                <p className="text-muted-foreground text-sm mb-4">
-                  Create a group to start tracking shared expenses
-                </p>
-                <button
-                  onClick={handleNewGroup}
-                  className="text-primary font-medium"
-                >
-                  + Create your first group
-                </button>
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* Activity Tab - All Transactions */}
-        {activeTab === "activity" && (
-          <section className="animate-fade-in">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-foreground">All Activity</h2>
-            </div>
-            
-            {allTransactions.length > 0 ? (
-              <div className="space-y-3">
-                {allTransactions.map((transaction, index) => (
-                  <div
-                    key={transaction.id}
-                    className="animate-slide-up"
-                    style={{ animationDelay: `${0.1 + index * 0.05}s` }}
-                  >
-                    <TimelineItem
-                      type={transaction.type}
-                      title={transaction.title}
-                      amount={transaction.amount}
-                      date={transaction.date}
-                      paidBy={transaction.type === "expense" ? transaction.paidByName : undefined}
-                      participants={transaction.type === "expense" ? transaction.participants : undefined}
-                      from={transaction.type === "payment" ? transaction.fromName : undefined}
-                      to={transaction.type === "payment" ? transaction.toName : undefined}
-                      method={transaction.type === "payment" ? transaction.method : undefined}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 animate-fade-in">
-                <div className="text-6xl mb-4">📝</div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">No activity yet</h3>
-                <p className="text-muted-foreground text-sm">
-                  Your transactions will appear here
-                </p>
-              </div>
-            )}
-          </section>
-        )}
+          )}
+        </div>
       </main>
 
       {/* Bottom Navigation */}
       <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
 
-      {/* Add Expense Sheet */}
+      {/* Sheets */}
       {groups.length > 0 && (
         <AddExpenseSheet
           open={showAddExpense}
@@ -525,7 +425,6 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Record Payment Sheet */}
       {groups.length > 0 && (
         <RecordPaymentSheet
           open={showRecordPayment}
@@ -535,21 +434,18 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Create Group Sheet */}
       <CreateGroupSheet
         open={showCreateGroup}
         onClose={() => setShowCreateGroup(false)}
         onSubmit={handleGroupSubmit}
       />
 
-      {/* Add Money Sheet */}
       <AddMoneySheet
         open={showAddMoney}
         onClose={() => setShowAddMoney(false)}
         onSubmit={handleAddMoney}
       />
 
-      {/* Payment Confirmation Sheet */}
       <PaymentConfirmationSheet
         open={showPaymentConfirmation}
         onClose={() => {
