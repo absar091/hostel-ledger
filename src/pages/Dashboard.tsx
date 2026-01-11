@@ -10,14 +10,16 @@ import CreateGroupSheet from "@/components/CreateGroupSheet";
 import AddMoneySheet from "@/components/AddMoneySheet";
 import PaymentConfirmationSheet from "@/components/PaymentConfirmationSheet";
 import TimelineItem from "@/components/TimelineItem";
+import ErrorAlert from "@/components/ErrorAlert";
+import SuccessAlert from "@/components/SuccessAlert";
 import { toast } from "sonner";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, getWalletBalance } = useFirebaseAuth();
-  const { groups, transactions, isLoading, createGroup, addExpense, recordPayment, addMoneyToWallet, markPaymentAsPaid, getAllTransactions } = useFirebaseData();
+  const { user, getWalletBalance, getSettlements } = useFirebaseAuth();
+  const { groups, transactions, isLoading, createGroup, addExpense, recordPayment, addMoneyToWallet, payMyDebt, getAllTransactions } = useFirebaseData();
   
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("home");
   const [showAddExpense, setShowAddExpense] = useState(false);
@@ -28,13 +30,17 @@ const Dashboard = () => {
   const [selectedMemberForPayment, setSelectedMemberForPayment] = useState<{
     id: string;
     name: string;
-    balance: number;
+    amount: number;
+    groupId?: string;
   } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   // Get all transactions including wallet transactions
   const allTransactions = getAllTransactions();
+  const settlements = getSettlements();
 
-  // Calculate totals from all groups
+  // Calculate totals from all groups (keeping for backward compatibility)
   const { totalReceive, totalOwe } = useMemo(() => {
     let receive = 0;
     let owe = 0;
@@ -110,19 +116,31 @@ const Dashboard = () => {
     note: string;
     place: string;
   }) => {
-    const result = await addExpense({
-      groupId: data.groupId,
-      amount: data.amount,
-      paidBy: data.paidBy,
-      participants: data.participants,
-      note: data.note,
-      place: data.place,
-    });
-    
-    if (result.success) {
-      toast.success(`Added expense of Rs ${data.amount}`);
-    } else {
-      toast.error(result.error || "Failed to add expense");
+    try {
+      setError(null);
+      const result = await addExpense({
+        groupId: data.groupId,
+        amount: data.amount,
+        paidBy: data.paidBy,
+        participants: data.participants,
+        note: data.note,
+        place: data.place,
+      });
+      
+      if (result.success) {
+        setSuccess(`✅ Added expense of Rs ${data.amount.toLocaleString()}`);
+        toast.success(`Added expense of Rs ${data.amount.toLocaleString()}`);
+      } else {
+        if (result.error?.includes("Insufficient")) {
+          setError("insufficient_funds");
+        } else {
+          setError(result.error || "Failed to add expense");
+        }
+        toast.error(result.error || "Failed to add expense");
+      }
+    } catch (error) {
+      setError("network_error");
+      toast.error("Network error. Please check your connection.");
     }
   };
 
@@ -135,21 +153,29 @@ const Dashboard = () => {
   }) => {
     if (!user) return;
     
-    const result = await recordPayment({
-      groupId: data.groupId,
-      fromMember: data.fromMember,
-      toMember: user.uid,
-      amount: data.amount,
-      method: data.method,
-      note: data.note,
-    });
-    
-    if (result.success) {
-      const group = groups.find((g) => g.id === data.groupId);
-      const memberName = group?.members.find((m) => m.id === data.fromMember)?.name;
-      toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
-    } else {
-      toast.error(result.error || "Failed to record payment");
+    try {
+      setError(null);
+      const result = await recordPayment({
+        groupId: data.groupId,
+        fromMember: data.fromMember,
+        toMember: user.uid,
+        amount: data.amount,
+        method: data.method,
+        note: data.note,
+      });
+      
+      if (result.success) {
+        const group = groups.find((g) => g.id === data.groupId);
+        const memberName = group?.members.find((m) => m.id === data.fromMember)?.name;
+        setSuccess(`✅ Recorded Rs ${data.amount.toLocaleString()} from ${memberName}`);
+        toast.success(`Recorded Rs ${data.amount.toLocaleString()} from ${memberName}`);
+      } else {
+        setError(result.error || "Failed to record payment");
+        toast.error(result.error || "Failed to record payment");
+      }
+    } catch (error) {
+      setError("network_error");
+      toast.error("Network error. Please check your connection.");
     }
   };
 
@@ -176,7 +202,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleAddMoney = async (amount: number, method: string, note?: string) => {
+  const handleAddMoney = async (amount: number, note?: string) => {
     const result = await addMoneyToWallet(amount, note);
     if (result.success) {
       toast.success(`Added Rs ${amount} to wallet`);
@@ -203,7 +229,7 @@ const Dashboard = () => {
       return { success: false, error: "Member not found" };
     }
 
-    const result = markPaymentAsPaid(targetGroup.id, memberId, amount);
+    const result = await payMyDebt(targetGroup.id, memberId, amount);
     if (result.success) {
       toast.success(`Paid Rs ${amount} to ${targetMember.name}`);
     } else {
@@ -212,25 +238,36 @@ const Dashboard = () => {
     return result;
   };
 
-  // Find members you owe money to (for quick pay buttons)
+  // Find members you owe money to (using new settlement system)
   const membersYouOwe = useMemo(() => {
-    const owedMembers: Array<{ id: string; name: string; balance: number; groupId: string }> = [];
+    const owedMembers: Array<{ id: string; name: string; amount: number; groupId?: string }> = [];
     
-    groups.forEach(group => {
-      group.members.forEach(member => {
-        if (!member.isCurrentUser && member.balance < 0) {
-          owedMembers.push({
-            id: member.id,
-            name: member.name,
-            balance: member.balance,
-            groupId: group.id
-          });
-        }
-      });
+    // Get debts from settlement system
+    Object.entries(settlements).forEach(([personId, settlement]) => {
+      if (settlement.toPay > 0) {
+        // Find the person's name from groups
+        let personName = "Member";
+        let groupId = "";
+        
+        groups.forEach(group => {
+          const member = group.members.find(m => m.id === personId);
+          if (member) {
+            personName = member.name;
+            groupId = group.id;
+          }
+        });
+        
+        owedMembers.push({
+          id: personId,
+          name: personName,
+          amount: settlement.toPay,
+          groupId: groupId
+        });
+      }
     });
     
-    return owedMembers.sort((a, b) => a.balance - b.balance); // Most owed first
-  }, [groups]);
+    return owedMembers.sort((a, b) => b.amount - a.amount); // Highest debt first
+  }, [settlements, groups]);
 
   // Get greeting based on time
   const getGreeting = () => {
@@ -257,12 +294,29 @@ const Dashboard = () => {
           </button>
         </div>
 
+        {/* Error and Success Alerts */}
+        {error && (
+          <ErrorAlert
+            type={error.includes("Insufficient") ? "insufficient_funds" : 
+                  error.includes("network") ? "network_error" : "general"}
+            message={typeof error === "string" ? error : undefined}
+            onDismiss={() => setError(null)}
+            onAddMoney={() => {
+              setError(null);
+              setShowAddMoney(true);
+            }}
+          />
+        )}
+        
+        {success && (
+          <SuccessAlert
+            message={success}
+            onDismiss={() => setSuccess(null)}
+          />
+        )}
+
         {/* Wallet Card */}
-        <WalletCard 
-          toReceive={totalReceive} 
-          toOwe={totalOwe} 
-          onAddMoney={() => setShowAddMoney(true)}
-        />
+        <WalletCard onAddMoney={() => setShowAddMoney(true)} />
       </header>
 
       {/* Main Content */}
@@ -293,7 +347,7 @@ const Dashboard = () => {
                     >
                       <div className="text-left">
                         <div className="font-medium">{member.name}</div>
-                        <div className="text-sm text-negative">You owe Rs {Math.abs(member.balance)}</div>
+                        <div className="text-sm text-negative">You owe Rs {member.amount.toLocaleString()}</div>
                       </div>
                       <div className="bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm font-medium">
                         Pay Now

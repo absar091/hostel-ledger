@@ -198,8 +198,8 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
-        <SheetHeader className="mb-6">
+      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col">
+        <SheetHeader className="flex-shrink-0 mb-6">
           <SheetTitle className="text-center">
             {step === 1 && "Select Group"}
             {step === 2 && "Enter Amount"}
@@ -209,7 +209,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
           </SheetTitle>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-4">
           {/* Step 1: Select Group */}
           {step === 1 && (
             <div className="space-y-3 animate-fade-in">
@@ -407,7 +407,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
           )}
         </div>
 
-        <div className="pt-4 border-t mt-auto">
+        <div className="flex-shrink-0 pt-4 border-t bg-background">
           <div className="flex gap-3">
             {step > 1 && (
               <Button

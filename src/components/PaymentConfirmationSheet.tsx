@@ -1,4 +1,3 @@
-import React from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import Avatar from "./Avatar";
@@ -11,7 +10,9 @@ interface PaymentConfirmationSheetProps {
   member: {
     id: string;
     name: string;
-    balance: number; // How much you owe them (negative value)
+    amount?: number; // New settlement system amount
+    balance?: number; // Old balance system (for backward compatibility)
+    groupId?: string;
   } | null;
   onConfirmPayment: (memberId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
 }
@@ -27,7 +28,34 @@ const PaymentConfirmationSheet = ({
 
   if (!member) return null;
 
-  const amountToPay = Math.abs(member.balance); // Convert negative to positive
+  // Handle both new settlement system (amount) and old balance system (balance)
+  const amountToPay = member.amount || Math.abs(member.balance || 0);
+  
+  // Validate amount to prevent NaN
+  if (isNaN(amountToPay) || amountToPay <= 0) {
+    return (
+      <Sheet open={open} onOpenChange={onClose}>
+        <SheetContent side="bottom" className="h-[40vh] rounded-t-3xl flex flex-col">
+          <SheetHeader className="flex-shrink-0 mb-6">
+            <SheetTitle className="text-center">Payment Error</SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Invalid Payment Amount</h3>
+              <p className="text-muted-foreground mb-4">
+                Unable to determine the payment amount for {member.name}
+              </p>
+              <Button onClick={onClose} variant="outline">
+                Close
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+  
   const hasEnoughBalance = walletBalance >= amountToPay;
 
   const handlePayNow = async () => {
@@ -41,12 +69,12 @@ const PaymentConfirmationSheet = ({
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
-        <SheetHeader className="mb-6">
+      <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl flex flex-col">
+        <SheetHeader className="flex-shrink-0 mb-6">
           <SheetTitle className="text-center">Pay from Wallet</SheetTitle>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-6">
+        <div className="flex-1 overflow-y-auto space-y-6 pb-4">
           {/* Member Info */}
           <div className="text-center">
             <Avatar name={member.name} size="lg" />
@@ -123,7 +151,7 @@ const PaymentConfirmationSheet = ({
           )}
         </div>
 
-        <div className="pt-4 border-t bg-background">
+        <div className="flex-shrink-0 pt-4 border-t bg-background">
           <div className="flex gap-3">
             <Button
               variant="secondary"

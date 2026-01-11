@@ -272,7 +272,7 @@ const Profile = () => {
 
           <div className="flex-1 overflow-y-auto space-y-6 pb-4">
             <p className="text-sm text-muted-foreground text-center">
-              Add your payment details so group members can easily send you money
+              Add your payment details so group members know how to settle expenses with you
             </p>
 
             {/* Mobile Wallets */}

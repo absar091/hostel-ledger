@@ -7,15 +7,18 @@ import { useNavigate, useParams } from "react-router-dom";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
 import RecordPaymentSheet from "@/components/RecordPaymentSheet";
 import MemberDetailSheet from "@/components/MemberDetailSheet";
+import MemberSettlementSheet from "@/components/MemberSettlementSheet";
 import GroupSettingsSheet from "@/components/GroupSettingsSheet";
 import { toast } from "sonner";
 import { Plus, HandCoins } from "lucide-react";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 
 const GroupDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { getGroupById, getTransactionsByGroup, addExpense, recordPayment, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup } = useFirebaseData();
+  const { getGroupById, getTransactionsByGroup, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup } = useFirebaseData();
+  const { getSettlements } = useFirebaseAuth();
   
   const [activeTab, setActiveTab] = useState<"ledger" | "members" | "summary">("ledger");
   const [showAddExpense, setShowAddExpense] = useState(false);
@@ -23,8 +26,12 @@ const GroupDetail = () => {
   const [showGroupSettings, setShowGroupSettings] = useState(false);
   const [selectedMember, setSelectedMember] = useState<{ id: string; name: string; balance: number; paymentDetails?: any; phone?: string } | null>(null);
   const [showMemberDetail, setShowMemberDetail] = useState(false);
+  const [showMemberSettlement, setShowMemberSettlement] = useState(false);
+  const [settlementMember, setSettlementMember] = useState<{ id: string; name: string; avatar?: string } | null>(null);
+  
   const group = id ? getGroupById(id) : undefined;
   const transactions = id ? getTransactionsByGroup(id) : [];
+  const settlements = getSettlements();
 
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
@@ -290,38 +297,79 @@ const GroupDetail = () => {
         {activeTab === "members" && (
           <div className="space-y-3 animate-fade-in">
             {group.members.map((member, index) => {
-              const isPositive = member.balance >= 0;
               const isYou = member.isCurrentUser;
               
+              // Get settlement data for this member
+              const memberSettlement = settlements[member.id] || { toReceive: 0, toPay: 0 };
+              const youOweThisMember = memberSettlement.toPay > 0;
+              const thisMemberOwesYou = memberSettlement.toReceive > 0;
+              const isSettled = memberSettlement.toReceive === 0 && memberSettlement.toPay === 0;
+              
+              const handleSettlementClick = () => {
+                setSettlementMember({
+                  id: member.id,
+                  name: member.name,
+                  avatar: member.paymentDetails?.avatar
+                });
+                setShowMemberSettlement(true);
+              };
+              
               return (
-                <button
+                <div
                   key={member.id}
-                  onClick={() => handleMemberClick(member)}
-                  disabled={isYou}
-                  className={`w-full bg-card rounded-xl p-4 shadow-card flex items-center gap-4 animate-slide-up text-left transition-all ${
-                    !isYou ? "hover:shadow-card-hover active:scale-[0.98]" : ""
-                  }`}
+                  className={`w-full bg-card rounded-xl p-4 shadow-card animate-slide-up`}
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
-                  <Avatar name={member.name} size="lg" />
-                  <div className="flex-1">
-                    <div className="font-semibold text-foreground">{member.name}</div>
-                    <div className={`text-sm ${isPositive ? "text-positive" : "text-negative"}`}>
-                      {member.balance === 0
-                        ? "settled up"
-                        : isYou
-                        ? isPositive
-                          ? `will receive Rs ${member.balance}`
-                          : `owes Rs ${Math.abs(member.balance)}`
-                        : isPositive
-                        ? `owes you Rs ${member.balance}`
-                        : `you owe Rs ${Math.abs(member.balance)}`}
+                  <div className="flex items-center gap-4">
+                    <Avatar name={member.name} size="lg" />
+                    <div className="flex-1">
+                      <div className="font-semibold text-foreground">{member.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {isYou ? (
+                          "You"
+                        ) : isSettled ? (
+                          "✅ All settled"
+                        ) : (
+                          <div className="space-y-1">
+                            {thisMemberOwesYou && (
+                              <div className="text-green-600">
+                                Owes you Rs {memberSettlement.toReceive.toLocaleString()}
+                              </div>
+                            )}
+                            {youOweThisMember && (
+                              <div className="text-red-600">
+                                You owe Rs {memberSettlement.toPay.toLocaleString()}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
+                    
+                    {!isYou && !isSettled && (
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          onClick={handleSettlementClick}
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                        >
+                          Settle Up
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {!isYou && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleMemberClick(member)}
+                        className="p-2"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
-                  {!isYou && (
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                  )}
-                </button>
+                </div>
               );
             })}
           </div>
@@ -464,6 +512,18 @@ const GroupDetail = () => {
           navigate("/");
         }}
       />
+
+      {/* Member Settlement Sheet */}
+      {settlementMember && (
+        <MemberSettlementSheet
+          open={showMemberSettlement}
+          onClose={() => {
+            setShowMemberSettlement(false);
+            setSettlementMember(null);
+          }}
+          member={settlementMember}
+        />
+      )}
     </div>
   );
 };

@@ -7,7 +7,7 @@ export interface GroupMember {
   id: string;
   name: string;
   isCurrentUser?: boolean;
-  balance: number;
+  balance: number; // Keep for backward compatibility, but use settlements for new logic
   paymentDetails?: PaymentDetails;
   phone?: string | null;
   userId?: string; // Firebase user ID for real users
@@ -43,6 +43,16 @@ export interface Transaction {
   createdAt: string;
 }
 
+// Enterprise-grade settlement tracking
+export interface Settlement {
+  toReceive: number;  // Money others owe this user
+  toPay: number;      // Money this user owes others
+}
+
+export interface Settlements {
+  [personId: string]: Settlement;
+}
+
 interface FirebaseDataContextType {
   groups: Group[];
   transactions: Transaction[];
@@ -55,7 +65,8 @@ interface FirebaseDataContextType {
   updateMemberPaymentDetails: (groupId: string, memberId: string, paymentDetails: PaymentDetails, phone?: string) => Promise<{ success: boolean; error?: string }>;
   addExpense: (data: { groupId: string; amount: number; paidBy: string; participants: string[]; note: string; place: string }) => Promise<{ success: boolean; error?: string }>;
   recordPayment: (data: { groupId: string; fromMember: string; toMember: string; amount: number; method: "cash" | "online"; note?: string }) => Promise<{ success: boolean; error?: string }>;
-  markPaymentAsPaid: (groupId: string, toMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
+  payMyDebt: (groupId: string, toMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
+  markPaymentAsPaid: (groupId: string, fromMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   addMoneyToWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string }>;
   getGroupById: (groupId: string) => Group | undefined;
   getTransactionsByGroup: (groupId: string) => Transaction[];
@@ -66,7 +77,15 @@ interface FirebaseDataContextType {
 const FirebaseDataContext = createContext<FirebaseDataContextType | undefined>(undefined);
 
 export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
-  const { user, addMoneyToWallet: addToAuthWallet, deductMoneyFromWallet } = useFirebaseAuth();
+  const { 
+    user, 
+    addMoneyToWallet: addToAuthWallet, 
+    deductMoneyFromWallet, 
+    addToReceivable,
+    addToPayable,
+    markPaymentReceived,
+    markDebtPaid
+  } = useFirebaseAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -210,28 +229,44 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, error: "Invalid payer ID" };
       }
 
-      // Check if current user is the payer and has sufficient wallet balance
-      const isCurrentUserPayer = payer.isCurrentUser;
-      if (isCurrentUserPayer) {
-        const currentUserParticipantIndex = participantMembers.findIndex(p => p.isCurrentUser);
-        const baseAmount = Math.floor(data.amount / participantMembers.length);
-        const remainder = data.amount % participantMembers.length;
-        const userShare = baseAmount + (currentUserParticipantIndex < remainder ? 1 : 0);
-        
-        const deductResult = await deductMoneyFromWallet(userShare);
-        if (!deductResult.success) {
-          return { success: false, error: deductResult.error || "Insufficient wallet balance" };
-        }
-      }
-
-      // Calculate split amounts
+      // Calculate split amounts with proper remainder distribution
       const baseAmount = Math.floor(data.amount / participantMembers.length);
       const remainder = data.amount % participantMembers.length;
       const splitAmounts = participantMembers.map((_, index) => 
         baseAmount + (index < remainder ? 1 : 0)
       );
 
-      // Create transaction
+      // Enterprise-grade financial logic
+      const isCurrentUserPayer = payer.isCurrentUser;
+      const currentUserParticipantIndex = participantMembers.findIndex(p => p.isCurrentUser);
+      const currentUserShare = currentUserParticipantIndex >= 0 ? splitAmounts[currentUserParticipantIndex] : 0;
+
+      if (isCurrentUserPayer) {
+        // ✅ ACTION 2: User pays expense
+        // Step 1: Deduct FULL amount from Available Budget (real money spent)
+        const deductResult = await deductMoneyFromWallet(data.amount);
+        if (!deductResult.success) {
+          return { success: false, error: deductResult.error || "Insufficient Available Budget" };
+        }
+        
+        // Step 2: Create receivables for others' shares
+        for (let i = 0; i < participantMembers.length; i++) {
+          const participant = participantMembers[i];
+          if (!participant.isCurrentUser) {
+            const theirShare = splitAmounts[i];
+            await addToReceivable(participant.id, theirShare);
+          }
+        }
+      } else {
+        // ✅ ACTION 3: Someone else pays expense
+        // Step 1: Available Budget unchanged (user didn't pay)
+        // Step 2: Create debt to payer for user's share
+        if (currentUserShare > 0) {
+          await addToPayable(data.paidBy, currentUserShare);
+        }
+      }
+
+      // Create transaction record
       const transactionsRef = ref(database, 'transactions');
       const newTransactionRef = push(transactionsRef);
       const transactionId = newTransactionRef.key!;
@@ -254,9 +289,9 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           name: m.name,
           amount: splitAmounts[index],
         })),
-        place: data.place || null, // Convert undefined to null
-        note: data.note || null, // Convert undefined to null
-        walletBalanceAfter: isCurrentUserPayer ? user.walletBalance : null, // Convert undefined to null
+        place: data.place || null,
+        note: data.note || null,
+        walletBalanceAfter: user.walletBalance,
         createdAt: new Date().toISOString(),
       };
 
@@ -271,14 +306,16 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       });
       await Promise.all(memberPromises);
 
-      // Update group member balances
+      // Keep old group balance logic for backward compatibility
       const updatedMembers = group.members.map((m) => {
         if (m.id === data.paidBy) {
+          // Payer: Gets positive balance for what others owe them
           const payerParticipantIndex = participantMembers.findIndex(p => p.id === data.paidBy);
           const payerShare = payerParticipantIndex >= 0 ? splitAmounts[payerParticipantIndex] : 0;
-          const othersTotal = data.amount - payerShare;
-          return { ...m, balance: m.balance + othersTotal };
+          const othersOweMe = data.amount - payerShare;
+          return { ...m, balance: m.balance + othersOweMe };
         } else if (data.participants.includes(m.id)) {
+          // Participants: Get negative balance for what they owe the payer
           const participantIndex = participantMembers.findIndex(p => p.id === m.id);
           const theirShare = splitAmounts[participantIndex];
           return { ...m, balance: m.balance - theirShare };
@@ -355,12 +392,14 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         });
       await Promise.all(memberPromises);
 
-      // Update balances
+      // Update balances - FIXED LOGIC
       const updatedMembers = group.members.map((m) => {
         if (m.id === data.fromMember) {
-          return { ...m, balance: m.balance - data.amount };
-        } else if (m.id === data.toMember) {
+          // Person paying: Their debt decreases (balance becomes less negative or more positive)
           return { ...m, balance: m.balance + data.amount };
+        } else if (m.id === data.toMember) {
+          // Person receiving: What they're owed decreases (balance becomes less positive or more negative)
+          return { ...m, balance: m.balance - data.amount };
         }
         return m;
       });
@@ -375,22 +414,74 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const markPaymentAsPaid = async (groupId: string, toMember: string, amount: number): Promise<{ success: boolean; error?: string }> => {
+  const payMyDebt = async (groupId: string, toMember: string, amount: number): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
-    const deductResult = await deductMoneyFromWallet(amount);
-    if (!deductResult.success) {
-      return { success: false, error: deductResult.error || "Failed to deduct from wallet" };
-    }
+    try {
+      // Step 1: Use the enterprise settlement system
+      const result = await markDebtPaid(toMember, amount);
+      if (!result.success) {
+        return result;
+      }
 
-    return await recordPayment({
-      groupId,
-      fromMember: user.uid,
-      toMember,
-      amount,
-      method: "online",
-      note: "Paid from wallet"
-    });
+      // Step 2: Also update the old group balance system for backward compatibility
+      const group = groups.find((g) => g.id === groupId);
+      if (group) {
+        const updatedMembers = group.members.map((m) => {
+          if (m.id === toMember) {
+            // Reduce what they're owed (their positive balance decreases)
+            return { ...m, balance: m.balance - amount };
+          } else if (m.id === user.uid) {
+            // Reduce what you owe (your negative balance increases toward zero)
+            return { ...m, balance: m.balance + amount };
+          }
+          return m;
+        });
+
+        const groupRef = ref(database, `groups/${groupId}/members`);
+        await set(groupRef, updatedMembers);
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error("Pay debt error:", error);
+      return { success: false, error: error.message || "Failed to pay debt" };
+    }
+  };
+
+  const markPaymentAsPaid = async (groupId: string, fromMember: string, amount: number): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: "User not authenticated" };
+
+    try {
+      // Step 1: Use the enterprise settlement system
+      const result = await markPaymentReceived(fromMember, amount);
+      if (!result.success) {
+        return result;
+      }
+
+      // Step 2: Also update the old group balance system for backward compatibility
+      const group = groups.find((g) => g.id === groupId);
+      if (group) {
+        const updatedMembers = group.members.map((m) => {
+          if (m.id === fromMember) {
+            // Reduce what they owe you (their negative balance increases toward zero)
+            return { ...m, balance: m.balance + amount };
+          } else if (m.id === user.uid) {
+            // Reduce what you're owed (your positive balance decreases)
+            return { ...m, balance: m.balance - amount };
+          }
+          return m;
+        });
+
+        const groupRef = ref(database, `groups/${groupId}/members`);
+        await set(groupRef, updatedMembers);
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error("Mark payment as paid error:", error);
+      return { success: false, error: error.message || "Failed to mark payment as paid" };
+    }
   };
 
   const addMoneyToWallet = async (amount: number, note?: string): Promise<{ success: boolean; error?: string }> => {
@@ -518,6 +609,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         updateMemberPaymentDetails,
         addExpense,
         recordPayment,
+        payMyDebt,
         markPaymentAsPaid,
         addMoneyToWallet,
         getGroupById,

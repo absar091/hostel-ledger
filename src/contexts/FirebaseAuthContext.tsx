@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   updateProfile
 } from "firebase/auth";
-import { ref, set, get, update } from "firebase/database";
+import { ref, set, get, update, push } from "firebase/database";
 import { auth, database } from "@/lib/firebase";
 
 export interface PaymentDetails {
@@ -25,7 +25,8 @@ export interface UserProfile {
   phone?: string | null;
   avatar?: string | null;
   paymentDetails: PaymentDetails;
-  walletBalance: number;
+  walletBalance: number; // Available Budget (actual money you have)
+  settlements: { [personId: string]: { toReceive: number; toPay: number } }; // Enterprise settlement tracking
   createdAt: string;
 }
 
@@ -40,6 +41,15 @@ interface FirebaseAuthContextType {
   addMoneyToWallet: (amount: number) => Promise<{ success: boolean; error?: string }>;
   deductMoneyFromWallet: (amount: number) => Promise<{ success: boolean; error?: string }>;
   getWalletBalance: () => number;
+  getSettlements: () => { [personId: string]: { toReceive: number; toPay: number } };
+  getTotalToReceive: () => number;
+  getTotalToPay: () => number;
+  getSettlementDelta: () => number;
+  updateSettlement: (personId: string, toReceive: number, toPay: number) => Promise<{ success: boolean; error?: string }>;
+  addToReceivable: (personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
+  addToPayable: (personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
+  markPaymentReceived: (personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
+  markDebtPaid: (personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
 }
 
 const FirebaseAuthContext = createContext<FirebaseAuthContextType | undefined>(undefined);
@@ -81,6 +91,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           avatar: userData.avatar,
           paymentDetails: userData.paymentDetails || {},
           walletBalance: userData.walletBalance || 0,
+          settlements: userData.settlements || {}, // Initialize settlements
           createdAt: userData.createdAt
         };
         setUser(userProfile);
@@ -100,6 +111,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
             avatar: null,
             paymentDetails: {},
             walletBalance: 0,
+            settlements: {}, // Initialize empty settlements
             createdAt: new Date().toISOString()
           };
           
@@ -188,6 +200,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         phone: data.phone || null, // Convert undefined to null
         paymentDetails: {},
         walletBalance: 0,
+        settlements: {}, // Initialize empty settlements
         createdAt: new Date().toISOString()
       };
 
@@ -265,12 +278,18 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      const newBalance = user.walletBalance + amount;
-      const userRef = ref(database, `users/${user.uid}/walletBalance`);
-      await set(userRef, newBalance);
+      const newWalletBalance = user.walletBalance + amount;
+      
+      const userRef = ref(database, `users/${user.uid}`);
+      await update(userRef, { 
+        walletBalance: newWalletBalance
+      });
       
       // Update local state
-      setUser(prev => prev ? { ...prev, walletBalance: newBalance } : null);
+      setUser(prev => prev ? { 
+        ...prev, 
+        walletBalance: newWalletBalance
+      } : null);
       
       return { success: true };
     } catch (error: any) {
@@ -303,8 +322,203 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Enterprise-grade settlement management functions
   const getWalletBalance = (): number => {
     return user?.walletBalance || 0;
+  };
+
+  const getSettlements = (): { [personId: string]: { toReceive: number; toPay: number } } => {
+    return user?.settlements || {};
+  };
+
+  const getTotalToReceive = (): number => {
+    if (!user?.settlements) return 0;
+    return Object.values(user.settlements).reduce((sum, settlement) => sum + settlement.toReceive, 0);
+  };
+
+  const getTotalToPay = (): number => {
+    if (!user?.settlements) return 0;
+    return Object.values(user.settlements).reduce((sum, settlement) => sum + settlement.toPay, 0);
+  };
+
+  const getSettlementDelta = (): number => {
+    return getTotalToReceive() - getTotalToPay();
+  };
+
+  const updateSettlement = async (personId: string, toReceive: number, toPay: number): Promise<{ success: boolean; error?: string }> => {
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    try {
+      const userRef = ref(database, `users/${user.uid}/settlements/${personId}`);
+      const settlement = { toReceive: Math.max(0, toReceive), toPay: Math.max(0, toPay) };
+      await set(userRef, settlement);
+      
+      // Update local state
+      setUser(prev => prev ? { 
+        ...prev, 
+        settlements: { 
+          ...prev.settlements, 
+          [personId]: settlement 
+        } 
+      } : null);
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error("Update settlement error:", error);
+      return { success: false, error: error.message || "Failed to update settlement" };
+    }
+  };
+
+  const addToReceivable = async (personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
+    if (!user || amount <= 0) {
+      return { success: false, error: "Invalid amount or user not authenticated" };
+    }
+
+    const currentSettlement = user.settlements[personId] || { toReceive: 0, toPay: 0 };
+    return await updateSettlement(personId, currentSettlement.toReceive + amount, currentSettlement.toPay);
+  };
+
+  const addToPayable = async (personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
+    if (!user || amount <= 0) {
+      return { success: false, error: "Invalid amount or user not authenticated" };
+    }
+
+    const currentSettlement = user.settlements[personId] || { toReceive: 0, toPay: 0 };
+    return await updateSettlement(personId, currentSettlement.toReceive, currentSettlement.toPay + amount);
+  };
+
+  const markPaymentReceived = async (personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
+    if (!user || amount <= 0) {
+      return { success: false, error: "Invalid amount or user not authenticated" };
+    }
+
+    const currentSettlement = user.settlements[personId] || { toReceive: 0, toPay: 0 };
+    
+    // Allow partial payments - don't require exact amount
+    if (currentSettlement.toReceive <= 0) {
+      return { success: false, error: "No pending receivables from this person" };
+    }
+
+    // Allow paying more than owed (in case of overpayment)
+    const actualAmount = Math.min(amount, currentSettlement.toReceive);
+
+    try {
+      // Step 1: Add real money to wallet
+      const addResult = await addMoneyToWallet(actualAmount);
+      if (!addResult.success) {
+        return addResult;
+      }
+
+      // Step 2: Reduce receivable amount
+      await updateSettlement(personId, currentSettlement.toReceive - actualAmount, currentSettlement.toPay);
+      
+      // Step 3: Create transaction record
+      const transactionsRef = ref(database, 'transactions');
+      const newTransactionRef = push(transactionsRef);
+      const transactionId = newTransactionRef.key!;
+
+      const paymentTransaction = {
+        id: transactionId,
+        groupId: "settlement", // Special groupId for direct settlements
+        type: "payment" as const,
+        title: "Payment Received",
+        amount: actualAmount,
+        date: new Date().toLocaleDateString("en-US", { 
+          month: "short", 
+          day: "numeric",
+          year: "numeric"
+        }),
+        paidBy: personId,
+        paidByName: "Member", // We don't have their name in settlements
+        from: personId,
+        fromName: "Member",
+        to: user.uid,
+        toName: user.name,
+        method: "cash" as const,
+        note: `Payment received from settlement`,
+        walletBalanceAfter: user.walletBalance + actualAmount,
+        createdAt: new Date().toISOString(),
+      };
+
+      await set(newTransactionRef, paymentTransaction);
+
+      // Add to user's transactions
+      const userTransactionRef = ref(database, `userTransactions/${user.uid}/${transactionId}`);
+      await set(userTransactionRef, true);
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error("Mark payment received error:", error);
+      return { success: false, error: error.message || "Failed to mark payment as received" };
+    }
+  };
+
+  const markDebtPaid = async (personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
+    if (!user || amount <= 0) {
+      return { success: false, error: "Invalid amount or user not authenticated" };
+    }
+
+    const currentSettlement = user.settlements[personId] || { toReceive: 0, toPay: 0 };
+    
+    // Allow partial payments - don't require exact amount
+    if (currentSettlement.toPay <= 0) {
+      return { success: false, error: "No pending debts to this person" };
+    }
+
+    // Allow paying more than owed (in case of overpayment)
+    const actualAmount = Math.min(amount, currentSettlement.toPay);
+
+    try {
+      // Step 1: Deduct real money from wallet
+      const deductResult = await deductMoneyFromWallet(actualAmount);
+      if (!deductResult.success) {
+        return deductResult;
+      }
+
+      // Step 2: Reduce payable amount
+      await updateSettlement(personId, currentSettlement.toReceive, currentSettlement.toPay - actualAmount);
+      
+      // Step 3: Create transaction record
+      const transactionsRef = ref(database, 'transactions');
+      const newTransactionRef = push(transactionsRef);
+      const transactionId = newTransactionRef.key!;
+
+      const paymentTransaction = {
+        id: transactionId,
+        groupId: "settlement", // Special groupId for direct settlements
+        type: "payment" as const,
+        title: "Debt Payment",
+        amount: actualAmount,
+        date: new Date().toLocaleDateString("en-US", { 
+          month: "short", 
+          day: "numeric",
+          year: "numeric"
+        }),
+        paidBy: user.uid,
+        paidByName: user.name,
+        from: user.uid,
+        fromName: user.name,
+        to: personId,
+        toName: "Member",
+        method: "online" as const,
+        note: `Debt payment from wallet`,
+        walletBalanceAfter: user.walletBalance - actualAmount,
+        createdAt: new Date().toISOString(),
+      };
+
+      await set(newTransactionRef, paymentTransaction);
+
+      // Add to user's transactions
+      const userTransactionRef = ref(database, `userTransactions/${user.uid}/${transactionId}`);
+      await set(userTransactionRef, true);
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error("Mark debt paid error:", error);
+      return { success: false, error: error.message || "Failed to mark debt as paid" };
+    }
   };
 
   return (
@@ -318,7 +532,16 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       updateUserProfile,
       addMoneyToWallet,
       deductMoneyFromWallet,
-      getWalletBalance
+      getWalletBalance,
+      getSettlements,
+      getTotalToReceive,
+      getTotalToPay,
+      getSettlementDelta,
+      updateSettlement,
+      addToReceivable,
+      addToPayable,
+      markPaymentReceived,
+      markDebtPaid
     }}>
       {children}
     </FirebaseAuthContext.Provider>

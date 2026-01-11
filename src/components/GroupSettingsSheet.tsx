@@ -82,12 +82,12 @@ const GroupSettingsSheet = ({
   return (
     <>
       <Sheet open={open} onOpenChange={onClose}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
-          <SheetHeader className="mb-6">
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col">
+          <SheetHeader className="flex-shrink-0 mb-6">
             <SheetTitle className="text-center">Group Settings</SheetTitle>
           </SheetHeader>
 
-          <div className="flex-1 overflow-y-auto space-y-6">
+          <div className="flex-1 overflow-y-auto space-y-6 pb-4">
             {/* Group Name & Emoji */}
             <div className="space-y-4">
               <div>

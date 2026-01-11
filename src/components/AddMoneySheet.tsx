@@ -1,24 +1,21 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Wallet, CreditCard, Banknote } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Wallet, PiggyBank } from "lucide-react";
 
 interface AddMoneySheetProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (amount: number, method: string, note?: string) => void;
+  onSubmit: (amount: number, note?: string) => void;
 }
 
 const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
   const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState<"bank" | "cash" | "card">("bank");
   const [note, setNote] = useState("");
 
   const handleClose = () => {
     setAmount("");
-    setMethod("bank");
     setNote("");
     onClose();
   };
@@ -30,7 +27,7 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
       return;
     }
 
-    onSubmit(amountValue, method, note.trim() || undefined);
+    onSubmit(amountValue, note.trim() || undefined);
     handleClose();
   };
 
@@ -43,15 +40,18 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
-        <SheetHeader className="mb-6">
+      <SheetContent side="bottom" className="h-[75vh] rounded-t-3xl flex flex-col">
+        <SheetHeader className="flex-shrink-0 mb-6">
           <SheetTitle className="text-center flex items-center justify-center gap-2">
-            <Wallet className="w-5 h-5" />
-            Add Money to Wallet
+            <PiggyBank className="w-5 h-5" />
+            Add to Available Budget
           </SheetTitle>
+          <p className="text-sm text-muted-foreground text-center">
+            Add actual money to your wallet for expense tracking
+          </p>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-6">
+        <div className="flex-1 overflow-y-auto space-y-6 pb-4">
           {/* Amount Input */}
           <div className="text-center">
             <div className="text-6xl font-bold text-foreground mb-4">
@@ -85,83 +85,32 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
             </div>
           </div>
 
-          {/* Payment Method */}
-          <div>
-            <label className="text-sm font-medium text-muted-foreground mb-3 block">
-              Payment method
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              <button
-                onClick={() => setMethod("bank")}
-                className={cn(
-                  "flex flex-col items-center gap-2 p-4 rounded-xl transition-all",
-                  method === "bank"
-                    ? "bg-primary/10 border-2 border-primary"
-                    : "bg-secondary hover:bg-secondary/80"
-                )}
-              >
-                <Wallet className={cn(
-                  "w-6 h-6",
-                  method === "bank" ? "text-primary" : "text-muted-foreground"
-                )} />
-                <span className={cn(
-                  "text-sm font-medium",
-                  method === "bank" ? "text-primary" : "text-foreground"
-                )}>Bank Transfer</span>
-              </button>
-              
-              <button
-                onClick={() => setMethod("card")}
-                className={cn(
-                  "flex flex-col items-center gap-2 p-4 rounded-xl transition-all",
-                  method === "card"
-                    ? "bg-primary/10 border-2 border-primary"
-                    : "bg-secondary hover:bg-secondary/80"
-                )}
-              >
-                <CreditCard className={cn(
-                  "w-6 h-6",
-                  method === "card" ? "text-primary" : "text-muted-foreground"
-                )} />
-                <span className={cn(
-                  "text-sm font-medium",
-                  method === "card" ? "text-primary" : "text-foreground"
-                )}>Card</span>
-              </button>
-
-              <button
-                onClick={() => setMethod("cash")}
-                className={cn(
-                  "flex flex-col items-center gap-2 p-4 rounded-xl transition-all",
-                  method === "cash"
-                    ? "bg-primary/10 border-2 border-primary"
-                    : "bg-secondary hover:bg-secondary/80"
-                )}
-              >
-                <Banknote className={cn(
-                  "w-6 h-6",
-                  method === "cash" ? "text-primary" : "text-muted-foreground"
-                )} />
-                <span className={cn(
-                  "text-sm font-medium",
-                  method === "cash" ? "text-primary" : "text-foreground"
-                )}>Cash Deposit</span>
-              </button>
-            </div>
-          </div>
-
           {/* Note */}
           <div>
             <label className="text-sm font-medium text-muted-foreground mb-3 block">
               Note (optional)
             </label>
             <Input
-              placeholder="e.g., Monthly allowance, Salary"
+              placeholder="e.g., Monthly allowance, Salary, Pocket money"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               className="h-12"
               maxLength={100}
             />
+          </div>
+
+          {/* Info Box */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <Wallet className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-blue-900 mb-1">Available Budget Tracking</h4>
+                <p className="text-sm text-blue-700">
+                  This adds to your Available Budget (real money). When you pay for group expenses, 
+                  the full amount will be deducted from this balance.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Summary */}
@@ -173,16 +122,16 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
                     +Rs {parseFloat(amount).toLocaleString()}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    via {method === "bank" ? "Bank Transfer" : method === "card" ? "Card" : "Cash Deposit"}
+                    Added to Available Budget
                   </div>
                 </div>
-                <Wallet className="w-8 h-8 text-primary" />
+                <PiggyBank className="w-8 h-8 text-primary" />
               </div>
             </div>
           )}
         </div>
 
-        <div className="pt-4 border-t bg-background">
+        <div className="flex-shrink-0 pt-4 border-t bg-background">
           <div className="flex gap-3">
             <Button
               variant="secondary"
@@ -196,7 +145,7 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
               disabled={!canSubmit()}
               className="flex-1 h-12"
             >
-              Add Money
+              Add to Available Budget
             </Button>
           </div>
         </div>
