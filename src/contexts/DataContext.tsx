@@ -46,6 +46,7 @@ interface DataContextType {
   updateGroup: (groupId: string, data: Partial<Group>) => void;
   deleteGroup: (groupId: string) => void;
   addMemberToGroup: (groupId: string, member: { name: string; paymentDetails?: PaymentDetails; phone?: string }) => void;
+  removeMemberFromGroup: (groupId: string, memberId: string) => void;
   updateMemberPaymentDetails: (groupId: string, memberId: string, paymentDetails: PaymentDetails, phone?: string) => void;
   addExpense: (data: { groupId: string; amount: number; paidBy: string; participants: string[]; note: string; place: string }) => void;
   recordPayment: (data: { groupId: string; fromMember: string; toMember: string; amount: number; method: "cash" | "online"; note?: string }) => void;
@@ -150,6 +151,19 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
               phone: member.phone,
             },
           ],
+        };
+      }
+      return g;
+    });
+    saveGroups(updatedGroups);
+  };
+
+  const removeMemberFromGroup = (groupId: string, memberId: string) => {
+    const updatedGroups = groups.map((g) => {
+      if (g.id === groupId) {
+        return {
+          ...g,
+          members: g.members.filter((m) => m.id !== memberId),
         };
       }
       return g;
@@ -303,6 +317,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         updateGroup,
         deleteGroup,
         addMemberToGroup,
+        removeMemberFromGroup,
         updateMemberPaymentDetails,
         addExpense,
         recordPayment,
