@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { FirebaseAuthProvider, useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { FirebaseDataProvider } from "@/contexts/FirebaseDataContext";
-import FirebaseTest from "@/components/FirebaseTest";
 import Index from "./pages/Index";
 import GroupDetail from "./pages/GroupDetail";
 import Login from "./pages/Login";
@@ -71,7 +70,6 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner position="top-center" />
-      <FirebaseTest />
       <BrowserRouter>
         <FirebaseAuthProvider>
           <FirebaseDataProvider>

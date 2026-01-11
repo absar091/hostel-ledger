@@ -4,8 +4,8 @@ import { ArrowLeft, Plus, Wallet, TrendingDown, TrendingUp, PiggyBank } from "lu
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { useAuth } from "@/contexts/AuthContext";
-import { useData } from "@/contexts/DataContext";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 
 interface BudgetEntry {
   id: string;
@@ -19,8 +19,8 @@ const BUDGET_KEY = "hostel_wallet_budget";
 
 const Budget = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { groups, transactions } = useData();
+  const { user } = useFirebaseAuth();
+  const { groups, transactions } = useFirebaseData();
   
   const [showAddFunds, setShowAddFunds] = useState(false);
   const [fundAmount, setFundAmount] = useState("");

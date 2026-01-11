@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuth, PaymentDetails } from "@/contexts/AuthContext";
+import { useFirebaseAuth, PaymentDetails } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
 import { ArrowLeft, User, Mail, Phone, CreditCard, Building2, LogOut, Check, ChevronRight, PiggyBank } from "lucide-react";
 import Avatar from "@/components/Avatar";
@@ -27,7 +27,7 @@ const BANKS = [
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, updateProfile, logout } = useAuth();
+  const { user, updateUserProfile, logout } = useFirebaseAuth();
   const [showEditSheet, setShowEditSheet] = useState(false);
   const [showPaymentSheet, setShowPaymentSheet] = useState(false);
   
@@ -42,13 +42,17 @@ const Profile = () => {
   const [accountNumber, setAccountNumber] = useState(user?.paymentDetails?.accountNumber || "");
   const [raastId, setRaastId] = useState(user?.paymentDetails?.raastId || "");
 
-  const handleSaveProfile = () => {
-    updateProfile({ name: editName, phone: editPhone || undefined });
-    toast.success("Profile updated");
-    setShowEditSheet(false);
+  const handleSaveProfile = async () => {
+    const result = await updateUserProfile({ name: editName, phone: editPhone || null });
+    if (result.success) {
+      toast.success("Profile updated");
+      setShowEditSheet(false);
+    } else {
+      toast.error(result.error || "Failed to update profile");
+    }
   };
 
-  const handleSavePaymentDetails = () => {
+  const handleSavePaymentDetails = async () => {
     const paymentDetails: PaymentDetails = {};
     if (jazzCash) paymentDetails.jazzCash = jazzCash;
     if (easypaisa) paymentDetails.easypaisa = easypaisa;
@@ -56,9 +60,13 @@ const Profile = () => {
     if (accountNumber) paymentDetails.accountNumber = accountNumber;
     if (raastId) paymentDetails.raastId = raastId;
     
-    updateProfile({ paymentDetails });
-    toast.success("Payment details updated");
-    setShowPaymentSheet(false);
+    const result = await updateUserProfile({ paymentDetails });
+    if (result.success) {
+      toast.success("Payment details updated");
+      setShowPaymentSheet(false);
+    } else {
+      toast.error(result.error || "Failed to update payment details");
+    }
   };
 
   const handleLogout = () => {

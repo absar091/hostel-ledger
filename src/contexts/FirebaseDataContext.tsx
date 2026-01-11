@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { ref, push, set, update, remove, onValue, off, get } from "firebase/database";
 import { database } from "@/lib/firebase";
 import { useFirebaseAuth, PaymentDetails } from "./FirebaseAuthContext";
@@ -9,7 +9,7 @@ export interface GroupMember {
   isCurrentUser?: boolean;
   balance: number;
   paymentDetails?: PaymentDetails;
-  phone?: string;
+  phone?: string | null;
   userId?: string; // Firebase user ID for real users
 }
 
@@ -151,16 +151,16 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             name: "You",
             isCurrentUser: true,
             balance: 0,
-            paymentDetails: user.paymentDetails,
-            phone: user.phone,
+            paymentDetails: user.paymentDetails || {},
+            phone: user.phone || null, // Convert undefined to null
             userId: user.uid,
           },
           ...data.members.map((m) => ({
             id: `member_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             name: m.name,
             balance: 0,
-            paymentDetails: m.paymentDetails,
-            phone: m.phone,
+            paymentDetails: m.paymentDetails || {},
+            phone: m.phone || null, // Convert undefined to null
           })),
         ],
         createdBy: user.uid,
@@ -254,9 +254,9 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           name: m.name,
           amount: splitAmounts[index],
         })),
-        place: data.place,
-        note: data.note,
-        walletBalanceAfter: isCurrentUserPayer ? user.walletBalance : undefined,
+        place: data.place || null, // Convert undefined to null
+        note: data.note || null, // Convert undefined to null
+        walletBalanceAfter: isCurrentUserPayer ? user.walletBalance : null, // Convert undefined to null
         createdAt: new Date().toISOString(),
       };
 
@@ -340,7 +340,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         to: data.toMember,
         toName: toPerson.name,
         method: data.method,
-        note: data.note,
+        note: data.note || null, // Convert undefined to null
         createdAt: new Date().toISOString(),
       };
 
@@ -420,7 +420,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         }),
         paidBy: user.uid,
         paidByName: user.name,
-        note: note || "Added money to wallet",
+        note: note || null, // Convert undefined to null
         walletBalanceAfter: user.walletBalance + amount,
         createdAt: new Date().toISOString(),
       };

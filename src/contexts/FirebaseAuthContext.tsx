@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { 
   User,
   signInWithEmailAndPassword,
@@ -22,8 +22,8 @@ export interface UserProfile {
   uid: string;
   email: string;
   name: string;
-  phone?: string;
-  avatar?: string;
+  phone?: string | null;
+  avatar?: string | null;
   paymentDetails: PaymentDetails;
   walletBalance: number;
   createdAt: string;
@@ -53,7 +53,6 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setFirebaseUser(firebaseUser);
-        // Fetch user profile from Realtime Database
         await fetchUserProfile(firebaseUser.uid);
       } else {
         setFirebaseUser(null);
@@ -67,12 +66,14 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = async (uid: string) => {
     try {
+      console.log("🔥 Fetching user profile for UID:", uid); // Debug log
       const userRef = ref(database, `users/${uid}`);
       const snapshot = await get(userRef);
       
       if (snapshot.exists()) {
         const userData = snapshot.val();
-        setUser({
+        console.log("🔥 Raw user data from database:", userData); // Debug log
+        const userProfile: UserProfile = {
           uid,
           email: userData.email,
           name: userData.name,
@@ -81,18 +82,55 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           paymentDetails: userData.paymentDetails || {},
           walletBalance: userData.walletBalance || 0,
           createdAt: userData.createdAt
-        });
+        };
+        setUser(userProfile);
+        console.log("🔥 User profile loaded successfully:", userProfile); // Debug log
+      } else {
+        console.log("🔥 No user profile found in database for UID:", uid); // Debug log
+        console.log("🔥 Creating user profile from Firebase Auth data..."); // Debug log
+        
+        // Create user profile from Firebase Auth data
+        const firebaseUser = auth.currentUser;
+        if (firebaseUser) {
+          const newUserProfile: UserProfile = {
+            uid,
+            email: firebaseUser.email || "",
+            name: firebaseUser.displayName || "User",
+            phone: null,
+            avatar: null,
+            paymentDetails: {},
+            walletBalance: 0,
+            createdAt: new Date().toISOString()
+          };
+          
+          // Save to database
+          await set(userRef, newUserProfile);
+          setUser(newUserProfile);
+          console.log("🔥 User profile created successfully:", newUserProfile); // Debug log
+        } else {
+          console.log("🔥 No Firebase user found, cannot create profile"); // Debug log
+          setUser(null);
+        }
       }
     } catch (error) {
-      console.error("Error fetching user profile:", error);
+      console.error("🔥 Error fetching/creating user profile:", error);
+      setUser(null);
     }
   };
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true);
+      console.log("🔥 Attempting login for:", email); // Debug log
+      
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      await fetchUserProfile(userCredential.user.uid);
+      console.log("🔥 Firebase login successful, UID:", userCredential.user.uid); // Debug log
+      console.log("🔥 Firebase user object:", userCredential.user); // Debug log
+      
+      // The onAuthStateChanged listener will handle fetching the profile
+      // So we don't need to manually call fetchUserProfile here
+      
+      console.log("🔥 Login process completed, waiting for auth state change"); // Debug log
       return { success: true };
     } catch (error: any) {
       console.error("Login error:", error);
@@ -110,6 +148,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           break;
         case 'auth/too-many-requests':
           errorMessage = "Too many failed attempts. Please try again later";
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = "Invalid email or password. Please check your credentials or create an account.";
           break;
         default:
           errorMessage = error.message || "Login failed";
@@ -139,12 +180,12 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         displayName: data.name
       });
 
-      // Create user profile in Realtime Database
+      // Create user profile in Realtime Database - Fix undefined values
       const userProfile: UserProfile = {
         uid: firebaseUser.uid,
         email: data.email,
         name: data.name,
-        phone: data.phone,
+        phone: data.phone || null, // Convert undefined to null
         paymentDetails: {},
         walletBalance: 0,
         createdAt: new Date().toISOString()
@@ -195,11 +236,21 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      // Clean data to remove undefined values
+      const cleanData = Object.fromEntries(
+        Object.entries(data).filter(([_, value]) => value !== undefined)
+      );
+
+      // Convert undefined to null for Firebase
+      const firebaseData = Object.fromEntries(
+        Object.entries(cleanData).map(([key, value]) => [key, value === undefined ? null : value])
+      );
+
       const userRef = ref(database, `users/${user.uid}`);
-      await update(userRef, data);
+      await update(userRef, firebaseData);
       
       // Update local state
-      setUser(prev => prev ? { ...prev, ...data } : null);
+      setUser(prev => prev ? { ...prev, ...cleanData } : null);
       
       return { success: true };
     } catch (error: any) {

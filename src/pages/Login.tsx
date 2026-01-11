@@ -28,9 +28,11 @@ const Login = () => {
 
     if (result.success) {
       toast.success("Welcome back!");
-      navigate("/");
+      console.log("🔥 LOGIN SUCCESS - Login result:", result); // Debug log
+      console.log("🔥 LOGIN SUCCESS - Should redirect now..."); // Debug log
     } else {
       toast.error(result.error || "Login failed");
+      console.log("🔥 LOGIN FAILED - Error:", result.error); // Debug log
     }
   };
 

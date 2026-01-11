@@ -10,12 +10,12 @@ import MemberDetailSheet from "@/components/MemberDetailSheet";
 import GroupSettingsSheet from "@/components/GroupSettingsSheet";
 import { toast } from "sonner";
 import { Plus, HandCoins } from "lucide-react";
-import { useData } from "@/contexts/DataContext";
+import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 
 const GroupDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { getGroupById, getTransactionsByGroup, addExpense, recordPayment, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup } = useData();
+  const { getGroupById, getTransactionsByGroup, addExpense, recordPayment, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup } = useFirebaseData();
   
   const [activeTab, setActiveTab] = useState<"ledger" | "members" | "summary">("ledger");
   const [showAddExpense, setShowAddExpense] = useState(false);
