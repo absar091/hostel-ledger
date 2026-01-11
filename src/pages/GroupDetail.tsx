@@ -52,21 +52,34 @@ const GroupDetail = () => {
       })
       .map((t) => {
         let direction: "gave" | "received" = "received";
+        let balanceChange = 0; // positive = they owe more (good), negative = you owe more (bad)
         
         if (t.type === "payment") {
-          direction = t.from === selectedMember.id ? "received" : "gave";
-        } else if (t.type === "expense") {
-          const currentUser = group.members.find((m) => m.isCurrentUser);
-          if (t.paidBy === currentUser?.id) {
+          if (t.from === selectedMember.id) {
+            // They paid you
             direction = "received";
-          } else if (t.paidBy === selectedMember.id) {
+            balanceChange = -t.amount; // They owe you less now
+          } else {
+            // You paid them
             direction = "gave";
+            balanceChange = t.amount; // You reduced your debt
+          }
+        } else if (t.type === "expense") {
+          if (t.paidBy === currentUser?.id) {
+            // You paid, they owe you their share
+            direction = "received";
+            const theirShare = t.participants?.find((p) => p.id === selectedMember.id)?.amount || 0;
+            balanceChange = theirShare; // They owe you more
+          } else if (t.paidBy === selectedMember.id) {
+            // They paid, you owe them your share
+            direction = "gave";
+            const yourShare = t.participants?.find((p) => p.id === currentUser?.id)?.amount || 0;
+            balanceChange = -yourShare; // You owe them more
           }
         }
         
         let amount = t.amount;
         if (t.type === "expense") {
-          const currentUser = group.members.find((m) => m.isCurrentUser);
           if (t.paidBy === currentUser?.id) {
             amount = t.participants?.find((p) => p.id === selectedMember.id)?.amount || 0;
           } else {
@@ -83,6 +96,7 @@ const GroupDetail = () => {
           place: t.place,
           method: t.method,
           direction,
+          balanceChange,
         };
       });
   }, [group, selectedMember, transactions]);
