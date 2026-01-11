@@ -89,15 +89,24 @@ const TimelineItem = ({
           
           {participants && participants.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
-              {participants.map((p) => (
-                <span
-                  key={p.name}
-                  className="inline-flex items-center gap-1 text-xs bg-secondary rounded-full px-2 py-1"
-                >
-                  <span className="font-medium">{p.name}</span>
-                  <span className="text-negative">owes Rs {p.amount}</span>
-                </span>
-              ))}
+              {participants.map((p) => {
+                const isPayer = p.name === paidBy;
+                return (
+                  <span
+                    key={p.name}
+                    className={`inline-flex items-center gap-1 text-xs rounded-full px-2 py-1 ${
+                      isPayer ? "bg-positive/10" : "bg-secondary"
+                    }`}
+                  >
+                    <span className="font-medium">{p.name}</span>
+                    {isPayer ? (
+                      <span className="text-positive">paid</span>
+                    ) : (
+                      <span className="text-negative">owes Rs {p.amount}</span>
+                    )}
+                  </span>
+                );
+              })}
             </div>
           )}
         </div>

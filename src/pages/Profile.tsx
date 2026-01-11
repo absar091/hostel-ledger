@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth, PaymentDetails } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { ArrowLeft, User, Mail, Phone, CreditCard, Building2, LogOut, Check, ChevronRight } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, CreditCard, Building2, LogOut, Check, ChevronRight, PiggyBank } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -99,6 +99,21 @@ const Profile = () => {
       </header>
 
       <main className="px-4 space-y-4">
+        {/* My Budget */}
+        <button
+          onClick={() => navigate("/budget")}
+          className="w-full bg-gradient-to-r from-primary to-primary/80 rounded-xl p-4 flex items-center gap-4 shadow-md animate-slide-up text-primary-foreground"
+        >
+          <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+            <PiggyBank className="w-5 h-5 text-primary-foreground" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="font-medium">My Budget</p>
+            <p className="text-sm opacity-80">Track your monthly funds & spending</p>
+          </div>
+          <ChevronRight className="w-5 h-5 opacity-80" />
+        </button>
+
         {/* Edit Profile */}
         <button
           onClick={() => {
@@ -107,6 +122,7 @@ const Profile = () => {
             setShowEditSheet(true);
           }}
           className="w-full bg-card rounded-xl p-4 flex items-center gap-4 shadow-sm animate-slide-up"
+          style={{ animationDelay: "0.05s" }}
         >
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
             <User className="w-5 h-5 text-primary" />
@@ -129,7 +145,7 @@ const Profile = () => {
             setShowPaymentSheet(true);
           }}
           className="w-full bg-card rounded-xl p-4 flex items-center gap-4 shadow-sm animate-slide-up"
-          style={{ animationDelay: "0.05s" }}
+          style={{ animationDelay: "0.1s" }}
         >
           <div className="w-10 h-10 rounded-full bg-positive/10 flex items-center justify-center">
             <CreditCard className="w-5 h-5 text-positive" />
@@ -185,7 +201,7 @@ const Profile = () => {
         <button
           onClick={handleLogout}
           className="w-full bg-destructive/10 rounded-xl p-4 flex items-center gap-4 animate-slide-up"
-          style={{ animationDelay: "0.1s" }}
+          style={{ animationDelay: "0.15s" }}
         >
           <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
             <LogOut className="w-5 h-5 text-destructive" />
