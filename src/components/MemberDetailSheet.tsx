@@ -101,7 +101,6 @@ const MemberDetailSheet = ({
               </div>
             </div>
           )}
-          </div>
 
           {/* Quick Actions */}
           <div className="flex gap-3 mb-6">
