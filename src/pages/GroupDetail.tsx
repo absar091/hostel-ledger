@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { ArrowLeft, Settings } from "lucide-react";
+import { useState, useMemo } from "react";
+import { ArrowLeft, Settings, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TimelineItem from "@/components/TimelineItem";
 import Avatar from "@/components/Avatar";
 import { useNavigate, useParams } from "react-router-dom";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
 import RecordPaymentSheet from "@/components/RecordPaymentSheet";
+import MemberDetailSheet from "@/components/MemberDetailSheet";
 import { toast } from "sonner";
 import { Plus, HandCoins } from "lucide-react";
 
@@ -28,6 +29,7 @@ const groupsData: Record<string, {
     from?: string;
     to?: string;
     method?: string;
+    place?: string;
   }[];
 }> = {
   "1": {
@@ -60,6 +62,7 @@ const groupsData: Record<string, {
         date: "Yesterday",
         paidBy: "You",
         category: "food",
+        place: "Student Café",
         participants: [
           { name: "Ali", amount: 400 },
           { name: "Bilal", amount: 400 },
@@ -73,6 +76,7 @@ const groupsData: Record<string, {
         date: "2 days ago",
         paidBy: "Hassan",
         category: "shopping",
+        place: "Metro Store",
         participants: [
           { name: "You", amount: 200 },
           { name: "Ali", amount: 200 },
@@ -103,6 +107,7 @@ const groupsData: Record<string, {
         date: "3 days ago",
         paidBy: "Zain",
         category: "food",
+        place: "Hostel Mess",
         participants: [
           { name: "You", amount: 500 },
           { name: "Faisal", amount: 500 },
@@ -144,6 +149,7 @@ const groupsData: Record<string, {
         date: "Last week",
         paidBy: "You",
         category: "other",
+        place: "Grand Hotel",
         participants: [
           { name: "Ahmed", amount: 1000 },
           { name: "Saad", amount: 1000 },
@@ -186,8 +192,73 @@ const GroupDetail = () => {
   const [activeTab, setActiveTab] = useState<"ledger" | "members" | "summary">("ledger");
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<{ id: string; name: string; balance: number } | null>(null);
+  const [showMemberDetail, setShowMemberDetail] = useState(false);
 
   const group = id ? groupsData[id] : null;
+
+  // Get transactions between "You" and the selected member
+  const memberTransactions = useMemo(() => {
+    if (!group || !selectedMember) return [];
+    
+    return group.timeline
+      .filter((t) => {
+        // Payment transactions
+        if (t.type === "payment") {
+          return (
+            (t.from === selectedMember.name && t.to === "You") ||
+            (t.from === "You" && t.to === selectedMember.name)
+          );
+        }
+        // Expense transactions - where member is involved
+        if (t.type === "expense") {
+          const memberInvolved = t.participants?.some((p) => p.name === selectedMember.name);
+          const youPaid = t.paidBy === "You";
+          const memberPaid = t.paidBy === selectedMember.name;
+          const youInvolved = t.participants?.some((p) => p.name === "You");
+          
+          return (youPaid && memberInvolved) || (memberPaid && youInvolved);
+        }
+        return false;
+      })
+      .map((t) => {
+        // Determine direction (gave or received money)
+        let direction: "gave" | "received" = "received";
+        
+        if (t.type === "payment") {
+          direction = t.from === selectedMember.name ? "received" : "gave";
+        } else if (t.type === "expense") {
+          if (t.paidBy === "You") {
+            // You paid, so you'll receive from them
+            direction = "received";
+          } else if (t.paidBy === selectedMember.name) {
+            // They paid, so you gave (owe) them
+            direction = "gave";
+          }
+        }
+        
+        // Calculate the amount specific to this member
+        let amount = t.amount;
+        if (t.type === "expense") {
+          if (t.paidBy === "You") {
+            amount = t.participants?.find((p) => p.name === selectedMember.name)?.amount || 0;
+          } else {
+            amount = t.participants?.find((p) => p.name === "You")?.amount || 0;
+          }
+        }
+        
+        return {
+          id: t.id,
+          type: t.type,
+          title: t.title,
+          amount,
+          date: t.date,
+          place: t.place,
+          method: t.method,
+          direction,
+        };
+      });
+  }, [group, selectedMember]);
 
   if (!group) {
     return (
@@ -202,6 +273,12 @@ const GroupDetail = () => {
   }
 
   const members = group.members.map((m) => ({ id: m.id, name: m.name }));
+
+  const handleMemberClick = (member: { id: string; name: string; balance: number }) => {
+    if (member.name === "You") return; // Don't show detail for yourself
+    setSelectedMember(member);
+    setShowMemberDetail(true);
+  };
 
   const handleExpenseSubmit = (data: {
     amount: number;
@@ -324,10 +401,16 @@ const GroupDetail = () => {
           <div className="space-y-3 animate-fade-in">
             {group.members.map((member, index) => {
               const isPositive = member.balance >= 0;
+              const isYou = member.name === "You";
+              
               return (
-                <div
+                <button
                   key={member.id}
-                  className="bg-card rounded-xl p-4 shadow-card flex items-center gap-4 animate-slide-up"
+                  onClick={() => handleMemberClick(member)}
+                  disabled={isYou}
+                  className={`w-full bg-card rounded-xl p-4 shadow-card flex items-center gap-4 animate-slide-up text-left transition-all ${
+                    !isYou ? "hover:shadow-card-hover active:scale-[0.98]" : ""
+                  }`}
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <Avatar name={member.name} size="lg" />
@@ -336,17 +419,19 @@ const GroupDetail = () => {
                     <div className={`text-sm ${isPositive ? "text-positive" : "text-negative"}`}>
                       {member.balance === 0
                         ? "settled up"
+                        : isYou
+                        ? isPositive
+                          ? `will receive Rs ${member.balance}`
+                          : `owes Rs ${Math.abs(member.balance)}`
                         : isPositive
-                        ? `will receive Rs ${member.balance}`
-                        : `owes Rs ${Math.abs(member.balance)}`}
+                        ? `owes you Rs ${member.balance}`
+                        : `you owe Rs ${Math.abs(member.balance)}`}
                     </div>
                   </div>
-                  {member.name !== "You" && member.balance !== 0 && (
-                    <Button variant="outline" size="sm">
-                      Settle
-                    </Button>
+                  {!isYou && (
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
                   )}
-                </div>
+                </button>
               );
             })}
           </div>
@@ -435,6 +520,20 @@ const GroupDetail = () => {
         onClose={() => setShowRecordPayment(false)}
         members={members}
         onSubmit={handlePaymentSubmit}
+      />
+
+      <MemberDetailSheet
+        open={showMemberDetail}
+        onClose={() => {
+          setShowMemberDetail(false);
+          setSelectedMember(null);
+        }}
+        member={selectedMember}
+        transactions={memberTransactions}
+        onRecordPayment={() => {
+          setShowMemberDetail(false);
+          setShowRecordPayment(true);
+        }}
       />
     </div>
   );
