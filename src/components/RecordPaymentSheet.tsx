@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, Banknote, Smartphone } from "lucide-react";
+import { Check, Banknote, Smartphone, ChevronRight } from "lucide-react";
 import Avatar from "./Avatar";
 import { cn } from "@/lib/utils";
 
@@ -11,11 +11,19 @@ interface Member {
   name: string;
 }
 
+interface Group {
+  id: string;
+  name: string;
+  emoji: string;
+  members: Member[];
+}
+
 interface RecordPaymentSheetProps {
   open: boolean;
   onClose: () => void;
-  members: Member[];
+  groups: Group[];
   onSubmit: (data: {
+    groupId: string;
     fromMember: string;
     amount: number;
     method: "cash" | "online";
@@ -23,13 +31,31 @@ interface RecordPaymentSheetProps {
   }) => void;
 }
 
-const RecordPaymentSheet = ({ open, onClose, members, onSubmit }: RecordPaymentSheetProps) => {
+const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSheetProps) => {
+  const [step, setStep] = useState(1);
+  const [selectedGroup, setSelectedGroup] = useState("");
   const [fromMember, setFromMember] = useState("");
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<"cash" | "online">("cash");
   const [note, setNote] = useState("");
 
+  // Get members from selected group (exclude "You")
+  const otherMembers = useMemo(() => {
+    const group = groups.find((g) => g.id === selectedGroup);
+    return group?.members.filter((m) => m.name !== "You") || [];
+  }, [groups, selectedGroup]);
+
+  // Auto-select group if only one exists
+  useEffect(() => {
+    if (open && groups.length === 1) {
+      setSelectedGroup(groups[0].id);
+      setStep(2);
+    }
+  }, [open, groups]);
+
   const handleClose = () => {
+    setStep(groups.length === 1 ? 2 : 1);
+    setSelectedGroup(groups.length === 1 ? groups[0]?.id || "" : "");
     setFromMember("");
     setAmount("");
     setMethod("cash");
@@ -39,6 +65,7 @@ const RecordPaymentSheet = ({ open, onClose, members, onSubmit }: RecordPaymentS
 
   const handleSubmit = () => {
     onSubmit({
+      groupId: selectedGroup,
       fromMember,
       amount: parseFloat(amount),
       method,
@@ -47,39 +74,55 @@ const RecordPaymentSheet = ({ open, onClose, members, onSubmit }: RecordPaymentS
     handleClose();
   };
 
-  const canSubmit = fromMember !== "" && parseFloat(amount) > 0;
+  const canProceed = () => {
+    if (step === 1) return selectedGroup !== "";
+    if (step === 2) return fromMember !== "";
+    if (step === 3) return parseFloat(amount) > 0;
+    return true;
+  };
 
-  // Filter out "You" from members since you're receiving from others
-  const otherMembers = members.filter((m) => m.name !== "You");
+  const selectedGroupData = groups.find((g) => g.id === selectedGroup);
+  const selectedMemberName = otherMembers.find((m) => m.id === fromMember)?.name;
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col">
         <SheetHeader className="flex-shrink-0 mb-4">
-          <SheetTitle className="text-center">Record Payment Received</SheetTitle>
+          <SheetTitle className="text-center">
+            {step === 1 && "Select Group"}
+            {step === 2 && "Who Paid You?"}
+            {step === 3 && "Payment Details"}
+          </SheetTitle>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto space-y-6 pb-4">
-          {/* Who paid you */}
-          <div className="animate-fade-in">
-            <label className="text-sm font-medium text-muted-foreground mb-3 block">
-              Who paid you?
-            </label>
-            <div className="space-y-2">
-              {otherMembers.map((member) => (
+          {/* Step 1: Select Group */}
+          {step === 1 && (
+            <div className="space-y-3 animate-fade-in">
+              <p className="text-sm text-muted-foreground mb-4">
+                Which group is this payment from?
+              </p>
+              {groups.map((group) => (
                 <button
-                  key={member.id}
-                  onClick={() => setFromMember(member.id)}
+                  key={group.id}
+                  onClick={() => setSelectedGroup(group.id)}
                   className={cn(
                     "w-full flex items-center gap-4 p-4 rounded-xl transition-all",
-                    fromMember === member.id
+                    selectedGroup === group.id
                       ? "bg-positive/10 border-2 border-positive"
                       : "bg-secondary hover:bg-secondary/80"
                   )}
                 >
-                  <Avatar name={member.name} />
-                  <span className="font-medium flex-1 text-left">{member.name}</span>
-                  {fromMember === member.id && (
+                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-2xl">
+                    {group.emoji}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <span className="font-medium">{group.name}</span>
+                    <p className="text-sm text-muted-foreground">
+                      {group.members.length} members
+                    </p>
+                  </div>
+                  {selectedGroup === group.id && (
                     <div className="w-6 h-6 rounded-full bg-positive flex items-center justify-center">
                       <Check className="w-4 h-4 text-primary-foreground" />
                     </div>
@@ -87,113 +130,176 @@ const RecordPaymentSheet = ({ open, onClose, members, onSubmit }: RecordPaymentS
                 </button>
               ))}
             </div>
-          </div>
+          )}
 
-          {/* Amount */}
-          <div className="animate-fade-in" style={{ animationDelay: "0.05s" }}>
-            <label className="text-sm font-medium text-muted-foreground mb-3 block">
-              Amount received
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
-                Rs
-              </span>
-              <Input
-                type="number"
-                placeholder="0"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="text-2xl h-16 pl-12 font-semibold"
-                autoFocus
-              />
+          {/* Step 2: Who paid you */}
+          {step === 2 && (
+            <div className="animate-fade-in">
+              {selectedGroupData && (
+                <div className="inline-flex items-center gap-2 bg-secondary rounded-full px-3 py-1 mb-4">
+                  <span>{selectedGroupData.emoji}</span>
+                  <span className="text-sm font-medium">{selectedGroupData.name}</span>
+                </div>
+              )}
+              <p className="text-sm text-muted-foreground mb-4">
+                Who sent you money?
+              </p>
+              <div className="space-y-2">
+                {otherMembers.map((member) => (
+                  <button
+                    key={member.id}
+                    onClick={() => setFromMember(member.id)}
+                    className={cn(
+                      "w-full flex items-center gap-4 p-4 rounded-xl transition-all",
+                      fromMember === member.id
+                        ? "bg-positive/10 border-2 border-positive"
+                        : "bg-secondary hover:bg-secondary/80"
+                    )}
+                  >
+                    <Avatar name={member.name} />
+                    <span className="font-medium flex-1 text-left">{member.name}</span>
+                    {fromMember === member.id && (
+                      <div className="w-6 h-6 rounded-full bg-positive flex items-center justify-center">
+                        <Check className="w-4 h-4 text-primary-foreground" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Payment Method */}
-          <div className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
-            <label className="text-sm font-medium text-muted-foreground mb-3 block">
-              Payment method (optional)
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setMethod("cash")}
-                className={cn(
-                  "flex items-center justify-center gap-3 p-4 rounded-xl transition-all",
-                  method === "cash"
-                    ? "bg-positive/10 border-2 border-positive"
-                    : "bg-secondary hover:bg-secondary/80"
-                )}
-              >
-                <Banknote className={cn(
-                  "w-5 h-5",
-                  method === "cash" ? "text-positive" : "text-muted-foreground"
-                )} />
-                <span className={cn(
-                  "font-medium",
-                  method === "cash" ? "text-positive" : "text-foreground"
-                )}>Cash</span>
-              </button>
-              
-              <button
-                onClick={() => setMethod("online")}
-                className={cn(
-                  "flex items-center justify-center gap-3 p-4 rounded-xl transition-all",
-                  method === "online"
-                    ? "bg-positive/10 border-2 border-positive"
-                    : "bg-secondary hover:bg-secondary/80"
-                )}
-              >
-                <Smartphone className={cn(
-                  "w-5 h-5",
-                  method === "online" ? "text-positive" : "text-muted-foreground"
-                )} />
-                <span className={cn(
-                  "font-medium",
-                  method === "online" ? "text-positive" : "text-foreground"
-                )}>Online</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Note */}
-          <div className="animate-fade-in" style={{ animationDelay: "0.15s" }}>
-            <label className="text-sm font-medium text-muted-foreground mb-3 block">
-              Note (optional)
-            </label>
-            <Input
-              placeholder="e.g., Mess payment for January"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="h-12"
-            />
-          </div>
-
-          {/* Summary */}
-          {fromMember && parseFloat(amount) > 0 && (
-            <div className="bg-positive/5 border border-positive/20 rounded-xl p-4 animate-fade-in">
-              <div className="flex items-center gap-3">
-                <Avatar name={otherMembers.find((m) => m.id === fromMember)?.name || ""} />
-                <div>
-                  <div className="font-semibold text-positive">
-                    +Rs {amount}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    from {otherMembers.find((m) => m.id === fromMember)?.name} • {method}
-                  </div>
+          {/* Step 3: Amount and details */}
+          {step === 3 && (
+            <div className="space-y-6 animate-fade-in">
+              {/* Amount */}
+              <div>
+                <label className="text-sm font-medium text-muted-foreground mb-3 block">
+                  Amount received from {selectedMemberName}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
+                    Rs
+                  </span>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="text-2xl h-16 pl-12 font-semibold"
+                    autoFocus
+                  />
                 </div>
               </div>
+
+              {/* Payment Method */}
+              <div>
+                <label className="text-sm font-medium text-muted-foreground mb-3 block">
+                  Payment method
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setMethod("cash")}
+                    className={cn(
+                      "flex items-center justify-center gap-3 p-4 rounded-xl transition-all",
+                      method === "cash"
+                        ? "bg-positive/10 border-2 border-positive"
+                        : "bg-secondary hover:bg-secondary/80"
+                    )}
+                  >
+                    <Banknote className={cn(
+                      "w-5 h-5",
+                      method === "cash" ? "text-positive" : "text-muted-foreground"
+                    )} />
+                    <span className={cn(
+                      "font-medium",
+                      method === "cash" ? "text-positive" : "text-foreground"
+                    )}>Cash</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setMethod("online")}
+                    className={cn(
+                      "flex items-center justify-center gap-3 p-4 rounded-xl transition-all",
+                      method === "online"
+                        ? "bg-positive/10 border-2 border-positive"
+                        : "bg-secondary hover:bg-secondary/80"
+                    )}
+                  >
+                    <Smartphone className={cn(
+                      "w-5 h-5",
+                      method === "online" ? "text-positive" : "text-muted-foreground"
+                    )} />
+                    <span className={cn(
+                      "font-medium",
+                      method === "online" ? "text-positive" : "text-foreground"
+                    )}>Online</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Note */}
+              <div>
+                <label className="text-sm font-medium text-muted-foreground mb-3 block">
+                  Note (optional)
+                </label>
+                <Input
+                  placeholder="e.g., Mess payment for January"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  className="h-12"
+                />
+              </div>
+
+              {/* Summary */}
+              {parseFloat(amount) > 0 && (
+                <div className="bg-positive/5 border border-positive/20 rounded-xl p-4 animate-fade-in">
+                  <div className="flex items-center gap-3">
+                    <Avatar name={selectedMemberName || ""} />
+                    <div>
+                      <div className="font-semibold text-positive">
+                        +Rs {amount}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        from {selectedMemberName} • {method}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
 
         <div className="flex-shrink-0 pt-4 border-t bg-background">
-          <Button
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className="w-full h-12 bg-positive hover:bg-positive/90"
-          >
-            Record Payment
-          </Button>
+          <div className="flex gap-3">
+            {step > 1 && (
+              <Button
+                variant="secondary"
+                onClick={() => setStep((s) => s - 1)}
+                className="flex-1 h-12"
+              >
+                Back
+              </Button>
+            )}
+            {step < 3 ? (
+              <Button
+                onClick={() => setStep((s) => s + 1)}
+                disabled={!canProceed()}
+                className="flex-1 h-12 bg-positive hover:bg-positive/90"
+              >
+                Continue <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSubmit}
+                disabled={!canProceed()}
+                className="w-full h-12 bg-positive hover:bg-positive/90"
+              >
+                Record Payment
+              </Button>
+            )}
+          </div>
         </div>
       </SheetContent>
     </Sheet>

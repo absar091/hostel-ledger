@@ -117,6 +117,7 @@ const GroupDetail = () => {
   };
 
   const handleExpenseSubmit = (data: {
+    groupId: string;
     amount: number;
     paidBy: string;
     participants: string[];
@@ -124,7 +125,7 @@ const GroupDetail = () => {
     place: string;
   }) => {
     addExpense({
-      groupId: group.id,
+      groupId: data.groupId,
       amount: data.amount,
       paidBy: data.paidBy,
       participants: data.participants,
@@ -135,6 +136,7 @@ const GroupDetail = () => {
   };
 
   const handlePaymentSubmit = (data: {
+    groupId: string;
     fromMember: string;
     amount: number;
     method: "cash" | "online";
@@ -143,7 +145,7 @@ const GroupDetail = () => {
     if (!currentUser) return;
     
     recordPayment({
-      groupId: group.id,
+      groupId: data.groupId,
       fromMember: data.fromMember,
       toMember: currentUser.id,
       amount: data.amount,
@@ -154,6 +156,14 @@ const GroupDetail = () => {
     const memberName = group.members.find((m) => m.id === data.fromMember)?.name;
     toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
   };
+
+  // Single group for this page
+  const groupForSheet = [{
+    id: group.id,
+    name: group.name,
+    emoji: group.emoji,
+    members: members,
+  }];
 
   // Calculate summary data
   const totalSpent = transactions
@@ -365,7 +375,7 @@ const GroupDetail = () => {
       <AddExpenseSheet
         open={showAddExpense}
         onClose={() => setShowAddExpense(false)}
-        members={members}
+        groups={groupForSheet}
         onSubmit={handleExpenseSubmit}
       />
 
@@ -373,7 +383,7 @@ const GroupDetail = () => {
       <RecordPaymentSheet
         open={showRecordPayment}
         onClose={() => setShowRecordPayment(false)}
-        members={members}
+        groups={groupForSheet}
         onSubmit={handlePaymentSubmit}
       />
 
