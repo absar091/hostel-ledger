@@ -137,12 +137,16 @@ const Dashboard = () => {
   const handleGroupSubmit = (data: {
     name: string;
     emoji: string;
-    members: string[];
+    members: { name: string; phone?: string; paymentDetails?: { jazzCash?: string; easypaisa?: string; bankName?: string; accountNumber?: string; raastId?: string } }[];
   }) => {
     createGroup({
       name: data.name,
       emoji: data.emoji,
-      members: data.members.filter((m) => m !== "You").map((name) => ({ name })),
+      members: data.members.map((m) => ({
+        name: m.name,
+        phone: m.phone,
+        paymentDetails: m.paymentDetails,
+      })),
     });
     toast.success(`Created group "${data.name}"`);
   };
