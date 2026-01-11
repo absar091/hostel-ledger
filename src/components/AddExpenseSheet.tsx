@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,11 +11,19 @@ interface Member {
   name: string;
 }
 
+interface Group {
+  id: string;
+  name: string;
+  emoji: string;
+  members: Member[];
+}
+
 interface AddExpenseSheetProps {
   open: boolean;
   onClose: () => void;
-  members: Member[];
+  groups: Group[];
   onSubmit: (data: {
+    groupId: string;
     amount: number;
     paidBy: string;
     participants: string[];
@@ -24,13 +32,28 @@ interface AddExpenseSheetProps {
   }) => void;
 }
 
-const AddExpenseSheet = ({ open, onClose, members, onSubmit }: AddExpenseSheetProps) => {
+const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetProps) => {
   const [step, setStep] = useState(1);
+  const [selectedGroup, setSelectedGroup] = useState("");
   const [amount, setAmount] = useState("");
   const [paidBy, setPaidBy] = useState("");
   const [participants, setParticipants] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [place, setPlace] = useState("");
+
+  // Get members from selected group
+  const members = useMemo(() => {
+    const group = groups.find((g) => g.id === selectedGroup);
+    return group?.members || [];
+  }, [groups, selectedGroup]);
+
+  // Auto-select group if only one exists
+  useEffect(() => {
+    if (open && groups.length === 1) {
+      setSelectedGroup(groups[0].id);
+      setStep(2);
+    }
+  }, [open, groups]);
 
   // Calculate split details
   const splitDetails = useMemo(() => {
@@ -63,7 +86,8 @@ const AddExpenseSheet = ({ open, onClose, members, onSubmit }: AddExpenseSheetPr
   }, [amount, paidBy, participants, members]);
 
   const handleClose = () => {
-    setStep(1);
+    setStep(groups.length === 1 ? 2 : 1);
+    setSelectedGroup(groups.length === 1 ? groups[0]?.id || "" : "");
     setAmount("");
     setPaidBy("");
     setParticipants([]);
@@ -74,6 +98,7 @@ const AddExpenseSheet = ({ open, onClose, members, onSubmit }: AddExpenseSheetPr
 
   const handleSubmit = () => {
     onSubmit({
+      groupId: selectedGroup,
       amount: parseFloat(amount),
       paidBy,
       participants,
@@ -90,29 +115,75 @@ const AddExpenseSheet = ({ open, onClose, members, onSubmit }: AddExpenseSheetPr
   };
 
   const canProceed = () => {
-    if (step === 1) return parseFloat(amount) > 0;
-    if (step === 2) return paidBy !== "";
-    if (step === 3) return participants.length > 0;
+    if (step === 1) return selectedGroup !== "";
+    if (step === 2) return parseFloat(amount) > 0;
+    if (step === 3) return paidBy !== "";
+    if (step === 4) return participants.length > 0;
     return true;
   };
 
   const paidByName = members.find((m) => m.id === paidBy)?.name;
+  const selectedGroupData = groups.find((g) => g.id === selectedGroup);
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
         <SheetHeader className="mb-6">
           <SheetTitle className="text-center">
-            {step === 1 && "Enter Amount"}
-            {step === 2 && "Who Paid?"}
-            {step === 3 && "Split Between"}
-            {step === 4 && "Add Details"}
+            {step === 1 && "Select Group"}
+            {step === 2 && "Enter Amount"}
+            {step === 3 && "Who Paid?"}
+            {step === 4 && "Split Between"}
+            {step === 5 && "Add Details"}
           </SheetTitle>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto">
+          {/* Step 1: Select Group */}
           {step === 1 && (
+            <div className="space-y-3 animate-fade-in">
+              <p className="text-sm text-muted-foreground mb-4">
+                Which group is this expense for?
+              </p>
+              {groups.map((group) => (
+                <button
+                  key={group.id}
+                  onClick={() => setSelectedGroup(group.id)}
+                  className={cn(
+                    "w-full flex items-center gap-4 p-4 rounded-xl transition-all",
+                    selectedGroup === group.id
+                      ? "bg-primary/10 border-2 border-primary"
+                      : "bg-secondary hover:bg-secondary/80"
+                  )}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-2xl">
+                    {group.emoji}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <span className="font-medium">{group.name}</span>
+                    <p className="text-sm text-muted-foreground">
+                      {group.members.length} members
+                    </p>
+                  </div>
+                  {selectedGroup === group.id && (
+                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                      <Check className="w-4 h-4 text-primary-foreground" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Step 2: Enter Amount */}
+          {step === 2 && (
             <div className="text-center py-8 animate-fade-in">
+              {selectedGroupData && (
+                <div className="inline-flex items-center gap-2 bg-secondary rounded-full px-3 py-1 mb-4">
+                  <span>{selectedGroupData.emoji}</span>
+                  <span className="text-sm font-medium">{selectedGroupData.name}</span>
+                </div>
+              )}
               <div className="text-6xl font-bold text-foreground mb-4">
                 Rs {amount || "0"}
               </div>
@@ -127,7 +198,8 @@ const AddExpenseSheet = ({ open, onClose, members, onSubmit }: AddExpenseSheetPr
             </div>
           )}
 
-          {step === 2 && (
+          {/* Step 3: Who Paid */}
+          {step === 3 && (
             <div className="space-y-3 animate-fade-in">
               {members.map((member) => (
                 <button
@@ -152,16 +224,14 @@ const AddExpenseSheet = ({ open, onClose, members, onSubmit }: AddExpenseSheetPr
             </div>
           )}
 
-          {step === 3 && (
+          {/* Step 4: Split Between */}
+          {step === 4 && (
             <div className="space-y-3 animate-fade-in">
               <p className="text-sm text-muted-foreground mb-4">
                 Select everyone who shared this expense (including who paid)
               </p>
               {members.map((member) => {
                 const isSelected = participants.includes(member.id);
-                const perPersonAmount = participants.length > 0 
-                  ? Math.round(parseFloat(amount) / (participants.length + (isSelected ? 0 : 1)))
-                  : Math.round(parseFloat(amount) / 1);
                 
                 return (
                   <button
@@ -214,7 +284,8 @@ const AddExpenseSheet = ({ open, onClose, members, onSubmit }: AddExpenseSheetPr
             </div>
           )}
 
-          {step === 4 && (
+          {/* Step 5: Add Details */}
+          {step === 5 && (
             <div className="space-y-4 animate-fade-in">
               <div>
                 <label className="text-sm font-medium text-muted-foreground mb-2 block">
@@ -276,7 +347,7 @@ const AddExpenseSheet = ({ open, onClose, members, onSubmit }: AddExpenseSheetPr
                 Back
               </Button>
             )}
-            {step < 4 ? (
+            {step < 5 ? (
               <Button
                 onClick={() => setStep((s) => s + 1)}
                 disabled={!canProceed()}

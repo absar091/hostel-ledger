@@ -41,14 +41,14 @@ const Dashboard = () => {
     return { totalReceive: receive, totalOwe: owe };
   }, [groups]);
 
-  // Get all members across groups for expense sheet
-  const allMembers = useMemo(() => {
-    if (groups.length === 0) return [];
-    // Get members from first group for now (user should select group first ideally)
-    return groups[0]?.members.map((m) => ({
-      id: m.id,
-      name: m.name,
-    })) || [];
+  // Prepare groups data for sheets
+  const groupsForSheets = useMemo(() => {
+    return groups.map((g) => ({
+      id: g.id,
+      name: g.name,
+      emoji: g.emoji,
+      members: g.members.map((m) => ({ id: m.id, name: m.name })),
+    }));
   }, [groups]);
 
   const handleTabChange = (tab: typeof activeTab) => {
@@ -91,16 +91,15 @@ const Dashboard = () => {
   };
 
   const handleExpenseSubmit = (data: {
+    groupId: string;
     amount: number;
     paidBy: string;
     participants: string[];
     note: string;
     place: string;
   }) => {
-    if (groups.length === 0) return;
-    
     addExpense({
-      groupId: groups[0].id, // Default to first group from dashboard
+      groupId: data.groupId,
       amount: data.amount,
       paidBy: data.paidBy,
       participants: data.participants,
@@ -111,18 +110,20 @@ const Dashboard = () => {
   };
 
   const handlePaymentSubmit = (data: {
+    groupId: string;
     fromMember: string;
     amount: number;
     method: "cash" | "online";
     note: string;
   }) => {
-    if (groups.length === 0) return;
+    const group = groups.find((g) => g.id === data.groupId);
+    if (!group) return;
     
-    const currentUser = groups[0].members.find((m) => m.isCurrentUser);
+    const currentUser = group.members.find((m) => m.isCurrentUser);
     if (!currentUser) return;
 
     recordPayment({
-      groupId: groups[0].id,
+      groupId: data.groupId,
       fromMember: data.fromMember,
       toMember: currentUser.id,
       amount: data.amount,
@@ -130,9 +131,10 @@ const Dashboard = () => {
       note: data.note,
     });
     
-    const memberName = groups[0].members.find((m) => m.id === data.fromMember)?.name || "Unknown";
+    const memberName = group.members.find((m) => m.id === data.fromMember)?.name || "Unknown";
     toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
   };
+
 
   const handleGroupSubmit = (data: {
     name: string;
@@ -351,7 +353,7 @@ const Dashboard = () => {
         <AddExpenseSheet
           open={showAddExpense}
           onClose={() => setShowAddExpense(false)}
-          members={allMembers}
+          groups={groupsForSheets}
           onSubmit={handleExpenseSubmit}
         />
       )}
@@ -361,7 +363,7 @@ const Dashboard = () => {
         <RecordPaymentSheet
           open={showRecordPayment}
           onClose={() => setShowRecordPayment(false)}
-          members={allMembers}
+          groups={groupsForSheets}
           onSubmit={handlePaymentSubmit}
         />
       )}
