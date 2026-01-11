@@ -18,9 +18,16 @@ interface MemberDetailSheetProps {
   open: boolean;
   onClose: () => void;
   member: {
-    id: string;
     name: string;
     balance: number;
+    paymentDetails?: {
+      jazzCash?: string;
+      easypaisa?: string;
+      bankName?: string;
+      accountNumber?: string;
+      raastId?: string;
+    };
+    phone?: string;
   } | null;
   transactions: Transaction[];
   onRecordPayment: () => void;
@@ -60,6 +67,40 @@ const MemberDetailSheet = ({
                 Rs {Math.abs(member.balance)}
               </div>
             )}
+          </div>
+
+          {/* Payment Details */}
+          {member.paymentDetails && Object.keys(member.paymentDetails).length > 0 && (
+            <div className="bg-secondary rounded-xl p-4 mb-6">
+              <h3 className="font-semibold text-foreground mb-3">Payment Details</h3>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {member.paymentDetails.jazzCash && (
+                  <div>
+                    <p className="text-muted-foreground">JazzCash</p>
+                    <p className="font-medium">{member.paymentDetails.jazzCash}</p>
+                  </div>
+                )}
+                {member.paymentDetails.easypaisa && (
+                  <div>
+                    <p className="text-muted-foreground">Easypaisa</p>
+                    <p className="font-medium">{member.paymentDetails.easypaisa}</p>
+                  </div>
+                )}
+                {member.paymentDetails.bankName && (
+                  <div>
+                    <p className="text-muted-foreground">{member.paymentDetails.bankName}</p>
+                    <p className="font-medium">{member.paymentDetails.accountNumber}</p>
+                  </div>
+                )}
+                {member.paymentDetails.raastId && (
+                  <div>
+                    <p className="text-muted-foreground">Raast ID</p>
+                    <p className="font-medium">{member.paymentDetails.raastId}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           </div>
 
           {/* Quick Actions */}

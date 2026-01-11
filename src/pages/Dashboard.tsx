@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import WalletCard from "@/components/WalletCard";
 import QuickActions from "@/components/QuickActions";
 import GroupCard from "@/components/GroupCard";
@@ -8,110 +9,80 @@ import RecordPaymentSheet from "@/components/RecordPaymentSheet";
 import CreateGroupSheet from "@/components/CreateGroupSheet";
 import TimelineItem from "@/components/TimelineItem";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
-
-// Mock data - replaced with real data from database later
-const initialGroups = [
-  { id: "1", name: "Roommates", emoji: "🏠", balance: 450, memberCount: 4 },
-  { id: "2", name: "Mess Group", emoji: "🍽️", balance: -300, memberCount: 6 },
-  { id: "3", name: "Trip Friends", emoji: "✈️", balance: 1200, memberCount: 5 },
-];
-
-const mockMembers = [
-  { id: "1", name: "You" },
-  { id: "2", name: "Ali" },
-  { id: "3", name: "Bilal" },
-  { id: "4", name: "Hassan" },
-];
-
-type Transaction = {
-  id: string;
-  type: "expense" | "payment";
-  title: string;
-  amount: number;
-  date: string;
-  paidBy?: string;
-  category?: "food" | "shopping" | "transport" | "coffee" | "other";
-  participants?: { name: string; amount: number }[];
-  from?: string;
-  to?: string;
-  method?: string;
-};
-
-// Mock transactions data
-const initialTransactions: Transaction[] = [
-  {
-    id: "t1",
-    type: "expense",
-    title: "Dinner at Cafe",
-    amount: 1200,
-    date: "Today",
-    paidBy: "You",
-    category: "food",
-    participants: [
-      { name: "Ali", amount: 300 },
-      { name: "Bilal", amount: 300 },
-      { name: "Hassan", amount: 300 },
-    ],
-  },
-  {
-    id: "t2",
-    type: "payment",
-    title: "Payment Received",
-    amount: 500,
-    date: "Yesterday",
-    from: "Ali",
-    to: "You",
-    method: "cash",
-  },
-  {
-    id: "t3",
-    type: "expense",
-    title: "Groceries",
-    amount: 800,
-    date: "Yesterday",
-    paidBy: "Bilal",
-    category: "shopping",
-    participants: [
-      { name: "You", amount: 200 },
-      { name: "Hassan", amount: 200 },
-    ],
-  },
-  {
-    id: "t4",
-    type: "payment",
-    title: "Payment Received",
-    amount: 300,
-    date: "2 days ago",
-    from: "Hassan",
-    to: "You",
-    method: "online",
-  },
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { useData } from "@/contexts/DataContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { groups, transactions, createGroup, addExpense, recordPayment } = useData();
+  
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("home");
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
-  const [groups, setGroups] = useState(initialGroups);
-  const [transactions, setTransactions] = useState(initialTransactions);
 
-  const totalReceive = groups.filter((g) => g.balance > 0).reduce((sum, g) => sum + g.balance, 0);
-  const totalOwe = Math.abs(groups.filter((g) => g.balance < 0).reduce((sum, g) => sum + g.balance, 0));
+  // Calculate totals from all groups
+  const { totalReceive, totalOwe } = useMemo(() => {
+    let receive = 0;
+    let owe = 0;
+
+    groups.forEach((group) => {
+      const currentUserMember = group.members.find((m) => m.isCurrentUser);
+      if (currentUserMember) {
+        if (currentUserMember.balance > 0) {
+          receive += currentUserMember.balance;
+        } else {
+          owe += Math.abs(currentUserMember.balance);
+        }
+      }
+    });
+
+    return { totalReceive: receive, totalOwe: owe };
+  }, [groups]);
+
+  // Get all members across groups for expense sheet
+  const allMembers = useMemo(() => {
+    if (groups.length === 0) return [];
+    // Get members from first group for now (user should select group first ideally)
+    return groups[0]?.members.map((m) => ({
+      id: m.id,
+      name: m.name,
+    })) || [];
+  }, [groups]);
 
   const handleTabChange = (tab: typeof activeTab) => {
     if (tab === "add") {
-      setShowAddExpense(true);
+      if (groups.length === 0) {
+        toast.error("Create a group first to add expenses");
+        setShowCreateGroup(true);
+      } else {
+        setShowAddExpense(true);
+      }
+    } else if (tab === "profile") {
+      navigate("/profile");
     } else {
       setActiveTab(tab);
     }
   };
 
-  const handleAddExpense = () => setShowAddExpense(true);
+  const handleAddExpense = () => {
+    if (groups.length === 0) {
+      toast.error("Create a group first to add expenses");
+      setShowCreateGroup(true);
+    } else {
+      setShowAddExpense(true);
+    }
+  };
   
-  const handleReceivedMoney = () => setShowRecordPayment(true);
+  const handleReceivedMoney = () => {
+    if (groups.length === 0) {
+      toast.error("Create a group first to record payments");
+      setShowCreateGroup(true);
+    } else {
+      setShowRecordPayment(true);
+    }
+  };
   
   const handleNewGroup = () => setShowCreateGroup(true);
 
@@ -126,23 +97,16 @@ const Dashboard = () => {
     note: string;
     place: string;
   }) => {
-    const paidByName = mockMembers.find((m) => m.id === data.paidBy)?.name || "Unknown";
-    const newTransaction: Transaction = {
-      id: `t${transactions.length + 1}`,
-      type: "expense",
-      title: data.note || "New Expense",
+    if (groups.length === 0) return;
+    
+    addExpense({
+      groupId: groups[0].id, // Default to first group from dashboard
       amount: data.amount,
-      date: "Just now",
-      paidBy: paidByName,
-      category: "other",
-      participants: data.participants
-        .filter((id) => id !== data.paidBy)
-        .map((id) => ({
-          name: mockMembers.find((m) => m.id === id)?.name || "Unknown",
-          amount: Math.round(data.amount / data.participants.length),
-        })),
-    };
-    setTransactions([newTransaction, ...transactions]);
+      paidBy: data.paidBy,
+      participants: data.participants,
+      note: data.note,
+      place: data.place,
+    });
     toast.success(`Added expense of Rs ${data.amount}`);
   };
 
@@ -152,18 +116,21 @@ const Dashboard = () => {
     method: "cash" | "online";
     note: string;
   }) => {
-    const memberName = mockMembers.find((m) => m.id === data.fromMember)?.name || "Unknown";
-    const newTransaction: Transaction = {
-      id: `t${transactions.length + 1}`,
-      type: "payment",
-      title: "Payment Received",
+    if (groups.length === 0) return;
+    
+    const currentUser = groups[0].members.find((m) => m.isCurrentUser);
+    if (!currentUser) return;
+
+    recordPayment({
+      groupId: groups[0].id,
+      fromMember: data.fromMember,
+      toMember: currentUser.id,
       amount: data.amount,
-      date: "Just now",
-      from: memberName,
-      to: "You",
       method: data.method,
-    };
-    setTransactions([newTransaction, ...transactions]);
+      note: data.note,
+    });
+    
+    const memberName = groups[0].members.find((m) => m.id === data.fromMember)?.name || "Unknown";
     toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
   };
 
@@ -172,15 +139,20 @@ const Dashboard = () => {
     emoji: string;
     members: string[];
   }) => {
-    const newGroup = {
-      id: String(groups.length + 1),
+    createGroup({
       name: data.name,
       emoji: data.emoji,
-      balance: 0,
-      memberCount: data.members.length,
-    };
-    setGroups([...groups, newGroup]);
+      members: data.members.filter((m) => m !== "You").map((name) => ({ name })),
+    });
     toast.success(`Created group "${data.name}"`);
+  };
+
+  // Get greeting based on time
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
   };
 
   return (
@@ -189,10 +161,13 @@ const Dashboard = () => {
       <header className="px-4 pt-8 pb-4">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <div className="text-muted-foreground text-sm">Good morning</div>
-            <h1 className="text-2xl font-bold text-foreground">Hostel Wallet</h1>
+            <div className="text-muted-foreground text-sm">{getGreeting()}</div>
+            <h1 className="text-2xl font-bold text-foreground">{user?.name || "Hostel Wallet"}</h1>
           </div>
-          <button className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+          <button 
+            onClick={() => navigate("/profile")}
+            className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center"
+          >
             <span className="text-lg">👋</span>
           </button>
         </div>
@@ -215,12 +190,14 @@ const Dashboard = () => {
           <section className="animate-fade-in">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-foreground">Recent Transactions</h2>
-              <button 
-                onClick={() => setActiveTab("activity")}
-                className="text-sm text-primary font-medium"
-              >
-                See all
-              </button>
+              {transactions.length > 0 && (
+                <button 
+                  onClick={() => setActiveTab("activity")}
+                  className="text-sm text-primary font-medium"
+                >
+                  See all
+                </button>
+              )}
             </div>
             
             {transactions.length > 0 ? (
@@ -236,12 +213,11 @@ const Dashboard = () => {
                       title={transaction.title}
                       amount={transaction.amount}
                       date={transaction.date}
-                      paidBy={transaction.type === "expense" ? transaction.paidBy : undefined}
+                      paidBy={transaction.type === "expense" ? transaction.paidByName : undefined}
                       participants={transaction.type === "expense" ? transaction.participants : undefined}
-                      from={transaction.type === "payment" ? transaction.from : undefined}
-                      to={transaction.type === "payment" ? transaction.to : undefined}
+                      from={transaction.type === "payment" ? transaction.fromName : undefined}
+                      to={transaction.type === "payment" ? transaction.toName : undefined}
                       method={transaction.type === "payment" ? transaction.method : undefined}
-                      category={transaction.type === "expense" ? transaction.category : undefined}
                     />
                   </div>
                 ))}
@@ -251,13 +227,16 @@ const Dashboard = () => {
                 <div className="text-6xl mb-4">📝</div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">No transactions yet</h3>
                 <p className="text-muted-foreground text-sm mb-4">
-                  Add an expense or record a payment to get started
+                  {groups.length === 0 
+                    ? "Create a group to start tracking expenses"
+                    : "Add an expense or record a payment to get started"
+                  }
                 </p>
                 <button
-                  onClick={handleAddExpense}
+                  onClick={groups.length === 0 ? handleNewGroup : handleAddExpense}
                   className="text-primary font-medium"
                 >
-                  + Add your first expense
+                  {groups.length === 0 ? "+ Create your first group" : "+ Add your first expense"}
                 </button>
               </div>
             )}
@@ -279,21 +258,26 @@ const Dashboard = () => {
             
             {groups.length > 0 ? (
               <div className="space-y-3">
-                {groups.map((group, index) => (
-                  <div
-                    key={group.id}
-                    className="animate-slide-up"
-                    style={{ animationDelay: `${0.1 + index * 0.05}s` }}
-                  >
-                    <GroupCard
-                      name={group.name}
-                      emoji={group.emoji}
-                      balance={group.balance}
-                      memberCount={group.memberCount}
-                      onClick={() => handleGroupClick(group.id)}
-                    />
-                  </div>
-                ))}
+                {groups.map((group, index) => {
+                  const currentUser = group.members.find((m) => m.isCurrentUser);
+                  const balance = currentUser?.balance || 0;
+                  
+                  return (
+                    <div
+                      key={group.id}
+                      className="animate-slide-up"
+                      style={{ animationDelay: `${0.1 + index * 0.05}s` }}
+                    >
+                      <GroupCard
+                        name={group.name}
+                        emoji={group.emoji}
+                        balance={balance}
+                        memberCount={group.members.length}
+                        onClick={() => handleGroupClick(group.id)}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-12 animate-fade-in">
@@ -333,12 +317,11 @@ const Dashboard = () => {
                       title={transaction.title}
                       amount={transaction.amount}
                       date={transaction.date}
-                      paidBy={transaction.type === "expense" ? transaction.paidBy : undefined}
+                      paidBy={transaction.type === "expense" ? transaction.paidByName : undefined}
                       participants={transaction.type === "expense" ? transaction.participants : undefined}
-                      from={transaction.type === "payment" ? transaction.from : undefined}
-                      to={transaction.type === "payment" ? transaction.to : undefined}
+                      from={transaction.type === "payment" ? transaction.fromName : undefined}
+                      to={transaction.type === "payment" ? transaction.toName : undefined}
                       method={transaction.type === "payment" ? transaction.method : undefined}
-                      category={transaction.type === "expense" ? transaction.category : undefined}
                     />
                   </div>
                 ))}
@@ -354,37 +337,30 @@ const Dashboard = () => {
             )}
           </section>
         )}
-
-        {/* Profile Tab Placeholder */}
-        {activeTab === "profile" && (
-          <section className="animate-fade-in text-center py-12">
-            <div className="text-6xl mb-4">👤</div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Profile</h3>
-            <p className="text-muted-foreground text-sm">
-              Coming soon...
-            </p>
-          </section>
-        )}
       </main>
 
       {/* Bottom Navigation */}
       <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
 
       {/* Add Expense Sheet */}
-      <AddExpenseSheet
-        open={showAddExpense}
-        onClose={() => setShowAddExpense(false)}
-        members={mockMembers}
-        onSubmit={handleExpenseSubmit}
-      />
+      {groups.length > 0 && (
+        <AddExpenseSheet
+          open={showAddExpense}
+          onClose={() => setShowAddExpense(false)}
+          members={allMembers}
+          onSubmit={handleExpenseSubmit}
+        />
+      )}
 
       {/* Record Payment Sheet */}
-      <RecordPaymentSheet
-        open={showRecordPayment}
-        onClose={() => setShowRecordPayment(false)}
-        members={mockMembers}
-        onSubmit={handlePaymentSubmit}
-      />
+      {groups.length > 0 && (
+        <RecordPaymentSheet
+          open={showRecordPayment}
+          onClose={() => setShowRecordPayment(false)}
+          members={allMembers}
+          onSubmit={handlePaymentSubmit}
+        />
+      )}
 
       {/* Create Group Sheet */}
       <CreateGroupSheet

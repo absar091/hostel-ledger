@@ -9,241 +9,68 @@ import RecordPaymentSheet from "@/components/RecordPaymentSheet";
 import MemberDetailSheet from "@/components/MemberDetailSheet";
 import { toast } from "sonner";
 import { Plus, HandCoins } from "lucide-react";
-
-// Mock data for all groups
-const groupsData: Record<string, {
-  id: string;
-  name: string;
-  emoji: string;
-  totalPending: number;
-  members: { id: string; name: string; balance: number }[];
-  timeline: {
-    id: string;
-    type: "expense" | "payment";
-    title: string;
-    amount: number;
-    date: string;
-    paidBy?: string;
-    category?: "food" | "shopping" | "transport" | "coffee" | "other";
-    participants?: { name: string; amount: number }[];
-    from?: string;
-    to?: string;
-    method?: string;
-    place?: string;
-  }[];
-}> = {
-  "1": {
-    id: "1",
-    name: "Roommates",
-    emoji: "🏠",
-    totalPending: 1200,
-    members: [
-      { id: "1", name: "You", balance: 450 },
-      { id: "2", name: "Ali", balance: -200 },
-      { id: "3", name: "Bilal", balance: -150 },
-      { id: "4", name: "Hassan", balance: -100 },
-    ],
-    timeline: [
-      {
-        id: "1",
-        type: "payment",
-        title: "Payment Received",
-        amount: 400,
-        date: "Today",
-        from: "Ali",
-        to: "You",
-        method: "cash",
-      },
-      {
-        id: "2",
-        type: "expense",
-        title: "Dinner – Student Café",
-        amount: 1200,
-        date: "Yesterday",
-        paidBy: "You",
-        category: "food",
-        place: "Student Café",
-        participants: [
-          { name: "Ali", amount: 400 },
-          { name: "Bilal", amount: 400 },
-        ],
-      },
-      {
-        id: "3",
-        type: "expense",
-        title: "Groceries",
-        amount: 800,
-        date: "2 days ago",
-        paidBy: "Hassan",
-        category: "shopping",
-        place: "Metro Store",
-        participants: [
-          { name: "You", amount: 200 },
-          { name: "Ali", amount: 200 },
-          { name: "Bilal", amount: 200 },
-        ],
-      },
-    ],
-  },
-  "2": {
-    id: "2",
-    name: "Mess Group",
-    emoji: "🍽️",
-    totalPending: 800,
-    members: [
-      { id: "1", name: "You", balance: -300 },
-      { id: "2", name: "Zain", balance: 150 },
-      { id: "3", name: "Faisal", balance: 100 },
-      { id: "4", name: "Imran", balance: 50 },
-      { id: "5", name: "Umar", balance: 0 },
-      { id: "6", name: "Tariq", balance: 0 },
-    ],
-    timeline: [
-      {
-        id: "1",
-        type: "expense",
-        title: "Mess Fee – January",
-        amount: 3000,
-        date: "3 days ago",
-        paidBy: "Zain",
-        category: "food",
-        place: "Hostel Mess",
-        participants: [
-          { name: "You", amount: 500 },
-          { name: "Faisal", amount: 500 },
-          { name: "Imran", amount: 500 },
-          { name: "Umar", amount: 500 },
-          { name: "Tariq", amount: 500 },
-        ],
-      },
-      {
-        id: "2",
-        type: "payment",
-        title: "Payment Received",
-        amount: 500,
-        date: "2 days ago",
-        from: "Faisal",
-        to: "Zain",
-        method: "online",
-      },
-    ],
-  },
-  "3": {
-    id: "3",
-    name: "Trip Friends",
-    emoji: "✈️",
-    totalPending: 2500,
-    members: [
-      { id: "1", name: "You", balance: 1200 },
-      { id: "2", name: "Ahmed", balance: -400 },
-      { id: "3", name: "Saad", balance: -400 },
-      { id: "4", name: "Waqas", balance: -200 },
-      { id: "5", name: "Kamran", balance: -200 },
-    ],
-    timeline: [
-      {
-        id: "1",
-        type: "expense",
-        title: "Hotel Booking",
-        amount: 5000,
-        date: "Last week",
-        paidBy: "You",
-        category: "other",
-        place: "Grand Hotel",
-        participants: [
-          { name: "Ahmed", amount: 1000 },
-          { name: "Saad", amount: 1000 },
-          { name: "Waqas", amount: 1000 },
-          { name: "Kamran", amount: 1000 },
-        ],
-      },
-      {
-        id: "2",
-        type: "expense",
-        title: "Transport",
-        amount: 2000,
-        date: "Last week",
-        paidBy: "Ahmed",
-        category: "transport",
-        participants: [
-          { name: "You", amount: 400 },
-          { name: "Saad", amount: 400 },
-          { name: "Waqas", amount: 400 },
-          { name: "Kamran", amount: 400 },
-        ],
-      },
-      {
-        id: "3",
-        type: "payment",
-        title: "Payment Received",
-        amount: 600,
-        date: "5 days ago",
-        from: "Ahmed",
-        to: "You",
-        method: "cash",
-      },
-    ],
-  },
-};
+import { useData } from "@/contexts/DataContext";
 
 const GroupDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { getGroupById, getTransactionsByGroup, getTransactionsByMember, addExpense, recordPayment } = useData();
+  
   const [activeTab, setActiveTab] = useState<"ledger" | "members" | "summary">("ledger");
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<{ id: string; name: string; balance: number } | null>(null);
+  const [selectedMember, setSelectedMember] = useState<{ id: string; name: string; balance: number; paymentDetails?: any; phone?: string } | null>(null);
   const [showMemberDetail, setShowMemberDetail] = useState(false);
 
-  const group = id ? groupsData[id] : null;
+  const group = id ? getGroupById(id) : undefined;
+  const transactions = id ? getTransactionsByGroup(id) : [];
 
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
     if (!group || !selectedMember) return [];
     
-    return group.timeline
+    const currentUser = group.members.find((m) => m.isCurrentUser);
+    if (!currentUser) return [];
+    
+    return transactions
       .filter((t) => {
-        // Payment transactions
         if (t.type === "payment") {
           return (
-            (t.from === selectedMember.name && t.to === "You") ||
-            (t.from === "You" && t.to === selectedMember.name)
+            (t.from === selectedMember.id && t.to === currentUser.id) ||
+            (t.from === currentUser.id && t.to === selectedMember.id)
           );
         }
-        // Expense transactions - where member is involved
         if (t.type === "expense") {
-          const memberInvolved = t.participants?.some((p) => p.name === selectedMember.name);
-          const youPaid = t.paidBy === "You";
-          const memberPaid = t.paidBy === selectedMember.name;
-          const youInvolved = t.participants?.some((p) => p.name === "You");
+          const memberInvolved = t.participants?.some((p) => p.id === selectedMember.id);
+          const youPaid = t.paidBy === currentUser.id;
+          const memberPaid = t.paidBy === selectedMember.id;
+          const youInvolved = t.participants?.some((p) => p.id === currentUser.id);
           
           return (youPaid && memberInvolved) || (memberPaid && youInvolved);
         }
         return false;
       })
       .map((t) => {
-        // Determine direction (gave or received money)
         let direction: "gave" | "received" = "received";
         
         if (t.type === "payment") {
-          direction = t.from === selectedMember.name ? "received" : "gave";
+          direction = t.from === selectedMember.id ? "received" : "gave";
         } else if (t.type === "expense") {
-          if (t.paidBy === "You") {
-            // You paid, so you'll receive from them
+          const currentUser = group.members.find((m) => m.isCurrentUser);
+          if (t.paidBy === currentUser?.id) {
             direction = "received";
-          } else if (t.paidBy === selectedMember.name) {
-            // They paid, so you gave (owe) them
+          } else if (t.paidBy === selectedMember.id) {
             direction = "gave";
           }
         }
         
-        // Calculate the amount specific to this member
         let amount = t.amount;
         if (t.type === "expense") {
-          if (t.paidBy === "You") {
-            amount = t.participants?.find((p) => p.name === selectedMember.name)?.amount || 0;
+          const currentUser = group.members.find((m) => m.isCurrentUser);
+          if (t.paidBy === currentUser?.id) {
+            amount = t.participants?.find((p) => p.id === selectedMember.id)?.amount || 0;
           } else {
-            amount = t.participants?.find((p) => p.name === "You")?.amount || 0;
+            amount = t.participants?.find((p) => p.id === currentUser?.id)?.amount || 0;
           }
         }
         
@@ -258,7 +85,7 @@ const GroupDetail = () => {
           direction,
         };
       });
-  }, [group, selectedMember]);
+  }, [group, selectedMember, transactions]);
 
   if (!group) {
     return (
@@ -273,9 +100,18 @@ const GroupDetail = () => {
   }
 
   const members = group.members.map((m) => ({ id: m.id, name: m.name }));
+  const currentUser = group.members.find((m) => m.isCurrentUser);
 
-  const handleMemberClick = (member: { id: string; name: string; balance: number }) => {
-    if (member.name === "You") return; // Don't show detail for yourself
+  // Calculate total pending
+  const totalPending = group.members.reduce((sum, m) => {
+    if (!m.isCurrentUser && m.balance < 0) {
+      return sum + Math.abs(m.balance);
+    }
+    return sum;
+  }, 0);
+
+  const handleMemberClick = (member: { id: string; name: string; balance: number; paymentDetails?: any; phone?: string }) => {
+    if (member.id === currentUser?.id) return;
     setSelectedMember(member);
     setShowMemberDetail(true);
   };
@@ -287,7 +123,15 @@ const GroupDetail = () => {
     note: string;
     place: string;
   }) => {
-    toast.success(`Added expense of Rs ${data.amount} to ${group.name}`);
+    addExpense({
+      groupId: group.id,
+      amount: data.amount,
+      paidBy: data.paidBy,
+      participants: data.participants,
+      note: data.note,
+      place: data.place,
+    });
+    toast.success(`Added expense of Rs ${data.amount}`);
   };
 
   const handlePaymentSubmit = (data: {
@@ -296,15 +140,26 @@ const GroupDetail = () => {
     method: "cash" | "online";
     note: string;
   }) => {
-    const memberName = members.find((m) => m.id === data.fromMember)?.name;
+    if (!currentUser) return;
+    
+    recordPayment({
+      groupId: group.id,
+      fromMember: data.fromMember,
+      toMember: currentUser.id,
+      amount: data.amount,
+      method: data.method,
+      note: data.note,
+    });
+    
+    const memberName = group.members.find((m) => m.id === data.fromMember)?.name;
     toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
   };
 
   // Calculate summary data
-  const totalSpent = group.timeline
+  const totalSpent = transactions
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0);
-  const expenseCount = group.timeline.filter((t) => t.type === "expense").length;
+  const expenseCount = transactions.filter((t) => t.type === "expense").length;
   const topSpender = group.members.reduce((prev, curr) =>
     curr.balance > prev.balance ? curr : prev
   );
@@ -328,7 +183,7 @@ const GroupDetail = () => {
                 <h1 className="text-xl font-bold text-foreground">{group.name}</h1>
               </div>
               <p className="text-sm text-muted-foreground">
-                {group.members.length} members • Rs {group.totalPending.toLocaleString()} pending
+                {group.members.length} members {totalPending > 0 && `• Rs ${totalPending.toLocaleString()} pending`}
               </p>
             </div>
             
@@ -364,8 +219,8 @@ const GroupDetail = () => {
       <main className="px-4 py-4">
         {activeTab === "ledger" && (
           <div className="space-y-3 animate-fade-in">
-            {group.timeline.length > 0 ? (
-              group.timeline.map((item, index) => (
+            {transactions.length > 0 ? (
+              transactions.map((item, index) => (
                 <div
                   key={item.id}
                   className="animate-slide-up"
@@ -376,12 +231,11 @@ const GroupDetail = () => {
                     title={item.title}
                     amount={item.amount}
                     date={item.date}
-                    paidBy={item.paidBy}
-                    participants={item.participants}
-                    from={item.from}
-                    to={item.to}
-                    method={item.method}
-                    category={item.category}
+                    paidBy={item.type === "expense" ? item.paidByName : undefined}
+                    participants={item.type === "expense" ? item.participants : undefined}
+                    from={item.type === "payment" ? item.fromName : undefined}
+                    to={item.type === "payment" ? item.toName : undefined}
+                    method={item.type === "payment" ? item.method : undefined}
                   />
                 </div>
               ))
@@ -401,7 +255,7 @@ const GroupDetail = () => {
           <div className="space-y-3 animate-fade-in">
             {group.members.map((member, index) => {
               const isPositive = member.balance >= 0;
-              const isYou = member.name === "You";
+              const isYou = member.isCurrentUser;
               
               return (
                 <button
@@ -500,14 +354,14 @@ const GroupDetail = () => {
         </Button>
         <Button 
           onClick={() => setShowAddExpense(true)}
-          className="flex-1 h-12 rounded-xl text-base font-semibold shadow-wallet"
+          className="flex-1 h-12 rounded-xl text-base font-semibold"
         >
           <Plus className="w-5 h-5 mr-2" />
           Add Expense
         </Button>
       </div>
 
-      {/* Sheets */}
+      {/* Add Expense Sheet */}
       <AddExpenseSheet
         open={showAddExpense}
         onClose={() => setShowAddExpense(false)}
@@ -515,6 +369,7 @@ const GroupDetail = () => {
         onSubmit={handleExpenseSubmit}
       />
 
+      {/* Record Payment Sheet */}
       <RecordPaymentSheet
         open={showRecordPayment}
         onClose={() => setShowRecordPayment(false)}
@@ -522,19 +377,27 @@ const GroupDetail = () => {
         onSubmit={handlePaymentSubmit}
       />
 
-      <MemberDetailSheet
-        open={showMemberDetail}
-        onClose={() => {
-          setShowMemberDetail(false);
-          setSelectedMember(null);
-        }}
-        member={selectedMember}
-        transactions={memberTransactions}
-        onRecordPayment={() => {
-          setShowMemberDetail(false);
-          setShowRecordPayment(true);
-        }}
-      />
+      {/* Member Detail Sheet */}
+      {selectedMember && (
+        <MemberDetailSheet
+          open={showMemberDetail}
+          onClose={() => {
+            setShowMemberDetail(false);
+            setSelectedMember(null);
+          }}
+          member={{
+            name: selectedMember.name,
+            balance: selectedMember.balance,
+            paymentDetails: selectedMember.paymentDetails,
+            phone: selectedMember.phone,
+          }}
+          transactions={memberTransactions}
+          onRecordPayment={() => {
+            setShowMemberDetail(false);
+            setShowRecordPayment(true);
+          }}
+        />
+      )}
     </div>
   );
 };
