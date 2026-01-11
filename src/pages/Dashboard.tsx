@@ -246,23 +246,26 @@ const Dashboard = () => {
     Object.entries(settlements).forEach(([personId, settlement]) => {
       if (settlement.toPay > 0) {
         // Find the person's name from groups
-        let personName = "Member";
+        let personName = "Unknown Member";
         let groupId = "";
         
         groups.forEach(group => {
           const member = group.members.find(m => m.id === personId);
-          if (member) {
+          if (member && member.name) {
             personName = member.name;
             groupId = group.id;
           }
         });
         
-        owedMembers.push({
-          id: personId,
-          name: personName,
-          amount: settlement.toPay,
-          groupId: groupId
-        });
+        // Only add if we have a valid amount and name
+        if (settlement.toPay > 0 && personName !== "Unknown Member") {
+          owedMembers.push({
+            id: personId,
+            name: personName,
+            amount: settlement.toPay,
+            groupId: groupId
+          });
+        }
       }
     });
     
