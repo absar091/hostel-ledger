@@ -104,6 +104,13 @@ const Login = () => {
             Sign up
           </Link>
         </p>
+
+        {/* Forgot password link */}
+        <p className="mt-4 text-center text-gray-500 animate-fade-in">
+          <Link to="/forgot-password" className="text-emerald-600 font-medium hover:underline">
+            Forgot your password?
+          </Link>
+        </p>
       </div>
     </div>
   );

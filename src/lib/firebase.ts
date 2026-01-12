@@ -6,12 +6,12 @@ import { getDatabase } from 'firebase/database';
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDnbnq_aO1JHFshsY4RmBoU0NiHOqnq9mU",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "hostel-ledger.firebaseapp.com",
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://hostel-ledger-default-rtdb.firebaseio.com/",
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://hostel-ledger-default-rtdb.firebaseio.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "hostel-ledger",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "hostel-ledger.firebasestorage.app",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "841373188948",
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:841373188948:web:16c8dea6cfbdbaaebf7ec1",
-  measurementId: "G-Z6GXYNNGYM"
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-Z6GXYNNGYM"
 };
 
 // Initialize Firebase

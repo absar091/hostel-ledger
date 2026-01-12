@@ -28,7 +28,7 @@ class ErrorBoundary extends Component<Props, State> {
     this.setState({ error, errorInfo });
     
     // Log to external service in production
-    if (process.env.NODE_ENV === 'production') {
+    if (import.meta.env.MODE === 'production') {
       // TODO: Send to error tracking service (Sentry, LogRocket, etc.)
     }
   }
@@ -77,7 +77,7 @@ class ErrorBoundary extends Component<Props, State> {
               </Button>
             </div>
             
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.MODE === 'development' && this.state.error && (
               <details className="mt-6 text-left">
                 <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
                   Error Details (Development)

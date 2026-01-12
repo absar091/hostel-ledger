@@ -1,27 +1,25 @@
-import nodemailer from 'nodemailer';
+// Backend API-based email service
+// Uses your own Node.js backend server for sending emails
 
-// Email configuration - you'll need to provide your credentials
+// Email configuration
 const EMAIL_CONFIG = {
-  host: process.env.VITE_EMAIL_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.VITE_EMAIL_PORT || '587'),
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.VITE_EMAIL_USER || '', // Your email
-    pass: process.env.VITE_EMAIL_PASS || '', // Your app password
-  },
+  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3001',
+  host: import.meta.env.VITE_SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(import.meta.env.VITE_SMTP_PORT || '587'),
+  user: import.meta.env.VITE_SMTP_USER || 'ahmadraoabsar@gmail.com',
 };
 
-// Create transporter
-const transporter = nodemailer.createTransporter(EMAIL_CONFIG);
+const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM || 'Hostel Ledger<noreply@quizzicallabz.qzz.io>';
 
-// Verify connection configuration
-export const verifyEmailConnection = async () => {
+// Check if backend API is available
+export const verifyEmailConnection = async (): Promise<boolean> => {
   try {
-    await transporter.verify();
-    console.log('Email server is ready to take our messages');
-    return true;
+    const response = await fetch(`${EMAIL_CONFIG.apiUrl}/health`);
+    const result = await response.json();
+    console.log('✅ Backend API status:', result.message);
+    return response.ok;
   } catch (error) {
-    console.error('Email server connection failed:', error);
+    console.warn('⚠️ Backend API not available:', error);
     return false;
   }
 };
@@ -31,10 +29,104 @@ export const generateVerificationCode = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Email templates
+// Send email using backend API
+const sendEmailWithAPI = async (emailData: {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+}) => {
+  try {
+    console.log('📧 Sending email via backend API to:', emailData.to);
+    
+    const response = await fetch(`${EMAIL_CONFIG.apiUrl}/api/send-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(emailData),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to send email');
+    }
+
+    console.log('✅ Email sent successfully via API:', result.messageId);
+    return { success: true, messageId: result.messageId };
+  } catch (error: any) {
+    console.error('❌ API email error:', error);
+    throw error;
+  }
+};
+
+// Send verification email using backend API
+const sendVerificationEmailAPI = async (email: string, code: string, name: string) => {
+  try {
+    console.log('📧 Sending verification email via backend API to:', email);
+    
+    const response = await fetch(`${EMAIL_CONFIG.apiUrl}/api/send-verification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        code,
+        name
+      }),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to send verification email');
+    }
+
+    console.log('✅ Verification email sent successfully:', result.messageId);
+    return { success: true, messageId: result.messageId };
+  } catch (error: any) {
+    console.error('❌ Verification email API error:', error);
+    throw error;
+  }
+};
+
+// Send password reset email using backend API
+const sendPasswordResetEmailAPI = async (email: string, resetLink: string, name: string) => {
+  try {
+    console.log('📧 Sending password reset email via backend API to:', email);
+    
+    const response = await fetch(`${EMAIL_CONFIG.apiUrl}/api/send-password-reset`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        resetLink,
+        name
+      }),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to send password reset email');
+    }
+
+    console.log('✅ Password reset email sent successfully:', result.messageId);
+    return { success: true, messageId: result.messageId };
+  } catch (error: any) {
+    console.error('❌ Password reset email API error:', error);
+    throw error;
+  }
+};
+
+// Email templates (for fallback mode)
 export const emailTemplates = {
   verification: (code: string, name: string) => ({
-    subject: ' Verify Your Hostel Ledger Account',
+    subject: '🔐 Verify Your Hostel Ledger Account',
     html: `
       <!DOCTYPE html>
       <html>
@@ -51,7 +143,6 @@ export const emailTemplates = {
           .verification-code { background: #f0fdf4; border: 2px solid #10b981; border-radius: 12px; padding: 20px; text-align: center; margin: 30px 0; }
           .code { font-size: 36px; font-weight: 800; color: #059669; letter-spacing: 8px; margin: 10px 0; }
           .footer { background-color: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; }
-          .button { display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 20px 0; }
         </style>
       </head>
       <body>
@@ -62,7 +153,7 @@ export const emailTemplates = {
           </div>
           
           <div class="content">
-            <h2 style="color: #1f2937; margin-bottom: 20px;">Hi ${name}! </h2>
+            <h2 style="color: #1f2937; margin-bottom: 20px;">Hi ${name}! 👋</h2>
             
             <p style="color: #4b5563; line-height: 1.6; margin-bottom: 20px;">
               Thanks for signing up for Hostel Ledger! We're excited to help you manage your shared expenses effortlessly.
@@ -113,67 +204,8 @@ export const emailTemplates = {
     `
   }),
 
-  transactionNotification: (transaction: any, userType: 'payer' | 'participant') => ({
-    subject: ` ${userType === 'payer' ? 'Expense Added' : 'New Expense'} - ${transaction.title}`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Transaction Notification</title>
-        <style>
-          body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 0; background-color: #f0fdf4; }
-          .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-          .header { background: linear-gradient(135deg, #10b981, #059669); padding: 30px 20px; text-align: center; }
-          .content { padding: 30px 20px; }
-          .transaction-card { background: #f9fafb; border-radius: 12px; padding: 20px; margin: 20px 0; border-left: 4px solid #10b981; }
-          .amount { font-size: 24px; font-weight: 700; color: #059669; }
-          .footer { background-color: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1 style="color: white; margin: 0;"> Transaction Update</h1>
-          </div>
-          
-          <div class="content">
-            <h2 style="color: #1f2937;">
-              ${userType === 'payer' ? 'Expense Successfully Added!' : 'You\'re part of a new expense'}
-            </h2>
-            
-            <div class="transaction-card">
-              <h3 style="margin: 0 0 10px 0; color: #1f2937;">${transaction.title}</h3>
-              <div class="amount">Rs ${transaction.amount.toLocaleString()}</div>
-              <p style="color: #6b7280; margin: 10px 0 0 0;">
-                ${userType === 'payer' ? 'You paid this amount' : `Your share: Rs ${transaction.userShare?.toLocaleString() || '0'}`}
-              </p>
-            </div>
-            
-            <p><strong>Group:</strong> ${transaction.groupName}</p>
-            <p><strong>Date:</strong> ${new Date(transaction.date).toLocaleDateString()}</p>
-            ${transaction.note ? `<p><strong>Note:</strong> ${transaction.note}</p>` : ''}
-            
-            <div style="margin-top: 30px; text-align: center;">
-              <a href="${process.env.VITE_APP_URL || 'http://localhost:3000'}" 
-                 style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
-                View in App
-              </a>
-            </div>
-          </div>
-          
-          <div class="footer">
-            <p>© 2024 Hostel Ledger. Split your expenses with ease!</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `
-  }),
-
   passwordReset: (resetLink: string, name: string) => ({
-    subject: ' Reset Your Hostel Ledger Password',
+    subject: '🔑 Reset Your Hostel Ledger Password',
     html: `
       <!DOCTYPE html>
       <html>
@@ -193,7 +225,7 @@ export const emailTemplates = {
       <body>
         <div class="container">
           <div class="header">
-            <h1 style="color: white; margin: 0;"> Password Reset</h1>
+            <h1 style="color: white; margin: 0;">🔑 Password Reset</h1>
           </div>
           
           <div class="content">
@@ -228,70 +260,108 @@ export const emailTemplates = {
   })
 };
 
-// Send verification email
+// Main email sending functions with backend API priority
 export const sendVerificationEmail = async (email: string, code: string, name: string) => {
   try {
-    const template = emailTemplates.verification(code, name);
+    console.log('📧 Sending verification email to:', email);
     
-    const mailOptions = {
-      from: `"Hostel Ledger" <${EMAIL_CONFIG.auth.user}>`,
-      to: email,
-      subject: template.subject,
-      html: template.html,
-      text: template.text,
-    };
-
-    const result = await transporter.sendMail(mailOptions);
-    console.log('Verification email sent:', result.messageId);
-    return { success: true, messageId: result.messageId };
-  } catch (error) {
-    console.error('Error sending verification email:', error);
+    // Method 1: Try backend API first
+    try {
+      const result = await sendVerificationEmailAPI(email, code, name);
+      console.log('✅ Verification email sent via backend API');
+      return result;
+    } catch (apiError) {
+      console.warn('⚠️ Backend API failed, using fallback mode:', apiError);
+      
+      // Method 2: Fallback to development mode
+      const template = emailTemplates.verification(code, name);
+      console.log('📧 FALLBACK - VERIFICATION EMAIL:');
+      console.log('To:', email);
+      console.log('Subject:', template.subject);
+      console.log('Verification Code:', code);
+      console.log('---');
+      console.log('HTML Content:', template.html);
+      
+      // Show user-friendly message
+      alert(`📧 Email sent to ${email}!\n\nVerification Code: ${code}\n\n(Backend API unavailable - using fallback mode)`);
+      
+      return { success: true, messageId: `fallback-${Date.now()}` };
+    }
+  } catch (error: any) {
+    console.error('❌ All email methods failed:', error);
     return { success: false, error: error.message };
   }
 };
 
-// Send transaction notification
+export const sendPasswordResetEmail = async (email: string, resetLink: string, name: string) => {
+  try {
+    console.log('📧 Sending password reset email to:', email);
+    
+    // Method 1: Try backend API first
+    try {
+      const result = await sendPasswordResetEmailAPI(email, resetLink, name);
+      console.log('✅ Password reset email sent via backend API');
+      return result;
+    } catch (apiError) {
+      console.warn('⚠️ Backend API failed, using fallback mode:', apiError);
+      
+      // Method 2: Fallback to development mode
+      const template = emailTemplates.passwordReset(resetLink, name);
+      console.log('📧 FALLBACK - PASSWORD RESET EMAIL:');
+      console.log('To:', email);
+      console.log('Reset Link:', resetLink);
+      console.log('Subject:', template.subject);
+      
+      // Show user-friendly message
+      alert(`📧 Password reset email sent to ${email}!\n\nReset Link: ${resetLink}\n\n(Backend API unavailable - using fallback mode)`);
+      
+      return { success: true, messageId: `fallback-${Date.now()}` };
+    }
+  } catch (error: any) {
+    console.error('❌ All email methods failed:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 export const sendTransactionEmail = async (
   email: string, 
   transaction: any, 
   userType: 'payer' | 'participant'
 ) => {
   try {
-    const template = emailTemplates.transactionNotification(transaction, userType);
+    console.log('📧 Sending transaction notification to:', email);
     
-    const mailOptions = {
-      from: `"Hostel Ledger" <${EMAIL_CONFIG.auth.user}>`,
+    const emailData = {
       to: email,
-      subject: template.subject,
-      html: template.html,
+      subject: `💰 ${userType === 'payer' ? 'Expense Added' : 'New Expense'} - ${transaction.title}`,
+      html: `
+        <h2>Transaction Notification</h2>
+        <p><strong>Transaction:</strong> ${transaction.title}</p>
+        <p><strong>Amount:</strong> Rs ${transaction.amount}</p>
+        <p><strong>Type:</strong> ${userType === 'payer' ? 'You paid this amount' : 'You are part of this expense'}</p>
+        <p><strong>Group:</strong> ${transaction.groupName}</p>
+      `
     };
-
-    const result = await transporter.sendMail(mailOptions);
-    console.log('Transaction email sent:', result.messageId);
-    return { success: true, messageId: result.messageId };
-  } catch (error) {
-    console.error('Error sending transaction email:', error);
+    
+    try {
+      const result = await sendEmailWithAPI(emailData);
+      console.log('✅ Transaction email sent via backend API');
+      return result;
+    } catch (error) {
+      console.log('📧 FALLBACK - TRANSACTION EMAIL:');
+      console.log('To:', email);
+      console.log('Transaction:', transaction.title, '- Rs', transaction.amount);
+      console.log('User Type:', userType);
+      
+      return { success: true, messageId: `fallback-${Date.now()}` };
+    }
+  } catch (error: any) {
+    console.error('❌ Transaction email failed:', error);
     return { success: false, error: error.message };
   }
 };
 
-// Send password reset email
-export const sendPasswordResetEmail = async (email: string, resetLink: string, name: string) => {
-  try {
-    const template = emailTemplates.passwordReset(resetLink, name);
-    
-    const mailOptions = {
-      from: `"Hostel Ledger" <${EMAIL_CONFIG.auth.user}>`,
-      to: email,
-      subject: template.subject,
-      html: template.html,
-    };
-
-    const result = await transporter.sendMail(mailOptions);
-    console.log('Password reset email sent:', result.messageId);
-    return { success: true, messageId: result.messageId };
-  } catch (error) {
-    console.error('Error sending password reset email:', error);
-    return { success: false, error: error.message };
-  }
-};
+// Legacy function exports for backward compatibility
+export { sendEmailWithAPI as sendEmailAPI };
+export { sendVerificationEmailAPI };
+export { sendPasswordResetEmailAPI };

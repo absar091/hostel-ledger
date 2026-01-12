@@ -1,0 +1,188 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { Mail, ArrowLeft, Send } from "lucide-react";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+
+const ForgotPassword = () => {
+  const navigate = useNavigate();
+  const { sendPasswordResetEmail } = useFirebaseAuth();
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email) {
+      toast.error("Please enter your email address");
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Use Firebase's built-in password reset
+      const result = await sendPasswordResetEmail(email);
+      
+      if (result.success) {
+        setEmailSent(true);
+        toast.success("Password reset email sent! Check your inbox.");
+      } else {
+        toast.error(result.error || "Failed to send reset email. Please try again.");
+      }
+
+    } catch (error: any) {
+      console.error("Password reset error:", error);
+      toast.error("Failed to send reset email. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          {/* Success State */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <Mail className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Check Your Email</h1>
+            <p className="text-gray-600">
+              We've sent password reset instructions to
+            </p>
+            <p className="text-emerald-600 font-medium">{email}</p>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-lg rounded-3xl p-8 shadow-xl border border-white/50">
+            <div className="text-center space-y-4">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                <Send className="w-6 h-6 text-green-600" />
+              </div>
+              
+              <h2 className="text-xl font-semibold text-gray-900">Email Sent!</h2>
+              
+              <p className="text-gray-600">
+                Click the link in your email to reset your password. This email is sent directly by Firebase for security.
+              </p>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Important:</strong> You'll receive a Firebase password reset email (not our custom email). 
+                  <br />
+                  Check your spam folder if you don't see it within a few minutes.
+                </p>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEmailSent(false)}
+                  className="flex-1"
+                >
+                  Try Different Email
+                </Button>
+                
+                <Button
+                  type="button"
+                  onClick={() => navigate("/login")}
+                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+                >
+                  Back to Login
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <Mail className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Forgot Password?</h1>
+          <p className="text-gray-600">
+            No worries! Enter your email and we'll send you reset instructions.
+          </p>
+        </div>
+
+        {/* Form */}
+        <div className="bg-white/80 backdrop-blur-lg rounded-3xl p-8 shadow-xl border border-white/50">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input
+                  type="email"
+                  placeholder="Enter your email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-12 pl-12"
+                  autoComplete="email"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+            >
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Sending...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Send className="w-4 h-4" />
+                  Send Reset Instructions
+                </div>
+              )}
+            </Button>
+          </form>
+
+          {/* Back to Login */}
+          <div className="mt-6 text-center">
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Login
+            </Link>
+          </div>
+        </div>
+
+        {/* Help Text */}
+        <div className="mt-6 text-center text-sm text-gray-500">
+          <p>Remember your password? <Link to="/login" className="text-emerald-600 hover:underline">Sign in</Link></p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ForgotPassword;

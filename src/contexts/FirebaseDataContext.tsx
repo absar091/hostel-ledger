@@ -2,8 +2,98 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { ref, push, set, update, remove, onValue, off, get } from "firebase/database";
 import { database } from "@/lib/firebase";
 import { useFirebaseAuth, PaymentDetails } from "./FirebaseAuthContext";
-import { validateExpenseData, validatePaymentData, validateGroupData, validateAmount, sanitizeString, sanitizeAmount } from "@/lib/validation";
 import { TransactionManager, retryOperation } from "@/lib/transaction";
+
+// Utility functions - defined locally to avoid import issues
+const sanitizeString = (input: string): string => {
+  return input.trim().replace(/[<>\"'&]/g, '').substring(0, 200);
+};
+
+const sanitizeAmount = (amount: string | number): number => {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return isNaN(num) ? 0 : Math.max(0, Math.min(num, 1000000));
+};
+
+const validateAmount = (amount: number): { isValid: boolean; error?: string } => {
+  if (isNaN(amount) || amount <= 0) {
+    return { isValid: false, error: 'Amount must be a positive number' };
+  }
+  if (amount > 1000000) {
+    return { isValid: false, error: 'Amount cannot exceed 1,000,000' };
+  }
+  return { isValid: true };
+};
+
+const validateExpenseData = (data: {
+  groupId: string;
+  amount: number;
+  paidBy: string;
+  participants: string[];
+  note: string;
+  place: string;
+}): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+
+  if (!data.groupId || data.groupId.trim() === '') {
+    errors.push('Group is required');
+  }
+
+  const amountValidation = validateAmount(data.amount);
+  if (!amountValidation.isValid) {
+    errors.push(amountValidation.error || 'Invalid amount');
+  }
+
+  if (!data.paidBy || data.paidBy.trim() === '') {
+    errors.push('Please select who paid');
+  }
+
+  if (!data.participants || data.participants.length === 0) {
+    errors.push('Please select at least one participant');
+  }
+
+  if (data.note && data.note.length > 200) {
+    errors.push('Note must be less than 200 characters');
+  }
+
+  if (data.place && data.place.length > 100) {
+    errors.push('Place must be less than 100 characters');
+  }
+
+  return { isValid: errors.length === 0, errors };
+};
+
+const validatePaymentData = (data: {
+  groupId: string;
+  fromMember: string;
+  amount: number;
+  method: string;
+  note: string;
+}): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+
+  if (!data.groupId || data.groupId.trim() === '') {
+    errors.push('Group is required');
+  }
+
+  if (!data.fromMember || data.fromMember.trim() === '') {
+    errors.push('Please select who paid you');
+  }
+
+  const amountValidation = validateAmount(data.amount);
+  if (!amountValidation.isValid) {
+    errors.push(amountValidation.error || 'Invalid amount');
+  }
+
+  if (!data.method || !['cash', 'online'].includes(data.method)) {
+    errors.push('Please select a payment method');
+  }
+
+  if (data.note && data.note.length > 200) {
+    errors.push('Note must be less than 200 characters');
+  }
+
+  return { isValid: errors.length === 0, errors };
+};
 import { 
   calculateExpenseSplit, 
   calculateExpenseSettlements, 
@@ -104,66 +194,87 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
     setIsLoading(true);
 
-    // Listen to user's groups with error handling
-    const groupsRef = ref(database, `userGroups/${user.uid}`);
-    const groupsListener = onValue(groupsRef, async (snapshot) => {
+    // Add a small delay to ensure Firebase auth is fully established
+    const setupListeners = async () => {
       try {
-        if (snapshot.exists()) {
-          const userGroupIds = Object.keys(snapshot.val());
-          const groupPromises = userGroupIds.map(async (groupId) => {
-            const groupRef = ref(database, `groups/${groupId}`);
-            const groupSnapshot = await get(groupRef);
-            return groupSnapshot.exists() ? { id: groupId, ...groupSnapshot.val() } : null;
-          });
-          
-          const groupsData = await Promise.all(groupPromises);
-          setGroups(groupsData.filter(Boolean) as Group[]);
-        } else {
-          setGroups([]);
-        }
+        // Wait a bit for auth to be fully established
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Listen to user's groups with error handling
+        const groupsRef = ref(database, `userGroups/${user.uid}`);
+        const groupsListener = onValue(groupsRef, async (snapshot) => {
+          try {
+            if (snapshot.exists()) {
+              const userGroupIds = Object.keys(snapshot.val());
+              const groupPromises = userGroupIds.map(async (groupId) => {
+                const groupRef = ref(database, `groups/${groupId}`);
+                const groupSnapshot = await get(groupRef);
+                return groupSnapshot.exists() ? { id: groupId, ...groupSnapshot.val() } : null;
+              });
+              
+              const groupsData = await Promise.all(groupPromises);
+              setGroups(groupsData.filter(Boolean) as Group[]);
+            } else {
+              setGroups([]);
+            }
+          } catch (error) {
+            console.error("Error loading groups:", error);
+            setGroups([]);
+          } finally {
+            setIsLoading(false);
+          }
+        }, (error) => {
+          console.error("Groups listener error:", error);
+          setIsLoading(false);
+          // Don't throw error, just log it and continue
+        });
+
+        // Listen to user's transactions with error handling
+        const transactionsRef = ref(database, `userTransactions/${user.uid}`);
+        const transactionsListener = onValue(transactionsRef, async (snapshot) => {
+          try {
+            if (snapshot.exists()) {
+              const userTransactionIds = Object.keys(snapshot.val());
+              const transactionPromises = userTransactionIds.map(async (transactionId) => {
+                const transactionRef = ref(database, `transactions/${transactionId}`);
+                const transactionSnapshot = await get(transactionRef);
+                return transactionSnapshot.exists() ? { id: transactionId, ...transactionSnapshot.val() } : null;
+              });
+              
+              const transactionsData = await Promise.all(transactionPromises);
+              const sortedTransactions = transactionsData
+                .filter(Boolean)
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+              setTransactions(sortedTransactions as Transaction[]);
+            } else {
+              setTransactions([]);
+            }
+          } catch (error) {
+            console.error("Error loading transactions:", error);
+            setTransactions([]);
+          }
+        }, (error) => {
+          console.error("Transactions listener error:", error);
+          // Don't throw error, just log it and continue
+        });
+
+        // Cleanup listeners
+        return () => {
+          off(groupsRef, 'value', groupsListener);
+          off(transactionsRef, 'value', transactionsListener);
+        };
       } catch (error) {
-        console.error("Error loading groups:", error);
-        setGroups([]);
-      } finally {
+        console.error("Error setting up Firebase listeners:", error);
         setIsLoading(false);
       }
-    }, (error) => {
-      console.error("Groups listener error:", error);
-      setIsLoading(false);
-    });
+    };
 
-    // Listen to user's transactions with error handling
-    const transactionsRef = ref(database, `userTransactions/${user.uid}`);
-    const transactionsListener = onValue(transactionsRef, async (snapshot) => {
-      try {
-        if (snapshot.exists()) {
-          const userTransactionIds = Object.keys(snapshot.val());
-          const transactionPromises = userTransactionIds.map(async (transactionId) => {
-            const transactionRef = ref(database, `transactions/${transactionId}`);
-            const transactionSnapshot = await get(transactionRef);
-            return transactionSnapshot.exists() ? { id: transactionId, ...transactionSnapshot.val() } : null;
-          });
-          
-          const transactionsData = await Promise.all(transactionPromises);
-          const sortedTransactions = transactionsData
-            .filter(Boolean)
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          setTransactions(sortedTransactions as Transaction[]);
-        } else {
-          setTransactions([]);
-        }
-      } catch (error) {
-        console.error("Error loading transactions:", error);
-        setTransactions([]);
-      }
-    }, (error) => {
-      console.error("Transactions listener error:", error);
-    });
+    const cleanup = setupListeners();
 
-    // Cleanup listeners
     return () => {
-      off(groupsRef, 'value', groupsListener);
-      off(transactionsRef, 'value', transactionsListener);
+      cleanup.then(cleanupFn => {
+        if (cleanupFn) cleanupFn();
+      });
     };
   }, [user]);
 
@@ -174,10 +285,18 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   }): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
-    // Validate input
-    const validation = validateGroupData(data);
-    if (!validation.isValid) {
-      return { success: false, error: validation.errors.join(", ") };
+    // Validate input - basic validation for now
+    if (!data.name || data.name.trim() === '') {
+      return { success: false, error: "Group name is required" };
+    }
+    if (data.name.length > 50) {
+      return { success: false, error: "Group name must be less than 50 characters" };
+    }
+    if (!data.emoji || data.emoji.trim() === '') {
+      return { success: false, error: "Please select an emoji for the group" };
+    }
+    if (!data.members || data.members.length === 0) {
+      return { success: false, error: "Please add at least one member" };
     }
 
     const transaction = new TransactionManager();
@@ -188,15 +307,15 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       const groupId = newGroupRef.key!;
 
       const sanitizedMembers = data.members.map(m => ({
-        name: sanitizeString(m.name),
+        name: m.name.trim().substring(0, 50),
         paymentDetails: m.paymentDetails || {},
-        phone: m.phone ? sanitizeString(m.phone) : null,
+        phone: m.phone ? m.phone.trim().substring(0, 20) : null,
       }));
 
       const newGroup: Group = {
         id: groupId,
-        name: sanitizeString(data.name),
-        emoji: sanitizeString(data.emoji),
+        name: data.name.trim().substring(0, 50),
+        emoji: data.emoji.trim().substring(0, 10),
         members: [
           {
             id: user.uid,

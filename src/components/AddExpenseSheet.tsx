@@ -6,7 +6,7 @@ import { Check, ChevronRight, AlertCircle } from "lucide-react";
 import Avatar from "./Avatar";
 import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
-import { validateExpenseData, sanitizeString, sanitizeAmount } from "@/lib/validation";
+// import { validateExpenseData, sanitizeString, sanitizeAmount } from "@/lib/validation";
 
 interface Member {
   id: string;
@@ -138,13 +138,19 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
       amount: parseFloat(amount),
       paidBy,
       participants,
-      note: sanitizeString(note),
-      place: sanitizeString(place),
+      note: note.trim().substring(0, 200),
+      place: place.trim().substring(0, 100),
     };
 
-    const validation = validateExpenseData(expenseData);
-    if (!validation.isValid) {
-      setValidationErrors(validation.errors);
+    // Basic validation
+    const errors: string[] = [];
+    if (!selectedGroup) errors.push('Group is required');
+    if (isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) errors.push('Amount must be a positive number');
+    if (!paidBy) errors.push('Please select who paid');
+    if (participants.length === 0) errors.push('Please select at least one participant');
+
+    if (errors.length > 0) {
+      setValidationErrors(errors);
       return;
     }
 
@@ -166,11 +172,11 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
     setValidationErrors([]);
     onSubmit({
       groupId: selectedGroup,
-      amount: sanitizeAmount(parseFloat(amount)),
+      amount: Math.max(0, Math.min(parseFloat(amount), 1000000)),
       paidBy,
       participants,
-      note: sanitizeString(note),
-      place: sanitizeString(place),
+      note: note.trim().substring(0, 200),
+      place: place.trim().substring(0, 100),
     });
     handleClose();
   };
@@ -209,7 +215,6 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
           <SheetDescription className="text-center text-sm text-gray-500">
             Add a new expense to split between group members
           </SheetDescription>
-          </div>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto pb-4">

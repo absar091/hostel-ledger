@@ -10,6 +10,9 @@ interface TokenPayload {
   iat: number;
 }
 
+// Get JWT secret from environment (Vite uses import.meta.env)
+const JWT_SECRET = import.meta.env.VITE_JWT_SECRET || 'hostel-ledger-super-secret-key-2024-change-in-production';
+
 // Simple base64 encoding/decoding for demo purposes
 // In production, use proper JWT with signing
 export const createToken = (payload: Omit<TokenPayload, 'iat' | 'exp'>, expiresInMinutes: number = 60): string => {
@@ -21,12 +24,26 @@ export const createToken = (payload: Omit<TokenPayload, 'iat' | 'exp'>, expiresI
   };
   
   // In production, use proper JWT signing with a secret key
-  return btoa(JSON.stringify(fullPayload));
+  // For now, we'll use a simple encoding with the secret
+  const tokenData = JSON.stringify(fullPayload);
+  const signature = btoa(JWT_SECRET + tokenData).slice(0, 32);
+  return btoa(tokenData) + '.' + signature;
 };
 
 export const verifyToken = (token: string): { valid: boolean; payload?: TokenPayload; error?: string } => {
   try {
-    const payload: TokenPayload = JSON.parse(atob(token));
+    const [tokenData, signature] = token.split('.');
+    if (!tokenData || !signature) {
+      return { valid: false, error: 'Invalid token format' };
+    }
+
+    // Verify signature
+    const expectedSignature = btoa(JWT_SECRET + atob(tokenData)).slice(0, 32);
+    if (signature !== expectedSignature) {
+      return { valid: false, error: 'Invalid token signature' };
+    }
+
+    const payload: TokenPayload = JSON.parse(atob(tokenData));
     const now = Math.floor(Date.now() / 1000);
     
     if (payload.exp < now) {

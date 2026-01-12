@@ -21,7 +21,7 @@ class Logger {
   private userId?: string;
 
   constructor() {
-    this.logLevel = process.env.NODE_ENV === 'production' ? LogLevel.WARN : LogLevel.DEBUG;
+    this.logLevel = import.meta.env.MODE === 'production' ? LogLevel.WARN : LogLevel.DEBUG;
     this.sessionId = this.generateSessionId();
   }
 
@@ -57,7 +57,7 @@ class Logger {
 
   private sendToExternalService(entry: LogEntry) {
     // In production, send to external logging service
-    if (process.env.NODE_ENV === 'production') {
+    if (import.meta.env.MODE === 'production') {
       // TODO: Integrate with logging service (e.g., LogRocket, Sentry, etc.)
       // Example: logService.send(entry);
     }
