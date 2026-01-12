@@ -16,7 +16,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
   ];
 
   return (
-    <nav className="mobile-nav">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-gray-100 safe-area-pb z-50 shadow-lg">
       <div className="max-w-lg mx-auto flex items-center justify-around py-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -27,7 +27,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                className="touch-target w-14 h-14 -mt-6 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 shadow-lg flex items-center justify-center backdrop-blur-lg border border-emerald-400/20 hover:from-emerald-600 hover:to-teal-600 transition-all"
+                className="touch-target w-14 h-14 -mt-6 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 shadow-lg flex items-center justify-center border-4 border-white hover:from-emerald-600 hover:to-teal-600 transition-all"
               >
                 <Icon className="w-6 h-6 text-white" />
               </button>
@@ -40,7 +40,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
               onClick={() => onTabChange(tab.id)}
               className={cn(
                 "touch-target flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors",
-                isActive ? "text-primary" : "text-muted-foreground"
+                isActive ? "text-emerald-600" : "text-gray-400"
               )}
             >
               <Icon className="w-5 h-5" />

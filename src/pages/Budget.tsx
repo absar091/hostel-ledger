@@ -94,24 +94,24 @@ const Budget = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 pb-8">
       {/* Header */}
       <header className="px-4 pt-8 pb-4">
         <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center"
+            className="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
           </button>
-          <h1 className="text-2xl font-bold text-foreground">My Budget</h1>
+          <h1 className="text-2xl font-bold text-gray-900">My Budget</h1>
         </div>
 
         {/* Budget Overview Card */}
-        <div className="bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-6 shadow-lg text-primary-foreground">
+        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 shadow-lg text-white">
           <div className="flex items-center gap-2 mb-1">
-            <PiggyBank className="w-5 h-5 opacity-80" />
-            <span className="text-sm opacity-80">Remaining Budget</span>
+            <PiggyBank className="w-5 h-5 text-white/80" />
+            <span className="text-sm text-white/80">Remaining Budget</span>
           </div>
           <div className="text-4xl font-bold mb-4">
             {remainingBudget >= 0 ? "" : "-"}Rs {Math.abs(remainingBudget).toLocaleString()}
@@ -120,7 +120,7 @@ const Budget = () => {
           <Button
             onClick={() => setShowAddFunds(true)}
             variant="secondary"
-            className="w-full"
+            className="w-full bg-white/20 hover:bg-white/30 text-white border-white/30"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Funds
@@ -131,50 +131,50 @@ const Budget = () => {
       {/* Stats Grid */}
       <main className="px-4 space-y-6">
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-card rounded-xl p-4 shadow-card">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white/50">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <Wallet className="w-4 h-4 text-primary" />
+              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                <Wallet className="w-4 h-4 text-emerald-600" />
               </div>
-              <span className="text-sm text-muted-foreground">Total Added</span>
+              <span className="text-sm text-gray-500">Total Added</span>
             </div>
-            <div className="text-xl font-bold text-foreground">
+            <div className="text-xl font-bold text-gray-900">
               Rs {totalFunds.toLocaleString()}
             </div>
           </div>
 
-          <div className="bg-card rounded-xl p-4 shadow-card">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white/50">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-negative/10 flex items-center justify-center">
-                <TrendingDown className="w-4 h-4 text-negative" />
+              <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                <TrendingDown className="w-4 h-4 text-red-500" />
               </div>
-              <span className="text-sm text-muted-foreground">Total Spent</span>
+              <span className="text-sm text-gray-500">Total Spent</span>
             </div>
-            <div className="text-xl font-bold text-foreground">
+            <div className="text-xl font-bold text-gray-900">
               Rs {totalSpent.toLocaleString()}
             </div>
           </div>
 
-          <div className="bg-card rounded-xl p-4 shadow-card">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white/50">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-positive/10 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-positive" />
+              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-emerald-500" />
               </div>
-              <span className="text-sm text-muted-foreground">To Receive</span>
+              <span className="text-sm text-gray-500">To Receive</span>
             </div>
-            <div className="text-xl font-bold text-positive">
+            <div className="text-xl font-bold text-emerald-600">
               Rs {toReceive.toLocaleString()}
             </div>
           </div>
 
-          <div className="bg-card rounded-xl p-4 shadow-card">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white/50">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-negative/10 flex items-center justify-center">
-                <TrendingDown className="w-4 h-4 text-negative" />
+              <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                <TrendingDown className="w-4 h-4 text-red-500" />
               </div>
-              <span className="text-sm text-muted-foreground">You Owe</span>
+              <span className="text-sm text-gray-500">You Owe</span>
             </div>
-            <div className="text-xl font-bold text-negative">
+            <div className="text-xl font-bold text-red-500">
               Rs {toOwe.toLocaleString()}
             </div>
           </div>
@@ -182,33 +182,33 @@ const Budget = () => {
 
         {/* Funds History */}
         <section>
-          <h2 className="text-lg font-semibold text-foreground mb-4">Funds Added</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Funds Added</h2>
           
           {budgetEntries.length > 0 ? (
             <div className="space-y-3">
               {budgetEntries.map((entry) => (
                 <div
                   key={entry.id}
-                  className="bg-card rounded-xl p-4 shadow-card flex items-center justify-between"
+                  className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white/50 flex items-center justify-between"
                 >
                   <div>
-                    <div className="font-medium text-foreground">{entry.note}</div>
-                    <div className="text-sm text-muted-foreground">{entry.date}</div>
+                    <div className="font-medium text-gray-900">{entry.note}</div>
+                    <div className="text-sm text-gray-500">{entry.date}</div>
                   </div>
-                  <div className="text-lg font-bold text-positive">
+                  <div className="text-lg font-bold text-emerald-600">
                     +Rs {entry.amount.toLocaleString()}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 bg-card rounded-xl">
-              <PiggyBank className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-              <h3 className="font-semibold text-foreground mb-1">No funds added yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">
+            <div className="text-center py-12 bg-white/80 backdrop-blur-sm rounded-xl border border-white/50">
+              <PiggyBank className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+              <h3 className="font-semibold text-gray-900 mb-1">No funds added yet</h3>
+              <p className="text-sm text-gray-500 mb-4">
                 Add your monthly allowance to track spending
               </p>
-              <Button onClick={() => setShowAddFunds(true)} variant="outline">
+              <Button onClick={() => setShowAddFunds(true)} variant="outline" className="border-emerald-200 text-emerald-600 hover:bg-emerald-50">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Funds
               </Button>

@@ -78,28 +78,28 @@ const Profile = () => {
   const hasPaymentDetails = user?.paymentDetails && Object.keys(user.paymentDetails).length > 0;
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 pb-8">
       {/* Header */}
       <header className="px-4 pt-8 pb-6">
         <div className="flex items-center gap-4 mb-6">
           <button
             onClick={() => navigate("/")}
-            className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center"
+            className="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
           </button>
-          <h1 className="text-xl font-bold text-foreground">Profile</h1>
+          <h1 className="text-xl font-bold text-gray-900">Profile</h1>
         </div>
 
         {/* Profile Card */}
-        <div className="bg-card rounded-2xl p-6 shadow-md animate-fade-in">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50 animate-fade-in">
           <div className="flex items-center gap-4">
             <Avatar name={user?.name || "User"} size="lg" />
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-foreground">{user?.name}</h2>
-              <p className="text-muted-foreground text-sm">{user?.email}</p>
+              <h2 className="text-xl font-bold text-gray-900">{user?.name}</h2>
+              <p className="text-gray-500 text-sm">{user?.email}</p>
               {user?.phone && (
-                <p className="text-muted-foreground text-sm">{user.phone}</p>
+                <p className="text-gray-500 text-sm">{user.phone}</p>
               )}
             </div>
           </div>
@@ -110,16 +110,16 @@ const Profile = () => {
         {/* My Budget */}
         <button
           onClick={() => navigate("/budget")}
-          className="w-full bg-gradient-to-r from-primary to-primary/80 rounded-xl p-4 flex items-center gap-4 shadow-md animate-slide-up text-primary-foreground"
+          className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-4 flex items-center gap-4 shadow-md animate-slide-up text-white"
         >
-          <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-            <PiggyBank className="w-5 h-5 text-primary-foreground" />
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+            <PiggyBank className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 text-left">
             <p className="font-medium">My Budget</p>
-            <p className="text-sm opacity-80">Track your monthly funds & spending</p>
+            <p className="text-sm text-white/80">Track your monthly funds & spending</p>
           </div>
-          <ChevronRight className="w-5 h-5 opacity-80" />
+          <ChevronRight className="w-5 h-5 text-white/80" />
         </button>
 
         {/* Edit Profile */}
@@ -129,17 +129,17 @@ const Profile = () => {
             setEditPhone(user?.phone || "");
             setShowEditSheet(true);
           }}
-          className="w-full bg-card rounded-xl p-4 flex items-center gap-4 shadow-sm animate-slide-up"
+          className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-4 flex items-center gap-4 shadow-sm border border-white/50 animate-slide-up"
           style={{ animationDelay: "0.05s" }}
         >
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <User className="w-5 h-5 text-primary" />
+          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+            <User className="w-5 h-5 text-emerald-600" />
           </div>
           <div className="flex-1 text-left">
-            <p className="font-medium text-foreground">Edit Profile</p>
-            <p className="text-sm text-muted-foreground">Update your name and phone</p>
+            <p className="font-medium text-gray-900">Edit Profile</p>
+            <p className="text-sm text-gray-500">Update your name and phone</p>
           </div>
-          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          <ChevronRight className="w-5 h-5 text-gray-400" />
         </button>
 
         {/* Payment Details */}
@@ -152,53 +152,53 @@ const Profile = () => {
             setRaastId(user?.paymentDetails?.raastId || "");
             setShowPaymentSheet(true);
           }}
-          className="w-full bg-card rounded-xl p-4 flex items-center gap-4 shadow-sm animate-slide-up"
+          className="w-full bg-white/80 backdrop-blur-sm rounded-xl p-4 flex items-center gap-4 shadow-sm border border-white/50 animate-slide-up"
           style={{ animationDelay: "0.1s" }}
         >
-          <div className="w-10 h-10 rounded-full bg-positive/10 flex items-center justify-center">
-            <CreditCard className="w-5 h-5 text-positive" />
+          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+            <CreditCard className="w-5 h-5 text-emerald-600" />
           </div>
           <div className="flex-1 text-left">
-            <p className="font-medium text-foreground">Payment Details</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="font-medium text-gray-900">Payment Details</p>
+            <p className="text-sm text-gray-500">
               {hasPaymentDetails ? "Manage your payment methods" : "Add JazzCash, Easypaisa, Bank details"}
             </p>
           </div>
           {hasPaymentDetails && (
-            <div className="w-6 h-6 rounded-full bg-positive flex items-center justify-center">
-              <Check className="w-4 h-4 text-primary-foreground" />
+            <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center">
+              <Check className="w-4 h-4 text-white" />
             </div>
           )}
-          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          <ChevronRight className="w-5 h-5 text-gray-400" />
         </button>
 
         {/* Current Payment Details Preview */}
         {hasPaymentDetails && (
-          <div className="bg-card rounded-xl p-4 space-y-3 animate-fade-in">
-            <p className="text-sm font-medium text-muted-foreground">Your Payment Methods</p>
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 space-y-3 animate-fade-in border border-white/50">
+            <p className="text-sm font-medium text-gray-500">Your Payment Methods</p>
             <div className="grid grid-cols-2 gap-3">
               {user?.paymentDetails?.jazzCash && (
-                <div className="bg-secondary rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground">JazzCash</p>
-                  <p className="font-medium text-sm">{user.paymentDetails.jazzCash}</p>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500">JazzCash</p>
+                  <p className="font-medium text-sm text-gray-900">{user.paymentDetails.jazzCash}</p>
                 </div>
               )}
               {user?.paymentDetails?.easypaisa && (
-                <div className="bg-secondary rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground">Easypaisa</p>
-                  <p className="font-medium text-sm">{user.paymentDetails.easypaisa}</p>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500">Easypaisa</p>
+                  <p className="font-medium text-sm text-gray-900">{user.paymentDetails.easypaisa}</p>
                 </div>
               )}
               {user?.paymentDetails?.bankName && (
-                <div className="bg-secondary rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground">{user.paymentDetails.bankName}</p>
-                  <p className="font-medium text-sm">{user.paymentDetails.accountNumber}</p>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500">{user.paymentDetails.bankName}</p>
+                  <p className="font-medium text-sm text-gray-900">{user.paymentDetails.accountNumber}</p>
                 </div>
               )}
               {user?.paymentDetails?.raastId && (
-                <div className="bg-secondary rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground">Raast ID</p>
-                  <p className="font-medium text-sm">{user.paymentDetails.raastId}</p>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500">Raast ID</p>
+                  <p className="font-medium text-sm text-gray-900">{user.paymentDetails.raastId}</p>
                 </div>
               )}
             </div>
@@ -208,13 +208,13 @@ const Profile = () => {
         {/* Logout */}
         <button
           onClick={handleLogout}
-          className="w-full bg-destructive/10 rounded-xl p-4 flex items-center gap-4 animate-slide-up"
+          className="w-full bg-red-50 rounded-xl p-4 flex items-center gap-4 animate-slide-up border border-red-100"
           style={{ animationDelay: "0.15s" }}
         >
-          <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
-            <LogOut className="w-5 h-5 text-destructive" />
+          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+            <LogOut className="w-5 h-5 text-red-500" />
           </div>
-          <p className="font-medium text-destructive">Log Out</p>
+          <p className="font-medium text-red-500">Log Out</p>
         </button>
       </main>
 
