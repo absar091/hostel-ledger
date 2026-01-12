@@ -28,11 +28,11 @@ const Login = () => {
 
     if (result.success) {
       toast.success("Welcome back!");
-      console.log("🔥 LOGIN SUCCESS - Login result:", result);
-      console.log("🔥 LOGIN SUCCESS - Should redirect now...");
+      console.log(" LOGIN SUCCESS - Login result:", result);
+      console.log(" LOGIN SUCCESS - Should redirect now...");
     } else {
       toast.error(result.error || "Login failed");
-      console.log("🔥 LOGIN FAILED - Error:", result.error);
+      console.log(" LOGIN FAILED - Error:", result.error);
     }
   };
 
