@@ -2,6 +2,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import Avatar from "./Avatar";
 import { ArrowDownLeft, ArrowUpRight, HandCoins, Calendar, MapPin, CreditCard, Banknote, ArrowRight } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Transaction {
   id: string;
@@ -150,41 +156,64 @@ const MemberDetailSheet = ({
           )}
 
           {/* Quick Actions - Both directions now available */}
-          <div className="flex gap-3 mb-6">
-            {/* Receive Payment Button */}
-            {theyOweYou > 0 && (
-              <Button 
-                onClick={onRecordPayment}
-                className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
-              >
-                <ArrowDownLeft className="w-4 h-4 mr-2" />
-                Received from {member.name}
-              </Button>
-            )}
-            
-            {/* Pay to Member Button - NEW */}
-            {youOweThem > 0 && onPayToMember && (
-              <Button 
-                onClick={onPayToMember}
-                className="flex-1 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
-              >
-                <ArrowUpRight className="w-4 h-4 mr-2" />
-                Pay to {member.name}
-              </Button>
-            )}
-            
-            {/* General Record Payment if no specific debts */}
-            {theyOweYou === 0 && youOweThem === 0 && (
-              <Button 
-                onClick={onRecordPayment}
-                variant="outline"
-                className="flex-1 h-12"
-              >
-                <HandCoins className="w-4 h-4 mr-2" />
-                Record Payment
-              </Button>
-            )}
-          </div>
+          <TooltipProvider delayDuration={300}>
+            <div className="flex gap-3 mb-6">
+              {/* Receive Payment Button */}
+              {theyOweYou > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={onRecordPayment}
+                      className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
+                    >
+                      <ArrowDownLeft className="w-4 h-4 mr-2" />
+                      Received from {member.name}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800 max-w-xs">
+                    <p>Record a payment you received from {member.name} to reduce their debt</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              
+              {/* Pay to Member Button - NEW */}
+              {youOweThem > 0 && onPayToMember && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={onPayToMember}
+                      className="flex-1 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
+                    >
+                      <ArrowUpRight className="w-4 h-4 mr-2" />
+                      Pay to {member.name}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800 max-w-xs">
+                    <p>Pay the full amount (Rs {youOweThem.toLocaleString()}) you owe to {member.name}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              
+              {/* General Record Payment if no specific debts */}
+              {theyOweYou === 0 && youOweThem === 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={onRecordPayment}
+                      variant="outline"
+                      className="flex-1 h-12"
+                    >
+                      <HandCoins className="w-4 h-4 mr-2" />
+                      Record Payment
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800">
+                    <p>Record a payment between you and {member.name}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          </TooltipProvider>
 
           {/* Balance History Ledger */}
           <div className="space-y-3">
