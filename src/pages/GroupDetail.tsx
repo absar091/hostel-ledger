@@ -212,7 +212,7 @@ const GroupDetail = () => {
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate("/")}
-              className="w-10 h-10 rounded-full glass-card flex items-center justify-center hover:bg-cyan-500/10 transition-colors"
+              className="w-10 h-10 rounded-full glass-card flex items-center justify-center hover:bg-emerald-500/10 transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
@@ -229,7 +229,7 @@ const GroupDetail = () => {
             
             <button 
               onClick={() => setShowGroupSettings(true)}
-              className="w-10 h-10 rounded-full glass-card flex items-center justify-center hover:bg-cyan-500/10 transition-colors"
+              className="w-10 h-10 rounded-full glass-card flex items-center justify-center hover:bg-emerald-500/10 transition-colors"
             >
               <Settings className="w-5 h-5 text-foreground" />
             </button>
@@ -249,7 +249,7 @@ const GroupDetail = () => {
               className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === tab.id
                   ? "bg-primary text-primary-foreground"
-                  : "glass-card text-muted-foreground hover:bg-cyan-500/10"
+                  : "glass-card text-muted-foreground hover:bg-emerald-500/10"
               }`}
             >
               {tab.label}
@@ -311,7 +311,6 @@ const GroupDetail = () => {
                 setSettlementMember({
                   id: member.id,
                   name: member.name,
-                  avatar: member.paymentDetails?.avatar
                 });
                 setShowMemberSettlement(true);
               };
@@ -319,7 +318,7 @@ const GroupDetail = () => {
               return (
                 <div
                   key={member.id}
-                  className={`w-full glass-card p-4 animate-slide-up hover:bg-cyan-500/10 transition-colors`}
+                  className={`w-full glass-card p-4 animate-slide-up hover:bg-emerald-500/10 transition-colors`}
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div className="flex items-center gap-4">
@@ -334,12 +333,12 @@ const GroupDetail = () => {
                         ) : (
                           <div className="space-y-1">
                             {thisMemberOwesYou && (
-                              <div className="text-green-400">
+                              <div className="text-emerald-600">
                                 Owes you Rs {memberSettlement.toReceive.toLocaleString()}
                               </div>
                             )}
                             {youOweThisMember && (
-                              <div className="text-red-400">
+                              <div className="text-red-500">
                                 You owe Rs {memberSettlement.toPay.toLocaleString()}
                               </div>
                             )}
@@ -364,8 +363,11 @@ const GroupDetail = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleMemberClick(member)}
-                        className="p-2 hover:bg-cyan-500/10"
+                        onClick={() => handleMemberClick({
+                          ...member,
+                          balance: member.balance || 0
+                        })}
+                        className="p-2 hover:bg-emerald-500/10"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </Button>

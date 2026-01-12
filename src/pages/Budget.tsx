@@ -27,7 +27,7 @@ const Budget = () => {
   const [fundNote, setFundNote] = useState("");
   const [budgetEntries, setBudgetEntries] = useState<BudgetEntry[]>(() => {
     if (user) {
-      const saved = localStorage.getItem(`${BUDGET_KEY}_${user.id}`);
+      const saved = localStorage.getItem(`${BUDGET_KEY}_${user.uid}`);
       return saved ? JSON.parse(saved) : [];
     }
     return [];
@@ -85,7 +85,7 @@ const Budget = () => {
     const updated = [newEntry, ...budgetEntries];
     setBudgetEntries(updated);
     if (user) {
-      localStorage.setItem(`${BUDGET_KEY}_${user.id}`, JSON.stringify(updated));
+      localStorage.setItem(`${BUDGET_KEY}_${user.uid}`, JSON.stringify(updated));
     }
 
     setFundAmount("");
