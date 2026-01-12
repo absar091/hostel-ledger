@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Check, ChevronRight, AlertCircle } from "lucide-react";
@@ -206,8 +206,9 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
             {step === 4 && "Split Between"}
             {step === 5 && "Add Details"}
           </SheetTitle>
-          <div className="sr-only">
+          <SheetDescription className="text-center text-sm text-gray-500">
             Add a new expense to split between group members
+          </SheetDescription>
           </div>
         </SheetHeader>
 
