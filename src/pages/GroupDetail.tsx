@@ -482,9 +482,24 @@ const GroupDetail = () => {
             phone: selectedMember.phone,
           }}
           transactions={memberTransactions}
+          settlementInfo={{
+            theyOweYou: settlements[selectedMember.id]?.toReceive || 0,
+            youOweThem: settlements[selectedMember.id]?.toPay || 0,
+          }}
           onRecordPayment={() => {
             setShowMemberDetail(false);
             setShowRecordPayment(true);
+          }}
+          onPayToMember={() => {
+            // Pay your debt to this member
+            if (!currentUser || !selectedMember) return;
+            const amountYouOwe = settlements[selectedMember.id]?.toPay || 0;
+            if (amountYouOwe > 0) {
+              payMyDebt(group.id, selectedMember.id, amountYouOwe);
+              toast.success(`Paid Rs ${amountYouOwe} to ${selectedMember.name}`);
+              setShowMemberDetail(false);
+              setSelectedMember(null);
+            }
           }}
         />
       )}

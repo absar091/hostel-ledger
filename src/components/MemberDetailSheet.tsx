@@ -15,6 +15,11 @@ interface Transaction {
   balanceChange: number; // positive = they owe more, negative = you owe more
 }
 
+interface SettlementInfo {
+  theyOweYou: number;  // Amount they owe to you
+  youOweThem: number;  // Amount you owe to them
+}
+
 interface MemberDetailSheetProps {
   open: boolean;
   onClose: () => void;
@@ -31,22 +36,22 @@ interface MemberDetailSheetProps {
     phone?: string;
   } | null;
   transactions: Transaction[];
+  settlementInfo?: SettlementInfo;
   onRecordPayment: () => void;
+  onPayToMember?: () => void; // New: Pay your debt to member
 }
 
-// Calculate running balances for ledger view
+// Calculate running balances for ledger view - FIXED LOGIC
 const calculateBalanceHistory = (transactions: Transaction[], currentBalance: number) => {
-  // Work backwards from current balance
   const history: { transaction: Transaction; balanceBefore: number; balanceAfter: number }[] = [];
   
   let runningBalance = currentBalance;
   
   // Transactions are in reverse chronological order (newest first)
-  // So we work backwards to calculate the balance progression
+  // Work backwards to calculate the balance progression
   for (const transaction of transactions) {
     const balanceAfter = runningBalance;
-    // FIXED: Working backwards - if transaction improved balance by +100, 
-    // then previous balance was 100 worse (subtract the improvement)
+    // The balance before = current balance - the change that transaction made
     const balanceBefore = runningBalance - transaction.balanceChange;
     
     history.push({
@@ -62,29 +67,23 @@ const calculateBalanceHistory = (transactions: Transaction[], currentBalance: nu
   return history;
 };
 
-const formatBalance = (amount: number, memberName: string) => {
-  if (amount === 0) return "Settled";
-  if (amount > 0) return `${memberName} owes Rs ${amount}`;
-  return `You owe Rs ${Math.abs(amount)}`;
-};
-
 const MemberDetailSheet = ({ 
   open, 
   onClose, 
   member, 
   transactions,
-  onRecordPayment 
+  settlementInfo,
+  onRecordPayment,
+  onPayToMember
 }: MemberDetailSheetProps) => {
   if (!member) return null;
 
-  const isPositive = member.balance >= 0;
-  const balanceText = member.balance === 0
-    ? "All settled up!"
-    : isPositive
-    ? `${member.name} owes you`
-    : `You owe ${member.name}`;
+  // Use settlementInfo if provided, otherwise fallback to balance
+  const theyOweYou = settlementInfo?.theyOweYou || (member.balance > 0 ? member.balance : 0);
+  const youOweThem = settlementInfo?.youOweThem || (member.balance < 0 ? Math.abs(member.balance) : 0);
+  const netBalance = theyOweYou - youOweThem; // Positive = they owe you net
 
-  const balanceHistory = calculateBalanceHistory(transactions, member.balance);
+  const balanceHistory = calculateBalanceHistory(transactions, netBalance);
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
@@ -94,16 +93,27 @@ const MemberDetailSheet = ({
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto pb-4">
-          {/* Member Summary */}
+          {/* Member Summary with Separate Debt Display */}
           <div className="flex flex-col items-center mb-6">
             <Avatar name={member.name} size="lg" />
             <h2 className="text-xl font-bold mt-3 text-gray-900">{member.name}</h2>
-            <p className="text-gray-500 text-sm">{balanceText}</p>
-            {member.balance !== 0 && (
-              <div className={`text-2xl font-bold mt-2 ${isPositive ? "text-emerald-600" : "text-red-600"}`}>
-                Rs {Math.abs(member.balance)}
-              </div>
-            )}
+            
+            {/* Separate Debt Display - NOT auto-balanced */}
+            <div className="mt-3 space-y-2 text-center">
+              {theyOweYou > 0 && (
+                <div className="text-emerald-600 font-semibold">
+                  {member.name} owes you: Rs {theyOweYou.toLocaleString()}
+                </div>
+              )}
+              {youOweThem > 0 && (
+                <div className="text-red-600 font-semibold">
+                  You owe {member.name}: Rs {youOweThem.toLocaleString()}
+                </div>
+              )}
+              {theyOweYou === 0 && youOweThem === 0 && (
+                <div className="text-gray-500">✅ All settled up!</div>
+              )}
+            </div>
           </div>
 
           {/* Payment Details */}
@@ -139,23 +149,39 @@ const MemberDetailSheet = ({
             </div>
           )}
 
-          {/* Quick Actions */}
+          {/* Quick Actions - Both directions now available */}
           <div className="flex gap-3 mb-6">
-            <Button 
-              onClick={onRecordPayment}
-              className="flex-1 h-12"
-              variant={isPositive ? "default" : "outline"}
-            >
-              <ArrowDownLeft className="w-4 h-4 mr-2" />
-              {isPositive ? "Received from them" : "Record Payment"}
-            </Button>
-            {!isPositive && member.balance !== 0 && (
+            {/* Receive Payment Button */}
+            {theyOweYou > 0 && (
               <Button 
                 onClick={onRecordPayment}
-                className="flex-1 h-12"
+                className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
+              >
+                <ArrowDownLeft className="w-4 h-4 mr-2" />
+                Received from {member.name}
+              </Button>
+            )}
+            
+            {/* Pay to Member Button - NEW */}
+            {youOweThem > 0 && onPayToMember && (
+              <Button 
+                onClick={onPayToMember}
+                className="flex-1 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
               >
                 <ArrowUpRight className="w-4 h-4 mr-2" />
-                Pay {member.name}
+                Pay to {member.name}
+              </Button>
+            )}
+            
+            {/* General Record Payment if no specific debts */}
+            {theyOweYou === 0 && youOweThem === 0 && (
+              <Button 
+                onClick={onRecordPayment}
+                variant="outline"
+                className="flex-1 h-12"
+              >
+                <HandCoins className="w-4 h-4 mr-2" />
+                Record Payment
               </Button>
             )}
           </div>
@@ -219,27 +245,33 @@ const MemberDetailSheet = ({
                     </div>
                   </div>
 
-                  {/* Balance Change Ledger */}
+                  {/* Balance Change Ledger - Clearer format */}
                   <div className="bg-gray-50 rounded-lg p-3 mt-2">
                     <div className="flex items-center justify-between text-sm">
                       <div className="text-center flex-1">
-                        <p className="text-gray-500 text-xs mb-1">Previous</p>
+                        <p className="text-gray-500 text-xs mb-1">Before</p>
                         <p className={`font-medium ${balanceBefore > 0 ? "text-emerald-600" : balanceBefore < 0 ? "text-red-600" : "text-gray-500"}`}>
-                          {balanceBefore === 0 ? "Settled" : balanceBefore > 0 ? `+Rs ${balanceBefore}` : `-Rs ${Math.abs(balanceBefore)}`}
+                          {balanceBefore === 0 ? "Settled" : 
+                           balanceBefore > 0 ? `They owe Rs ${balanceBefore}` : 
+                           `You owe Rs ${Math.abs(balanceBefore)}`}
                         </p>
                       </div>
                       <ArrowRight className="w-4 h-4 text-gray-400 mx-2" />
                       <div className="text-center flex-1">
                         <p className="text-gray-500 text-xs mb-1">Change</p>
                         <p className={`font-medium ${transaction.balanceChange > 0 ? "text-emerald-600" : transaction.balanceChange < 0 ? "text-red-600" : "text-gray-500"}`}>
-                          {transaction.balanceChange > 0 ? `+Rs ${transaction.balanceChange}` : transaction.balanceChange < 0 ? `-Rs ${Math.abs(transaction.balanceChange)}` : "Rs 0"}
+                          {transaction.balanceChange > 0 ? `+Rs ${transaction.balanceChange}` : 
+                           transaction.balanceChange < 0 ? `-Rs ${Math.abs(transaction.balanceChange)}` : 
+                           "Rs 0"}
                         </p>
                       </div>
                       <ArrowRight className="w-4 h-4 text-gray-400 mx-2" />
                       <div className="text-center flex-1">
-                        <p className="text-gray-500 text-xs mb-1">Updated</p>
+                        <p className="text-gray-500 text-xs mb-1">After</p>
                         <p className={`font-medium ${balanceAfter > 0 ? "text-emerald-600" : balanceAfter < 0 ? "text-red-600" : "text-gray-500"}`}>
-                          {balanceAfter === 0 ? "Settled" : balanceAfter > 0 ? `+Rs ${balanceAfter}` : `-Rs ${Math.abs(balanceAfter)}`}
+                          {balanceAfter === 0 ? "Settled" : 
+                           balanceAfter > 0 ? `They owe Rs ${balanceAfter}` : 
+                           `You owe Rs ${Math.abs(balanceAfter)}`}
                         </p>
                       </div>
                     </div>
