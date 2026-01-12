@@ -23,10 +23,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center mobile-padding">
-        <div className="glass-card p-8 text-center">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <div className="text-muted-foreground">Loading your data...</div>
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center mobile-padding">
+        <div className="bg-white rounded-2xl p-8 text-center shadow-lg border border-gray-100">
+          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="text-gray-500">Loading your data...</div>
         </div>
       </div>
     );
@@ -45,10 +45,10 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center mobile-padding">
-        <div className="glass-card p-8 text-center">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <div className="text-muted-foreground">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center mobile-padding">
+        <div className="bg-white rounded-2xl p-8 text-center shadow-lg border border-gray-100">
+          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="text-gray-500">Loading...</div>
         </div>
       </div>
     );
@@ -76,7 +76,7 @@ const AppRoutes = () => (
 
 const App = () => (
   <ErrorBoundary>
-    <div className="dark min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
