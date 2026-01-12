@@ -687,6 +687,15 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       const newTransactionRef = push(transactionsRef);
       const transactionId = newTransactionRef.key!;
 
+      // FIXED: Calculate proper wallet balance after payment
+      // If current user is receiving money, balance increases
+      // If current user is paying, balance decreases
+      const isReceiving = data.toMember === user.uid;
+      const walletBalanceBefore = user.walletBalance || 0;
+      const walletBalanceAfter = isReceiving 
+        ? walletBalanceBefore + sanitizedAmount 
+        : walletBalanceBefore - sanitizedAmount;
+
       const newTransaction: Transaction = {
         id: transactionId,
         groupId: data.groupId,
@@ -706,7 +715,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         toName: toPerson.name,
         method: data.method,
         note: sanitizedNote,
-        walletBalanceAfter: user.walletBalance, // This will be updated by settlement functions
+        walletBalanceBefore: walletBalanceBefore,
+        walletBalanceAfter: walletBalanceAfter,
         createdAt: new Date().toISOString(),
       };
 
