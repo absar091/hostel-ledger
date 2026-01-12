@@ -132,6 +132,9 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
       <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl flex flex-col">
         <SheetHeader className="flex-shrink-0 mb-4">
           <SheetTitle className="text-center">Create New Group</SheetTitle>
+          <div className="sr-only">
+            Create a new group to split expenses with friends or roommates
+          </div>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto space-y-5 pb-4">

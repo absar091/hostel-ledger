@@ -2,13 +2,22 @@ import { useState, useMemo, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, Banknote, Smartphone, ChevronRight } from "lucide-react";
+import { Check, Banknote, Smartphone, ChevronRight, Info, CreditCard } from "lucide-react";
 import Avatar from "./Avatar";
 import { cn } from "@/lib/utils";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 
 interface Member {
   id: string;
   name: string;
+  paymentDetails?: {
+    jazzCash?: string;
+    easypaisa?: string;
+    bankName?: string;
+    accountNumber?: string;
+    raastId?: string;
+  };
+  phone?: string;
 }
 
 interface Group {
@@ -32,6 +41,7 @@ interface RecordPaymentSheetProps {
 }
 
 const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSheetProps) => {
+  const { getSettlements } = useFirebaseAuth();
   const [step, setStep] = useState(1);
   const [selectedGroup, setSelectedGroup] = useState("");
   const [fromMember, setFromMember] = useState("");
@@ -44,6 +54,28 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
     const group = groups.find((g) => g.id === selectedGroup);
     return group?.members.filter((m) => m.name !== "You") || [];
   }, [groups, selectedGroup]);
+
+  // Get settlement data for selected group
+  const settlements = selectedGroup ? getSettlements(selectedGroup) : {};
+  
+  // Get selected member's details including settlement info
+  const selectedMemberData = useMemo(() => {
+    if (!fromMember || !selectedGroup) return null;
+    
+    const member = otherMembers.find(m => m.id === fromMember);
+    if (!member) return null;
+    
+    const settlement = settlements[fromMember] || { toReceive: 0, toPay: 0 };
+    const group = groups.find(g => g.id === selectedGroup);
+    const fullMember = group?.members.find(m => m.id === fromMember);
+    
+    return {
+      ...member,
+      settlement,
+      paymentDetails: fullMember?.paymentDetails,
+      phone: fullMember?.phone
+    };
+  }, [fromMember, selectedGroup, otherMembers, settlements, groups]);
 
   // Auto-select group if only one exists
   useEffect(() => {
@@ -121,6 +153,9 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
             {step === 2 && "Who Paid You?"}
             {step === 3 && "Payment Details"}
           </SheetTitle>
+          <div className="sr-only">
+            Record a payment received from a group member
+          </div>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto space-y-6 pb-4">
@@ -173,26 +208,46 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 Who sent you money?
               </p>
               <div className="space-y-2">
-                {otherMembers.map((member) => (
-                  <button
-                    key={member.id}
-                    onClick={() => setFromMember(member.id)}
-                    className={cn(
-                      "w-full flex items-center gap-4 p-4 rounded-xl transition-all",
-                      fromMember === member.id
-                        ? "bg-positive/10 border-2 border-positive"
-                        : "bg-secondary hover:bg-secondary/80"
-                    )}
-                  >
-                    <Avatar name={member.name} />
-                    <span className="font-medium flex-1 text-left">{member.name}</span>
-                    {fromMember === member.id && (
-                      <div className="w-6 h-6 rounded-full bg-positive flex items-center justify-center">
-                        <Check className="w-4 h-4 text-primary-foreground" />
+                {otherMembers.map((member) => {
+                  const settlement = settlements[member.id] || { toReceive: 0, toPay: 0 };
+                  const owesYou = settlement.toReceive > 0;
+                  const youOwe = settlement.toPay > 0;
+                  const isSettled = settlement.toReceive === 0 && settlement.toPay === 0;
+                  
+                  return (
+                    <button
+                      key={member.id}
+                      onClick={() => setFromMember(member.id)}
+                      className={cn(
+                        "w-full flex items-center gap-4 p-4 rounded-xl transition-all",
+                        fromMember === member.id
+                          ? "bg-positive/10 border-2 border-positive"
+                          : "bg-secondary hover:bg-secondary/80"
+                      )}
+                    >
+                      <Avatar name={member.name} />
+                      <div className="flex-1 text-left">
+                        <div className="font-medium">{member.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {isSettled ? (
+                            "✅ All settled"
+                          ) : owesYou ? (
+                            <span className="text-green-400">Owes you Rs {settlement.toReceive.toLocaleString()}</span>
+                          ) : youOwe ? (
+                            <span className="text-red-400">You owe Rs {settlement.toPay.toLocaleString()}</span>
+                          ) : (
+                            "No pending settlements"
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </button>
-                ))}
+                      {fromMember === member.id && (
+                        <div className="w-6 h-6 rounded-full bg-positive flex items-center justify-center">
+                          <Check className="w-4 h-4 text-primary-foreground" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -200,6 +255,83 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
           {/* Step 3: Amount and details */}
           {step === 3 && (
             <div className="space-y-6 animate-fade-in">
+              {/* Member Details Card */}
+              {selectedMemberData && (
+                <div className="glass-card p-4 bg-cyan-500/10 border-cyan-400/20">
+                  <div className="flex items-start gap-3 mb-3">
+                    <Avatar name={selectedMemberData.name} size="md" />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground">{selectedMemberData.name}</h3>
+                      <div className="text-sm text-muted-foreground">
+                        {selectedMemberData.settlement.toReceive > 0 ? (
+                          <span className="text-green-400">
+                            💰 Owes you Rs {selectedMemberData.settlement.toReceive.toLocaleString()}
+                          </span>
+                        ) : selectedMemberData.settlement.toPay > 0 ? (
+                          <span className="text-red-400">
+                            💸 You owe Rs {selectedMemberData.settlement.toPay.toLocaleString()}
+                          </span>
+                        ) : (
+                          <span className="text-cyan-400">✅ All settled up</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Payment Details */}
+                  {selectedMemberData.paymentDetails && Object.keys(selectedMemberData.paymentDetails).length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-cyan-400/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CreditCard className="w-4 h-4 text-cyan-400" />
+                        <span className="text-sm font-medium text-cyan-400">Payment Details</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        {selectedMemberData.paymentDetails.jazzCash && (
+                          <div>
+                            <span className="text-muted-foreground">JazzCash:</span>
+                            <div className="font-mono text-foreground">{selectedMemberData.paymentDetails.jazzCash}</div>
+                          </div>
+                        )}
+                        {selectedMemberData.paymentDetails.easypaisa && (
+                          <div>
+                            <span className="text-muted-foreground">Easypaisa:</span>
+                            <div className="font-mono text-foreground">{selectedMemberData.paymentDetails.easypaisa}</div>
+                          </div>
+                        )}
+                        {selectedMemberData.paymentDetails.bankName && (
+                          <div>
+                            <span className="text-muted-foreground">Bank:</span>
+                            <div className="font-mono text-foreground">{selectedMemberData.paymentDetails.bankName}</div>
+                          </div>
+                        )}
+                        {selectedMemberData.paymentDetails.accountNumber && (
+                          <div>
+                            <span className="text-muted-foreground">Account:</span>
+                            <div className="font-mono text-foreground">{selectedMemberData.paymentDetails.accountNumber}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Quick Amount Suggestion */}
+                  {selectedMemberData.settlement.toReceive > 0 && (
+                    <div className="mt-3 pt-3 border-t border-cyan-400/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Info className="w-4 h-4 text-cyan-400" />
+                        <span className="text-sm font-medium text-cyan-400">Quick Fill</span>
+                      </div>
+                      <button
+                        onClick={() => setAmount(selectedMemberData.settlement.toReceive.toString())}
+                        className="text-xs bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 px-3 py-1 rounded-lg transition-colors"
+                      >
+                        Full Amount: Rs {selectedMemberData.settlement.toReceive.toLocaleString()}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Amount */}
               <div>
                 <label className="text-sm font-medium text-muted-foreground mb-3 block">

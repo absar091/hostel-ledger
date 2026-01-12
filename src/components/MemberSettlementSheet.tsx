@@ -14,9 +14,10 @@ interface MemberSettlementSheetProps {
     name: string;
     avatar?: string;
   };
+  groupId: string; // ADDED: Group context for proper settlement tracking
 }
 
-const MemberSettlementSheet = ({ open, onClose, member }: MemberSettlementSheetProps) => {
+const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlementSheetProps) => {
   const { getSettlements, markPaymentReceived, markDebtPaid } = useFirebaseAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [customReceiveAmount, setCustomReceiveAmount] = useState("");
@@ -24,7 +25,8 @@ const MemberSettlementSheet = ({ open, onClose, member }: MemberSettlementSheetP
   const [showCustomReceive, setShowCustomReceive] = useState(false);
   const [showCustomPay, setShowCustomPay] = useState(false);
   
-  const settlements = getSettlements();
+  // FIXED: Get group-specific settlements instead of aggregated
+  const settlements = getSettlements(groupId);
   const memberSettlement = settlements[member.id] || { toReceive: 0, toPay: 0 };
   
   const handleMarkReceived = async (amount?: number) => {
@@ -33,7 +35,8 @@ const MemberSettlementSheet = ({ open, onClose, member }: MemberSettlementSheetP
     
     setIsProcessing(true);
     try {
-      const result = await markPaymentReceived(member.id, finalAmount);
+      // FIXED: Pass groupId as first parameter
+      const result = await markPaymentReceived(groupId, member.id, finalAmount);
       if (result.success) {
         setCustomReceiveAmount("");
         setShowCustomReceive(false);
@@ -55,7 +58,8 @@ const MemberSettlementSheet = ({ open, onClose, member }: MemberSettlementSheetP
     
     setIsProcessing(true);
     try {
-      const result = await markDebtPaid(member.id, finalAmount);
+      // FIXED: Pass groupId as first parameter
+      const result = await markDebtPaid(groupId, member.id, finalAmount);
       if (result.success) {
         setCustomPayAmount("");
         setShowCustomPay(false);

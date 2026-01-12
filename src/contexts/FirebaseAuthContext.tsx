@@ -7,8 +7,11 @@ import {
   onAuthStateChanged,
   updateProfile
 } from "firebase/auth";
-import { ref, set, get, update, push } from "firebase/database";
+import { ref, set, get, update, push, onValue, off } from "firebase/database";
 import { auth, database } from "@/lib/firebase";
+import { logger } from "@/lib/logger";
+import { validateAmount, sanitizeString, sanitizeAmount } from "@/lib/validation";
+import { retryOperation } from "@/lib/transaction";
 
 export interface PaymentDetails {
   jazzCash?: string;
@@ -26,7 +29,7 @@ export interface UserProfile {
   avatar?: string | null;
   paymentDetails: PaymentDetails;
   walletBalance: number; // Available Budget (actual money you have)
-  settlements: { [personId: string]: { toReceive: number; toPay: number } }; // Enterprise settlement tracking
+  settlements: { [groupId: string]: { [personId: string]: { toReceive: number; toPay: number } } }; // CORRECTED: Group-aware settlement tracking
   createdAt: string;
 }
 
@@ -41,15 +44,15 @@ interface FirebaseAuthContextType {
   addMoneyToWallet: (amount: number) => Promise<{ success: boolean; error?: string }>;
   deductMoneyFromWallet: (amount: number) => Promise<{ success: boolean; error?: string }>;
   getWalletBalance: () => number;
-  getSettlements: () => { [personId: string]: { toReceive: number; toPay: number } };
-  getTotalToReceive: () => number;
-  getTotalToPay: () => number;
-  getSettlementDelta: () => number;
-  updateSettlement: (personId: string, toReceive: number, toPay: number) => Promise<{ success: boolean; error?: string }>;
-  addToReceivable: (personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
-  addToPayable: (personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
-  markPaymentReceived: (personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
-  markDebtPaid: (personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
+  getSettlements: (groupId?: string) => { [personId: string]: { toReceive: number; toPay: number } };
+  getTotalToReceive: (groupId?: string) => number;
+  getTotalToPay: (groupId?: string) => number;
+  getSettlementDelta: (groupId?: string) => number;
+  updateSettlement: (groupId: string, personId: string, toReceive: number, toPay: number) => Promise<{ success: boolean; error?: string }>;
+  addToReceivable: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
+  addToPayable: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
+  markPaymentReceived: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
+  markDebtPaid: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
 }
 
 const FirebaseAuthContext = createContext<FirebaseAuthContextType | undefined>(undefined);
@@ -76,13 +79,13 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = async (uid: string) => {
     try {
-      console.log("🔥 Fetching user profile for UID:", uid); // Debug log
+      logger.debug("Fetching user profile", { uid });
       const userRef = ref(database, `users/${uid}`);
-      const snapshot = await get(userRef);
+      const snapshot = await retryOperation(() => get(userRef));
       
       if (snapshot.exists()) {
         const userData = snapshot.val();
-        console.log("🔥 Raw user data from database:", userData); // Debug log
+        logger.debug("User profile loaded from database", { uid });
         const userProfile: UserProfile = {
           uid,
           email: userData.email,
@@ -90,17 +93,16 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           phone: userData.phone,
           avatar: userData.avatar,
           paymentDetails: userData.paymentDetails || {},
-          walletBalance: userData.walletBalance || 0,
-          settlements: userData.settlements || {}, // Initialize settlements
+          walletBalance: isNaN(userData.walletBalance) ? 0 : (userData.walletBalance || 0),
+          settlements: userData.settlements || {},
           createdAt: userData.createdAt
         };
-        setUser(userProfile);
-        console.log("🔥 User profile loaded successfully:", userProfile); // Debug log
-      } else {
-        console.log("🔥 No user profile found in database for UID:", uid); // Debug log
-        console.log("🔥 Creating user profile from Firebase Auth data..."); // Debug log
         
-        // Create user profile from Firebase Auth data
+        setUser(userProfile);
+        logger.setUserId(uid);
+      } else {
+        logger.info("Creating new user profile", { uid });
+        
         const firebaseUser = auth.currentUser;
         if (firebaseUser) {
           const newUserProfile: UserProfile = {
@@ -111,21 +113,21 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
             avatar: null,
             paymentDetails: {},
             walletBalance: 0,
-            settlements: {}, // Initialize empty settlements
+            settlements: {},
             createdAt: new Date().toISOString()
           };
           
-          // Save to database
-          await set(userRef, newUserProfile);
+          await retryOperation(() => set(userRef, newUserProfile));
           setUser(newUserProfile);
-          console.log("🔥 User profile created successfully:", newUserProfile); // Debug log
+          logger.setUserId(uid);
+          logger.info("User profile created successfully", { uid });
         } else {
-          console.log("🔥 No Firebase user found, cannot create profile"); // Debug log
+          logger.warn("No Firebase user found, cannot create profile");
           setUser(null);
         }
       }
-    } catch (error) {
-      console.error("🔥 Error fetching/creating user profile:", error);
+    } catch (error: any) {
+      logger.error("Error fetching/creating user profile", { uid, error: error.message });
       setUser(null);
     }
   };
@@ -133,19 +135,14 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true);
-      console.log("🔥 Attempting login for:", email); // Debug log
+      logger.info("Login attempt", { email });
       
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log("🔥 Firebase login successful, UID:", userCredential.user.uid); // Debug log
-      console.log("🔥 Firebase user object:", userCredential.user); // Debug log
+      logger.info("Login successful", { uid: userCredential.user.uid });
       
-      // The onAuthStateChanged listener will handle fetching the profile
-      // So we don't need to manually call fetchUserProfile here
-      
-      console.log("🔥 Login process completed, waiting for auth state change"); // Debug log
       return { success: true };
     } catch (error: any) {
-      console.error("Login error:", error);
+      logger.error("Login failed", { email, error: error.message });
       let errorMessage = "Login failed";
       
       switch (error.code) {
@@ -273,17 +270,23 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addMoneyToWallet = async (amount: number): Promise<{ success: boolean; error?: string }> => {
-    if (!user || amount <= 0) {
-      return { success: false, error: "Invalid amount or user not authenticated" };
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const validation = validateAmount(amount);
+    if (!validation.isValid) {
+      return { success: false, error: validation.errors.join(", ") };
     }
 
     try {
-      const newWalletBalance = user.walletBalance + amount;
+      const sanitizedAmount = sanitizeAmount(amount);
+      const newWalletBalance = user.walletBalance + sanitizedAmount;
       
       const userRef = ref(database, `users/${user.uid}`);
-      await update(userRef, { 
+      await retryOperation(() => update(userRef, { 
         walletBalance: newWalletBalance
-      });
+      }));
       
       // Update local state
       setUser(prev => prev ? { 
@@ -291,9 +294,10 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         walletBalance: newWalletBalance
       } : null);
       
+      logger.logTransaction("wallet_add", sanitizedAmount, true);
       return { success: true };
     } catch (error: any) {
-      console.error("Add money error:", error);
+      logger.error("Add money to wallet failed", { amount, error: error.message });
       return { success: false, error: error.message || "Failed to add money" };
     }
   };
@@ -322,47 +326,90 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Enterprise-grade settlement management functions
+  // CORRECTED: Enterprise-grade settlement management functions with group awareness
   const getWalletBalance = (): number => {
-    return user?.walletBalance || 0;
+    const balance = user?.walletBalance || 0;
+    return isNaN(balance) ? 0 : balance;
   };
 
-  const getSettlements = (): { [personId: string]: { toReceive: number; toPay: number } } => {
-    return user?.settlements || {};
+  const getSettlements = (groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
+    if (!user?.settlements) return {};
+    
+    if (groupId) {
+      // Return settlements for specific group
+      return user.settlements[groupId] || {};
+    } else {
+      // Return aggregated settlements across all groups
+      const aggregated: { [personId: string]: { toReceive: number; toPay: number } } = {};
+      
+      Object.values(user.settlements).forEach(groupSettlements => {
+        Object.entries(groupSettlements).forEach(([personId, settlement]) => {
+          if (!aggregated[personId]) {
+            aggregated[personId] = { toReceive: 0, toPay: 0 };
+          }
+          aggregated[personId].toReceive += settlement.toReceive;
+          aggregated[personId].toPay += settlement.toPay;
+        });
+      });
+      
+      return aggregated;
+    }
   };
 
-  const getTotalToReceive = (): number => {
-    if (!user?.settlements) return 0;
-    return Object.values(user.settlements).reduce((sum, settlement) => sum + settlement.toReceive, 0);
+  const getTotalToReceive = (groupId?: string): number => {
+    const settlements = getSettlements(groupId);
+    if (!settlements || Object.keys(settlements).length === 0) return 0;
+    
+    return Object.values(settlements).reduce((sum, settlement) => {
+      const amount = settlement?.toReceive || 0;
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
   };
 
-  const getTotalToPay = (): number => {
-    if (!user?.settlements) return 0;
-    return Object.values(user.settlements).reduce((sum, settlement) => sum + settlement.toPay, 0);
+  const getTotalToPay = (groupId?: string): number => {
+    const settlements = getSettlements(groupId);
+    if (!settlements || Object.keys(settlements).length === 0) return 0;
+    
+    return Object.values(settlements).reduce((sum, settlement) => {
+      const amount = settlement?.toPay || 0;
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
   };
 
-  const getSettlementDelta = (): number => {
-    return getTotalToReceive() - getTotalToPay();
+  const getSettlementDelta = (groupId?: string): number => {
+    const toReceive = getTotalToReceive(groupId);
+    const toPay = getTotalToPay(groupId);
+    
+    if (isNaN(toReceive) || isNaN(toPay)) return 0;
+    return toReceive - toPay;
   };
 
-  const updateSettlement = async (personId: string, toReceive: number, toPay: number): Promise<{ success: boolean; error?: string }> => {
+  const updateSettlement = async (groupId: string, personId: string, toReceive: number, toPay: number): Promise<{ success: boolean; error?: string }> => {
     if (!user) {
       return { success: false, error: "User not authenticated" };
     }
 
     try {
-      const userRef = ref(database, `users/${user.uid}/settlements/${personId}`);
+      const userRef = ref(database, `users/${user.uid}/settlements/${groupId}/${personId}`);
       const settlement = { toReceive: Math.max(0, toReceive), toPay: Math.max(0, toPay) };
+      
       await set(userRef, settlement);
       
       // Update local state
-      setUser(prev => prev ? { 
-        ...prev, 
-        settlements: { 
-          ...prev.settlements, 
-          [personId]: settlement 
-        } 
-      } : null);
+      setUser(prev => {
+        if (!prev) return null;
+        
+        const newSettlements = { ...prev.settlements };
+        if (!newSettlements[groupId]) {
+          newSettlements[groupId] = {};
+        }
+        newSettlements[groupId][personId] = settlement;
+        
+        return { 
+          ...prev, 
+          settlements: newSettlements
+        };
+      });
       
       return { success: true };
     } catch (error: any) {
@@ -371,34 +418,40 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addToReceivable = async (personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
+  const addToReceivable = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
     if (!user || amount <= 0) {
       return { success: false, error: "Invalid amount or user not authenticated" };
     }
 
-    const currentSettlement = user.settlements[personId] || { toReceive: 0, toPay: 0 };
-    return await updateSettlement(personId, currentSettlement.toReceive + amount, currentSettlement.toPay);
+    const groupSettlements = user.settlements[groupId] || {};
+    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
+    
+    const result = await updateSettlement(groupId, personId, currentSettlement.toReceive + amount, currentSettlement.toPay);
+    
+    return result;
   };
 
-  const addToPayable = async (personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
+  const addToPayable = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
     if (!user || amount <= 0) {
       return { success: false, error: "Invalid amount or user not authenticated" };
     }
 
-    const currentSettlement = user.settlements[personId] || { toReceive: 0, toPay: 0 };
-    return await updateSettlement(personId, currentSettlement.toReceive, currentSettlement.toPay + amount);
+    const groupSettlements = user.settlements[groupId] || {};
+    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
+    return await updateSettlement(groupId, personId, currentSettlement.toReceive, currentSettlement.toPay + amount);
   };
 
-  const markPaymentReceived = async (personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
+  const markPaymentReceived = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
     if (!user || amount <= 0) {
       return { success: false, error: "Invalid amount or user not authenticated" };
     }
 
-    const currentSettlement = user.settlements[personId] || { toReceive: 0, toPay: 0 };
+    const groupSettlements = user.settlements[groupId] || {};
+    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
     
     // Allow partial payments - don't require exact amount
     if (currentSettlement.toReceive <= 0) {
-      return { success: false, error: "No pending receivables from this person" };
+      return { success: false, error: "No pending receivables from this person in this group" };
     }
 
     // Allow paying more than owed (in case of overpayment)
@@ -412,7 +465,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Step 2: Reduce receivable amount
-      await updateSettlement(personId, currentSettlement.toReceive - actualAmount, currentSettlement.toPay);
+      await updateSettlement(groupId, personId, currentSettlement.toReceive - actualAmount, currentSettlement.toPay);
       
       // Step 3: Create transaction record
       const transactionsRef = ref(database, 'transactions');
@@ -421,7 +474,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       const paymentTransaction = {
         id: transactionId,
-        groupId: "settlement", // Special groupId for direct settlements
+        groupId: groupId, // CORRECTED: Use actual group ID instead of "settlement"
         type: "payment" as const,
         title: "Payment Received",
         amount: actualAmount,
@@ -438,6 +491,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         toName: user.name,
         method: "cash" as const,
         note: `Payment received from settlement`,
+        walletBalanceBefore: user.walletBalance,
         walletBalanceAfter: user.walletBalance + actualAmount,
         createdAt: new Date().toISOString(),
       };
@@ -455,16 +509,17 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const markDebtPaid = async (personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
+  const markDebtPaid = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
     if (!user || amount <= 0) {
       return { success: false, error: "Invalid amount or user not authenticated" };
     }
 
-    const currentSettlement = user.settlements[personId] || { toReceive: 0, toPay: 0 };
+    const groupSettlements = user.settlements[groupId] || {};
+    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
     
     // Allow partial payments - don't require exact amount
     if (currentSettlement.toPay <= 0) {
-      return { success: false, error: "No pending debts to this person" };
+      return { success: false, error: "No pending debts to this person in this group" };
     }
 
     // Allow paying more than owed (in case of overpayment)
@@ -478,7 +533,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Step 2: Reduce payable amount
-      await updateSettlement(personId, currentSettlement.toReceive, currentSettlement.toPay - actualAmount);
+      await updateSettlement(groupId, personId, currentSettlement.toReceive, currentSettlement.toPay - actualAmount);
       
       // Step 3: Create transaction record
       const transactionsRef = ref(database, 'transactions');
@@ -487,7 +542,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       const paymentTransaction = {
         id: transactionId,
-        groupId: "settlement", // Special groupId for direct settlements
+        groupId: groupId, // CORRECTED: Use actual group ID instead of "settlement"
         type: "payment" as const,
         title: "Debt Payment",
         amount: actualAmount,
@@ -504,6 +559,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         toName: "Member",
         method: "online" as const,
         note: `Debt payment from wallet`,
+        walletBalanceBefore: user.walletBalance,
         walletBalanceAfter: user.walletBalance - actualAmount,
         createdAt: new Date().toISOString(),
       };

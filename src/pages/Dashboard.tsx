@@ -1,8 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import MetricCard from "@/components/enterprise/MetricCard";
-import EnterpriseButton from "@/components/enterprise/EnterpriseButton";
-import TransactionItem from "@/components/enterprise/TransactionItem";
+import { ArrowUpRight, ArrowDownLeft, Plus, TrendingUp, TrendingDown, Calendar, User, CreditCard, Users } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
 import RecordPaymentSheet from "@/components/RecordPaymentSheet";
@@ -11,15 +9,15 @@ import AddMoneySheet from "@/components/AddMoneySheet";
 import PaymentConfirmationSheet from "@/components/PaymentConfirmationSheet";
 import ErrorAlert from "@/components/ErrorAlert";
 import SuccessAlert from "@/components/SuccessAlert";
+import FirebasePermissionTest from "@/components/FirebasePermissionTest";
 import { toast } from "sonner";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
-import "@/styles/design-system.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, getWalletBalance, getSettlements, getTotalToReceive, getTotalToPay, getSettlementDelta } = useFirebaseAuth();
-  const { groups, transactions, isLoading, createGroup, addExpense, recordPayment, addMoneyToWallet, payMyDebt, getAllTransactions } = useFirebaseData();
+  const { groups, createGroup, addExpense, recordPayment, addMoneyToWallet, payMyDebt, getAllTransactions } = useFirebaseData();
   
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("home");
   const [showAddExpense, setShowAddExpense] = useState(false);
@@ -27,6 +25,7 @@ const Dashboard = () => {
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [showAddMoney, setShowAddMoney] = useState(false);
   const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [selectedMemberForPayment, setSelectedMemberForPayment] = useState<{
     id: string;
     name: string;
@@ -45,25 +44,6 @@ const Dashboard = () => {
   const settlementDelta = getSettlementDelta();
   const totalToReceive = getTotalToReceive();
   const totalToPay = getTotalToPay();
-
-  // Calculate totals from all groups (keeping for backward compatibility)
-  const { totalReceive, totalOwe } = useMemo(() => {
-    let receive = 0;
-    let owe = 0;
-
-    groups.forEach((group) => {
-      const currentUserMember = group.members.find((m) => m.isCurrentUser);
-      if (currentUserMember) {
-        if (currentUserMember.balance > 0) {
-          receive += currentUserMember.balance;
-        } else {
-          owe += Math.abs(currentUserMember.balance);
-        }
-      }
-    });
-
-    return { totalReceive: receive, totalOwe: owe };
-  }, [groups]);
 
   // Prepare groups data for sheets
   const groupsForSheets = useMemo(() => {
@@ -85,6 +65,8 @@ const Dashboard = () => {
       }
     } else if (tab === "profile") {
       navigate("/profile");
+    } else if (tab === "groups") {
+      navigate("/groups");
     } else {
       setActiveTab(tab);
     }
@@ -109,10 +91,6 @@ const Dashboard = () => {
   };
   
   const handleNewGroup = () => setShowCreateGroup(true);
-
-  const handleGroupClick = (groupId: string) => {
-    navigate(`/group/${groupId}`);
-  };
 
   const handleExpenseSubmit = async (data: {
     groupId: string;
@@ -185,7 +163,6 @@ const Dashboard = () => {
     }
   };
 
-
   const handleGroupSubmit = async (data: {
     name: string;
     emoji: string;
@@ -244,40 +221,6 @@ const Dashboard = () => {
     return result;
   };
 
-  // Find members you owe money to (using new settlement system)
-  const membersYouOwe = useMemo(() => {
-    const owedMembers: Array<{ id: string; name: string; amount: number; groupId?: string }> = [];
-    
-    // Get debts from settlement system
-    Object.entries(settlements).forEach(([personId, settlement]) => {
-      if (settlement.toPay > 0) {
-        // Find the person's name from groups
-        let personName = "Unknown Member";
-        let groupId = "";
-        
-        groups.forEach(group => {
-          const member = group.members.find(m => m.id === personId);
-          if (member && member.name) {
-            personName = member.name;
-            groupId = group.id;
-          }
-        });
-        
-        // Only add if we have a valid amount and name
-        if (settlement.toPay > 0 && personName !== "Unknown Member") {
-          owedMembers.push({
-            id: personId,
-            name: personName,
-            amount: settlement.toPay,
-            groupId: groupId
-          });
-        }
-      }
-    });
-    
-    return owedMembers.sort((a, b) => b.amount - a.amount); // Highest debt first
-  }, [settlements, groups]);
-
   // Get greeting based on time
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -286,13 +229,199 @@ const Dashboard = () => {
     return "Good evening";
   };
 
+  // Transaction detail modal component
+  const TransactionDetailModal = ({ transaction, onClose }: { transaction: any; onClose: () => void }) => {
+    if (!transaction) return null;
+
+    // Find the group for this transaction
+    const transactionGroup = groups.find(g => g.id === transaction.groupId);
+
+    return (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center sm:justify-center">
+        <div className="mobile-card w-full sm:max-w-md sm:mx-4 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto sm:rounded-3xl rounded-t-3xl">
+          <div className="p-6">
+            {/* Mobile handle */}
+            <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-6 sm:hidden"></div>
+            
+            <div className="text-center mb-6">
+              <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center backdrop-blur-sm border-2 ${
+                transaction.type === 'expense' ? 'bg-red-500/20 border-red-400/40' : 
+                transaction.type === 'payment' ? 'bg-cyan-500/20 border-cyan-400/40' : 'bg-cyan-500/20 border-cyan-400/40'
+              }`}>
+                {transaction.type === 'expense' ? (
+                  <ArrowUpRight className={`w-8 h-8 text-red-400`} />
+                ) : transaction.type === 'payment' ? (
+                  <ArrowDownLeft className={`w-8 h-8 text-cyan-400`} />
+                ) : (
+                  <CreditCard className={`w-8 h-8 text-cyan-400`} />
+                )}
+              </div>
+              <h2 className="text-2xl font-bold text-foreground mb-2">{transaction.title}</h2>
+              <div className="text-3xl font-bold text-foreground">
+                Rs {transaction.amount.toLocaleString()}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {/* Date */}
+              <div className="flex items-center gap-3 p-4 glass-card">
+                <Calendar className="w-5 h-5 text-cyan-400" />
+                <div>
+                  <div className="text-sm text-muted-foreground">Date</div>
+                  <div className="font-medium text-foreground">{transaction.date}</div>
+                </div>
+              </div>
+
+              {/* Transaction Type */}
+              <div className="flex items-center gap-3 p-4 glass-card">
+                <div className={`w-5 h-5 rounded-full ${
+                  transaction.type === 'expense' ? 'bg-red-400' : 
+                  transaction.type === 'payment' ? 'bg-cyan-400' : 'bg-cyan-400'
+                }`}></div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Type</div>
+                  <div className="font-medium text-foreground capitalize">{transaction.type}</div>
+                </div>
+              </div>
+
+              {/* Group Information */}
+              {transactionGroup && (
+                <div className="flex items-center gap-3 p-4 glass-card">
+                  <Users className="w-5 h-5 text-cyan-400" />
+                  <div>
+                    <div className="text-sm text-muted-foreground">Group</div>
+                    <div className="font-medium text-foreground">{transactionGroup.name}</div>
+                    <div className="text-xs text-muted-foreground">{transactionGroup.members.length} members</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Paid By (for expenses) */}
+              {transaction.paidByName && (
+                <div className="flex items-center gap-3 p-4 glass-card">
+                  <User className="w-5 h-5 text-cyan-400" />
+                  <div>
+                    <div className="text-sm text-muted-foreground">Paid by</div>
+                    <div className="font-medium text-foreground">{transaction.paidByName}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Details (for payments) */}
+              {transaction.fromName && transaction.toName && (
+                <div className="flex items-center gap-3 p-4 glass-card">
+                  <ArrowUpRight className="w-5 h-5 text-cyan-400" />
+                  <div>
+                    <div className="text-sm text-muted-foreground">Payment</div>
+                    <div className="font-medium text-foreground">{transaction.fromName} → {transaction.toName}</div>
+                    {transaction.method && (
+                      <div className="text-xs text-muted-foreground capitalize">via {transaction.method}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Participants (for expenses) */}
+              {transaction.participants && transaction.participants.length > 0 && (
+                <div className="p-4 glass-card">
+                  <div className="text-sm text-muted-foreground mb-3">Participants</div>
+                  <div className="space-y-2">
+                    {transaction.participants.map((participant: any, index: number) => (
+                      <div key={index} className="flex justify-between items-center">
+                        <span className="font-medium text-foreground">{participant.name}</span>
+                        <span className="text-sm text-muted-foreground">Rs {participant.amount.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Place (for expenses) */}
+              {transaction.place && (
+                <div className="flex items-center gap-3 p-4 glass-card">
+                  <div className="w-5 h-5 rounded-full bg-muted"></div>
+                  <div>
+                    <div className="text-sm text-muted-foreground">Place</div>
+                    <div className="font-medium text-foreground">{transaction.place}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Note */}
+              {transaction.note && (
+                <div className="p-4 glass-card">
+                  <div className="text-sm text-muted-foreground mb-1">Note</div>
+                  <div className="font-medium text-foreground">{transaction.note}</div>
+                </div>
+              )}
+
+              {/* Wallet Balance Changes (for wallet transactions) */}
+              {(transaction.walletBalanceBefore !== undefined || transaction.walletBalanceAfter !== undefined) && (
+                <div className="space-y-3">
+                  {transaction.walletBalanceBefore !== undefined && (
+                    <div className="flex items-center gap-3 p-4 glass-card">
+                      <CreditCard className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">Wallet Balance Before</div>
+                        <div className="font-medium text-foreground">Rs {transaction.walletBalanceBefore.toLocaleString()}</div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {transaction.walletBalanceAfter !== undefined && (
+                    <div className="flex items-center gap-3 p-4 glass-card">
+                      <CreditCard className="w-5 h-5 text-cyan-400" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">Wallet Balance After</div>
+                        <div className="font-medium text-foreground">Rs {transaction.walletBalanceAfter.toLocaleString()}</div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Balance Change Summary */}
+                  {transaction.walletBalanceBefore !== undefined && transaction.walletBalanceAfter !== undefined && (
+                    <div className="flex items-center gap-3 p-4 glass-card bg-cyan-500/10 border-cyan-400/20">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                        transaction.walletBalanceAfter > transaction.walletBalanceBefore ? 'bg-green-500' : 'bg-red-500'
+                      }`}>
+                        <span className="text-xs text-white font-bold">
+                          {transaction.walletBalanceAfter > transaction.walletBalanceBefore ? '+' : '-'}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="text-sm text-muted-foreground">Balance Change</div>
+                        <div className={`font-bold ${
+                          transaction.walletBalanceAfter > transaction.walletBalanceBefore ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                          {transaction.walletBalanceAfter > transaction.walletBalanceBefore ? '+' : ''}
+                          Rs {Math.abs(transaction.walletBalanceAfter - transaction.walletBalanceBefore).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={onClose}
+              className="w-full mt-6 btn-primary-teal"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-bg-app pb-24">
-      {/* Header Section */}
-      <header className="px-4 pt-8 pb-4">
-        <div className="mb-4">
-          <div className="text-caption text-text-secondary">{getGreeting()}</div>
-          <h1 className="text-heading-l text-text-primary">{user?.name || "User"}</h1>
+    <div className="min-h-screen bg-background pb-20 safe-area-pt">
+      {/* Header - Mobile Optimized */}
+      <div className="mobile-padding pt-8 pb-6">
+        <div className="mb-6">
+          <div className="text-sm text-muted-foreground mb-1">{getGreeting()}</div>
+          <h1 className="text-3xl font-bold text-foreground">{user?.name || "User"}</h1>
         </div>
 
         {/* Error and Success Alerts */}
@@ -315,102 +444,177 @@ const Dashboard = () => {
             onDismiss={() => setSuccess(null)}
           />
         )}
-      </header>
+      </div>
 
-      {/* Main Content */}
-      <main className="px-4 space-y-4">
-        {/* Available Budget - Primary Metric */}
-        <MetricCard
-          label="Available Budget"
-          amount={walletBalance}
-          helperText="Actual money you have right now"
-          variant="default"
-          size="large"
-        />
+      {/* Dashboard Cards - Mobile First */}
+      <div className="mobile-padding space-y-6">
+        {/* Main Wallet Card - Now matches shortcut card styling */}
+        <button
+          onClick={() => setShowAddMoney(true)}
+          className="glass-card p-6 w-full text-left hover:bg-cyan-500/10 transition-all duration-200 group"
+        >
+          <div className="flex justify-between items-start mb-6">
+            <div className="flex-1">
+              <div className="text-muted-foreground text-sm mb-2">Available Balance</div>
+              <div className="text-currency-large text-foreground mb-1">
+                Rs {walletBalance.toLocaleString()}
+              </div>
+              <div className="text-muted-foreground text-sm">Tap to add money</div>
+            </div>
+            <div className="touch-target w-12 h-12 bg-gradient-to-br from-cyan-500/20 to-teal-500/20 rounded-full flex items-center justify-center border border-cyan-400/40 group-hover:border-cyan-400/60 transition-all">
+              <Plus className="w-6 h-6 text-cyan-400" />
+            </div>
+          </div>
 
-        {/* Settlement Delta */}
-        <MetricCard
-          label="Settlement Delta"
-          amount={settlementDelta}
-          helperText="Pending group settlements"
-          variant={settlementDelta !== 0 ? "neutral" : "default"}
-          size="medium"
-        />
+          {/* Settlement Delta Section */}
+          <div className="glass-card p-4 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-4 h-4 bg-cyan-400/30 rounded-full"></div>
+              <span className="text-foreground text-sm">Settlement Delta</span>
+            </div>
+            <div className={`text-currency-medium mb-1 ${
+              settlementDelta > 0 ? 'text-cyan-400' : 
+              settlementDelta < 0 ? 'text-red-400' : 
+              'text-foreground'
+            }`}>
+              {settlementDelta > 0 ? '+' : ''}Rs {settlementDelta.toLocaleString()}
+            </div>
+            <div className="text-muted-foreground text-xs">
+              Pending group settlements
+            </div>
+          </div>
 
-        {/* Receive / Owe Grid */}
-        <div className="grid grid-cols-2 gap-4">
-          <MetricCard
-            label="You'll Receive"
-            amount={totalToReceive}
-            helperText="Money others owe you"
-            variant="positive"
-            size="medium"
-          />
-          <MetricCard
-            label="You Owe"
-            amount={totalToPay}
-            helperText="Money you need to pay"
-            variant="negative"
-            size="medium"
-          />
-        </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="glass-card p-4 bg-green-500/10 border-green-400/20">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingDown className="w-4 h-4 text-green-400" />
+                <span className="text-green-400 text-sm font-medium">You'll Receive</span>
+              </div>
+              <div className="text-currency-small text-green-400 font-bold">Rs {totalToReceive.toLocaleString()}</div>
+            </div>
+            
+            <div className="glass-card p-4 bg-red-500/10 border-red-400/20">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-red-400" />
+                <span className="text-red-400 text-sm font-medium">You Owe</span>
+              </div>
+              <div className="text-currency-small text-red-400 font-bold">Rs {totalToPay.toLocaleString()}</div>
+            </div>
+          </div>
+        </button>
 
-        {/* Action Buttons Row */}
-        <div className="flex gap-3">
-          <EnterpriseButton
-            variant="primary"
+        {/* Quick Actions - Mobile Optimized */}
+        <div className="grid grid-cols-3 gap-3">
+          <button
             onClick={handleAddExpense}
-            className="flex-1"
+            className="glass-card p-4 hover:bg-cyan-500/10 transition-all duration-200 text-center group"
           >
-            Add Expense
-          </EnterpriseButton>
-          <EnterpriseButton
-            variant="secondary"
+            <div className="w-12 h-12 bg-gradient-to-br from-cyan-500/20 to-teal-500/20 rounded-xl flex items-center justify-center mb-3 mx-auto border border-cyan-400/40 group-hover:border-cyan-400/60 transition-all">
+              <Plus className="w-6 h-6 text-cyan-400" />
+            </div>
+            <div className="text-foreground font-medium text-sm">Add Expense</div>
+          </button>
+          
+          <button
             onClick={handleReceivedMoney}
-            className="flex-1"
+            className="glass-card p-4 hover:bg-cyan-500/10 transition-all duration-200 text-center group"
           >
-            Received
-          </EnterpriseButton>
-          <EnterpriseButton
-            variant="secondary"
+            <div className="w-12 h-12 bg-gradient-to-br from-cyan-500/20 to-teal-500/20 rounded-xl flex items-center justify-center mb-3 mx-auto border border-cyan-400/40 group-hover:border-cyan-400/60 transition-all">
+              <ArrowDownLeft className="w-6 h-6 text-cyan-400" />
+            </div>
+            <div className="text-foreground font-medium text-sm">Received</div>
+          </button>
+          
+          <button
             onClick={handleNewGroup}
-            className="flex-1"
+            className="glass-card p-4 hover:bg-cyan-500/10 transition-all duration-200 text-center group"
           >
-            New Group
-          </EnterpriseButton>
+            <div className="w-12 h-12 bg-gradient-to-br from-cyan-500/20 to-teal-500/20 rounded-xl flex items-center justify-center mb-3 mx-auto border border-cyan-400/40 group-hover:border-cyan-400/60 transition-all">
+              <User className="w-6 h-6 text-cyan-400" />
+            </div>
+            <div className="text-foreground font-medium text-sm">New Group</div>
+          </button>
         </div>
 
-        {/* Recent Transactions */}
-        <div className="mt-6">
-          <h2 className="text-heading-m text-text-primary mb-4">Recent Transactions</h2>
+        {/* Recent Transactions - Mobile Optimized */}
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-foreground">Recent Transactions</h2>
+            {allTransactions.length > 5 && (
+              <button className="text-primary text-sm font-medium">View All</button>
+            )}
+          </div>
           
           {allTransactions.length > 0 ? (
-            <div className="bg-bg-card border border-border-subtle rounded-card overflow-hidden">
-              {allTransactions.slice(0, 5).map((transaction, index) => (
-                <TransactionItem
+            <div className="mobile-card p-0 overflow-hidden">
+              {allTransactions.slice(0, 8).map((transaction) => (
+                <button
                   key={transaction.id}
-                  title={transaction.title}
-                  metaLine1={`${transaction.date} • ${transaction.type}`}
-                  metaLine2={transaction.type === "expense" ? `Paid by ${transaction.paidByName}` : 
-                           transaction.type === "payment" ? `${transaction.fromName} → ${transaction.toName}` : undefined}
-                  amount={transaction.amount}
-                  isLast={index === Math.min(allTransactions.length, 5) - 1}
-                />
+                  onClick={() => setSelectedTransaction(transaction)}
+                  className="w-full p-4 flex items-center gap-4 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0"
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center backdrop-blur-sm border-2 ${
+                    transaction.type === 'expense' ? 'bg-red-500/10 border-red-400/30' : 
+                    transaction.type === 'payment' ? 'bg-cyan-500/10 border-cyan-400/30' : 'bg-cyan-500/10 border-cyan-400/30'
+                  }`}>
+                    {transaction.type === 'expense' ? (
+                      <ArrowUpRight className="w-5 h-5 text-red-400" />
+                    ) : transaction.type === 'payment' ? (
+                      <ArrowDownLeft className="w-5 h-5 text-cyan-400" />
+                    ) : (
+                      <CreditCard className="w-5 h-5 text-cyan-400" />
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 text-left">
+                    <div className="font-medium text-foreground mb-1">{transaction.title}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {transaction.date}
+                      {transaction.type === "expense" && transaction.paidByName && (
+                        <span> • Paid by {transaction.paidByName}</span>
+                      )}
+                      {transaction.type === "payment" && transaction.fromName && transaction.toName && (
+                        <span> • {transaction.fromName} to {transaction.toName}</span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <div className={`font-bold ${
+                      transaction.type === 'expense' ? 'text-red-400' : 
+                      transaction.type === 'payment' ? 'text-cyan-400' : 'text-cyan-400'
+                    }`}>
+                      {transaction.type === 'expense' ? '-' : '+'}Rs {transaction.amount.toLocaleString()}
+                    </div>
+                  </div>
+                </button>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <div className="text-text-muted text-body mb-4">No transactions yet</div>
-              <EnterpriseButton
-                variant="secondary"
+            <div className="mobile-card p-12 text-center">
+              <div className="w-16 h-16 bg-cyan-500/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-cyan-400/40">
+                <CreditCard className="w-8 h-8 text-cyan-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No transactions yet</h3>
+              <p className="text-muted-foreground mb-6">Start by creating a group or adding an expense</p>
+              <button
                 onClick={groups.length === 0 ? handleNewGroup : handleAddExpense}
+                className="btn-primary-teal"
               >
-                {groups.length === 0 ? "Create your first group" : "Add your first expense"}
-              </EnterpriseButton>
+                {groups.length === 0 ? "Create Your First Group" : "Add Your First Expense"}
+              </button>
             </div>
           )}
         </div>
-      </main>
+      </div>
+
+      {/* Transaction Detail Modal */}
+      {selectedTransaction && (
+        <TransactionDetailModal
+          transaction={selectedTransaction}
+          onClose={() => setSelectedTransaction(null)}
+        />
+      )}
 
       {/* Bottom Navigation */}
       <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />

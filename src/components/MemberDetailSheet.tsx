@@ -45,7 +45,8 @@ const calculateBalanceHistory = (transactions: Transaction[], currentBalance: nu
   // So we work backwards to calculate the balance progression
   for (const transaction of transactions) {
     const balanceAfter = runningBalance;
-    // FIXED: Subtract the balance change to get the previous balance
+    // FIXED: Working backwards - if transaction improved balance by +100, 
+    // then previous balance was 100 worse (subtract the improvement)
     const balanceBefore = runningBalance - transaction.balanceChange;
     
     history.push({

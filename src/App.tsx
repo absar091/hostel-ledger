@@ -5,7 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { FirebaseAuthProvider, useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { FirebaseDataProvider } from "@/contexts/FirebaseDataContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
+import Groups from "./pages/Groups";
 import GroupDetail from "./pages/GroupDetail";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -15,14 +17,17 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Protected Route wrapper
+// Protected Route wrapper with mobile-first loading
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useFirebaseAuth();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center mobile-padding">
+        <div className="glass-card p-8 text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="text-muted-foreground">Loading your data...</div>
+        </div>
       </div>
     );
   }
@@ -34,14 +39,17 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Public Route wrapper (redirect to home if already logged in)
+// Public Route wrapper with mobile-first loading
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useFirebaseAuth();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center mobile-padding">
+        <div className="glass-card p-8 text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
       </div>
     );
   }
@@ -58,6 +66,7 @@ const AppRoutes = () => (
     <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
     <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+    <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
     <Route path="/group/:id" element={<ProtectedRoute><GroupDetail /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
     <Route path="/budget" element={<ProtectedRoute><Budget /></ProtectedRoute>} />
@@ -66,19 +75,37 @@ const AppRoutes = () => (
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner position="top-center" />
-      <BrowserRouter>
-        <FirebaseAuthProvider>
-          <FirebaseDataProvider>
-            <AppRoutes />
-          </FirebaseDataProvider>
-        </FirebaseAuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <div className="dark min-h-screen bg-background">
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner 
+            position="top-center" 
+            toastOptions={{
+              style: {
+                background: 'hsl(var(--card))',
+                color: 'hsl(var(--card-foreground))',
+                border: '1px solid hsl(var(--border))',
+              },
+            }}
+          />
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
+            <FirebaseAuthProvider>
+              <FirebaseDataProvider>
+                <AppRoutes />
+              </FirebaseDataProvider>
+            </FirebaseAuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </div>
+  </ErrorBoundary>
 );
 
 export default App;

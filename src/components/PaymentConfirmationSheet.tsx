@@ -72,6 +72,9 @@ const PaymentConfirmationSheet = ({
       <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl flex flex-col">
         <SheetHeader className="flex-shrink-0 mb-6">
           <SheetTitle className="text-center">Pay from Wallet</SheetTitle>
+          <div className="sr-only">
+            Confirm payment to a group member from your wallet balance
+          </div>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto space-y-6 pb-4">

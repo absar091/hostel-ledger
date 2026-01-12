@@ -46,6 +46,9 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
             <PiggyBank className="w-5 h-5" />
             Add to Available Budget
           </SheetTitle>
+          <div className="sr-only">
+            Add money to your wallet for expense tracking
+          </div>
           <p className="text-sm text-muted-foreground text-center">
             Add actual money to your wallet for expense tracking
           </p>
@@ -100,12 +103,12 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
           </div>
 
           {/* Info Box */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="glass-card p-4 bg-teal-500/10 border-teal-500/20">
             <div className="flex items-start gap-3">
-              <Wallet className="w-5 h-5 text-blue-600 mt-0.5" />
+              <Wallet className="w-5 h-5 text-teal-400 mt-0.5" />
               <div>
-                <h4 className="font-medium text-blue-900 mb-1">Available Budget Tracking</h4>
-                <p className="text-sm text-blue-700">
+                <h4 className="font-medium text-foreground mb-1">Available Budget Tracking</h4>
+                <p className="text-sm text-muted-foreground">
                   This adds to your Available Budget (real money). When you pay for group expenses, 
                   the full amount will be deducted from this balance.
                 </p>

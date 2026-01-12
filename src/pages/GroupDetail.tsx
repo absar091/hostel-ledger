@@ -69,13 +69,13 @@ const GroupDetail = () => {
         
         if (t.type === "payment") {
           if (t.from === selectedMember.id && t.to === currentUser.id) {
-            // They paid you - they owe you less now
+            // They paid you - they owe you less now, your balance with them improves
             direction = "received";
-            balanceChange = -t.amount; // Their debt to you decreased
+            balanceChange = t.amount; // FIXED: Positive because your balance improves
           } else if (t.from === currentUser.id && t.to === selectedMember.id) {
-            // You paid them - you owe them less now
+            // You paid them - you owe them less now, your balance with them improves  
             direction = "gave";
-            balanceChange = t.amount; // Your debt to them decreased
+            balanceChange = t.amount; // FIXED: Positive because your balance improves
           }
         } else if (t.type === "expense") {
           if (t.paidBy === currentUser.id) {
@@ -212,7 +212,7 @@ const GroupDetail = () => {
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate("/")}
-              className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center"
+              className="w-10 h-10 rounded-full glass-card flex items-center justify-center hover:bg-cyan-500/10 transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
@@ -229,7 +229,7 @@ const GroupDetail = () => {
             
             <button 
               onClick={() => setShowGroupSettings(true)}
-              className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center"
+              className="w-10 h-10 rounded-full glass-card flex items-center justify-center hover:bg-cyan-500/10 transition-colors"
             >
               <Settings className="w-5 h-5 text-foreground" />
             </button>
@@ -249,7 +249,7 @@ const GroupDetail = () => {
               className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === tab.id
                   ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                  : "glass-card text-muted-foreground hover:bg-cyan-500/10"
               }`}
             >
               {tab.label}
@@ -284,7 +284,9 @@ const GroupDetail = () => {
               ))
             ) : (
               <div className="text-center py-12">
-                <div className="text-6xl mb-4">📝</div>
+                <div className="w-16 h-16 bg-cyan-500/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-cyan-400/40">
+                  <Plus className="w-8 h-8 text-cyan-400" />
+                </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">No transactions yet</h3>
                 <p className="text-muted-foreground text-sm">
                   Add an expense to get started
@@ -317,7 +319,7 @@ const GroupDetail = () => {
               return (
                 <div
                   key={member.id}
-                  className={`w-full bg-card rounded-xl p-4 shadow-card animate-slide-up`}
+                  className={`w-full glass-card p-4 animate-slide-up hover:bg-cyan-500/10 transition-colors`}
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div className="flex items-center gap-4">
@@ -332,12 +334,12 @@ const GroupDetail = () => {
                         ) : (
                           <div className="space-y-1">
                             {thisMemberOwesYou && (
-                              <div className="text-green-600">
+                              <div className="text-green-400">
                                 Owes you Rs {memberSettlement.toReceive.toLocaleString()}
                               </div>
                             )}
                             {youOweThisMember && (
-                              <div className="text-red-600">
+                              <div className="text-red-400">
                                 You owe Rs {memberSettlement.toPay.toLocaleString()}
                               </div>
                             )}
@@ -351,7 +353,7 @@ const GroupDetail = () => {
                         <Button
                           onClick={handleSettlementClick}
                           size="sm"
-                          className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                          className="btn-primary-teal text-xs"
                         >
                           Settle Up
                         </Button>
@@ -363,7 +365,7 @@ const GroupDetail = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleMemberClick(member)}
-                        className="p-2"
+                        className="p-2 hover:bg-cyan-500/10"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </Button>
@@ -377,7 +379,7 @@ const GroupDetail = () => {
 
         {activeTab === "summary" && (
           <div className="space-y-4 animate-fade-in">
-            <div className="bg-card rounded-xl p-6 shadow-card">
+            <div className="glass-card p-6">
               <h3 className="font-semibold text-foreground mb-4">Group Stats</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -391,12 +393,12 @@ const GroupDetail = () => {
               </div>
             </div>
             
-            <div className="bg-card rounded-xl p-6 shadow-card">
+            <div className="glass-card p-6">
               <h3 className="font-semibold text-foreground mb-4">Top Contributor</h3>
               <div className="flex items-center gap-3">
                 <Avatar name={topSpender.name} size="lg" />
                 <div>
-                  <div className="font-semibold">{topSpender.name}</div>
+                  <div className="font-semibold text-foreground">{topSpender.name}</div>
                   <div className="text-sm text-muted-foreground">
                     {topSpender.balance >= 0 
                       ? `Rs ${topSpender.balance} to receive` 
@@ -406,14 +408,14 @@ const GroupDetail = () => {
               </div>
             </div>
 
-            <div className="bg-card rounded-xl p-6 shadow-card">
+            <div className="glass-card p-6">
               <h3 className="font-semibold text-foreground mb-4">Members</h3>
               <div className="flex -space-x-2">
                 {group.members.slice(0, 5).map((member) => (
                   <Avatar key={member.id} name={member.name} size="md" />
                 ))}
                 {group.members.length > 5 && (
-                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-medium">
+                  <div className="w-10 h-10 rounded-full glass-card flex items-center justify-center text-sm font-medium text-foreground">
                     +{group.members.length - 5}
                   </div>
                 )}
@@ -514,7 +516,7 @@ const GroupDetail = () => {
       />
 
       {/* Member Settlement Sheet */}
-      {settlementMember && (
+      {settlementMember && group && (
         <MemberSettlementSheet
           open={showMemberSettlement}
           onClose={() => {
@@ -522,6 +524,7 @@ const GroupDetail = () => {
             setSettlementMember(null);
           }}
           member={settlementMember}
+          groupId={group.id}
         />
       )}
     </div>

@@ -2,9 +2,10 @@ import { useState, useMemo, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, ChevronRight } from "lucide-react";
+import { Check, ChevronRight, AlertCircle } from "lucide-react";
 import Avatar from "./Avatar";
 import { cn } from "@/lib/utils";
+import { validateExpenseData, sanitizeString, sanitizeAmount } from "@/lib/validation";
 
 interface Member {
   id: string;
@@ -40,6 +41,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
   const [participants, setParticipants] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [place, setPlace] = useState("");
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   // Get members from selected group
   const members = useMemo(() => {
@@ -124,54 +126,50 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
     setParticipants([]);
     setNote("");
     setPlace("");
+    setValidationErrors([]);
     onClose();
   };
 
   const handleSubmit = () => {
-    // Final validation before submission
-    const amountValue = parseFloat(amount);
-    
-    if (!selectedGroup) {
-      console.error("No group selected");
-      return;
-    }
-    
-    if (isNaN(amountValue) || amountValue <= 0) {
-      console.error("Invalid amount");
-      return;
-    }
-    
-    if (!paidBy) {
-      console.error("No payer selected");
-      return;
-    }
-    
-    if (participants.length === 0) {
-      console.error("No participants selected");
-      return;
-    }
-
-    // Check if payer exists in members
-    const payerExists = members.some(m => m.id === paidBy);
-    if (!payerExists) {
-      console.error("Invalid payer ID");
-      return;
-    }
-
-    // Check if all participants exist in members
-    const invalidParticipants = participants.filter(p => !members.some(m => m.id === p));
-    if (invalidParticipants.length > 0) {
-      console.error("Invalid participant IDs:", invalidParticipants);
-      return;
-    }
-
-    onSubmit({
+    // Comprehensive validation before submission
+    const expenseData = {
       groupId: selectedGroup,
-      amount: amountValue,
+      amount: parseFloat(amount),
       paidBy,
       participants,
-      note: note.trim(),
-      place: place.trim(),
+      note: sanitizeString(note),
+      place: sanitizeString(place),
+    };
+
+    const validation = validateExpenseData(expenseData);
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      return;
+    }
+
+    // Additional business logic validation
+    const members = groups.find(g => g.id === selectedGroup)?.members || [];
+    const payerExists = members.some(m => m.id === paidBy);
+    if (!payerExists) {
+      setValidationErrors(["Selected payer is not valid"]);
+      return;
+    }
+
+    const invalidParticipants = participants.filter(p => !members.some(m => m.id === p));
+    if (invalidParticipants.length > 0) {
+      setValidationErrors(["Some selected participants are not valid"]);
+      return;
+    }
+
+    // Clear errors and submit
+    setValidationErrors([]);
+    onSubmit({
+      groupId: selectedGroup,
+      amount: sanitizeAmount(parseFloat(amount)),
+      paidBy,
+      participants,
+      note: sanitizeString(note),
+      place: sanitizeString(place),
     });
     handleClose();
   };
@@ -207,9 +205,26 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
             {step === 4 && "Split Between"}
             {step === 5 && "Add Details"}
           </SheetTitle>
+          <div className="sr-only">
+            Add a new expense to split between group members
+          </div>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto pb-4">
+          {/* Validation Errors */}
+          {validationErrors.length > 0 && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="w-4 h-4 text-red-600" />
+                <span className="text-sm font-medium text-red-800">Please fix the following errors:</span>
+              </div>
+              <ul className="text-sm text-red-700 space-y-1">
+                {validationErrors.map((error, index) => (
+                  <li key={index}>• {error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           {/* Step 1: Select Group */}
           {step === 1 && (
             <div className="space-y-3 animate-fade-in">

@@ -16,7 +16,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 pb-safe">
+    <nav className="mobile-nav">
       <div className="max-w-lg mx-auto flex items-center justify-around py-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -27,9 +27,9 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                className="w-14 h-14 -mt-6 rounded-full gradient-wallet shadow-wallet flex items-center justify-center"
+                className="touch-target w-14 h-14 -mt-6 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 shadow-lg flex items-center justify-center backdrop-blur-lg border border-emerald-400/20 hover:from-emerald-600 hover:to-teal-600 transition-all"
               >
-                <Icon className="w-6 h-6 text-primary-foreground" />
+                <Icon className="w-6 h-6 text-white" />
               </button>
             );
           }
@@ -39,7 +39,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={cn(
-                "flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors",
+                "touch-target flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-colors",
                 isActive ? "text-primary" : "text-muted-foreground"
               )}
             >
