@@ -51,21 +51,21 @@ const TimelineItem = ({
     return (
       <button
         onClick={onClick}
-        className="w-full bg-positive-soft rounded-xl p-4 text-left hover:opacity-90 transition-opacity"
+        className="w-full bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-left hover:bg-emerald-100/50 transition-colors"
       >
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-positive/20 flex items-center justify-center shrink-0">
-            <Plus className="w-5 h-5 text-positive" />
+          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+            <Plus className="w-5 h-5 text-emerald-600" />
           </div>
           
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-foreground">{title}</div>
-            <div className="text-sm text-muted-foreground">Added to wallet</div>
+            <div className="font-semibold text-gray-900">{title}</div>
+            <div className="text-sm text-gray-500">Added to wallet</div>
           </div>
           
           <div className="text-right shrink-0">
-            <div className="font-bold text-positive">+Rs {amount.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">{date}</div>
+            <div className="font-bold text-emerald-600">+Rs {amount.toLocaleString()}</div>
+            <div className="text-xs text-gray-500">{date}</div>
           </div>
         </div>
       </button>
@@ -76,21 +76,21 @@ const TimelineItem = ({
     return (
       <button
         onClick={onClick}
-        className="w-full bg-negative-soft rounded-xl p-4 text-left hover:opacity-90 transition-opacity"
+        className="w-full bg-red-50 border border-red-100 rounded-xl p-4 text-left hover:bg-red-100/50 transition-colors"
       >
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-negative/20 flex items-center justify-center shrink-0">
-            <Wallet className="w-5 h-5 text-negative" />
+          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+            <Wallet className="w-5 h-5 text-red-600" />
           </div>
           
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-foreground">{title}</div>
-            <div className="text-sm text-muted-foreground">Deducted from wallet</div>
+            <div className="font-semibold text-gray-900">{title}</div>
+            <div className="text-sm text-gray-500">Deducted from wallet</div>
           </div>
           
           <div className="text-right shrink-0">
-            <div className="font-bold text-negative">-Rs {amount.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">{date}</div>
+            <div className="font-bold text-red-600">-Rs {amount.toLocaleString()}</div>
+            <div className="text-xs text-gray-500">{date}</div>
           </div>
         </div>
       </button>
@@ -101,26 +101,26 @@ const TimelineItem = ({
     return (
       <button
         onClick={onClick}
-        className="w-full bg-positive-soft rounded-xl p-4 text-left hover:opacity-90 transition-opacity"
+        className="w-full bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-left hover:bg-emerald-100/50 transition-colors"
       >
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-positive/20 flex items-center justify-center shrink-0">
-            <HandCoins className="w-5 h-5 text-positive" />
+          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+            <HandCoins className="w-5 h-5 text-emerald-600" />
           </div>
           
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-foreground">Payment Received</div>
-            <div className="text-sm text-muted-foreground">
+            <div className="font-semibold text-gray-900">Payment Received</div>
+            <div className="text-sm text-gray-500">
               {from} → {to}
             </div>
             {method && (
-              <div className="text-xs text-muted-foreground mt-1 capitalize">{method}</div>
+              <div className="text-xs text-gray-500 mt-1 capitalize">{method}</div>
             )}
           </div>
           
           <div className="text-right shrink-0">
-            <div className="font-bold text-positive">+Rs {amount.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">{date}</div>
+            <div className="font-bold text-emerald-600">+Rs {amount.toLocaleString()}</div>
+            <div className="text-xs text-gray-500">{date}</div>
           </div>
         </div>
       </button>
@@ -130,16 +130,16 @@ const TimelineItem = ({
   return (
     <button
       onClick={onClick}
-      className="w-full bg-card rounded-xl p-4 shadow-card text-left hover:shadow-card-hover transition-shadow"
+      className="w-full bg-white border border-gray-100 rounded-xl p-4 shadow-sm text-left hover:shadow-md transition-shadow"
     >
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center shrink-0">
-          <Icon className="w-5 h-5 text-secondary-foreground" />
+        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+          <Icon className="w-5 h-5 text-gray-600" />
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-foreground">{title}</div>
-          <div className="text-sm text-muted-foreground">Paid by {paidBy}</div>
+          <div className="font-semibold text-gray-900">{title}</div>
+          <div className="text-sm text-gray-500">Paid by {paidBy}</div>
           
           {participants && participants.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
@@ -149,14 +149,14 @@ const TimelineItem = ({
                   <span
                     key={p.name}
                     className={`inline-flex items-center gap-1 text-xs rounded-full px-2 py-1 ${
-                      isPayer ? "bg-positive/10" : "bg-secondary"
+                      isPayer ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-700"
                     }`}
                   >
                     <span className="font-medium">{p.name}</span>
                     {isPayer ? (
-                      <span className="text-positive">paid</span>
+                      <span className="text-emerald-600">paid</span>
                     ) : (
-                      <span className="text-negative">owes Rs {p.amount}</span>
+                      <span className="text-red-600">owes Rs {p.amount}</span>
                     )}
                   </span>
                 );
@@ -166,8 +166,8 @@ const TimelineItem = ({
         </div>
         
         <div className="text-right shrink-0">
-          <div className="font-bold text-foreground">Rs {amount.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground">{date}</div>
+          <div className="font-bold text-gray-900">Rs {amount.toLocaleString()}</div>
+          <div className="text-xs text-gray-500">{date}</div>
         </div>
       </div>
     </button>
