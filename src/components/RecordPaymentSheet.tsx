@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Check, Banknote, Smartphone, ChevronRight, Info, CreditCard } from "lucide-react";
@@ -154,9 +154,9 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
             {step === 2 && "Who Paid You?"}
             {step === 3 && "Payment Details"}
           </SheetTitle>
-          <div className="sr-only">
+          <SheetDescription className="text-center text-sm text-gray-500">
             Record a payment received from a group member
-          </div>
+          </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto space-y-6 pb-4">

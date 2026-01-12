@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, Plus, Users, ChevronDown, ChevronUp, Phone, CreditCard } from "lucide-react";
@@ -132,9 +132,9 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
       <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl flex flex-col bg-white">
         <SheetHeader className="flex-shrink-0 mb-4">
           <SheetTitle className="text-center text-gray-900">Create New Group</SheetTitle>
-          <div className="sr-only">
+          <SheetDescription className="text-center text-sm text-gray-500">
             Create a new group to split expenses with friends or roommates
-          </div>
+          </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto space-y-5 pb-4">
