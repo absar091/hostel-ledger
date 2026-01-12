@@ -7,79 +7,97 @@
 
 @layer base {
   :root {
-    /* Dark Theme - Matching the reference design */
-    --background: 210 40% 2%;
-    --foreground: 210 40% 98%;
+    /* Light Theme - Clean white/gray design matching screenshot */
+    --background: 210 20% 98%;
+    --foreground: 220 27% 8%;
 
-    --card: 210 40% 6%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 27% 8%;
 
-    --popover: 210 40% 6%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 27% 8%;
 
-    /* Primary - Teal/Cyan for buttons and accents */
-    --primary: 180 100% 50%;
-    --primary-foreground: 210 40% 2%;
+    /* Primary - Teal/Emerald for buttons and accents */
+    --primary: 162 88% 40%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Darker cards */
-    --secondary: 210 40% 8%;
-    --secondary-foreground: 210 40% 90%;
+    /* Secondary - Light gray cards */
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 220 27% 20%;
 
-    --muted: 210 40% 10%;
-    --muted-foreground: 210 40% 60%;
+    --muted: 210 20% 94%;
+    --muted-foreground: 220 15% 45%;
 
-    /* Accent - Bright cyan for highlights */
-    --accent: 180 100% 60%;
-    --accent-foreground: 210 40% 2%;
+    /* Accent - Bright teal for highlights */
+    --accent: 162 88% 35%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 40% 12%;
-    --input: 210 40% 8%;
-    --ring: 180 100% 50%;
+    --border: 220 15% 90%;
+    --input: 220 15% 95%;
+    --ring: 162 88% 40%;
 
     --radius: 1rem;
 
-    /* Custom semantic colors - Dark theme */
-    --positive: 180 100% 50%;
-    --positive-soft: 180 40% 15%;
+    /* Custom semantic colors - Light theme */
+    --positive: 162 88% 35%;
+    --positive-soft: 162 40% 92%;
     --negative: 0 72% 51%;
-    --negative-soft: 0 40% 15%;
-    --neutral: 180 100% 60%;
+    --negative-soft: 0 40% 95%;
+    --neutral: 220 70% 50%;
 
-    /* Gradients - Dark theme with teal accents */
-    --gradient-wallet: linear-gradient(135deg, hsl(180, 100%, 50%) 0%, hsl(180, 100%, 60%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(210, 40%, 6%) 0%, hsl(210, 40%, 4%) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(0, 255, 255, 0.05) 0%, rgba(0, 255, 255, 0.1) 100%);
+    /* Gradients - Light theme with teal accents */
+    --gradient-wallet: linear-gradient(135deg, hsl(162, 88%, 40%) 0%, hsl(172, 80%, 45%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(210, 20%, 98%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(20, 184, 166, 0.1) 100%);
 
-    /* Shadows - Dark theme */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
-    --shadow-wallet: 0 20px 40px -15px hsl(180 100% 50% / 0.3);
-    --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+    /* Shadows - Light theme */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    --shadow-wallet: 0 20px 40px -15px hsl(162 88% 40% / 0.25);
+    --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
 
     /* Sidebar */
-    --sidebar-background: 210 40% 2%;
-    --sidebar-foreground: 210 40% 90%;
-    --sidebar-primary: 180 100% 50%;
-    --sidebar-primary-foreground: 210 40% 2%;
-    --sidebar-accent: 210 40% 8%;
-    --sidebar-accent-foreground: 210 40% 90%;
-    --sidebar-border: 210 40% 12%;
-    --sidebar-ring: 180 100% 50%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 27% 20%;
+    --sidebar-primary: 162 88% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 20% 96%;
+    --sidebar-accent-foreground: 220 27% 20%;
+    --sidebar-border: 220 15% 90%;
+    --sidebar-ring: 162 88% 40%;
   }
 
-  /* Light theme fallback (rarely used) */
-  .light {
-    --background: 160 20% 98%;
-    --foreground: 220 27% 8%;
-    --card: 0 0% 100%;
-    --card-foreground: 220 27% 8%;
-    --primary: 162 88% 35%;
-    --primary-foreground: 0 0% 100%;
-    --gradient-wallet: linear-gradient(135deg, hsl(162, 88%, 35%) 0%, hsl(175, 85%, 40%) 100%);
+  /* Dark theme */
+  .dark {
+    --background: 220 27% 8%;
+    --foreground: 210 40% 98%;
+    --card: 220 27% 10%;
+    --card-foreground: 210 40% 98%;
+    --popover: 220 27% 10%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 162 88% 45%;
+    --primary-foreground: 220 27% 8%;
+    --secondary: 220 27% 14%;
+    --secondary-foreground: 210 40% 90%;
+    --muted: 220 27% 16%;
+    --muted-foreground: 210 40% 60%;
+    --accent: 162 88% 50%;
+    --accent-foreground: 220 27% 8%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 27% 18%;
+    --input: 220 27% 14%;
+    --ring: 162 88% 45%;
+    --positive: 162 88% 50%;
+    --positive-soft: 162 40% 20%;
+    --negative: 0 72% 55%;
+    --negative-soft: 0 40% 20%;
+    --gradient-wallet: linear-gradient(135deg, hsl(162, 88%, 45%) 0%, hsl(172, 80%, 50%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(220, 27%, 10%) 0%, hsl(220, 27%, 8%) 100%);
   }
 }
 
@@ -90,19 +108,15 @@
 
   html {
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-    /* Force dark theme */
-    @apply dark;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    /* Mobile-first responsive design */
     @apply min-h-screen overflow-x-hidden;
-    /* Dark theme background */
     background: hsl(var(--background));
   }
 
-  /* Mobile-first typography */
+  /* Typography */
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold text-foreground;
   }
@@ -112,7 +126,6 @@
   h3 { @apply text-lg sm:text-xl lg:text-2xl; }
   h4 { @apply text-base sm:text-lg lg:text-xl; }
 
-  /* Mobile-optimized text sizes */
   .text-currency-large { @apply text-3xl sm:text-4xl font-bold; }
   .text-currency-medium { @apply text-xl sm:text-2xl font-semibold; }
   .text-currency-small { @apply text-lg sm:text-xl font-medium; }
@@ -124,84 +137,83 @@
     @apply w-full max-w-sm mx-auto px-4 sm:max-w-md md:max-w-lg lg:max-w-xl;
   }
 
-  /* Enhanced Glass morphism components with dark theme */
+  /* Clean glass cards for light theme */
   .glass-card {
     @apply backdrop-blur-xl border rounded-2xl;
-    background: rgba(0, 255, 255, 0.03);
-    border: 1px solid rgba(0, 255, 255, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
   }
 
   .glass-card-strong {
     @apply backdrop-blur-xl border rounded-2xl;
-    background: rgba(0, 255, 255, 0.05);
-    border: 1px solid rgba(0, 255, 255, 0.15);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.7);
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
   }
 
   .glass-button {
     @apply backdrop-blur-md border rounded-xl;
-    background: rgba(0, 255, 255, 0.08);
-    border: 1px solid rgba(0, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(220, 220, 220, 0.5);
     transition: all 0.2s ease;
   }
 
   .glass-button:hover {
-    background: rgba(0, 255, 255, 0.12);
-    border: 1px solid rgba(0, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 1);
+    border: 1px solid rgba(200, 200, 200, 0.8);
   }
 
-  /* Teal/Cyan themed buttons */
+  /* Teal/Emerald themed buttons */
   .btn-primary-teal {
-    @apply bg-gradient-to-r from-cyan-500 to-teal-500 text-black font-medium rounded-xl px-6 py-3;
-    @apply hover:from-cyan-400 hover:to-teal-400 transition-all duration-200;
+    @apply bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium rounded-xl px-6 py-3;
+    @apply hover:from-emerald-600 hover:to-teal-600 transition-all duration-200;
     @apply shadow-lg hover:shadow-xl;
   }
 
   .btn-secondary-teal {
-    @apply bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-medium rounded-xl px-6 py-3;
-    @apply hover:bg-cyan-500/20 hover:border-cyan-500/30 transition-all duration-200;
+    @apply bg-emerald-50 text-emerald-600 border border-emerald-200 font-medium rounded-xl px-6 py-3;
+    @apply hover:bg-emerald-100 hover:border-emerald-300 transition-all duration-200;
   }
 
-  /* Mobile-optimized cards with dark theme */
+  /* Mobile-optimized cards with light theme */
   .mobile-card {
     @apply backdrop-blur-xl border rounded-2xl p-4 sm:p-6;
     background: hsl(var(--card));
     border: 1px solid hsl(var(--border));
-    box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.06);
     transition: all 0.2s ease;
   }
 
   .mobile-card:hover {
-    background: hsl(var(--card));
-    box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.1);
   }
 
-  /* Wallet card with cyan gradient */
+  /* Wallet card with teal gradient */
   .wallet-card {
     background: var(--gradient-wallet);
-    @apply text-black rounded-2xl p-6 shadow-wallet;
+    @apply text-white rounded-2xl p-6 shadow-wallet;
   }
 
-  /* Settlement cards with dark theme */
+  /* Settlement cards with light theme */
   .settlement-positive {
     @apply backdrop-blur-xl border rounded-xl p-4;
-    background: rgba(0, 255, 255, 0.1);
-    border: 1px solid rgba(0, 255, 255, 0.2);
-    color: rgb(0, 255, 255);
+    background: hsl(162, 88%, 95%);
+    border: 1px solid hsl(162, 88%, 80%);
+    color: hsl(162, 88%, 30%);
   }
 
   .settlement-negative {
     @apply backdrop-blur-xl border rounded-xl p-4;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    color: rgb(248, 113, 113);
+    background: hsl(0, 72%, 97%);
+    border: 1px solid hsl(0, 72%, 85%);
+    color: hsl(0, 72%, 45%);
   }
 
-  /* Mobile navigation with dark theme */
+  /* Mobile navigation with light theme */
   .mobile-nav {
     @apply fixed bottom-0 left-0 right-0 backdrop-blur-xl border-t z-50 safe-area-pb;
-    background: hsl(var(--card));
+    background: rgba(255, 255, 255, 0.95);
     border-top: 1px solid hsl(var(--border));
   }
 
@@ -247,12 +259,12 @@
     @apply min-h-[44px] min-w-[44px];
   }
 
-  /* Responsive text with enhanced contrast */
+  /* Responsive text */
   .text-responsive {
     @apply text-sm sm:text-base lg:text-lg;
   }
 
-  /* High contrast text for dark theme */
+  /* Text utilities for light theme */
   .text-glass-primary {
     color: hsl(var(--foreground));
     font-weight: 600;
@@ -270,7 +282,7 @@
   }
 }
 
-/* Custom scrollbar - Dark theme */
+/* Custom scrollbar - Light theme */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -300,11 +312,6 @@
   input, select, textarea {
     font-size: 16px !important;
   }
-}
-
-/* Dark theme overrides for better contrast */
-.dark {
-  color-scheme: dark;
 }
 
 /* Mobile-first responsive breakpoints */

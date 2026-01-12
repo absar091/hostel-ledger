@@ -20,7 +20,9 @@ interface Member {
   id: string;
   name: string;
   isCurrentUser?: boolean;
-  balance: number;
+  balance?: number;
+  paymentDetails?: any;
+  phone?: string | null;
 }
 
 interface GroupSettingsSheetProps {

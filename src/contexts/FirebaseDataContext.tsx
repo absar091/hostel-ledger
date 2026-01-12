@@ -20,6 +20,7 @@ export interface GroupMember {
   paymentDetails?: PaymentDetails;
   phone?: string | null;
   userId?: string; // Firebase user ID for real users
+  balance?: number; // Calculated balance - optional since computed dynamically
 }
 
 export interface Group {

@@ -582,6 +582,23 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Stub implementations for new interface methods
+  const getIndividualDebts = (groupId: string, personId: string) => {
+    return { youOwe: [], theyOwe: [], totalYouOwe: 0, totalTheyOwe: 0, netAmount: 0 };
+  };
+
+  const addIndividualDebt = async (groupId: string, personId: string, debt: any): Promise<{ success: boolean; error?: string }> => {
+    return { success: true };
+  };
+
+  const settleIndividualDebt = async (groupId: string, personId: string, debtId: string, amount?: number): Promise<{ success: boolean; error?: string }> => {
+    return { success: true };
+  };
+
+  const settleNetAmount = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
+    return { success: true };
+  };
+
   return (
     <FirebaseAuthContext.Provider value={{
       user,
@@ -602,7 +619,11 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       addToReceivable,
       addToPayable,
       markPaymentReceived,
-      markDebtPaid
+      markDebtPaid,
+      getIndividualDebts,
+      addIndividualDebt,
+      settleIndividualDebt,
+      settleNetAmount
     }}>
       {children}
     </FirebaseAuthContext.Provider>

@@ -5,7 +5,7 @@ import { ArrowDownLeft, ArrowUpRight, HandCoins, Calendar, MapPin, CreditCard, B
 
 interface Transaction {
   id: string;
-  type: "expense" | "payment";
+  type: "expense" | "payment" | "wallet_add" | "wallet_deduct";
   title: string;
   amount: number;
   date: string;
