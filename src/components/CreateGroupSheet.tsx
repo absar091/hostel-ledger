@@ -129,9 +129,9 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl flex flex-col">
+      <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl flex flex-col bg-white">
         <SheetHeader className="flex-shrink-0 mb-4">
-          <SheetTitle className="text-center">Create New Group</SheetTitle>
+          <SheetTitle className="text-center text-gray-900">Create New Group</SheetTitle>
           <div className="sr-only">
             Create a new group to split expenses with friends or roommates
           </div>
@@ -140,28 +140,28 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
         <div className="flex-1 overflow-y-auto space-y-5 pb-4">
           {/* Group Preview */}
           <div className="flex items-center justify-center animate-fade-in">
-            <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center text-3xl shadow-card">
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-3xl shadow-sm border border-gray-200">
               {emoji}
             </div>
           </div>
 
           {/* Group Name */}
           <div className="animate-fade-in" style={{ animationDelay: "0.05s" }}>
-            <label className="text-sm font-medium text-muted-foreground mb-2 block">
+            <label className="text-sm font-medium text-gray-500 mb-2 block">
               Group Name
             </label>
             <Input
               placeholder="e.g., Roommates, Trip Friends"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="h-11"
+              className="h-11 bg-gray-50 border-gray-200"
               autoFocus
             />
           </div>
 
           {/* Emoji Picker */}
           <div className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
-            <label className="text-sm font-medium text-muted-foreground mb-2 block">
+            <label className="text-sm font-medium text-gray-500 mb-2 block">
               Choose an Icon
             </label>
             <div className="grid grid-cols-8 gap-1.5">
@@ -172,8 +172,8 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                   className={cn(
                     "w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all",
                     emoji === e
-                      ? "bg-primary/10 border-2 border-primary scale-110"
-                      : "bg-secondary hover:bg-secondary/80"
+                      ? "bg-emerald-100 border-2 border-emerald-500 scale-110"
+                      : "bg-gray-50 hover:bg-gray-100 border border-gray-100"
                   )}
                 >
                   {e}
@@ -183,28 +183,28 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
           </div>
 
           {/* Add Members Section */}
-          <div className="animate-fade-in border-t pt-4" style={{ animationDelay: "0.15s" }}>
-            <label className="text-sm font-medium text-muted-foreground mb-3 block">
+          <div className="animate-fade-in border-t border-gray-100 pt-4" style={{ animationDelay: "0.15s" }}>
+            <label className="text-sm font-medium text-gray-500 mb-3 block">
               Add Members
             </label>
             
             {/* Member Name & Phone */}
-            <div className="space-y-3 bg-secondary/50 rounded-xl p-3">
+            <div className="space-y-3 bg-gray-50 rounded-xl p-3 border border-gray-100">
               <Input
                 placeholder="Member name *"
                 value={memberName}
                 onChange={(e) => setMemberName(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="h-11"
+                className="h-11 bg-white border-gray-200"
               />
               
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
                   placeholder="Phone (optional)"
                   value={memberPhone}
                   onChange={(e) => setMemberPhone(e.target.value)}
-                  className="h-11 pl-10"
+                  className="h-11 pl-10 bg-white border-gray-200"
                 />
               </div>
 
@@ -212,18 +212,18 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
               <button
                 type="button"
                 onClick={() => setShowPaymentFields(!showPaymentFields)}
-                className="w-full flex items-center justify-between p-3 bg-background rounded-lg text-sm"
+                className="w-full flex items-center justify-between p-3 bg-white rounded-lg text-sm border border-gray-100"
               >
                 <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">
+                  <CreditCard className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-500">
                     {hasPaymentInfo ? "Payment details added" : "Add payment details (optional)"}
                   </span>
                 </div>
                 {showPaymentFields ? (
-                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                  <ChevronUp className="w-4 h-4 text-gray-400" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
                 )}
               </button>
 
@@ -235,18 +235,18 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                       placeholder="JazzCash"
                       value={jazzCash}
                       onChange={(e) => setJazzCash(e.target.value)}
-                      className="h-10 text-sm"
+                      className="h-10 text-sm bg-white border-gray-200"
                     />
                     <Input
                       placeholder="Easypaisa"
                       value={easypaisa}
                       onChange={(e) => setEasypaisa(e.target.value)}
-                      className="h-10 text-sm"
+                      className="h-10 text-sm bg-white border-gray-200"
                     />
                   </div>
                   
                   <Select value={bankName} onValueChange={setBankName}>
-                    <SelectTrigger className="h-10 text-sm">
+                    <SelectTrigger className="h-10 text-sm bg-white border-gray-200">
                       <SelectValue placeholder="Select bank (optional)" />
                     </SelectTrigger>
                     <SelectContent>
@@ -263,7 +263,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                       placeholder="Account number / IBAN"
                       value={accountNumber}
                       onChange={(e) => setAccountNumber(e.target.value)}
-                      className="h-10 text-sm"
+                      className="h-10 text-sm bg-white border-gray-200"
                     />
                   )}
 
@@ -271,7 +271,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                     placeholder="Raast ID"
                     value={raastId}
                     onChange={(e) => setRaastId(e.target.value)}
-                    className="h-10 text-sm"
+                    className="h-10 text-sm bg-white border-gray-200"
                   />
                 </div>
               )}
@@ -279,7 +279,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
               <Button
                 onClick={handleAddMember}
                 disabled={!memberName.trim()}
-                className="w-full h-10"
+                className="w-full h-10 bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Member
@@ -289,28 +289,28 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
 
           {/* Members List */}
           <div className="space-y-2 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            <p className="text-sm font-medium text-muted-foreground">
+            <p className="text-sm font-medium text-gray-500">
               Members ({members.length + 1})
             </p>
             
             {/* You (always included) */}
-            <div className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-xl">
+            <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
               <Avatar name="You" size="sm" />
-              <span className="font-medium flex-1">You</span>
-              <span className="text-xs text-primary font-medium">Creator</span>
+              <span className="font-medium flex-1 text-gray-900">You</span>
+              <span className="text-xs text-emerald-600 font-medium">Creator</span>
             </div>
 
             {/* Added members */}
             {members.map((member) => (
               <div
                 key={member.name}
-                className="flex items-center gap-3 p-3 bg-secondary rounded-xl"
+                className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-xl"
               >
                 <Avatar name={member.name} size="sm" />
                 <div className="flex-1 min-w-0">
-                  <span className="font-medium block">{member.name}</span>
+                  <span className="font-medium block text-gray-900">{member.name}</span>
                   {(member.phone || member.paymentDetails) && (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-gray-500">
                       {member.phone && `📱 ${member.phone}`}
                       {member.paymentDetails && " • 💳 Payment info added"}
                     </span>
@@ -318,15 +318,15 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                 </div>
                 <button
                   onClick={() => handleRemoveMember(member.name)}
-                  className="w-6 h-6 rounded-full bg-destructive/10 flex items-center justify-center hover:bg-destructive/20 transition-colors"
+                  className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center hover:bg-red-200 transition-colors"
                 >
-                  <X className="w-3 h-3 text-destructive" />
+                  <X className="w-3 h-3 text-red-600" />
                 </button>
               </div>
             ))}
 
             {members.length === 0 && (
-              <div className="text-center py-4 text-muted-foreground">
+              <div className="text-center py-4 text-gray-500">
                 <Users className="w-6 h-6 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">Add members to split expenses with</p>
               </div>
@@ -334,11 +334,11 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
           </div>
         </div>
 
-        <div className="flex-shrink-0 pt-4 border-t bg-background">
+        <div className="flex-shrink-0 pt-4 border-t border-gray-100 bg-white">
           <Button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="w-full h-12"
+            className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600"
           >
             Create Group
           </Button>
