@@ -45,7 +45,7 @@ const Login = () => {
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
             <Wallet className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Hostel Wallet</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Hostel Ledger</h1>
           <p className="text-gray-500 mt-2">Split expenses with ease</p>
         </div>
 
