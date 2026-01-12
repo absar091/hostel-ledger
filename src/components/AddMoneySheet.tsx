@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Wallet, PiggyBank } from "lucide-react";
@@ -53,12 +53,9 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
               position="bottom"
             />
           </div>
-          <div className="sr-only">
-            Add money to your wallet for expense tracking
-          </div>
-          <p className="text-sm text-gray-500 text-center">
+          <SheetDescription className="text-sm text-gray-500 text-center">
             Add actual money to your wallet for expense tracking
-          </p>
+          </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto space-y-6 pb-4">

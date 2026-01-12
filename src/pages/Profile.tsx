@@ -6,7 +6,7 @@ import { useFirebaseAuth, PaymentDetails } from "@/contexts/FirebaseAuthContext"
 import { toast } from "sonner";
 import { ArrowLeft, User, Phone, CreditCard, Building2, LogOut, Check, ChevronRight } from "lucide-react";
 import Avatar from "@/components/Avatar";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Tooltip from "@/components/Tooltip";
 
@@ -215,6 +215,9 @@ const Profile = () => {
         <SheetContent side="bottom" className="h-auto rounded-t-3xl flex flex-col">
           <SheetHeader className="flex-shrink-0 mb-4">
             <SheetTitle className="text-center">Edit Profile</SheetTitle>
+            <SheetDescription className="text-center text-sm text-gray-500">
+              Update your personal information
+            </SheetDescription>
           </SheetHeader>
 
           <div className="space-y-4 pb-4">
@@ -260,6 +263,9 @@ const Profile = () => {
         <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col">
           <SheetHeader className="flex-shrink-0 mb-4">
             <SheetTitle className="text-center">Payment Details</SheetTitle>
+            <SheetDescription className="text-center text-sm text-gray-500">
+              Add your payment methods for group settlements
+            </SheetDescription>
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto space-y-6 pb-4">
