@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFirebaseAuth, PaymentDetails } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
-import { ArrowLeft, User, Mail, Phone, CreditCard, Building2, LogOut, Check, ChevronRight, PiggyBank } from "lucide-react";
+import { ArrowLeft, User, Phone, CreditCard, Building2, LogOut, Check, ChevronRight } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Tooltip from "@/components/Tooltip";
 
 const BANKS = [
   "Allied Bank",
@@ -107,21 +108,6 @@ const Profile = () => {
       </header>
 
       <main className="px-4 space-y-4">
-        {/* My Budget */}
-        <button
-          onClick={() => navigate("/budget")}
-          className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-4 flex items-center gap-4 shadow-md animate-slide-up text-white"
-        >
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-            <PiggyBank className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex-1 text-left">
-            <p className="font-medium">My Budget</p>
-            <p className="text-sm text-white/80">Track your monthly funds & spending</p>
-          </div>
-          <ChevronRight className="w-5 h-5 text-white/80" />
-        </button>
-
         {/* Edit Profile */}
         <button
           onClick={() => {
@@ -159,7 +145,13 @@ const Profile = () => {
             <CreditCard className="w-5 h-5 text-emerald-600" />
           </div>
           <div className="flex-1 text-left">
-            <p className="font-medium text-gray-900">Payment Details</p>
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-gray-900">Payment Details</p>
+              <Tooltip 
+                content="Add your payment methods so group members know how to send you money when settling expenses."
+                position="top"
+              />
+            </div>
             <p className="text-sm text-gray-500">
               {hasPaymentDetails ? "Manage your payment methods" : "Add JazzCash, Easypaisa, Bank details"}
             </p>
@@ -271,9 +263,15 @@ const Profile = () => {
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto space-y-6 pb-4">
-            <p className="text-sm text-muted-foreground text-center">
-              Add your payment details so group members know how to settle expenses with you
-            </p>
+            <div className="flex items-center gap-2 justify-center">
+              <p className="text-sm text-muted-foreground text-center">
+                Add your payment details so group members know how to settle expenses with you
+              </p>
+              <Tooltip 
+                content="These details will be visible to your group members when they need to pay you back for shared expenses."
+                position="top"
+              />
+            </div>
 
             {/* Mobile Wallets */}
             <div className="space-y-4">

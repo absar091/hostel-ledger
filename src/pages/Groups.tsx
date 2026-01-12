@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Users, ChevronRight, Plus, TrendingUp, TrendingDown } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import CreateGroupSheet from "@/components/CreateGroupSheet";
+import Tooltip from "@/components/Tooltip";
 import { toast } from "sonner";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
@@ -69,12 +70,18 @@ const Groups = () => {
             <div className="text-sm text-gray-500 mb-1">{getGreeting()}</div>
             <h1 className="text-3xl font-bold text-gray-900">Your Groups</h1>
           </div>
-          <button
-            onClick={() => setShowCreateGroup(true)}
-            className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center shadow-lg hover:from-emerald-600 hover:to-teal-600 transition-all backdrop-blur-lg border border-white/20"
-          >
-            <Plus className="w-6 h-6 text-white" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowCreateGroup(true)}
+              className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center shadow-lg hover:from-emerald-600 hover:to-teal-600 transition-all backdrop-blur-lg border border-white/20"
+            >
+              <Plus className="w-6 h-6 text-white" />
+            </button>
+            <Tooltip 
+              content="Create a new group to track shared expenses with friends, family, or colleagues."
+              position="left"
+            />
+          </div>
         </div>
       </div>
 
@@ -107,10 +114,19 @@ const Groups = () => {
                     </div>
                     
                     <div className="text-right">
-                      <div className={`text-xl font-bold mb-1 ${
-                        isPositive ? "text-emerald-600" : "text-red-600"
-                      }`}>
-                        {isPositive ? "+" : ""}Rs {Math.abs(balance).toLocaleString()}
+                      <div className="flex items-center gap-2 justify-end mb-1">
+                        <div className={`text-xl font-bold ${
+                          isPositive ? "text-emerald-600" : "text-red-600"
+                        }`}>
+                          {isPositive ? "+" : ""}Rs {Math.abs(balance).toLocaleString()}
+                        </div>
+                        <Tooltip 
+                          content={isPositive 
+                            ? "This is the total amount group members owe you in this group." 
+                            : "This is the total amount you owe to group members in this group."
+                          }
+                          position="left"
+                        />
                       </div>
                       <div className="flex items-center gap-1 text-sm text-gray-500">
                         {isPositive ? (

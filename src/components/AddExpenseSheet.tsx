@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Check, ChevronRight, AlertCircle } from "lucide-react";
 import Avatar from "./Avatar";
+import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
 import { validateExpenseData, sanitizeString, sanitizeAmount } from "@/lib/validation";
 
@@ -287,6 +288,13 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
           {/* Step 3: Who Paid */}
           {step === 3 && (
             <div className="space-y-3 animate-fade-in">
+              <div className="flex items-center gap-2 justify-center mb-4">
+                <p className="text-sm text-muted-foreground">Select who paid for this expense</p>
+                <Tooltip 
+                  content="Choose the person who actually paid the money upfront. The app will calculate how much others owe them."
+                  position="bottom"
+                />
+              </div>
               {members.map((member) => (
                 <button
                   key={member.id}
@@ -313,9 +321,15 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
           {/* Step 4: Split Between */}
           {step === 4 && (
             <div className="space-y-3 animate-fade-in">
-              <p className="text-sm text-muted-foreground mb-4">
-                Select everyone who shared this expense (including who paid)
-              </p>
+              <div className="flex items-center gap-2 justify-center mb-4">
+                <p className="text-sm text-muted-foreground">
+                  Select everyone who shared this expense (including who paid)
+                </p>
+                <Tooltip 
+                  content="Choose all people who should split this cost. The expense will be divided equally among selected members."
+                  position="bottom"
+                />
+              </div>
               {members.map((member) => {
                 const isSelected = participants.includes(member.id);
                 

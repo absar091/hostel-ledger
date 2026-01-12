@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Check, Banknote, Smartphone, ChevronRight, Info, CreditCard } from "lucide-react";
 import Avatar from "./Avatar";
+import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 
@@ -354,9 +355,15 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
 
               {/* Payment Method */}
               <div>
-                <label className="text-sm font-medium text-muted-foreground mb-3 block">
-                  Payment method
-                </label>
+                <div className="flex items-center gap-2 mb-3">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Payment method
+                  </label>
+                  <Tooltip 
+                    content="Select how you received the payment. This helps track different payment methods for your records."
+                    position="top"
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => setMethod("cash")}

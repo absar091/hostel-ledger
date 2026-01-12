@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowUpRight, ArrowDownLeft, Plus, TrendingUp, TrendingDown, Calendar, User, CreditCard, Users } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Plus, Calendar, User, CreditCard, Users } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
 import RecordPaymentSheet from "@/components/RecordPaymentSheet";
@@ -9,14 +9,15 @@ import AddMoneySheet from "@/components/AddMoneySheet";
 import PaymentConfirmationSheet from "@/components/PaymentConfirmationSheet";
 import ErrorAlert from "@/components/ErrorAlert";
 import SuccessAlert from "@/components/SuccessAlert";
-import FirebasePermissionTest from "@/components/FirebasePermissionTest";
+
 import { toast } from "sonner";
+import Tooltip from "@/components/Tooltip";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, getWalletBalance, getSettlements, getTotalToReceive, getTotalToPay, getSettlementDelta } = useFirebaseAuth();
+  const { user, getWalletBalance, getTotalToReceive, getTotalToPay, getSettlementDelta } = useFirebaseAuth();
   const { groups, createGroup, addExpense, recordPayment, addMoneyToWallet, payMyDebt, getAllTransactions } = useFirebaseData();
   
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("home");
@@ -37,7 +38,6 @@ const Dashboard = () => {
 
   // Get all transactions including wallet transactions
   const allTransactions = getAllTransactions();
-  const settlements = getSettlements();
 
   // Calculate totals using new settlement system
   const walletBalance = getWalletBalance();
@@ -112,7 +112,7 @@ const Dashboard = () => {
       });
       
       if (result.success) {
-        setSuccess(`✅ Added expense of Rs ${data.amount.toLocaleString()}`);
+        setSuccess(` Added expense of Rs ${data.amount.toLocaleString()}`);
         toast.success(`Added expense of Rs ${data.amount.toLocaleString()}`);
       } else {
         if (result.error?.includes("Insufficient")) {
@@ -151,7 +151,7 @@ const Dashboard = () => {
       if (result.success) {
         const group = groups.find((g) => g.id === data.groupId);
         const memberName = group?.members.find((m) => m.id === data.fromMember)?.name;
-        setSuccess(`✅ Recorded Rs ${data.amount.toLocaleString()} from ${memberName}`);
+        setSuccess(` Recorded Rs ${data.amount.toLocaleString()} from ${memberName}`);
         toast.success(`Recorded Rs ${data.amount.toLocaleString()} from ${memberName}`);
       } else {
         setError(result.error || "Failed to record payment");
@@ -446,93 +446,149 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* Dashboard Cards - Mobile First */}
-      <div className="mobile-padding space-y-6">
-        {/* Main Wallet Card - Now matches shortcut card styling */}
-        <button
-          onClick={() => setShowAddMoney(true)}
-          className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-6 w-full text-left shadow-lg hover:shadow-xl transition-all duration-200 group"
-        >
-          <div className="flex justify-between items-start mb-6">
-            <div className="flex-1">
-              <div className="text-white/80 text-sm mb-2">Available Balance</div>
-              <div className="text-4xl font-bold text-white mb-1">
-                Rs {walletBalance.toLocaleString()}
-              </div>
-              <div className="text-white/70 text-sm">Tap to add money</div>
+      {/* Dashboard Cards - Production-Grade Fintech UI */}
+      <div className="mobile-padding">
+        {/* Available Balance Card - Premium Primary Card */}
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-[24px] p-[18px] shadow-[0_12px_30px_rgba(16,185,129,0.15),0_4px_12px_rgba(16,185,129,0.1)] animate-[slideUp_0.5s_ease_forwards] text-white hover:scale-[0.98] active:scale-[0.96] transition-all duration-200 cursor-pointer mb-6"
+             onClick={() => setShowAddMoney(true)}>
+          <div className="flex justify-between items-center mb-[6px]">
+            <div className="flex items-center gap-2">
+              <span className="text-[12px] font-semibold tracking-[0.08em] uppercase opacity-90 text-white">Available Balance</span>
+              <Tooltip 
+                content="This is the actual money in your wallet that you can spend right now. It doesn't include money others owe you."
+                position="bottom"
+              >
+                <div className="w-4 h-4 rounded-full bg-white/30 flex items-center justify-center cursor-help">
+                  <span className="text-[10px] font-bold text-white">?</span>
+                </div>
+              </Tooltip>
             </div>
-            <div className="touch-target w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border border-white/30 group-hover:bg-white/30 transition-all">
-              <Plus className="w-6 h-6 text-white" />
+            <button 
+              className="bg-white/25 border-0 text-white w-[44px] h-[44px] rounded-full text-[26px] cursor-pointer hover:bg-white/35 active:scale-95 transition-all flex items-center justify-center shadow-inner"
+            >
+              <Plus className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="text-[40px] font-extrabold tracking-[-0.02em] leading-[1.15] mt-[6px] text-white tabular-nums">
+            <span className="text-[28px] opacity-90">Rs </span>{walletBalance.toLocaleString()}
+          </div>
+          <div className="text-[12px] leading-[1.4] opacity-80 mt-1 text-white font-medium">
+            Money available to spend
+          </div>
+          
+          {/* Ghost projection - "Wow" feature */}
+          <div className="mt-4 pt-3 border-t border-white/20">
+            <div className="flex items-center gap-2">
+              <div className="text-[11px] opacity-70 text-white font-medium">
+                After settlements: <span className="tabular-nums">Rs {(walletBalance + settlementDelta).toLocaleString()}</span>
+              </div>
+              <Tooltip 
+                content="This shows what your wallet balance will be after all pending group settlements are completed."
+                position="top"
+              >
+                <div className="w-4 h-4 rounded-full bg-white/30 flex items-center justify-center cursor-help">
+                  <span className="text-[10px] font-bold text-white">?</span>
+                </div>
+              </Tooltip>
             </div>
           </div>
+        </div>
 
-          {/* Settlement Delta Section */}
-          <div className="bg-white/30 backdrop-blur-sm rounded-xl p-4 mb-4 border border-white/40">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-4 h-4 bg-white/40 rounded-full"></div>
-              <span className="text-white text-sm">Settlement Delta</span>
+        <div className="space-y-4">
+          {/* Settlement Delta Card - Improved Visual Clarity */}
+          <div className="bg-white rounded-[20px] p-[18px] shadow-[0_12px_30px_rgba(0,0,0,0.08)] animate-[slideUp_0.5s_ease_forwards]">
+            <div className="flex items-center gap-2 mb-[6px]">
+              <div className={`w-3 h-3 rounded-full ${settlementDelta < 0 ? 'bg-orange-400' : settlementDelta > 0 ? 'bg-emerald-400' : 'bg-gray-400'}`}></div>
+              <span className="text-[12px] font-semibold tracking-[0.08em] uppercase opacity-85 text-gray-700">Settlement Delta</span>
+              <Tooltip 
+                content="The net amount you'll receive (+) or owe (-) after all group settlements. This is calculated from all your group expenses and payments."
+                position="top"
+              >
+                <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center cursor-help">
+                  <span className="text-[10px] font-bold text-gray-600">?</span>
+                </div>
+              </Tooltip>
+              {settlementDelta < 0 && <span className="text-[10px] text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full font-medium">↓ Pending</span>}
+              {settlementDelta > 0 && <span className="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-medium">↑ Incoming</span>}
             </div>
-            <div className={`text-2xl font-bold mb-1 ${
-              settlementDelta > 0 ? 'text-emerald-100' : 
-              settlementDelta < 0 ? 'text-red-200' : 
-              'text-white'
+            <div className={`text-[34px] font-extrabold tracking-[-0.02em] leading-[1.15] mt-[6px] tabular-nums ${
+              settlementDelta < 0 ? 'text-orange-600' : settlementDelta > 0 ? 'text-emerald-600' : 'text-gray-900'
             }`}>
-              {settlementDelta > 0 ? '+' : ''}Rs {settlementDelta.toLocaleString()}
+              <span className="text-[24px] opacity-90">Rs </span>{settlementDelta > 0 ? '' : '−'}{Math.abs(settlementDelta).toLocaleString()}
             </div>
-            <div className="text-white/70 text-xs">
-              Pending group settlements
+            <div className="text-[12px] leading-[1.4] opacity-70 mt-1 text-gray-600 font-medium">
+              Net amount from pending settlements
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingDown className="w-4 h-4 text-emerald-100" />
-                <span className="text-emerald-100 text-sm font-medium">You'll Receive</span>
+          {/* Receive / Owe Split Cards - Enhanced Contrast */}
+          <div className="grid grid-cols-2 gap-[14px]">
+            <div className="bg-gradient-to-br from-white to-emerald-50/30 border border-emerald-100/50 rounded-[20px] p-[18px] shadow-[0_12px_30px_rgba(0,0,0,0.08)] animate-[slideUp_0.5s_ease_forwards]">
+              <div className="flex items-center gap-2 mb-[6px]">
+                <span className="text-[12px] font-semibold tracking-[0.08em] uppercase opacity-85 text-emerald-700">To Receive</span>
+                <Tooltip 
+                  content="Total amount that group members owe you from shared expenses. This money will come to your wallet when they pay you."
+                  position="top"
+                >
+                  <div className="w-4 h-4 rounded-full bg-emerald-200 flex items-center justify-center cursor-help">
+                    <span className="text-[10px] font-bold text-emerald-700">?</span>
+                  </div>
+                </Tooltip>
               </div>
-              <div className="text-xl font-bold text-white">Rs {totalToReceive.toLocaleString()}</div>
+              <div className="text-[26px] font-extrabold tracking-[-0.02em] leading-[1.15] mt-[6px] text-emerald-700 tabular-nums">
+                <span className="text-[18px] opacity-90">Rs </span>{totalToReceive.toLocaleString()}
+              </div>
             </div>
             
-            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-red-200" />
-                <span className="text-red-200 text-sm font-medium">You Owe</span>
+            <div className="bg-gradient-to-br from-white to-red-50/30 border border-red-100/50 rounded-[20px] p-[18px] shadow-[0_12px_30px_rgba(0,0,0,0.08)] animate-[slideUp_0.5s_ease_forwards]">
+              <div className="flex items-center gap-2 mb-[6px]">
+                <span className="text-[12px] font-semibold tracking-[0.08em] uppercase opacity-85 text-red-700">To Pay</span>
+                <Tooltip 
+                  content="Total amount you owe to group members from shared expenses. You'll need to pay this from your wallet or record payments."
+                  position="top"
+                >
+                  <div className="w-4 h-4 rounded-full bg-red-200 flex items-center justify-center cursor-help">
+                    <span className="text-[10px] font-bold text-red-700">?</span>
+                  </div>
+                </Tooltip>
               </div>
-              <div className="text-xl font-bold text-white">Rs {totalToPay.toLocaleString()}</div>
+              <div className="text-[26px] font-extrabold tracking-[-0.02em] leading-[1.15] mt-[6px] text-red-600 tabular-nums">
+                <span className="text-[18px] opacity-90">Rs </span>{totalToPay.toLocaleString()}
+              </div>
             </div>
           </div>
-        </button>
+        </div>
 
-        {/* Quick Actions - Mobile Optimized */}
-        <div className="grid grid-cols-3 gap-3">
+        {/* Quick Actions - Refined & Professional */}
+        <div className="grid grid-cols-3 gap-3 mt-6">
           <button
             onClick={handleAddExpense}
-            className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 transition-all duration-200 text-center group border border-white/50 shadow-sm"
+            className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 active:scale-95 transition-all duration-200 text-center group border border-white/50 shadow-sm min-h-[44px]"
           >
-            <div className="w-12 h-12 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mb-3 mx-auto border border-emerald-200 group-hover:border-emerald-300 transition-all">
-              <Plus className="w-6 h-6 text-emerald-600" />
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mb-3 mx-auto border border-emerald-200 group-hover:border-emerald-300 group-active:scale-95 transition-all">
+              <Plus className="w-5 h-5 text-emerald-600" />
             </div>
-            <div className="text-gray-700 font-medium text-sm">Add Expense</div>
+            <div className="text-gray-700 font-semibold text-sm">Add Expense</div>
           </button>
           
           <button
             onClick={handleReceivedMoney}
-            className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 transition-all duration-200 text-center group border border-white/50 shadow-sm"
+            className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 active:scale-95 transition-all duration-200 text-center group border border-white/50 shadow-sm min-h-[44px]"
           >
-            <div className="w-12 h-12 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mb-3 mx-auto border border-emerald-200 group-hover:border-emerald-300 transition-all">
-              <ArrowDownLeft className="w-6 h-6 text-emerald-600" />
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mb-3 mx-auto border border-emerald-200 group-hover:border-emerald-300 group-active:scale-95 transition-all">
+              <ArrowDownLeft className="w-5 h-5 text-emerald-600" />
             </div>
-            <div className="text-gray-700 font-medium text-sm">Received</div>
+            <div className="text-gray-700 font-semibold text-sm">Received</div>
           </button>
           
           <button
             onClick={handleNewGroup}
-            className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 transition-all duration-200 text-center group border border-white/50 shadow-sm"
+            className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 active:scale-95 transition-all duration-200 text-center group border border-white/50 shadow-sm min-h-[44px]"
           >
-            <div className="w-12 h-12 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mb-3 mx-auto border border-emerald-200 group-hover:border-emerald-300 transition-all">
-              <User className="w-6 h-6 text-emerald-600" />
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mb-3 mx-auto border border-emerald-200 group-hover:border-emerald-300 group-active:scale-95 transition-all">
+              <User className="w-5 h-5 text-emerald-600" />
             </div>
-            <div className="text-gray-700 font-medium text-sm">New Group</div>
+            <div className="text-gray-700 font-semibold text-sm">New Group</div>
           </button>
         </div>
 

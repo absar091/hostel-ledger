@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Wallet, PiggyBank } from "lucide-react";
+import Tooltip from "./Tooltip";
 
 interface AddMoneySheetProps {
   open: boolean;
@@ -42,10 +43,16 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent side="bottom" className="h-[75vh] rounded-t-3xl flex flex-col bg-white">
         <SheetHeader className="flex-shrink-0 mb-6">
-          <SheetTitle className="text-center flex items-center justify-center gap-2 text-gray-900">
-            <PiggyBank className="w-5 h-5 text-emerald-600" />
-            Add to Available Budget
-          </SheetTitle>
+          <div className="flex items-center justify-center gap-2">
+            <SheetTitle className="text-center flex items-center justify-center gap-2 text-gray-900">
+              <PiggyBank className="w-5 h-5 text-emerald-600" />
+              Add to Available Budget
+            </SheetTitle>
+            <Tooltip 
+              content="Add money to your wallet balance. This represents actual money you have available to spend on group expenses."
+              position="bottom"
+            />
+          </div>
           <div className="sr-only">
             Add money to your wallet for expense tracking
           </div>

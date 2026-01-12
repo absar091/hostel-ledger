@@ -264,6 +264,11 @@
     @apply text-sm sm:text-base lg:text-lg;
   }
 
+  /* Tabular numbers for consistent digit spacing */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
   /* Text utilities for light theme */
   .text-glass-primary {
     color: hsl(var(--foreground));
@@ -298,6 +303,32 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary));
+}
+
+/* Animations matching HTML design */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation utilities */
+.animate-fadeIn {
+  animation: fadeIn 0.6s ease;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.5s ease forwards;
 }
 
 /* Mobile viewport fixes */
