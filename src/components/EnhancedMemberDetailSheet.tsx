@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import Avatar from "./Avatar";
 import { ArrowDownLeft, ArrowUpRight, HandCoins, Calendar, MapPin, CreditCard, Banknote, ArrowRight, CheckCircle, XCircle } from "lucide-react";
@@ -75,6 +75,9 @@ const EnhancedMemberDetailSheet = ({
       <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl flex flex-col">
         <SheetHeader className="flex-shrink-0 mb-6">
           <SheetTitle className="text-center">Financial Details</SheetTitle>
+          <SheetDescription className="text-center text-sm text-gray-500">
+            Detailed financial overview and settlement options for this member
+          </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto pb-4">

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, Wallet, TrendingDown, TrendingUp, PiggyBank } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 
@@ -222,6 +222,9 @@ const Budget = () => {
         <SheetContent side="bottom" className="rounded-t-3xl">
           <SheetHeader className="mb-6">
             <SheetTitle>Add Funds</SheetTitle>
+            <SheetDescription className="text-sm text-gray-500">
+              Add money to your budget tracking
+            </SheetDescription>
           </SheetHeader>
 
           <div className="space-y-4">

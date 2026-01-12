@@ -1,4 +1,4 @@
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import Avatar from "./Avatar";
 import { ArrowDownLeft, ArrowUpRight, HandCoins, Calendar, MapPin, CreditCard, Banknote, ArrowRight } from "lucide-react";
@@ -96,6 +96,9 @@ const MemberDetailSheet = ({
       <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white">
         <SheetHeader className="flex-shrink-0 mb-6">
           <SheetTitle className="text-center text-gray-900">Balance History</SheetTitle>
+          <SheetDescription className="text-center text-sm text-gray-500">
+            View transaction history and settlement details with this member
+          </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto pb-4">

@@ -1,4 +1,4 @@
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import Avatar from "./Avatar";
 import { Wallet, AlertCircle, CheckCircle } from "lucide-react";
@@ -38,6 +38,9 @@ const PaymentConfirmationSheet = ({
         <SheetContent side="bottom" className="h-[40vh] rounded-t-3xl flex flex-col">
           <SheetHeader className="flex-shrink-0 mb-6">
             <SheetTitle className="text-center">Payment Error</SheetTitle>
+            <SheetDescription className="text-center text-sm text-gray-500">
+              Unable to process payment due to invalid amount
+            </SheetDescription>
           </SheetHeader>
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -72,9 +75,9 @@ const PaymentConfirmationSheet = ({
       <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl flex flex-col">
         <SheetHeader className="flex-shrink-0 mb-6">
           <SheetTitle className="text-center">Pay from Wallet</SheetTitle>
-          <div className="sr-only">
+          <SheetDescription className="text-center text-sm text-gray-500">
             Confirm payment to a group member from your wallet balance
-          </div>
+          </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto space-y-6 pb-4">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Avatar from "@/components/Avatar";
@@ -105,6 +105,9 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
             <Avatar name={member.name} size="sm" />
             {member.name} — Settlement Details
           </SheetTitle>
+          <SheetDescription className="text-center text-sm text-gray-500">
+            Manage payments and settlements with this group member
+          </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto space-y-6 pb-4">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,6 +87,9 @@ const GroupSettingsSheet = ({
         <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col">
           <SheetHeader className="flex-shrink-0 mb-6">
             <SheetTitle className="text-center">Group Settings</SheetTitle>
+            <SheetDescription className="text-center text-sm text-gray-500">
+              Manage group details, members, and preferences
+            </SheetDescription>
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto space-y-6 pb-4">
