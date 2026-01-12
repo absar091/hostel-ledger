@@ -200,9 +200,11 @@ const GroupDetail = () => {
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0);
   const expenseCount = transactions.filter((t) => t.type === "expense").length;
-  const topSpender = group.members.reduce((prev, curr) =>
-    curr.balance > prev.balance ? curr : prev
-  );
+  const topSpender = group.members.reduce((prev, curr) => {
+    const prevBalance = prev.balance || 0;
+    const currBalance = curr.balance || 0;
+    return currBalance > prevBalance ? curr : prev;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 pb-24">
@@ -402,9 +404,9 @@ const GroupDetail = () => {
                 <div>
                   <div className="font-semibold text-gray-900">{topSpender.name}</div>
                   <div className="text-sm text-emerald-600">
-                    {topSpender.balance >= 0 
-                      ? `Rs ${topSpender.balance} to receive` 
-                      : `Rs ${Math.abs(topSpender.balance)} owes`}
+                    {(topSpender.balance || 0) >= 0 
+                      ? `Rs ${(topSpender.balance || 0).toLocaleString()} to receive` 
+                      : `Rs ${Math.abs(topSpender.balance || 0).toLocaleString()} owes`}
                   </div>
                 </div>
               </div>
