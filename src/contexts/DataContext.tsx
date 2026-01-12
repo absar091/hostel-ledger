@@ -36,6 +36,7 @@ export interface Transaction {
   method?: "cash" | "online";
   place?: string;
   note?: string;
+  walletBalanceBefore?: number; // Track wallet balance before transaction
   walletBalanceAfter?: number; // Track wallet balance after transaction
   createdAt: string;
 }
