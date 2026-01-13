@@ -733,7 +733,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         logger.logTransaction("expense_created", sanitizedAmount, true);
         
         // Send transaction notification emails (async, non-blocking)
-        setImmediate(async () => {
+        // Use setTimeout instead of setImmediate for better async behavior
+        setTimeout(async () => {
           try {
             console.log('📧 Sending transaction notification emails for expense...');
             
@@ -775,7 +776,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             console.error('❌ Failed to send transaction notification emails:', emailError);
             // Email failure doesn't affect transaction success
           }
-        });
+        }, 0); // Use setTimeout with 0ms delay for better async behavior
       } else {
         logger.logTransaction("expense_failed", sanitizedAmount, false);
       }
@@ -992,7 +993,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         logger.logTransaction("payment_recorded", sanitizedAmount, true);
         
         // Send transaction notification emails (async, non-blocking)
-        setImmediate(async () => {
+        setTimeout(async () => {
           try {
             console.log('📧 Sending transaction notification emails for payment...');
             
@@ -1034,7 +1035,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             console.error('❌ Failed to send payment notification email:', emailError);
             // Email failure doesn't affect transaction success
           }
-        });
+        }, 0); // Use setTimeout with 0ms delay for better async behavior
       } else {
         logger.logTransaction("payment_failed", sanitizedAmount, false);
       }
