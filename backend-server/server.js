@@ -8,7 +8,12 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:5173',
+    'https://hostel-ledger.vercel.app',
+    'http://localhost:8080',
+    'http://localhost:5173'
+  ],
   credentials: true
 }));
 app.use(express.json());
@@ -42,6 +47,22 @@ transporter.verify((error, success) => {
     console.log('✅ Email server is ready to send messages');
     console.log('📧 SMTP User:', process.env.SMTP_USER);
   }
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'Hostel Ledger Email API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      sendEmail: '/api/send-email',
+      sendVerification: '/api/send-verification',
+      sendPasswordReset: '/api/send-password-reset'
+    },
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Health check endpoint
