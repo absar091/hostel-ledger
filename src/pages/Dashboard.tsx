@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowUpRight, ArrowDownLeft, Plus, Calendar, User, CreditCard, Users } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Plus, User, CreditCard, Users } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
 import RecordPaymentSheet from "@/components/RecordPaymentSheet";
@@ -420,102 +420,10 @@ const Dashboard = () => {
       {/* Header with Enhanced Personalization */}
       <div className="mobile-padding pt-8 pb-6">
         <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="mb-2">
             <div className="text-sm text-gray-500">{getGreeting()}</div>
-            <div className="flex gap-1">
-              {/* Weather-like emoji based on time */}
-              {(() => {
-                const hour = new Date().getHours();
-                if (hour < 6) return "🌙";
-                if (hour < 12) return "☀️";
-                if (hour < 18) return "🌤️";
-                return "🌆";
-              })()}
-            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-gray-900">{user?.name || "User"}</h1>
-            <div className="flex gap-1">
-              {/* Motivational emoji based on balance */}
-              {walletBalance > 10000 ? "💰" : walletBalance > 5000 ? "💵" : walletBalance > 1000 ? "💳" : "🪙"}
-            </div>
-          </div>
-          
-          {/* Quick Stats Bar */}
-          <div className="mt-4 flex items-center gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-1">
-              <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
-              <span>{groups.length} {groups.length === 1 ? 'Group' : 'Groups'}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
-              <span>{allTransactions.length} Transactions</span>
-            </div>
-            {totalToReceive > 0 && (
-              <div className="flex items-center gap-1">
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                <span>Money incoming!</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Personalized Insights & Achievements */}
-        <div className="mb-6">
-          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-white/50">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700">Your Financial Snapshot</h3>
-              <div className="text-lg">📊</div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              {/* Achievement badges */}
-              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-3 border border-emerald-100">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">
-                    {walletBalance > 20000 ? "🏆" : walletBalance > 10000 ? "🥇" : walletBalance > 5000 ? "🥈" : "🥉"}
-                  </span>
-                  <span className="text-xs font-semibold text-emerald-700">
-                    {walletBalance > 20000 ? "High Roller" : walletBalance > 10000 ? "Gold Saver" : walletBalance > 5000 ? "Silver Saver" : "Getting Started"}
-                  </span>
-                </div>
-                <div className="text-[10px] text-emerald-600">
-                  {walletBalance > 20000 ? "Excellent financial management!" : 
-                   walletBalance > 10000 ? "Great savings discipline!" : 
-                   walletBalance > 5000 ? "Building good habits!" : "Every journey starts here!"}
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-3 border border-blue-100">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">
-                    {groups.length >= 5 ? "🌟" : groups.length >= 3 ? "👥" : groups.length >= 1 ? "🤝" : "👋"}
-                  </span>
-                  <span className="text-xs font-semibold text-blue-700">
-                    {groups.length >= 5 ? "Social Butterfly" : groups.length >= 3 ? "Group Master" : groups.length >= 1 ? "Team Player" : "Solo Explorer"}
-                  </span>
-                </div>
-                <div className="text-[10px] text-blue-600">
-                  {groups.length >= 5 ? "Managing multiple groups like a pro!" : 
-                   groups.length >= 3 ? "Balancing expenses across groups!" : 
-                   groups.length >= 1 ? "Sharing expenses responsibly!" : "Ready to create your first group!"}
-                </div>
-              </div>
-            </div>
-
-            {/* Quick tip */}
-            <div className="mt-3 p-2 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
-              <div className="flex items-center gap-2">
-                <span className="text-sm">💡</span>
-                <span className="text-xs text-yellow-700 font-medium">
-                  {totalToPay > totalToReceive ? "Tip: Consider settling some debts to improve your balance!" :
-                   totalToReceive > totalToPay ? "Great! You have more money coming in than going out." :
-                   allTransactions.length === 0 ? "Start by creating a group and adding your first expense!" :
-                   "Your finances are perfectly balanced! 🎯"}
-                </span>
-              </div>
-            </div>
-          </div>
+          <h1 className="text-3xl font-bold text-gray-900">{user?.name || "User"}</h1>
         </div>
 
         {/* Error and Success Alerts */}
@@ -574,8 +482,8 @@ const Dashboard = () => {
           <div className="mt-4 pt-3 border-t border-white/60">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="text-4xl opacity-100 text-red-500 font-bold tracking-wide bg-yellow-300 p-4">
-                  TESTING CHANGE - After settlements: <span className="tabular-nums text-5xl">Rs {(walletBalance + settlementDelta).toLocaleString()}</span>
+                <div className="text-sm opacity-90 text-white font-medium">
+                  After settlements: <span className="tabular-nums ">Rs {(walletBalance + settlementDelta).toLocaleString()}</span>
                 </div>
                 <Tooltip 
                   content="This shows what your wallet balance will be after all pending group settlements are completed."
@@ -587,10 +495,7 @@ const Dashboard = () => {
                 </Tooltip>
               </div>
               
-              {/* Smart insights */}
-              <div className="text-[10px] opacity-60 text-white">
-                {settlementDelta > 0 ? "💸 Payday coming!" : settlementDelta < 0 ? "⚡ Settlement due" : "✨ All settled"}
-              </div>
+
             </div>
           </div>
         </div>
@@ -598,19 +503,23 @@ const Dashboard = () => {
         <div className="space-y-4">
           {/* Settlement Delta Card - Improved Visual Clarity */}
           <div className="bg-white rounded-[20px] p-[18px] shadow-[0_12px_30px_rgba(0,0,0,0.08)] animate-[slideUp_0.5s_ease_forwards]">
-            <div className="flex items-center gap-2 mb-[6px]">
-              <div className={`w-3 h-3 rounded-full ${settlementDelta < 0 ? 'bg-orange-400' : settlementDelta > 0 ? 'bg-emerald-400' : 'bg-gray-400'}`}></div>
-              <span className="text-[12px] font-semibold tracking-[0.08em] uppercase opacity-85 text-gray-700">Settlement Delta</span>
-              <Tooltip 
-                content="The net amount you'll receive (+) or owe (-) after all group settlements. This is calculated from all your group expenses and payments."
-                position="top"
-              >
-                <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center cursor-help">
-                  <span className="text-[10px] font-bold text-gray-600">?</span>
-                </div>
-              </Tooltip>
-              {settlementDelta < 0 && <span className="text-[10px] text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full font-medium">↓ Pending</span>}
-              {settlementDelta > 0 && <span className="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-medium">↑ Incoming</span>}
+            <div className="flex items-center justify-between mb-[6px]">
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${settlementDelta < 0 ? 'bg-orange-400' : settlementDelta > 0 ? 'bg-emerald-400' : 'bg-gray-400'}`}></div>
+                <span className="text-[12px] font-semibold tracking-[0.08em] uppercase opacity-85 text-gray-700">Settlement Delta</span>
+                <Tooltip 
+                  content="The net amount you'll receive (+) or owe (-) after all group settlements. This is calculated from all your group expenses and payments."
+                  position="top"
+                >
+                  <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center cursor-help">
+                    <span className="text-[10px] font-bold text-gray-600">?</span>
+                  </div>
+                </Tooltip>
+              </div>
+              <div className="flex-shrink-0">
+                {settlementDelta < 0 && <span className="text-[10px] text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">↓ Pending</span>}
+                {settlementDelta > 0 && <span className="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">↑ Incoming</span>}
+              </div>
             </div>
             <div className={`text-[34px] font-extrabold tracking-[-0.02em] leading-[1.15] mt-[6px] tabular-nums ${
               settlementDelta < 0 ? 'text-orange-600' : settlementDelta > 0 ? 'text-emerald-600' : 'text-gray-900'
@@ -699,10 +608,7 @@ const Dashboard = () => {
         {/* Recent Transactions - Enhanced with Personality */}
         <div>
           <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-gray-900">Recent Activity</h2>
-              <span className="text-lg">📈</span>
-            </div>
+            <h2 className="text-xl font-bold text-gray-900">Recent Activity</h2>
             {allTransactions.length > 5 && (
               <button className="text-emerald-600 text-sm font-medium hover:text-emerald-700 transition-colors">
                 View All
@@ -758,7 +664,7 @@ const Dashboard = () => {
           ) : (
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-12 text-center shadow-sm border border-white/50">
               <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-200">
-                <div className="text-2xl">🚀</div>
+                <Plus className="w-8 h-8 text-emerald-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready to start your journey?</h3>
               <p className="text-gray-500 mb-6">Your financial adventure begins with your first transaction!</p>
@@ -767,7 +673,7 @@ const Dashboard = () => {
                   onClick={groups.length === 0 ? handleNewGroup : handleAddExpense}
                   className="py-3 px-6 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg hover:shadow-xl"
                 >
-                  {groups.length === 0 ? "🎯 Create Your First Group" : "💰 Add Your First Expense"}
+                  {groups.length === 0 ? "Create Your First Group" : "Add Your First Expense"}
                 </button>
                 <div className="text-xs text-gray-400">
                   {groups.length === 0 ? "Start by adding friends or roommates" : "Split your first bill with the group"}
