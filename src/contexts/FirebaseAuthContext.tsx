@@ -397,10 +397,41 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
   const checkEmailExists = async (email: string): Promise<boolean> => {
     try {
-      const methods = await fetchSignInMethodsForEmail(auth, email);
-      return methods.length > 0;
+      console.log('🔍 Checking if email exists in database:', email);
+      
+      // Check Realtime Database for existing user with this email
+      const usersRef = ref(database, 'users');
+      const snapshot = await get(usersRef);
+      
+      if (snapshot.exists()) {
+        const users = snapshot.val();
+        
+        // Search through all users to find matching email
+        for (const uid in users) {
+          if (users[uid].email === email) {
+            console.log('❌ Email already exists in database:', email);
+            return true;
+          }
+        }
+      }
+      
+      // Also check Firebase Auth as backup
+      try {
+        const methods = await fetchSignInMethodsForEmail(auth, email);
+        if (methods.length > 0) {
+          console.log('❌ Email already exists in Firebase Auth:', email);
+          return true;
+        }
+      } catch (authError) {
+        console.warn('⚠️ Firebase Auth check failed (non-critical):', authError);
+      }
+      
+      console.log('✅ Email is available:', email);
+      return false;
+      
     } catch (error) {
-      console.error("Error checking email existence:", error);
+      console.error("❌ Error checking email existence:", error);
+      // In case of error, return false to allow signup (better UX)
       return false;
     }
   };
