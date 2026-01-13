@@ -2,6 +2,8 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -42,7 +44,24 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Email transporter configuration
+// Helper function to load and process email templates
+const loadEmailTemplate = (templateName, variables = {}) => {
+  try {
+    const templatePath = path.join(__dirname, 'email-templates', `${templateName}.html`);
+    let template = fs.readFileSync(templatePath, 'utf8');
+    
+    // Replace variables in template
+    Object.keys(variables).forEach(key => {
+      const regex = new RegExp(`{{${key}}}`, 'g');
+      template = template.replace(regex, variables[key]);
+    });
+    
+    return template;
+  } catch (error) {
+    console.error(`❌ Error loading template ${templateName}:`, error);
+    return null;
+  }
+};
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT),
@@ -74,7 +93,9 @@ app.get('/', (req, res) => {
       health: '/health',
       sendEmail: '/api/send-email',
       sendVerification: '/api/send-verification',
-      sendPasswordReset: '/api/send-password-reset'
+      sendPasswordReset: '/api/send-password-reset',
+      sendWelcome: '/api/send-welcome',
+      sendTransactionAlert: '/api/send-transaction-alert'
     },
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
@@ -331,6 +352,189 @@ app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to send password reset email: ' + error.message
+    });
+  }
+});
+
+// Welcome email endpoint
+app.post('/api/send-welcome', emailLimiter, async (req, res) => {
+  try {
+    const { email, name } = req.body;
+
+    if (!email || !name) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: email, name'
+      });
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid email address'
+      });
+    }
+
+    // Load and process welcome template
+    const html = loadEmailTemplate('welcome', {
+      USER_NAME: name
+    });
+
+    if (!html) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to load email template'
+      });
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject: '🎉 Welcome to Hostel Ledger!',
+      html: html,
+      text: `Welcome to Hostel Ledger, ${name}!\n\nYour account has been successfully created and verified.\n\nYou can now start tracking shared expenses, settling balances, and managing hostel finances with ease.\n\nBest regards,\nHostel Ledger Team`
+    };
+
+    console.log('📧 Sending welcome email to:', email);
+    const result = await transporter.sendMail(mailOptions);
+    console.log('✅ Welcome email sent:', result.messageId);
+
+    res.json({
+      success: true,
+      messageId: result.messageId
+    });
+
+  } catch (error) {
+    console.error('❌ Welcome email error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send welcome email: ' + error.message
+    });
+  }
+});
+
+// Transaction alert email endpoint
+app.post('/api/send-transaction-alert', emailLimiter, async (req, res) => {
+  try {
+    const { email, name, transactionType, amount, groupName, date, description } = req.body;
+
+    if (!email || !name || !transactionType || !amount || !groupName || !date || !description) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: email, name, transactionType, amount, groupName, date, description'
+      });
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid email address'
+      });
+    }
+
+    // Load and process transaction alert template
+    const html = loadEmailTemplate('transaction-alert', {
+      USER_NAME: name,
+      TRANSACTION_TYPE: transactionType,
+      AMOUNT: amount,
+      GROUP_NAME: groupName,
+      DATE: date,
+      DESCRIPTION: description
+    });
+
+    if (!html) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to load email template'
+      });
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject: `💰 Transaction Alert - ${transactionType} in ${groupName}`,
+      html: html,
+      text: `Transaction Alert\n\nHello ${name},\n\nA new transaction has been recorded on your Hostel Ledger account.\n\nType: ${transactionType}\nAmount: ${amount}\nGroup: ${groupName}\nDate: ${date}\nDescription: ${description}\n\nBest regards,\nHostel Ledger Team`
+    };
+
+    console.log('📧 Sending transaction alert email to:', email);
+    const result = await transporter.sendMail(mailOptions);
+    console.log('✅ Transaction alert email sent:', result.messageId);
+
+    res.json({
+      success: true,
+      messageId: result.messageId
+    });
+
+  } catch (error) {
+    console.error('❌ Transaction alert email error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send transaction alert email: ' + error.message
+    });
+  }
+});
+
+// Update verification email endpoint to use new template
+app.post('/api/send-verification-new', emailLimiter, async (req, res) => {
+  try {
+    const { email, code, name } = req.body;
+
+    if (!email || !code || !name) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: email, code, name'
+      });
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid email address'
+      });
+    }
+
+    // Load and process verification template
+    const html = loadEmailTemplate('verification', {
+      USER_NAME: name,
+      CODE: code
+    });
+
+    if (!html) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to load email template'
+      });
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject: '🔐 Verify Your Hostel Ledger Account',
+      html: html,
+      text: `Hi ${name}!\n\nYour verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nBest regards,\nHostel Ledger Team`
+    };
+
+    console.log('📧 Sending verification email to:', email);
+    const result = await transporter.sendMail(mailOptions);
+    console.log('✅ Verification email sent:', result.messageId);
+
+    res.json({
+      success: true,
+      messageId: result.messageId
+    });
+
+  } catch (error) {
+    console.error('❌ Verification email error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send verification email: ' + error.message
     });
   }
 });

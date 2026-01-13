@@ -92,7 +92,109 @@ const sendVerificationEmailAPI = async (email: string, code: string, name: strin
   }
 };
 
-// Send password reset email using backend API
+// Send welcome email using backend API
+const sendWelcomeEmailAPI = async (email: string, name: string) => {
+  try {
+    console.log('📧 Sending welcome email via backend API to:', email);
+    
+    const response = await fetch(`${EMAIL_CONFIG.apiUrl}/api/send-welcome`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        name
+      }),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to send welcome email');
+    }
+
+    console.log('✅ Welcome email sent successfully:', result.messageId);
+    return { success: true, messageId: result.messageId };
+  } catch (error: any) {
+    console.error('❌ Welcome email API error:', error);
+    throw error;
+  }
+};
+
+// Send transaction alert email using backend API
+const sendTransactionAlertAPI = async (
+  email: string, 
+  name: string, 
+  transactionType: string, 
+  amount: string, 
+  groupName: string, 
+  date: string, 
+  description: string
+) => {
+  try {
+    console.log('📧 Sending transaction alert via backend API to:', email);
+    
+    const response = await fetch(`${EMAIL_CONFIG.apiUrl}/api/send-transaction-alert`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        name,
+        transactionType,
+        amount,
+        groupName,
+        date,
+        description
+      }),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to send transaction alert email');
+    }
+
+    console.log('✅ Transaction alert email sent successfully:', result.messageId);
+    return { success: true, messageId: result.messageId };
+  } catch (error: any) {
+    console.error('❌ Transaction alert email API error:', error);
+    throw error;
+  }
+};
+
+// Send verification email using new template
+const sendVerificationEmailNewAPI = async (email: string, code: string, name: string) => {
+  try {
+    console.log('📧 Sending verification email (new template) via backend API to:', email);
+    
+    const response = await fetch(`${EMAIL_CONFIG.apiUrl}/api/send-verification-new`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        code,
+        name
+      }),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to send verification email');
+    }
+
+    console.log('✅ Verification email (new template) sent successfully:', result.messageId);
+    return { success: true, messageId: result.messageId };
+  } catch (error: any) {
+    console.error('❌ Verification email (new template) API error:', error);
+    throw error;
+  }
+};
 const sendPasswordResetEmailAPI = async (email: string, resetLink: string, name: string) => {
   try {
     console.log('📧 Sending password reset email via backend API to:', email);
@@ -266,12 +368,49 @@ export const sendVerificationEmail = async (email: string, code: string, name: s
     console.log('📧 Sending verification email to:', email);
     console.log('📧 Using API URL:', EMAIL_CONFIG.apiUrl);
     
-    const result = await sendVerificationEmailAPI(email, code, name);
+    // Use new template
+    const result = await sendVerificationEmailNewAPI(email, code, name);
     console.log('✅ Verification email sent via backend API');
     return result;
   } catch (error: any) {
     console.error('❌ Verification email failed:', error);
     throw new Error(`Failed to send verification email: ${error.message}`);
+  }
+};
+
+export const sendWelcomeEmail = async (email: string, name: string) => {
+  try {
+    console.log('📧 Sending welcome email to:', email);
+    console.log('📧 Using API URL:', EMAIL_CONFIG.apiUrl);
+    
+    const result = await sendWelcomeEmailAPI(email, name);
+    console.log('✅ Welcome email sent via backend API');
+    return result;
+  } catch (error: any) {
+    console.error('❌ Welcome email failed:', error);
+    throw new Error(`Failed to send welcome email: ${error.message}`);
+  }
+};
+
+export const sendTransactionAlertEmail = async (
+  email: string, 
+  name: string, 
+  transactionType: string, 
+  amount: string, 
+  groupName: string, 
+  date: string, 
+  description: string
+) => {
+  try {
+    console.log('📧 Sending transaction alert email to:', email);
+    console.log('📧 Using API URL:', EMAIL_CONFIG.apiUrl);
+    
+    const result = await sendTransactionAlertAPI(email, name, transactionType, amount, groupName, date, description);
+    console.log('✅ Transaction alert email sent via backend API');
+    return result;
+  } catch (error: any) {
+    console.error('❌ Transaction alert email failed:', error);
+    throw new Error(`Failed to send transaction alert email: ${error.message}`);
   }
 };
 
@@ -322,4 +461,7 @@ export const sendTransactionEmail = async (
 // Legacy function exports for backward compatibility
 export { sendEmailWithAPI as sendEmailAPI };
 export { sendVerificationEmailAPI };
+export { sendVerificationEmailNewAPI };
 export { sendPasswordResetEmailAPI };
+export { sendWelcomeEmailAPI };
+export { sendTransactionAlertAPI };

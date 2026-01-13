@@ -79,7 +79,7 @@ const ForgotPassword = () => {
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
                 <p className="text-sm text-blue-800">
-                  <strong>Important:</strong> You'll receive a Firebase password reset email (not our custom email). 
+                  <strong>Important:</strong>
                   <br />
                   Check your spam folder if you don't see it within a few minutes.
                 </p>

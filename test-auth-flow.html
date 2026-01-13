@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Authentication Flow</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #059669;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Authentication Flow Test</h1>
+    <p>This page tests the new authentication system components.</p>
+
+    <!-- Backend Connectivity Test -->
+    <div class="test-section">
+        <h2>1. Backend Connectivity</h2>
+        <p>Test if the backend server is accessible and responding.</p>
+        <button class="test-button" onclick="testBackendConnectivity()">Test Backend</button>
+        <div id="backend-result"></div>
+    </div>
+
+    <!-- Email Sending Test -->
+    <div class="test-section">
+        <h2>2. Email Sending</h2>
+        <p>Test the email verification system.</p>
+        <div class="form-group">
+            <label for="test-email">Test Email:</label>
+            <input type="email" id="test-email" placeholder="your-email@example.com" value="test@example.com">
+        </div>
+        <div class="form-group">
+            <label for="test-name">Test Name:</label>
+            <input type="text" id="test-name" placeholder="Test User" value="Test User">
+        </div>
+        <button class="test-button" onclick="testEmailSending()">Send Test Email</button>
+        <div id="email-result"></div>
+    </div>
+
+    <!-- Verification Code Test -->
+    <div class="test-section">
+        <h2>3. Verification Code Storage</h2>
+        <p>Test Firestore verification code storage and retrieval.</p>
+        <div class="form-group">
+            <label for="verify-email">Email:</label>
+            <input type="email" id="verify-email" placeholder="test@example.com" value="test@example.com">
+        </div>
+        <div class="form-group">
+            <label for="verify-code">Code:</label>
+            <input type="text" id="verify-code" placeholder="123456" value="123456">
+        </div>
+        <button class="test-button" onclick="testStoreCode()">Store Code</button>
+        <button class="test-button" onclick="testVerifyCode()">Verify Code</button>
+        <div id="verification-result"></div>
+    </div>
+
+    <!-- Account Cleanup Test -->
+    <div class="test-section">
+        <h2>4. Account Cleanup</h2>
+        <p>Test the unverified account cleanup system.</p>
+        <button class="test-button" onclick="testCleanupStats()">Get Cleanup Stats</button>
+        <button class="test-button" onclick="testCleanupProcess()">Test Cleanup (Dry Run)</button>
+        <div id="cleanup-result"></div>
+    </div>
+
+    <!-- Manual Testing Guide -->
+    <div class="test-section">
+        <h2>5. Manual Testing Guide</h2>
+        <div class="info result">
+            <h3>Complete Flow Test:</h3>
+            <ol>
+                <li>Open the main app in a new tab</li>
+                <li>Navigate to the signup page</li>
+                <li>Fill in basic information (name, email, university)</li>
+                <li>Click "Continue" to go to password step</li>
+                <li>Enter a strong password and confirm it</li>
+                <li>Accept terms and privacy policy</li>
+                <li>Click "Create Account"</li>
+                <li>Check your email for verification code</li>
+                <li>Enter the 6-digit code on verification page</li>
+                <li>Should redirect to dashboard upon success</li>
+            </ol>
+            
+            <h3>Error Scenarios to Test:</h3>
+            <ul>
+                <li>Try creating account with existing email</li>
+                <li>Try entering wrong verification code</li>
+                <li>Try resending verification code</li>
+                <li>Test password strength indicators</li>
+                <li>Test form validation</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://hostel-ledger-backend.vercel.app';
+        
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+
+        async function testBackendConnectivity() {
+            showResult('backend-result', '🔄 Testing backend connectivity...', 'info');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`);
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    showResult('backend-result', `✅ Backend is accessible!<br>Response: ${data}`, 'success');
+                } else {
+                    showResult('backend-result', `❌ Backend returned error: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                showResult('backend-result', `❌ Backend connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testEmailSending() {
+            const email = document.getElementById('test-email').value;
+            const name = document.getElementById('test-name').value;
+            
+            if (!email || !name) {
+                showResult('email-result', '❌ Please enter both email and name', 'error');
+                return;
+            }
+            
+            showResult('email-result', '🔄 Sending test email...', 'info');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/send-verification-email`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        code: '123456',
+                        name: name
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('email-result', `✅ Email sent successfully!<br>Check ${email} for the test email.`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    showResult('email-result', `❌ Email sending failed: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                showResult('email-result', `❌ Email test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testStoreCode() {
+            showResult('verification-result', '⚠️ This test requires Firebase/Firestore to be initialized in the main app context.', 'info');
+        }
+
+        async function testVerifyCode() {
+            showResult('verification-result', '⚠️ This test requires Firebase/Firestore to be initialized in the main app context.', 'info');
+        }
+
+        async function testCleanupStats() {
+            showResult('cleanup-result', '⚠️ Account cleanup tests require Firebase Admin SDK access.', 'info');
+        }
+
+        async function testCleanupProcess() {
+            showResult('cleanup-result', '⚠️ Account cleanup tests require Firebase Admin SDK access.', 'info');
+        }
+
+        // Auto-test backend on page load
+        window.addEventListener('load', () => {
+            testBackendConnectivity();
+        });
+    </script>
+</body>
+</html>

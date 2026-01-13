@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Mail, Shield, ArrowLeft, RefreshCw } from "lucide-react";
 import { verifyVerificationCode, resendVerificationCode, getVerificationTimeRemaining } from "@/lib/verificationStore";
-import { sendVerificationEmail } from "@/lib/email";
+import { sendVerificationEmail, sendWelcomeEmail } from "@/lib/email";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 
 const VerifyEmail = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signup } = useFirebaseAuth();
+  const { markEmailAsVerified, firebaseUser } = useFirebaseAuth();
   
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -44,9 +44,7 @@ const VerifyEmail = () => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleVerify = async () => {
     if (!code || code.length !== 6) {
       toast.error("Please enter a valid 6-digit code");
       return;
@@ -64,51 +62,39 @@ const VerifyEmail = () => {
         return;
       }
 
-      // If verification successful and it's signup, complete the signup process
+      // If verification successful and it's signup, mark email as verified
       if (type === 'signup') {
-        const pendingSignup = sessionStorage.getItem('pendingSignup');
-        if (!pendingSignup) {
-          toast.error("Signup data not found. Please try signing up again.");
+        if (!firebaseUser) {
+          toast.error("User session not found. Please try signing up again.");
           navigate("/signup");
           return;
         }
 
-        const signupData = JSON.parse(pendingSignup);
+        // Mark email as verified in our database
+        const verificationResult = await markEmailAsVerified(firebaseUser.uid);
         
-        console.log('🔍 Signup data:', signupData);
-        console.log('📧 Email:', signupData.email);
-        console.log('🔑 Password length:', signupData.password?.length);
-        
-        // Complete Firebase signup
-        const signupResult = await signup({
-          email: signupData.email,
-          password: signupData.password,
-          firstName: signupData.firstName,
-          lastName: signupData.lastName,
-          university: signupData.university,
-          emailVerified: true
-        });
-
-        if (signupResult.success) {
-          // Clean up
-          sessionStorage.removeItem('pendingSignup');
-          toast.success("Account created successfully! Welcome to Hostel Ledger!");
-          navigate("/dashboard");
-        } else {
-          console.error('❌ Signup failed:', signupResult.error);
-          
-          // Handle specific signup errors
-          if (signupResult.error?.includes('email-already-in-use') || signupResult.error?.includes('already exists')) {
-            toast.error("This email is already registered. Please try logging in instead.");
-            // Redirect to login page
-            setTimeout(() => {
-              navigate("/login", { state: { email: signupData.email } });
-            }, 2000);
-          } else if (signupResult.error?.includes('admin-restricted-operation')) {
-            toast.error("Account creation is currently disabled. Please contact support.");
-          } else {
-            toast.error(signupResult.error || "Failed to create account");
+        if (verificationResult.success) {
+          // Send welcome email
+          try {
+            const pendingSignup = sessionStorage.getItem('pendingSignup');
+            const userName = pendingSignup 
+              ? `${JSON.parse(pendingSignup).firstName} ${JSON.parse(pendingSignup).lastName}`
+              : firebaseUser.displayName || "User";
+            
+            await sendWelcomeEmail(email, userName);
+            console.log('✅ Welcome email sent successfully');
+          } catch (emailError) {
+            console.warn('⚠️ Welcome email failed (non-critical):', emailError);
+            // Don't block the flow if welcome email fails
           }
+          
+          // Clean up session storage
+          sessionStorage.removeItem('pendingSignup');
+          toast.success("Email verified successfully! Welcome to Hostel Ledger!");
+          navigate("/");
+        } else {
+          console.error('❌ Failed to mark email as verified:', verificationResult.error);
+          toast.error("Failed to complete verification. Please try again.");
         }
       } else {
         // Handle other verification types (password reset, etc.)
@@ -169,6 +155,12 @@ const VerifyEmail = () => {
     setCode(value);
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && code.length === 6) {
+      handleVerify();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -184,49 +176,48 @@ const VerifyEmail = () => {
           <p className="text-emerald-600 font-medium">{email}</p>
         </div>
 
-        {/* Form */}
-        <div className="bg-white/80 backdrop-blur-lg rounded-3xl p-8 shadow-xl border border-white/50">
-          <form onSubmit={handleVerify} className="space-y-6">
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Verification Code
-              </label>
-              <Input
-                type="text"
-                placeholder="000000"
-                value={code}
-                onChange={handleCodeChange}
-                className="h-14 text-center text-2xl font-mono tracking-widest"
-                maxLength={6}
-                autoComplete="one-time-code"
-                autoFocus
-              />
-              <p className="text-sm text-gray-500 mt-2 text-center">
-                Enter the 6-digit code from your email
-              </p>
-            </div>
+        {/* Form - Direct on page like signup */}
+        <div className="space-y-6">
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">
+              Verification Code
+            </label>
+            <Input
+              type="text"
+              placeholder="000000"
+              value={code}
+              onChange={handleCodeChange}
+              onKeyPress={handleKeyPress}
+              className="h-14 text-center text-2xl font-mono tracking-widest border-2 focus:border-emerald-500 transition-all duration-300"
+              maxLength={6}
+              autoComplete="one-time-code"
+              autoFocus
+            />
+            <p className="text-sm text-gray-500 mt-2 text-center">
+              Enter the 6-digit code from your email
+            </p>
+          </div>
 
-            <Button
-              type="submit"
-              disabled={isLoading || code.length !== 6}
-              className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Verifying...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4" />
-                  Verify Email
-                </div>
-              )}
-            </Button>
-          </form>
+          <Button
+            onClick={handleVerify}
+            disabled={isLoading || code.length !== 6}
+            className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+          >
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Verifying...
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Verify Email
+              </div>
+            )}
+          </Button>
 
           {/* Resend Section */}
-          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+          <div className="text-center pt-4 border-t border-gray-200">
             <p className="text-gray-600 mb-4">Didn't receive the code?</p>
             
             {timeRemaining > 0 ? (
@@ -239,7 +230,7 @@ const VerifyEmail = () => {
                 variant="outline"
                 onClick={handleResend}
                 disabled={isResending}
-                className="w-full"
+                className="w-full h-12 border-2 hover:border-emerald-500 transition-all duration-300"
               >
                 {isResending ? (
                   <div className="flex items-center gap-2">
@@ -257,7 +248,7 @@ const VerifyEmail = () => {
           </div>
 
           {/* Back Link */}
-          <div className="mt-6 text-center">
+          <div className="text-center">
             <Button
               type="button"
               variant="ghost"
@@ -271,7 +262,7 @@ const VerifyEmail = () => {
         </div>
 
         {/* Help Text */}
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-8 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
           <p>Check your spam folder if you don't see the email</p>
           <p>The code expires in 10 minutes</p>
         </div>

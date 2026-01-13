@@ -55,6 +55,7 @@ interface FirebaseAuthContextType {
   sendPasswordResetEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
   confirmPasswordReset: (code: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   checkEmailExists: (email: string) => Promise<boolean>;
+  markEmailAsVerified: (uid: string) => Promise<{ success: boolean; error?: string }>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>;
   addMoneyToWallet: (amount: number) => Promise<{ success: boolean; error?: string }>;
   deductMoneyFromWallet: (amount: number) => Promise<{ success: boolean; error?: string }>;
@@ -213,6 +214,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         console.log('📧 Email:', data.email);
         console.log('🔑 Password length:', data.password?.length);
         console.log('👤 Name:', fullName);
+        console.log('✅ Email Verified:', data.emailVerified);
         
         // Create Firebase Auth user
         const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
@@ -239,6 +241,14 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
         const userRef = ref(database, `users/${firebaseUser.uid}`);
         await set(userRef, userProfile);
+
+        // Store email verification status and creation time for cleanup
+        const verificationRef = ref(database, `emailVerification/${firebaseUser.uid}`);
+        await set(verificationRef, {
+          emailVerified: data.emailVerified || false,
+          createdAt: new Date().toISOString(),
+          email: data.email
+        });
 
         setUser(userProfile);
         return { success: true };
@@ -392,6 +402,23 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error checking email existence:", error);
       return false;
+    }
+  };
+
+  const markEmailAsVerified = async (uid: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      // Update email verification status in database
+      const verificationRef = ref(database, `emailVerification/${uid}`);
+      await update(verificationRef, {
+        emailVerified: true,
+        verifiedAt: new Date().toISOString()
+      });
+
+      console.log('✅ Email marked as verified for user:', uid);
+      return { success: true };
+    } catch (error: any) {
+      console.error("Error marking email as verified:", error);
+      return { success: false, error: error.message || "Failed to mark email as verified" };
     }
   };
 
@@ -762,6 +789,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       sendPasswordResetEmail: sendPasswordResetEmailFirebase,
       confirmPasswordReset: confirmPasswordResetFirebase,
       checkEmailExists,
+      markEmailAsVerified,
       updateUserProfile,
       addMoneyToWallet,
       deductMoneyFromWallet,

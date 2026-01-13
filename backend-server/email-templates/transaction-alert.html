@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Transaction Alert</title>
+</head>
+<body style="margin:0;padding:0;background:#eafaf3;font-family:Arial, Helvetica, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td align="center" style="padding:40px 16px;">
+                <!-- Card -->
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;box-shadow:0 8px 30px rgba(16,185,129,0.12);overflow:hidden;">
+                    <!-- Logo -->
+                    <tr>
+                        <td align="center" style="padding:32px 24px 16px;">
+                            <img src="https://hostel-ledger.vercel.app/hostel-ledger.png" alt="Hostel Ledger" width="170"/>
+                        </td>
+                    </tr>
+                    <!-- Divider -->
+                    <tr>
+                        <td style="padding:0 32px;">
+                            <div style="height:1px;background:#e5f4ee;"></div>
+                        </td>
+                    </tr>
+                    <!-- Title -->
+                    <tr>
+                        <td style="padding:24px 32px 0;font-size:22px;font-weight:600;color:#064e3b;">
+                            Transaction alert
+                        </td>
+                    </tr>
+                    <!-- Intro -->
+                    <tr>
+                        <td style="padding:14px 32px 0;font-size:15px;color:#065f46;line-height:1.7;">
+                            Hello {{USER_NAME}},<br><br>
+                            A new transaction has been recorded on your <strong>Hostel Ledger</strong> account.
+                        </td>
+                    </tr>
+                    <!-- Transaction Details -->
+                    <tr>
+                        <td style="padding:20px 32px;">
+                            <div style="background:#ecfdf5;border:1px solid #d1fae5;border-radius:12px;padding:16px;font-size:14px;color:#065f46;line-height:1.7;">
+                                <strong>Type:</strong> {{TRANSACTION_TYPE}}<br>
+                                <strong>Amount:</strong> {{AMOUNT}}<br>
+                                <strong>Group:</strong> {{GROUP_NAME}}<br>
+                                <strong>Date:</strong> {{DATE}}<br>
+                                <strong>Description:</strong> {{DESCRIPTION}}
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Balance Info -->
+                    <tr>
+                        <td style="padding:0 32px;font-size:14px;color:#047857;line-height:1.6;">
+                            This transaction has been successfully added and reflected in your balances. You can review full details anytime in the app.
+                        </td>
+                    </tr>
+                    <!-- CTA -->
+                    <tr>
+                        <td align="center" style="padding:28px 32px;">
+                            <a href="https://hostel-ledger.vercel.app" style="background:#34d399;color:#064e3b;padding:14px 34px;border-radius:12px;text-decoration:none;font-weight:600;">
+                                View Transaction
+                            </a>
+                        </td>
+                    </tr>
+                    <!-- Info Note -->
+                    <tr>
+                        <td style="padding:18px 32px 0;font-size:13px;color:#059669;line-height:1.6;">
+                            If you don't recognize this transaction, please review it in the app or contact your group members for clarification.
+                        </td>
+                    </tr>
+                    <!-- Legal -->
+                    <tr>
+                        <td style="padding:20px 32px 0;font-size:12px;color:#047857;line-height:1.6;">
+                            By using Hostel Ledger, you agree to our 
+                            <a href="https://hostel-ledger.vercel.app/terms" style="color:#10b981;text-decoration:none;font-weight:600;">Terms & Conditions</a> 
+                            and 
+                            <a href="https://hostel-ledger.vercel.app/privacy" style="color:#10b981;text-decoration:none;font-weight:600;">Privacy Policy</a>.
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding:28px 32px 32px;border-top:1px solid #e5f4ee;font-size:12px;color:#6b7280;text-align:center;">
+                            © 2026 Hostel Ledger. All rights reserved by AARX Technologies.<br>
+                            <span style="font-size:11px;color:#9ca3af;">This is an automated transaction notification</span>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
