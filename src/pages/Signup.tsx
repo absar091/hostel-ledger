@@ -60,11 +60,26 @@ const Signup = () => {
     handleSubmit,
     watch,
     setValue,
-    formState: { errors, isValid },
+    formState: { errors, isValid, isSubmitting },
     trigger
   } = useForm<SignupFormDataWithoutEmergency>({
     resolver: zodResolver(signupSchemaWithoutEmergency),
-    mode: "onChange"
+    mode: "onChange",
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      password: "",
+      confirmPassword: "",
+      dateOfBirth: "",
+      university: "",
+      hostelName: "",
+      roomNumber: "",
+      termsAccepted: false,
+      privacyAccepted: false,
+      marketingEmails: false
+    }
   });
 
   const watchedPassword = watch("password");
@@ -647,6 +662,17 @@ const Signup = () => {
                   type="submit"
                   disabled={isLoading || !isValid || emailExists === true}
                   className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  onClick={() => {
+                    // Debug logging
+                    console.log('Form validation state:', {
+                      isValid,
+                      errors,
+                      emailExists,
+                      isLoading,
+                      isSubmitting
+                    });
+                    console.log('Current form values:', watch());
+                  }}
                 >
                   {isLoading ? (
                     <div className="flex items-center gap-2">
@@ -658,6 +684,11 @@ const Signup = () => {
                       <Shield className="w-5 h-5" />
                       Create Account
                       <Sparkles className="w-4 h-4" />
+                      {!isValid && (
+                        <span className="text-xs bg-red-500 text-white px-2 py-1 rounded ml-2">
+                          Form Invalid
+                        </span>
+                      )}
                     </div>
                   )}
                 </Button>
@@ -674,6 +705,26 @@ const Signup = () => {
               </Link>
             </p>
           </div>
+
+          {/* Debug Panel - Remove in production */}
+          {import.meta.env.DEV && (
+            <div className="mt-4 p-4 bg-gray-100 rounded-lg text-xs">
+              <h4 className="font-semibold mb-2">Debug Info:</h4>
+              <p><strong>Form Valid:</strong> {isValid ? '✅' : '❌'}</p>
+              <p><strong>Email Exists:</strong> {emailExists === null ? 'Unknown' : emailExists ? '❌ Yes' : '✅ No'}</p>
+              <p><strong>Current Step:</strong> {currentStep}/3</p>
+              {Object.keys(errors).length > 0 && (
+                <div>
+                  <strong>Errors:</strong>
+                  <ul className="list-disc list-inside">
+                    {Object.entries(errors).map(([field, error]) => (
+                      <li key={field}>{field}: {error?.message}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

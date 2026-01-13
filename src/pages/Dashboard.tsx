@@ -477,9 +477,9 @@ const Dashboard = () => {
           </div>
           
           {/* Ghost projection - "Wow" feature */}
-          <div className="mt-4 pt-3 border-t border-white/20">
+          <div className="mt-4 pt-3 border-t border-white/60">
             <div className="flex items-center gap-2">
-              <div className="text-[11px] opacity-70 text-white font-medium">
+              <div className="text-sm opacity-90 text-white font-medium">
                 After settlements: <span className="tabular-nums">Rs {(walletBalance + settlementDelta).toLocaleString()}</span>
               </div>
               <Tooltip 
