@@ -18,9 +18,11 @@ import {
 } from "lucide-react";
 import { sendVerificationEmail } from "@/lib/email";
 import { storeVerificationCode } from "@/lib/verificationStore";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { checkEmailExists } = useFirebaseAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -98,13 +100,27 @@ const Signup = () => {
     setIsLoading(true);
 
     try {
-      // Generate verification code
+      // Step 1: Check if email already exists BEFORE sending verification code
+      console.log("Checking if email already exists...");
+      toast.loading("Checking email availability...", { id: "email-check" });
+      
+      const emailExists = await checkEmailExists(formData.email);
+      toast.dismiss("email-check");
+      
+      if (emailExists) {
+        toast.error("An account with this email already exists. Please use a different email or try logging in.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Step 2: Generate verification code
+      toast.loading("Sending verification code...", { id: "sending-code" });
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
       
-      // Store verification code in Firestore (without userId since user doesn't exist yet)
+      // Step 3: Store verification code in Firestore (without userId since user doesn't exist yet)
       await storeVerificationCode(formData.email, verificationCode, 'signup');
       
-      // Send verification email
+      // Step 4: Send verification email
       const emailResult = await sendVerificationEmail(
         formData.email, 
         verificationCode, 
@@ -112,18 +128,29 @@ const Signup = () => {
       );
 
       if (!emailResult.success) {
+        toast.dismiss("sending-code");
         throw new Error('Failed to send verification email');
       }
 
-      // Store user data temporarily in sessionStorage (only for form data, not verification code)
+      toast.dismiss("sending-code");
+      
+      // Step 5: Store user data temporarily in sessionStorage (only for form data, not verification code)
       sessionStorage.setItem('pendingSignup', JSON.stringify(formData));
       
       toast.success("Verification code sent to your email!");
       navigate("/verify-email", { state: { email: formData.email, type: 'signup' } });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Signup error:", error);
-      toast.error(error.message || "Failed to create account. Please try again.");
+      
+      // Handle specific error cases
+      if (error.message?.includes('email-already-in-use') || error.message?.includes('already exists')) {
+        toast.error("An account with this email already exists. Please use a different email or try logging in.");
+      } else if (error.message?.includes('Failed to send verification email')) {
+        toast.error("Failed to send verification email. Please check your email address and try again.");
+      } else {
+        toast.error(error.message || "Failed to create account. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -219,6 +246,9 @@ const Signup = () => {
                 {errors.email && (
                   <p className="text-red-500 text-sm mt-1">{errors.email}</p>
                 )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Already have an account? <Link to="/login" className="text-emerald-600 hover:text-emerald-700 font-medium">Sign in here</Link>
+                </p>
               </div>
 
               <div className="group">

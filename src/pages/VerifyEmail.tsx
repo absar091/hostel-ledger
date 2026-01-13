@@ -75,8 +75,14 @@ const VerifyEmail = () => {
 
         const signupData = JSON.parse(pendingSignup);
         
+        console.log('🔍 Signup data:', signupData);
+        console.log('📧 Email:', signupData.email);
+        console.log('🔑 Password length:', signupData.password?.length);
+        
         // Complete Firebase signup
-        const signupResult = await signup(signupData.email, signupData.password, {
+        const signupResult = await signup({
+          email: signupData.email,
+          password: signupData.password,
           firstName: signupData.firstName,
           lastName: signupData.lastName,
           university: signupData.university,
@@ -89,7 +95,20 @@ const VerifyEmail = () => {
           toast.success("Account created successfully! Welcome to Hostel Ledger!");
           navigate("/dashboard");
         } else {
-          toast.error(signupResult.error || "Failed to create account");
+          console.error('❌ Signup failed:', signupResult.error);
+          
+          // Handle specific signup errors
+          if (signupResult.error?.includes('email-already-in-use') || signupResult.error?.includes('already exists')) {
+            toast.error("This email is already registered. Please try logging in instead.");
+            // Redirect to login page
+            setTimeout(() => {
+              navigate("/login", { state: { email: signupData.email } });
+            }, 2000);
+          } else if (signupResult.error?.includes('admin-restricted-operation')) {
+            toast.error("Account creation is currently disabled. Please contact support.");
+          } else {
+            toast.error(signupResult.error || "Failed to create account");
+          }
         }
       } else {
         // Handle other verification types (password reset, etc.)

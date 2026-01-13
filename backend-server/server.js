@@ -6,20 +6,12 @@ require('dotenv').config();
 
 const app = express();
 
-// Middleware
+// Middleware - More permissive CORS for debugging
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL || 'http://localhost:5173',
-    'https://hostel-ledger.vercel.app',
-    'https://hostel-ledger-git-main-absar091.vercel.app', // Git branch deployments
-    'https://hostel-ledger-absar091.vercel.app', // User-specific Vercel URL
-    'http://localhost:8080',
-    'http://localhost:5173',
-    'http://localhost:3000'
-  ],
+  origin: true, // Allow all origins during debugging
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 app.use(express.json());
 

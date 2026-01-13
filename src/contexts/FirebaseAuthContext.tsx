@@ -40,7 +40,16 @@ interface FirebaseAuthContextType {
   firebaseUser: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (data: { email: string; password: string; name: string; phone?: string }) => Promise<{ success: boolean; error?: string }>;
+  signup: (data: { 
+    email: string; 
+    password: string; 
+    firstName?: string;
+    lastName?: string;
+    name?: string; 
+    phone?: string;
+    university?: string;
+    emailVerified?: boolean;
+  }) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   resetPassword: (email: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   sendPasswordResetEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
@@ -185,57 +194,92 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (data: { 
     email: string; 
     password: string; 
-    name: string; 
-    phone?: string 
+    firstName?: string;
+    lastName?: string;
+    name?: string; 
+    phone?: string;
+    university?: string;
+    emailVerified?: boolean;
   }): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true);
       
-      // Create Firebase Auth user
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      const firebaseUser = userCredential.user;
-
-      // Update Firebase Auth profile
-      await updateProfile(firebaseUser, {
-        displayName: data.name
-      });
-
-      // Create user profile in Realtime Database - Fix undefined values
-      const userProfile: UserProfile = {
-        uid: firebaseUser.uid,
-        email: data.email,
-        name: data.name,
-        phone: data.phone || null, // Convert undefined to null
-        paymentDetails: {},
-        walletBalance: 0,
-        settlements: {}, // Initialize empty settlements
-        createdAt: new Date().toISOString()
-      };
-
-      const userRef = ref(database, `users/${firebaseUser.uid}`);
-      await set(userRef, userProfile);
-
-      setUser(userProfile);
-      return { success: true };
-    } catch (error: any) {
-      console.error("Signup error:", error);
-      let errorMessage = "Signup failed";
+      // Construct full name from firstName and lastName if provided
+      const fullName = data.name || `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'User';
       
-      switch (error.code) {
-        case 'auth/email-already-in-use':
-          errorMessage = "An account with this email already exists";
-          break;
-        case 'auth/invalid-email':
-          errorMessage = "Invalid email address";
-          break;
-        case 'auth/weak-password':
-          errorMessage = "Password should be at least 6 characters";
-          break;
-        default:
-          errorMessage = error.message || "Signup failed";
+      // Try Firebase Auth first
+      try {
+        console.log('🔍 Attempting Firebase Auth signup...');
+        console.log('📧 Email:', data.email);
+        console.log('🔑 Password length:', data.password?.length);
+        console.log('👤 Name:', fullName);
+        
+        // Create Firebase Auth user
+        const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+        const firebaseUser = userCredential.user;
+        
+        console.log('✅ Firebase Auth user created:', firebaseUser.uid);
+
+        // Update Firebase Auth profile
+        await updateProfile(firebaseUser, {
+          displayName: fullName
+        });
+
+        // Create user profile in Realtime Database
+        const userProfile: UserProfile = {
+          uid: firebaseUser.uid,
+          email: data.email,
+          name: fullName,
+          phone: data.phone || null,
+          paymentDetails: {},
+          walletBalance: 0,
+          settlements: {},
+          createdAt: new Date().toISOString()
+        };
+
+        const userRef = ref(database, `users/${firebaseUser.uid}`);
+        await set(userRef, userProfile);
+
+        setUser(userProfile);
+        return { success: true };
+        
+      } catch (authError: any) {
+        console.error("Firebase Auth signup failed:", authError);
+        
+        // If Firebase Auth is disabled, show helpful error message
+        if (authError.code === 'auth/admin-restricted-operation') {
+          return { 
+            success: false, 
+            error: "Account creation is currently disabled. Please contact support or enable Email/Password authentication in Firebase Console." 
+          };
+        }
+        
+        // Handle other auth errors
+        let errorMessage = "Signup failed";
+        
+        switch (authError.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = "An account with this email already exists";
+            break;
+          case 'auth/invalid-email':
+            errorMessage = "Invalid email address";
+            break;
+          case 'auth/weak-password':
+            errorMessage = "Password should be at least 6 characters";
+            break;
+          case 'auth/operation-not-allowed':
+            errorMessage = "Email/password accounts are not enabled. Please contact support.";
+            break;
+          default:
+            errorMessage = authError.message || "Signup failed";
+        }
+        
+        return { success: false, error: errorMessage };
       }
       
-      return { success: false, error: errorMessage };
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      return { success: false, error: error.message || "Signup failed" };
     } finally {
       setIsLoading(false);
     }
