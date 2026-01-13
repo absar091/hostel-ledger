@@ -99,11 +99,26 @@ const Signup = () => {
       if (watchedEmail && watchedEmail.includes('@') && watchedEmail.length > 5) {
         setIsCheckingEmail(true);
         try {
+          // Use fetchSignInMethodsForEmail as primary method
           const methods = await fetchSignInMethodsForEmail(auth, watchedEmail);
-          setEmailExists(methods.length > 0);
-        } catch (error) {
+          console.log("Email check for:", watchedEmail, "Methods found:", methods);
+          
+          // If methods array has items, email exists
+          if (methods.length > 0) {
+            setEmailExists(true);
+          } else {
+            setEmailExists(false);
+          }
+        } catch (error: any) {
           console.error("Error checking email:", error);
-          setEmailExists(null);
+          
+          // Handle specific Firebase errors
+          if (error.code === 'auth/invalid-email') {
+            setEmailExists(null);
+          } else {
+            // For other errors, assume email is available to not block signup
+            setEmailExists(false);
+          }
         } finally {
           setIsCheckingEmail(false);
         }
@@ -533,41 +548,41 @@ const Signup = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="group">
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Hostel Name (Optional)</label>
-                    <div className="relative">
-                      <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
-                      <Input
-                        {...register("hostelName")}
-                        placeholder="New Hostel"
-                        className="h-12 pl-12 border-2 focus:border-emerald-500 transition-all duration-300 hover:border-emerald-300"
-                      />
-                    </div>
-                    {errors.hostelName && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center gap-1 animate-shake">
-                        <XCircle className="w-4 h-4" />
-                        {errors.hostelName.message}
-                      </p>
-                    )}
+                <div className="group">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Hostel Name (Optional)</label>
+                  <div className="relative">
+                    <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
+                    <Input
+                      {...register("hostelName")}
+                      placeholder="New Hostel"
+                      className="h-12 pl-12 border-2 focus:border-emerald-500 transition-all duration-300 hover:border-emerald-300"
+                    />
                   </div>
+                  {errors.hostelName && (
+                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1 animate-shake">
+                      <XCircle className="w-4 h-4" />
+                      {errors.hostelName.message}
+                    </p>
+                  )}
+                </div>
 
-                  <div className="group">
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Room Number (Optional)</label>
-                    <div className="relative">
-                      <Home className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
-                      <Input
-                        {...register("roomNumber")}
-                        placeholder="101"
-                        className="h-12 pl-12 border-2 focus:border-emerald-500 transition-all duration-300 hover:border-emerald-300"
-                      />
-                    </div>
-                    {errors.roomNumber && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center gap-1 animate-shake">
-                        <XCircle className="w-4 h-4" />
-                        {errors.roomNumber.message}
-                      </p>
-                    )}
+                <div className="group">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Room Number (Optional)</label>
+                  <div className="relative">
+                    <Home className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
+                    <Input
+                      {...register("roomNumber")}
+                      placeholder="101"
+                      className="h-12 pl-12 border-2 focus:border-emerald-500 transition-all duration-300 hover:border-emerald-300"
+                    />
                   </div>
+                  {errors.roomNumber && (
+                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1 animate-shake">
+                      <XCircle className="w-4 h-4" />
+                      {errors.roomNumber.message}
+                    </p>
+                  )}
+                </div>
                 </div>
 
                 {/* Terms and Conditions */}
