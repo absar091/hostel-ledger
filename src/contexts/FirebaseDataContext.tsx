@@ -102,6 +102,7 @@ import {
   validatePaymentAmount 
 } from "@/lib/expenseLogic";
 import { logger } from "@/lib/logger";
+import { sendTransactionNotifications, TransactionData, UserData } from "@/lib/transactionNotifications";
 
 export interface GroupMember {
   id: string;
@@ -730,6 +731,51 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       
       if (result.success) {
         logger.logTransaction("expense_created", sanitizedAmount, true);
+        
+        // Send transaction notification emails (async, non-blocking)
+        setImmediate(async () => {
+          try {
+            console.log('📧 Sending transaction notification emails for expense...');
+            
+            // Prepare transaction data for email
+            const transactionData: TransactionData = {
+              id: transactionId,
+              type: 'expense',
+              title: sanitizedNote || "Expense",
+              amount: sanitizedAmount,
+              groupId: data.groupId,
+              groupName: group.name,
+              paidBy: data.paidBy,
+              paidByName: payer.name,
+              participants: data.participants,
+              date: new Date().toISOString(),
+              description: sanitizedNote || "Expense",
+              method: 'cash'
+            };
+            
+            // Send to current user if they're a participant and not the payer
+            if (user.uid !== data.paidBy && data.participants.includes(user.uid)) {
+              const currentUserData: UserData = {
+                uid: user.uid,
+                email: user.email,
+                name: user.name
+              };
+              
+              const emailResult = await sendTransactionNotifications(transactionData, [currentUserData]);
+              if (emailResult.success) {
+                console.log('✅ Transaction notification email sent successfully');
+              } else {
+                console.warn('⚠️ Transaction notification email failed:', emailResult.errors);
+              }
+            } else {
+              console.log('ℹ️ No transaction notification needed (user is payer or not participant)');
+            }
+            
+          } catch (emailError: any) {
+            console.error('❌ Failed to send transaction notification emails:', emailError);
+            // Email failure doesn't affect transaction success
+          }
+        });
       } else {
         logger.logTransaction("expense_failed", sanitizedAmount, false);
       }
@@ -944,6 +990,51 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         }
         
         logger.logTransaction("payment_recorded", sanitizedAmount, true);
+        
+        // Send transaction notification emails (async, non-blocking)
+        setImmediate(async () => {
+          try {
+            console.log('📧 Sending transaction notification emails for payment...');
+            
+            // Prepare transaction data for email
+            const transactionData: TransactionData = {
+              id: transactionId,
+              type: 'payment',
+              title: "Payment Made",
+              amount: sanitizedAmount,
+              groupId: data.groupId,
+              groupName: group.name,
+              paidBy: data.fromMember,
+              paidByName: fromPerson.name,
+              participants: [data.fromMember, data.toMember],
+              date: new Date().toISOString(),
+              description: sanitizedNote || "Payment",
+              method: data.method
+            };
+            
+            // Send notification to the recipient (if they're the current user)
+            if (data.toMember === user.uid && data.fromMember !== user.uid) {
+              const currentUserData: UserData = {
+                uid: user.uid,
+                email: user.email,
+                name: user.name
+              };
+              
+              const emailResult = await sendTransactionNotifications(transactionData, [currentUserData]);
+              if (emailResult.success) {
+                console.log('✅ Payment notification email sent successfully');
+              } else {
+                console.warn('⚠️ Payment notification email failed:', emailResult.errors);
+              }
+            } else {
+              console.log('ℹ️ No payment notification needed (user is not recipient)');
+            }
+            
+          } catch (emailError: any) {
+            console.error('❌ Failed to send payment notification email:', emailError);
+            // Email failure doesn't affect transaction success
+          }
+        });
       } else {
         logger.logTransaction("payment_failed", sanitizedAmount, false);
       }

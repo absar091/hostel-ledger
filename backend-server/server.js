@@ -4,7 +4,35 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const path = require('path');
+const admin = require('firebase-admin');
 require('dotenv').config();
+
+// Initialize Firebase Admin SDK using environment variables
+try {
+  const serviceAccount = {
+    type: "service_account",
+    project_id: process.env.FIREBASE_PROJECT_ID || "hostel-ledger",
+    private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+    private_key: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
+    client_email: process.env.FIREBASE_CLIENT_EMAIL,
+    client_id: process.env.FIREBASE_CLIENT_ID,
+    auth_uri: "https://accounts.google.com/o/oauth2/auth",
+    token_uri: "https://oauth2.googleapis.com/token",
+    auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+    client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
+    universe_domain: "googleapis.com"
+  };
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: process.env.FIREBASE_DATABASE_URL || "https://hostel-ledger-default-rtdb.firebaseio.com"
+  });
+  
+  console.log('✅ Firebase Admin SDK initialized successfully');
+} catch (error) {
+  console.error('❌ Firebase Admin SDK initialization failed:', error.message);
+  console.warn('⚠️ Email existence check will not work without Firebase Admin SDK');
+}
 
 const app = express();
 
@@ -546,6 +574,110 @@ app.use((err, req, res, next) => {
     success: false,
     error: 'Internal server error'
   });
+});
+
+// Email existence check endpoint
+app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
+  console.log('🔍 Email existence check requested from:', req.get('origin') || 'direct');
+  
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email is required'
+      });
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid email format'
+      });
+    }
+    
+    console.log('📧 Checking email existence for:', email);
+    
+    try {
+      // Check Firebase Auth first
+      let existsInAuth = false;
+      try {
+        const userRecord = await admin.auth().getUserByEmail(email);
+        if (userRecord) {
+          console.log('❌ Email exists in Firebase Auth:', email);
+          existsInAuth = true;
+        }
+      } catch (authError) {
+        if (authError.code === 'auth/user-not-found') {
+          console.log('✅ Email not found in Firebase Auth:', email);
+        } else {
+          console.warn('⚠️ Firebase Auth check error:', authError.message);
+        }
+      }
+      
+      // Check Realtime Database
+      let existsInDatabase = false;
+      try {
+        const usersRef = admin.database().ref('users');
+        const snapshot = await usersRef.once('value');
+        
+        if (snapshot.exists()) {
+          const users = snapshot.val();
+          console.log('📊 Found', Object.keys(users).length, 'users in database');
+          
+          // Search through all users to find matching email
+          for (const uid in users) {
+            if (users[uid].email === email) {
+              console.log('❌ Email exists in database:', email);
+              console.log('👤 User details:', {
+                uid,
+                name: users[uid].name,
+                email: users[uid].email,
+                createdAt: users[uid].createdAt
+              });
+              existsInDatabase = true;
+              break;
+            }
+          }
+        } else {
+          console.log('📭 No users found in database');
+        }
+      } catch (dbError) {
+        console.error('❌ Database check error:', dbError.message);
+      }
+      
+      const exists = existsInAuth || existsInDatabase;
+      
+      console.log(`📊 Email existence result for ${email}:`, {
+        existsInAuth,
+        existsInDatabase,
+        finalResult: exists
+      });
+      
+      res.json({
+        success: true,
+        exists: exists,
+        message: exists ? 'Email already exists' : 'Email is available'
+      });
+      
+    } catch (error) {
+      console.error('❌ Email existence check error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to check email existence'
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ Email existence check error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to check email existence'
+    });
+  }
 });
 
 // 404 handler

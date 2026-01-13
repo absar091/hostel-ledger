@@ -25,6 +25,10 @@ firebase-debug.log
 firebase-debug.*.log
 .firebaserc
 firebase.json
+*firebase-admin-key.json
+*serviceAccountKey.json
+firebase-adminsdk-*.json
+hostel-ledger-firebase-adminsdk-*.json
 
 # Editor directories and files
 .vscode/*
@@ -36,3 +40,4 @@ firebase.json
 *.njsproj
 *.sln
 *.sw?
+VERCEL_DEPLOYMENT_GUIDE.md

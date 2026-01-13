@@ -1,0 +1,80 @@
+Copy these environment variables to your Vercel project:
+
+Go to: https://vercel.com/dashboard → Select your backend project → Settings → Environment Variables
+
+Add these variables one by one:
+
+FIREBASE_PROJECT_ID
+hostel-ledger
+
+FIREBASE_PRIVATE_KEY_ID
+9aafec1eee9e3197d2fca4bac8b2225d31290df8
+
+FIREBASE_PRIVATE_KEY
+-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDlbDRzBaTW6S+V
+AGjtvdWWywSX+OeUyCT5i46wNIy8tTG3cV3mqb8k7b7BU+UKhQWCZ7tslQn/odcR
+5fJu9w0WNGgWJqTN7yGtJTxfRBCFiBEciL2zJKNEJesCgpYVFAM+Q2UeatdB4lAt
+BX7jdLhsHkjvlPw+g7VFbCErMtQqoJPLWIxj5yOb3T+uNlooQ6QaK/rVmRouf386
+ZynJHFoHOUkNMtLDf2mJ6SsJBS8sy3ixQ948QCGk1slfmsrN75v8IahtISReYTJa
+2OLawrF1p1YyLDEGS+CxTmldDX2ZLoI6+16v37lfNJMJJdrkD7+NOh7nU2iVKRjm
+anE0VKZVAgMBAAECggEAPlBABLfVOHw4rM9iMKS9pUn6Mu7rs6kTBeameGylh0Ht
+wYYcu6CCZtzeUXNghBVyVCOpsAnhH9pM6LMcwJAAsXXFibKwU7DuZDF3bua1WBeH
+kkj/wW8jm0hzRwjCC/KWGOzEQ9lAI0h9f2T9PHmA9/jX1Z8RTkeGzlbawXl6UCMu
+pXrdb4dZpRmJA4+oTUGVhBDd5qkXZNAEaxxIBkiYkhhFerISavMgW9/ROG3rtV0e
+Ragq0WJuGREOBEK9sd3Fme7+X/0Gr+N9yuNYSHU1CUqxctbPQsQHuKNtxki092YM
+h4+aqA/KGbYQJd+s/FzXrJNiabiUSBniFBRSXOrStwKBgQD2zK5VdDVrqcFwic86
+NWFwovply3luiziEvdunn11RB61yORUi3aqB+F17Lgd4mLZ3fQ7NiX8K9uZeNX4F
+n4+14JeyCA7SXSR9h4vkHZQ0+GZjdk4u/8c1L3vV3Pdp39rRe/RuMiXH342TmfQh
+isSXrJUteVz+yejvklw6CJQofwKBgQDt+bBOcdCi8wTu/Sj9sWfd+M9Ix9bE7ePv
+pesB9QsFxE2uRdwE3TO5rxjrlgAbErb2GsRfCMC1LeeSna3q2FZJA6KjC+DQ94xt
+oYRN58th9IgTglRwaRXugjdFNCij3o+KYbPuyq0MQ0h725r8L9OfVvCBF9wjVCAU
+perJh3mnKwKBgQCHfWj7+vdU6vYKnW2J7EJZPvAusF0zBfV6UmzjgkcNtCRRf+sN
+oBn6jmprtKJfX59Uy/AzgJehYlioQb+0wJt54xoEoA3bCU1+KMrw6hgyWGiFlC5p
++PvZQ/89MrkVg9KyjNVtJdS9/QnRjYSMYY16I0Imm+kk654Y4AYHyivkawKBgE6g
+IY05c3pzGp0vjZyMQcoIC8x7Ik18X8PtKMFDyfmEyzmaIUCGKTHfVTd5Ht3TCBo1
+682OYcU6vnklmbGu+oszJUgDg6rnL0GFjOYEgKEDnvX7KJTfU3yzDznRKuBBh2Fs
+OHvcAOK9VDR/8SwDTUMnAV1VmckeYV8RFoqxNRNzAoGAaeUopgLxX3AqZP2+aaQy
+ZfzreVOMLcDBv4q1Iv89Y10c46z7liHnvPutAOEPDmXSZ4WGjl8PIw+5bjFlPoxc
+CTMCDY1zV0liFyc3V6KdqBzyzBjErEU6DcnB+pwx/prbfByO21sGI2c2TkLeIiSY
+uGTZ/Ek5VDaoRFLV269ofEo=
+-----END PRIVATE KEY-----
+
+FIREBASE_CLIENT_EMAIL
+firebase-adminsdk-fbsvc@hostel-ledger.iam.gserviceaccount.com
+
+FIREBASE_CLIENT_ID
+118133021066713214469
+
+FIREBASE_CLIENT_X509_CERT_URL
+https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40hostel-ledger.iam.gserviceaccount.com
+
+FIREBASE_DATABASE_URL
+https://hostel-ledger-default-rtdb.firebaseio.com
+
+SMTP_HOST
+smtp.gmail.com
+
+SMTP_PORT
+587
+
+SMTP_USER
+ahmadraoabsar@gmail.com
+
+SMTP_PASS
+uzpk gcix ebfh sfrg
+
+EMAIL_FROM
+Hostel Ledger <noreply@quizzicallabz.qzz.io>
+
+FRONTEND_URL
+https://hostel-ledger.vercel.app
+
+NODE_ENV
+production
+
+IMPORTANT NOTES:
+1. Copy each variable name and value exactly as shown
+2. For FIREBASE_PRIVATE_KEY, make sure to include the entire private key including the BEGIN and END lines
+3. After adding all variables, redeploy your backend project in Vercel
+4. Test the email existence check endpoint after deployment

@@ -397,41 +397,56 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
   const checkEmailExists = async (email: string): Promise<boolean> => {
     try {
-      console.log('🔍 Checking if email exists in database:', email);
+      console.log('🔍 Checking if email exists:', email);
       
-      // Check Realtime Database for existing user with this email
-      const usersRef = ref(database, 'users');
-      const snapshot = await get(usersRef);
-      
-      if (snapshot.exists()) {
-        const users = snapshot.val();
+      // Primary check: Use backend API with Firebase Admin SDK
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/check-email-exists`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email })
+        });
         
-        // Search through all users to find matching email
-        for (const uid in users) {
-          if (users[uid].email === email) {
-            console.log('❌ Email already exists in database:', email);
-            return true;
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            if (result.exists) {
+              console.log('❌ Email already exists (backend check):', email);
+              return true;
+            } else {
+              console.log('✅ Email is available (backend check):', email);
+              return false;
+            }
           }
+        } else {
+          console.warn('⚠️ Backend email check failed, falling back to Firebase Auth');
         }
+      } catch (backendError: any) {
+        console.warn('⚠️ Backend email check error, falling back to Firebase Auth:', backendError.message);
       }
       
-      // Also check Firebase Auth as backup
+      // Fallback check: Use Firebase Auth to check if email exists
       try {
         const methods = await fetchSignInMethodsForEmail(auth, email);
         if (methods.length > 0) {
           console.log('❌ Email already exists in Firebase Auth:', email);
+          console.log('🔐 Sign-in methods:', methods);
           return true;
         }
-      } catch (authError) {
-        console.warn('⚠️ Firebase Auth check failed (non-critical):', authError);
+      } catch (authError: any) {
+        console.warn('⚠️ Firebase Auth check failed:', authError.message);
+        // If auth check fails, we can't determine if email exists
+        // Return false to allow signup attempt (Firebase will catch duplicates during signup)
       }
       
       console.log('✅ Email is available:', email);
       return false;
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Error checking email existence:", error);
-      // In case of error, return false to allow signup (better UX)
+      // In case of error, return false to allow signup (Firebase will catch duplicates during actual signup)
       return false;
     }
   };

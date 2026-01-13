@@ -228,7 +228,7 @@ const sendPasswordResetEmailAPI = async (email: string, resetLink: string, name:
 // Email templates (for fallback mode)
 export const emailTemplates = {
   verification: (code: string, name: string) => ({
-    subject: '🔐 Verify Your Hostel Ledger Account',
+    subject: ' Verify Your Hostel Ledger Account',
     html: `
       <!DOCTYPE html>
       <html>
@@ -250,7 +250,7 @@ export const emailTemplates = {
       <body>
         <div class="container">
           <div class="header">
-            <h1>🏠 Hostel Ledger</h1>
+            <h1> Hostel Ledger</h1>
             <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">Welcome to smart expense sharing!</p>
           </div>
           
