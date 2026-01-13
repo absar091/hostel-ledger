@@ -101,7 +101,7 @@ const Signup = () => {
       // Generate verification code
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
       
-      // Store verification code in Firestore
+      // Store verification code in Firestore (without userId since user doesn't exist yet)
       await storeVerificationCode(formData.email, verificationCode, 'signup');
       
       // Send verification email

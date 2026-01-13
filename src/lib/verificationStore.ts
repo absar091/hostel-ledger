@@ -58,19 +58,20 @@ class VerificationStore {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + this.EXPIRY_TIME);
     
-    const record: Omit<VerificationRecord, 'createdAt' | 'expiresAt'> & {
-      createdAt: Date;
-      expiresAt: Date;
-    } = {
+    const record: any = {
       code,
       email: email.toLowerCase(),
-      userId,
       type,
       attempts: 0,
       createdAt: now,
       expiresAt: expiresAt,
       verified: false
     };
+
+    // Only add userId if it's provided and not undefined
+    if (userId) {
+      record.userId = userId;
+    }
     
     try {
       const docId = this.getDocId(email);
@@ -91,19 +92,20 @@ class VerificationStore {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + this.EXPIRY_TIME);
     
-    const record: Omit<VerificationRecord, 'createdAt' | 'expiresAt'> & {
-      createdAt: Date;
-      expiresAt: Date;
-    } = {
+    const record: any = {
       code,
       email: email.toLowerCase(),
-      userId,
       type,
       attempts: 0,
       createdAt: now,
       expiresAt: expiresAt,
       verified: false
     };
+
+    // Only add userId if it's provided and not undefined
+    if (userId) {
+      record.userId = userId;
+    }
     
     try {
       const docId = this.getDocId(email);
