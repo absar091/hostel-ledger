@@ -18,14 +18,28 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Rate limiting for email endpoints
+// Rate limiting for email endpoints - very generous limits for testing
 const emailLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // limit each IP to 10 requests per windowMs
+  max: 100, // limit each IP to 100 requests per windowMs (increased from 50)
   message: {
     success: false,
     error: 'Too many email requests, please try again later.'
-  }
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+// General rate limiter for API endpoints
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // limit each IP to 200 requests per windowMs (increased from 100)
+  message: {
+    success: false,
+    error: 'Too many requests, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 // Email transporter configuration
@@ -65,7 +79,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// Health check endpoint
+// Health check endpoint (no rate limiting)
 app.get('/health', (req, res) => {
   res.json({ 
     success: true, 
@@ -73,6 +87,9 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// Apply general rate limiting to API endpoints only
+app.use('/api', generalLimiter);
 
 // Generic email sending endpoint
 app.post('/api/send-email', emailLimiter, async (req, res) => {
