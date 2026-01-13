@@ -28,8 +28,8 @@ const VerifyEmail = () => {
       return;
     }
 
-    const updateTimer = () => {
-      const remaining = getVerificationTimeRemaining(email);
+    const updateTimer = async () => {
+      const remaining = await getVerificationTimeRemaining(email);
       setTimeRemaining(remaining);
     };
 
@@ -55,8 +55,8 @@ const VerifyEmail = () => {
     setIsLoading(true);
 
     try {
-      // Verify the code
-      const result = verifyVerificationCode(email, code);
+      // Verify the code using Firestore
+      const result = await verifyVerificationCode(email, code);
       
       if (!result.success) {
         toast.error(result.error || "Invalid verification code");
@@ -79,12 +79,7 @@ const VerifyEmail = () => {
         const signupResult = await signup(signupData.email, signupData.password, {
           firstName: signupData.firstName,
           lastName: signupData.lastName,
-          phone: signupData.phone,
-          dateOfBirth: signupData.dateOfBirth,
           university: signupData.university,
-          hostelName: signupData.hostelName,
-          roomNumber: signupData.roomNumber,
-          emergencyContact: signupData.emergencyContact,
           emailVerified: true
         });
 
@@ -119,8 +114,8 @@ const VerifyEmail = () => {
     setIsResending(true);
 
     try {
-      // Generate new code
-      const newCode = resendVerificationCode(email);
+      // Generate new code using Firestore
+      const newCode = await resendVerificationCode(email);
       if (!newCode) {
         toast.error("Unable to resend code. Please try signing up again.");
         navigate("/signup");

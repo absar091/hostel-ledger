@@ -31,6 +31,12 @@
         ".read": "$uid === auth.uid",
         ".write": "$uid === auth.uid"
       }
+    },
+    "verificationCodes": {
+      "$codeId": {
+        ".read": true,
+        ".write": true
+      }
     }
   }
 }

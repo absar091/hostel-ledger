@@ -17,6 +17,7 @@ import {
   Heart
 } from "lucide-react";
 import { sendVerificationEmail } from "@/lib/email";
+import { storeVerificationCode } from "@/lib/verificationStore";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -100,6 +101,9 @@ const Signup = () => {
       // Generate verification code
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
       
+      // Store verification code in Firestore
+      await storeVerificationCode(formData.email, verificationCode, 'signup');
+      
       // Send verification email
       const emailResult = await sendVerificationEmail(
         formData.email, 
@@ -111,9 +115,8 @@ const Signup = () => {
         throw new Error('Failed to send verification email');
       }
 
-      // Store user data temporarily
+      // Store user data temporarily in sessionStorage (only for form data, not verification code)
       sessionStorage.setItem('pendingSignup', JSON.stringify(formData));
-      sessionStorage.setItem('verificationCode', verificationCode);
       
       toast.success("Verification code sent to your email!");
       navigate("/verify-email", { state: { email: formData.email, type: 'signup' } });
