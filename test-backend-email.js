@@ -1,7 +1,7 @@
 // Test script for backend email API
 const fetch = require('node-fetch');
 
-const API_URL = 'http://localhost:3001';
+const API_URL = 'https://hostel-ledger-backend.vercel.app';
 
 async function testEmailAPI() {
   console.log('🧪 Testing Backend Email API...\n');
