@@ -148,10 +148,10 @@ const Signup = () => {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-3">
             Join Hostel Ledger
           </h1>
-          <p className="text-gray-600 text-lg">Create your account to start managing shared expenses</p>
+          <p className="text-gray-600 text-lg">Create your account</p>
           <div className="flex items-center justify-center gap-2 mt-2 text-sm text-emerald-600">
             <Heart className="w-4 h-4 fill-current" />
-            <span>Trusted by 1000+ students</span>
+            <span>Split expenses with Ease</span>
           </div>
         </div>
 
