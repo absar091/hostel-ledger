@@ -45,9 +45,8 @@ export const sendTransactionNotifications = async (
     });
     const description = transaction.description || transaction.title;
     
-    // Send emails to all users (except the person who created the transaction)
+    // Send emails to all users (including the person who created the transaction)
     const emailPromises = users
-      .filter(user => user.uid !== transaction.paidBy) // Don't send to the person who created it
       .map(async (user) => {
         try {
           await sendTransactionAlertEmail(
@@ -151,14 +150,8 @@ export const shouldSendTransactionNotification = (
   transaction: TransactionData,
   user: UserData
 ): boolean => {
-  // Don't send to the person who created the transaction
-  if (user.uid === transaction.paidBy) {
-    return false;
-  }
-  
-  // Add more conditions here based on user preferences
-  // For now, send to all participants
-  return transaction.participants.includes(user.uid);
+  // Send to all users regardless of whether they are the payer or participant
+  return true;
 };
 
 /**
