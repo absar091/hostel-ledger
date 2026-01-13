@@ -11,10 +11,15 @@ app.use(cors({
   origin: [
     process.env.FRONTEND_URL || 'http://localhost:5173',
     'https://hostel-ledger.vercel.app',
+    'https://hostel-ledger-git-main-absar091.vercel.app', // Git branch deployments
+    'https://hostel-ledger-absar091.vercel.app', // User-specific Vercel URL
     'http://localhost:8080',
-    'http://localhost:5173'
+    'http://localhost:5173',
+    'http://localhost:3000'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(express.json());
 
@@ -65,6 +70,7 @@ transporter.verify((error, success) => {
 
 // Root endpoint
 app.get('/', (req, res) => {
+  console.log('📍 Root endpoint accessed from:', req.get('origin') || 'direct');
   res.json({ 
     success: true, 
     message: 'Hostel Ledger Email API',
@@ -75,16 +81,20 @@ app.get('/', (req, res) => {
       sendVerification: '/api/send-verification',
       sendPasswordReset: '/api/send-password-reset'
     },
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
 // Health check endpoint (no rate limiting)
 app.get('/health', (req, res) => {
+  console.log('🏥 Health check accessed from:', req.get('origin') || 'direct');
   res.json({ 
     success: true, 
     message: 'Hostel Ledger Email API is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
