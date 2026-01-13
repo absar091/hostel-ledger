@@ -19,6 +19,76 @@ export const signupSchema = z.object({
     .toLowerCase(),
   
   phone: z.string()
+    .optional()
+    .refine((val) => !val || val === '' || /^(\+92|0)?3[0-9]{9}$/.test(val), 'Please enter a valid Pakistani phone number (e.g., 03XX-XXXXXXX)'),
+  
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(128, 'Password must be less than 128 characters')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, 
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
+  
+  confirmPassword: z.string(),
+  
+  dateOfBirth: z.string()
+    .min(1, 'Date of birth is required')
+    .refine((date) => {
+      if (!date) return false;
+      const birthDate = new Date(date);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      const dayDiff = today.getDate() - birthDate.getDate();
+      
+      // Adjust age if birthday hasn't occurred this year
+      const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+      
+      return actualAge >= 13 && actualAge <= 100;
+    }, 'You must be between 13 and 100 years old'),
+  
+  university: z.string()
+    .min(2, 'University name must be at least 2 characters')
+    .max(100, 'University name must be less than 100 characters'),
+  
+  hostelName: z.string()
+    .optional()
+    .refine((val) => !val || val === '' || (val.length >= 2 && val.length <= 100), 'Hostel name must be between 2 and 100 characters'),
+  
+  roomNumber: z.string()
+    .optional()
+    .refine((val) => !val || val === '' || (val.length >= 1 && val.length <= 20), 'Room number must be between 1 and 20 characters'),
+  
+  termsAccepted: z.boolean()
+    .refine((val) => val === true, 'You must accept the terms and conditions'),
+  
+  privacyAccepted: z.boolean()
+    .refine((val) => val === true, 'You must accept the privacy policy'),
+  
+  marketingEmails: z.boolean().optional()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+// Legacy schema with emergency contact (kept for backward compatibility)
+export const signupSchemaWithEmergencyContact = z.object({
+  firstName: z.string()
+    .min(2, 'First name must be at least 2 characters')
+    .max(50, 'First name must be less than 50 characters')
+    .regex(/^[a-zA-Z\s]+$/, 'First name can only contain letters and spaces'),
+  
+  lastName: z.string()
+    .min(2, 'Last name must be at least 2 characters')
+    .max(50, 'Last name must be less than 50 characters')
+    .regex(/^[a-zA-Z\s]+$/, 'Last name can only contain letters and spaces'),
+  
+  email: z.string()
+    .email('Please enter a valid email address')
+    .min(5, 'Email must be at least 5 characters')
+    .max(100, 'Email must be less than 100 characters')
+    .toLowerCase(),
+  
+  phone: z.string()
     .regex(/^(\+92|0)?3[0-9]{9}$/, 'Please enter a valid Pakistani phone number (e.g., 03XX-XXXXXXX)')
     .optional(),
   
@@ -118,6 +188,140 @@ export const sanitizeInput = (input: string): string => {
   return input.trim().replace(/[<>\"']/g, '');
 };
 
+// Additional validation utilities for expense tracking
+export const validateAmount = (amount: number): { isValid: boolean; error?: string } => {
+  if (isNaN(amount) || amount <= 0) {
+    return { isValid: false, error: 'Amount must be a positive number' };
+  }
+  if (amount > 1000000) {
+    return { isValid: false, error: 'Amount cannot exceed 1,000,000' };
+  }
+  return { isValid: true };
+};
+
+export const sanitizeString = (input: string): string => {
+  return input.trim().replace(/[<>\"'&]/g, '').substring(0, 200);
+};
+
+export const sanitizeAmount = (amount: string | number): number => {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return isNaN(num) ? 0 : Math.max(0, Math.min(num, 1000000));
+};
+
+export const validateExpenseData = (data: {
+  groupId: string;
+  amount: number;
+  paidBy: string;
+  participants: string[];
+  note: string;
+  place: string;
+}): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+
+  if (!data.groupId || data.groupId.trim() === '') {
+    errors.push('Group is required');
+  }
+
+  const amountValidation = validateAmount(data.amount);
+  if (!amountValidation.isValid) {
+    errors.push(amountValidation.error || 'Invalid amount');
+  }
+
+  if (!data.paidBy || data.paidBy.trim() === '') {
+    errors.push('Please select who paid');
+  }
+
+  if (!data.participants || data.participants.length === 0) {
+    errors.push('Please select at least one participant');
+  }
+
+  if (data.note && data.note.length > 200) {
+    errors.push('Note must be less than 200 characters');
+  }
+
+  if (data.place && data.place.length > 100) {
+    errors.push('Place must be less than 100 characters');
+  }
+
+  return { isValid: errors.length === 0, errors };
+};
+
+export const validatePaymentData = (data: {
+  groupId: string;
+  fromMember: string;
+  amount: number;
+  method: string;
+  note: string;
+}): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+
+  if (!data.groupId || data.groupId.trim() === '') {
+    errors.push('Group is required');
+  }
+
+  if (!data.fromMember || data.fromMember.trim() === '') {
+    errors.push('Please select who paid you');
+  }
+
+  const amountValidation = validateAmount(data.amount);
+  if (!amountValidation.isValid) {
+    errors.push(amountValidation.error || 'Invalid amount');
+  }
+
+  if (!data.method || !['cash', 'online'].includes(data.method)) {
+    errors.push('Please select a payment method');
+  }
+
+  if (data.note && data.note.length > 200) {
+    errors.push('Note must be less than 200 characters');
+  }
+
+  return { isValid: errors.length === 0, errors };
+};
+
+export const validateGroupData = (data: {
+  name: string;
+  emoji: string;
+  members: { name: string; phone?: string }[];
+}): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+
+  if (!data.name || data.name.trim() === '') {
+    errors.push('Group name is required');
+  } else if (data.name.length > 50) {
+    errors.push('Group name must be less than 50 characters');
+  }
+
+  if (!data.emoji || data.emoji.trim() === '') {
+    errors.push('Please select an emoji for the group');
+  }
+
+  if (!data.members || data.members.length === 0) {
+    errors.push('Please add at least one member');
+  } else {
+    data.members.forEach((member, index) => {
+      if (!member.name || member.name.trim() === '') {
+        errors.push(`Member ${index + 1} name is required`);
+      } else if (member.name.length > 50) {
+        errors.push(`Member ${index + 1} name must be less than 50 characters`);
+      }
+
+      if (member.phone && !/^(\+92|0)?3[0-9]{9}$/.test(member.phone)) {
+        errors.push(`Member ${index + 1} phone number is invalid`);
+      }
+    });
+
+    // Check for duplicate names
+    const names = data.members.map(m => m.name.toLowerCase().trim());
+    const duplicates = names.filter((name, index) => names.indexOf(name) !== index);
+    if (duplicates.length > 0) {
+      errors.push('Member names must be unique');
+    }
+  }
+
+  return { isValid: errors.length === 0, errors };
+};
+
 export const validatePasswordStrength = (password: string): {
   score: number;
   feedback: string[];
@@ -159,7 +363,7 @@ export const checkEmailDomain = (email: string): boolean => {
   const allowedDomains = [
     'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com',
     'edu.pk', 'student.edu.pk', 'pu.edu.pk', 'lums.edu.pk',
-    'nust.edu.pk', 'comsats.edu.pk', 'fast.edu.pk'
+    'nust.edu.pk', 'comsats.edu.pk', 'fast.edu.pk' , 'cuvas.edu.pk'
   ];
   
   const domain = email.split('@')[1]?.toLowerCase();

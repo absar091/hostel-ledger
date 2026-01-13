@@ -1,1 +1,1 @@
-JWT_SECRET qz_email_verify_secret_2024_ultra_secure_key_xyz789   SMTP_HOST smtp.gmail.com  SMTP_PORT 587 SMTP_USER ahmadraoabsar@gmail.com SMTP_PASS uzpk gcix ebfh sfrg EMAIL_FROM Hostel Ledger<noreply@quizzicallabz.qzz.io>
+JWT_SECRET    SMTP_HOST smtp.gmail.com  SMTP_PORT 587 SMTP_USER ahmadraoabsar@gmail.com SMTP_PASS uzpk gcix ebfh sfrg EMAIL_FROM Hostel Ledger<noreply@quizzicallabz.qzz.io>

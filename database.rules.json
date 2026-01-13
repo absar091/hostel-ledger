@@ -1,0 +1,36 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "groups": {
+      "$groupId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "userGroups": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "transactions": {
+      "$transactionId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "userTransactions": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    }
+  }
+}
