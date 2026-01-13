@@ -25,7 +25,7 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Simple form state
+  // Simple form state with proper typing
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -37,11 +37,11 @@ const Signup = () => {
     privacyAccepted: false
   });
 
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Simple validation function
   const validateForm = () => {
-    const newErrors = {};
+    const newErrors: Record<string, string> = {};
 
     if (!formData.firstName || formData.firstName.length < 2) {
       newErrors.firstName = "First name must be at least 2 characters";
@@ -79,15 +79,15 @@ const Signup = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = (field: keyof typeof formData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: null }));
+      setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
