@@ -1,9 +1,9 @@
 // Backend API-based email service
-// Uses your own Node.js backend server for sending emails
+// Uses your deployed Node.js backend server for sending emails
 
 // Email configuration
 const EMAIL_CONFIG = {
-  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3001',
+  apiUrl: import.meta.env.VITE_API_URL || 'https://hostel-ledger-backend.vercel.app',
   host: import.meta.env.VITE_SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(import.meta.env.VITE_SMTP_PORT || '587'),
   user: import.meta.env.VITE_SMTP_USER || 'ahmadraoabsar@gmail.com',
@@ -260,66 +260,32 @@ export const emailTemplates = {
   })
 };
 
-// Main email sending functions with backend API priority
+// Main email sending functions - backend API only (no fallback)
 export const sendVerificationEmail = async (email: string, code: string, name: string) => {
   try {
     console.log('📧 Sending verification email to:', email);
+    console.log('📧 Using API URL:', EMAIL_CONFIG.apiUrl);
     
-    // Method 1: Try backend API first
-    try {
-      const result = await sendVerificationEmailAPI(email, code, name);
-      console.log('✅ Verification email sent via backend API');
-      return result;
-    } catch (apiError) {
-      console.warn('⚠️ Backend API failed, using fallback mode:', apiError);
-      
-      // Method 2: Fallback to development mode
-      const template = emailTemplates.verification(code, name);
-      console.log('📧 FALLBACK - VERIFICATION EMAIL:');
-      console.log('To:', email);
-      console.log('Subject:', template.subject);
-      console.log('Verification Code:', code);
-      console.log('---');
-      console.log('HTML Content:', template.html);
-      
-      // Show user-friendly message
-      alert(`📧 Email sent to ${email}!\n\nVerification Code: ${code}\n\n(Backend API unavailable - using fallback mode)`);
-      
-      return { success: true, messageId: `fallback-${Date.now()}` };
-    }
+    const result = await sendVerificationEmailAPI(email, code, name);
+    console.log('✅ Verification email sent via backend API');
+    return result;
   } catch (error: any) {
-    console.error('❌ All email methods failed:', error);
-    return { success: false, error: error.message };
+    console.error('❌ Verification email failed:', error);
+    throw new Error(`Failed to send verification email: ${error.message}`);
   }
 };
 
 export const sendPasswordResetEmail = async (email: string, resetLink: string, name: string) => {
   try {
     console.log('📧 Sending password reset email to:', email);
+    console.log('📧 Using API URL:', EMAIL_CONFIG.apiUrl);
     
-    // Method 1: Try backend API first
-    try {
-      const result = await sendPasswordResetEmailAPI(email, resetLink, name);
-      console.log('✅ Password reset email sent via backend API');
-      return result;
-    } catch (apiError) {
-      console.warn('⚠️ Backend API failed, using fallback mode:', apiError);
-      
-      // Method 2: Fallback to development mode
-      const template = emailTemplates.passwordReset(resetLink, name);
-      console.log('📧 FALLBACK - PASSWORD RESET EMAIL:');
-      console.log('To:', email);
-      console.log('Reset Link:', resetLink);
-      console.log('Subject:', template.subject);
-      
-      // Show user-friendly message
-      alert(`📧 Password reset email sent to ${email}!\n\nReset Link: ${resetLink}\n\n(Backend API unavailable - using fallback mode)`);
-      
-      return { success: true, messageId: `fallback-${Date.now()}` };
-    }
+    const result = await sendPasswordResetEmailAPI(email, resetLink, name);
+    console.log('✅ Password reset email sent via backend API');
+    return result;
   } catch (error: any) {
-    console.error('❌ All email methods failed:', error);
-    return { success: false, error: error.message };
+    console.error('❌ Password reset email failed:', error);
+    throw new Error(`Failed to send password reset email: ${error.message}`);
   }
 };
 
@@ -330,6 +296,7 @@ export const sendTransactionEmail = async (
 ) => {
   try {
     console.log('📧 Sending transaction notification to:', email);
+    console.log('📧 Using API URL:', EMAIL_CONFIG.apiUrl);
     
     const emailData = {
       to: email,
@@ -343,21 +310,12 @@ export const sendTransactionEmail = async (
       `
     };
     
-    try {
-      const result = await sendEmailWithAPI(emailData);
-      console.log('✅ Transaction email sent via backend API');
-      return result;
-    } catch (error) {
-      console.log('📧 FALLBACK - TRANSACTION EMAIL:');
-      console.log('To:', email);
-      console.log('Transaction:', transaction.title, '- Rs', transaction.amount);
-      console.log('User Type:', userType);
-      
-      return { success: true, messageId: `fallback-${Date.now()}` };
-    }
+    const result = await sendEmailWithAPI(emailData);
+    console.log('✅ Transaction email sent via backend API');
+    return result;
   } catch (error: any) {
     console.error('❌ Transaction email failed:', error);
-    return { success: false, error: error.message };
+    throw new Error(`Failed to send transaction email: ${error.message}`);
   }
 };
 
