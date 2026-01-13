@@ -234,14 +234,14 @@ const Signup = () => {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <GraduationCap className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Join Hostel Ledger</h1>
-          <p className="text-gray-600">Create your account</p>
-          <div className="flex items-center justify-center gap-2 mt-2 text-sm text-emerald-600">
-            <CreditCard className="w-4 h-4" />
-            <span>Split expenses with ease</span>
+          <div className="mb-8">
+            <img 
+              src="/logo.png" 
+              alt="Hostel Ledger Logo" 
+              className="w-32 h-32 mx-auto object-contain opacity-90 mb-4"
+            />
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Join Hostel Ledger</h2>
+            <p className="text-gray-600">Create your account</p>
           </div>
         </div>
 
@@ -342,6 +342,11 @@ const Signup = () => {
         {currentView === 'password' && (
           <div className="space-y-6">
             <div className="text-center mb-6">
+              <img 
+                src="/logo.png" 
+                alt="Hostel Ledger Logo" 
+                className="w-24 h-24 mx-auto object-contain opacity-90 mb-4"
+              />
               <h2 className="text-xl font-semibold text-gray-900">Set Your Password</h2>
               <p className="text-gray-600 text-sm">Choose a strong password for your account</p>
             </div>

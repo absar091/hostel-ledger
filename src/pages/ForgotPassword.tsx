@@ -55,14 +55,18 @@ const ForgotPassword = () => {
         <div className="w-full max-w-md">
           {/* Success State */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Mail className="w-8 h-8 text-white" />
+            <div className="mb-8">
+              <img 
+                src="/logo.png" 
+                alt="Hostel Ledger Logo" 
+                className="w-32 h-32 mx-auto object-contain opacity-90 mb-4"
+              />
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">Check Your Email</h2>
+              <p className="text-gray-600">
+                We've sent password reset instructions to
+              </p>
+              <p className="text-emerald-600 font-medium">{email}</p>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Check Your Email</h1>
-            <p className="text-gray-600">
-              We've sent password reset instructions to
-            </p>
-            <p className="text-emerald-600 font-medium">{email}</p>
           </div>
 
           <div className="bg-white/80 backdrop-blur-lg rounded-3xl p-8 shadow-xl border border-white/50">
@@ -115,13 +119,17 @@ const ForgotPassword = () => {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Mail className="w-8 h-8 text-white" />
+          <div className="mb-8">
+            <img 
+              src="/logo.png" 
+              alt="Hostel Ledger Logo" 
+              className="w-32 h-32 mx-auto object-contain opacity-90 mb-4"
+            />
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Forgot Password?</h2>
+            <p className="text-gray-600">
+              No worries! Enter your email and we'll send you reset instructions.
+            </p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Forgot Password?</h1>
-          <p className="text-gray-600">
-            No worries! Enter your email and we'll send you reset instructions.
-          </p>
         </div>
 
         {/* Form */}

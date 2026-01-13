@@ -111,14 +111,26 @@ const ResetPassword = () => {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Shield className="w-8 h-8 text-white" />
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+              <img 
+                src="/hostel-ledger.png" 
+                alt="Hostel Ledger Logo" 
+                className="w-14 h-14 object-contain"
+              />
+            </div>
+            <div className="text-left">
+              <h1 className="text-4xl font-bold text-gray-900 leading-tight">Hostel Ledger</h1>
+              <p className="text-gray-500 text-lg">Split expenses with ease</p>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Reset Password</h1>
-          <p className="text-gray-600">
-            Create a new password for your account
-          </p>
-          <p className="text-emerald-600 font-medium text-sm mt-1">Using Firebase secure reset</p>
+          <div className="text-center">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Reset Password</h2>
+            <p className="text-gray-600">
+              Create a new password for your account
+            </p>
+            <p className="text-emerald-600 font-medium text-sm mt-1">Using Firebase secure reset</p>
+          </div>
         </div>
 
         {/* Form */}

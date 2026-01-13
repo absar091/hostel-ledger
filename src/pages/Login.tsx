@@ -42,11 +42,11 @@ const Login = () => {
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         {/* Logo */}
         <div className="mb-8 text-center animate-fade-in">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Wallet className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">Hostel Ledger</h1>
-          <p className="text-gray-500 mt-2">Split expenses with ease</p>
+          <img 
+            src="/logo.png" 
+            alt="Hostel Ledger Logo" 
+            className="w-40 h-40 mx-auto object-contain opacity-90 mb-6"
+          />
         </div>
 
         {/* Form */}
