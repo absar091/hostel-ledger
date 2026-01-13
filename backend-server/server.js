@@ -6,6 +6,9 @@ require('dotenv').config();
 
 const app = express();
 
+// Trust proxy for Vercel deployment
+app.set('trust proxy', 1);
+
 // Middleware - More permissive CORS for debugging
 app.use(cors({
   origin: true, // Allow all origins during debugging
