@@ -754,22 +754,18 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               method: 'cash'
             };
             
-            // Send to current user if they're a participant and not the payer
-            if (user.uid !== data.paidBy && data.participants.includes(user.uid)) {
-              const currentUserData: UserData = {
-                uid: user.uid,
-                email: user.email,
-                name: user.name
-              };
-              
-              const emailResult = await sendTransactionNotifications(transactionData, [currentUserData]);
-              if (emailResult.success) {
-                console.log('✅ Transaction notification email sent successfully');
-              } else {
-                console.warn('⚠️ Transaction notification email failed:', emailResult.errors);
-              }
+            // Send notification email to current user regardless of whether they're payer or participant
+            const currentUserData: UserData = {
+              uid: user.uid,
+              email: user.email,
+              name: user.name
+            };
+            
+            const emailResult = await sendTransactionNotifications(transactionData, [currentUserData]);
+            if (emailResult.success) {
+              console.log('✅ Transaction notification email sent successfully');
             } else {
-              console.log('ℹ️ No transaction notification needed (user is payer or not participant)');
+              console.warn('⚠️ Transaction notification email failed:', emailResult.errors);
             }
             
           } catch (emailError: any) {
@@ -1013,22 +1009,18 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               method: data.method
             };
             
-            // Send notification to the recipient (if they're the current user)
-            if (data.toMember === user.uid && data.fromMember !== user.uid) {
-              const currentUserData: UserData = {
-                uid: user.uid,
-                email: user.email,
-                name: user.name
-              };
-              
-              const emailResult = await sendTransactionNotifications(transactionData, [currentUserData]);
-              if (emailResult.success) {
-                console.log('✅ Payment notification email sent successfully');
-              } else {
-                console.warn('⚠️ Payment notification email failed:', emailResult.errors);
-              }
+            // Send notification email to current user regardless of their role in the payment
+            const currentUserData: UserData = {
+              uid: user.uid,
+              email: user.email,
+              name: user.name
+            };
+            
+            const emailResult = await sendTransactionNotifications(transactionData, [currentUserData]);
+            if (emailResult.success) {
+              console.log('✅ Payment notification email sent successfully');
             } else {
-              console.log('ℹ️ No payment notification needed (user is not recipient)');
+              console.warn('⚠️ Payment notification email failed:', emailResult.errors);
             }
             
           } catch (emailError: any) {
