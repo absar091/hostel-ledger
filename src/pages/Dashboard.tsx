@@ -429,7 +429,7 @@ const Dashboard = () => {
           {/* Ghost projection - "Wow" feature */}
           <div className="mt-4 pt-3 border-t border-neutral-300">
             <div className="flex items-center gap-2">
-              <div className="text-[11px] text-white font-medium shadow-2xl opacity-90">
+              <div className="text-[11px] text-white font-medium border opacity-75 rounded-full shadow-none">
                 After settlements: <span className="tabular-nums">Rs {(walletBalance + settlementDelta).toLocaleString()}</span>
               </div>
               <Tooltip content="This shows what your wallet balance will be after all pending group settlements are completed." position="top">
