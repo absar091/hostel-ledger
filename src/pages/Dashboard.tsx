@@ -124,7 +124,7 @@ const Dashboard = () => {
       }
     } catch (error) {
       setError("network_error");
-      toast.error("Network error. Please check your connection.");
+      toast.error("Network error. Please check your Internet connection.");
     }
   };
 
@@ -159,7 +159,7 @@ const Dashboard = () => {
       }
     } catch (error) {
       setError("network_error");
-      toast.error("Network error. Please check your connection.");
+      toast.error("Network error. Please check your Internet connection.");
     }
   };
 
@@ -237,175 +237,175 @@ const Dashboard = () => {
     const transactionGroup = groups.find(g => g.id === transaction.groupId);
 
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center sm:justify-center">
-        <div className="bg-white w-full sm:max-w-md sm:mx-4 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto sm:rounded-3xl rounded-t-3xl shadow-xl">
-          <div className="p-6">
-            {/* Mobile handle */}
-            <div className="w-12 h-1 bg-gray-200 rounded-full mx-auto mb-6 sm:hidden"></div>
-            
-            <div className="text-center mb-6">
-              <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center border-2 ${
-                transaction.type === 'expense' ? 'bg-red-50 border-red-200' : 
-                transaction.type === 'payment' ? 'bg-emerald-50 border-emerald-200' : 'bg-emerald-50 border-emerald-200'
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="bg-white w-full max-w-md max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl border border-gray-200 mx-auto">
+          {/* Header with close button */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                transaction.type === 'expense' ? 'bg-red-100 text-red-600' : 
+                transaction.type === 'payment' ? 'bg-emerald-100 text-emerald-600' : 'bg-emerald-100 text-emerald-600'
               }`}>
                 {transaction.type === 'expense' ? (
-                  <ArrowUpRight className={`w-8 h-8 text-red-500`} />
+                  <ArrowUpRight className="w-4 h-4" />
                 ) : transaction.type === 'payment' ? (
-                  <ArrowDownLeft className={`w-8 h-8 text-emerald-500`} />
+                  <ArrowDownLeft className="w-4 h-4" />
                 ) : (
-                  <CreditCard className={`w-8 h-8 text-emerald-500`} />
+                  <CreditCard className="w-4 h-4" />
                 )}
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">{transaction.title}</h2>
-              <div className="text-3xl font-bold text-gray-900">
-                Rs {transaction.amount.toLocaleString()}
+              <div>
+                <h2 className="font-semibold text-gray-900">Transaction Details</h2>
+                <p className="text-xs text-gray-500 capitalize">{transaction.type}</p>
               </div>
             </div>
-
-            <div className="space-y-3">
-              {/* Date */}
-              <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <Calendar className="w-5 h-5 text-emerald-500" />
-                <div>
-                  <div className="text-sm text-gray-500">Date</div>
-                  <div className="font-medium text-gray-900">{transaction.date}</div>
-                </div>
-              </div>
-
-              {/* Transaction Type */}
-              <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <div className={`w-5 h-5 rounded-full ${
-                  transaction.type === 'expense' ? 'bg-red-500' : 
-                  transaction.type === 'payment' ? 'bg-emerald-500' : 'bg-emerald-500'
-                }`}></div>
-                <div>
-                  <div className="text-sm text-gray-500">Type</div>
-                  <div className="font-medium text-gray-900 capitalize">{transaction.type}</div>
-                </div>
-              </div>
-
-              {/* Group Information */}
-              {transactionGroup && (
-                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                  <Users className="w-5 h-5 text-emerald-500" />
-                  <div>
-                    <div className="text-sm text-gray-500">Group</div>
-                    <div className="font-medium text-gray-900">{transactionGroup.name}</div>
-                    <div className="text-xs text-gray-500">{transactionGroup.members.length} members</div>
-                  </div>
-                </div>
-              )}
-
-              {/* Paid By (for expenses) */}
-              {transaction.paidByName && (
-                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                  <User className="w-5 h-5 text-emerald-500" />
-                  <div>
-                    <div className="text-sm text-gray-500">Paid by</div>
-                    <div className="font-medium text-gray-900">{transaction.paidByName}</div>
-                  </div>
-                </div>
-              )}
-
-              {/* Payment Details (for payments) */}
-              {transaction.fromName && transaction.toName && (
-                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                  <ArrowUpRight className="w-5 h-5 text-emerald-500" />
-                  <div>
-                    <div className="text-sm text-gray-500">Payment</div>
-                    <div className="font-medium text-gray-900">{transaction.fromName} → {transaction.toName}</div>
-                    {transaction.method && (
-                      <div className="text-xs text-gray-500 capitalize">via {transaction.method}</div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Participants (for expenses) */}
-              {transaction.participants && transaction.participants.length > 0 && (
-                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                  <div className="text-sm text-gray-500 mb-3">Participants</div>
-                  <div className="space-y-2">
-                    {transaction.participants.map((participant: any, index: number) => (
-                      <div key={index} className="flex justify-between items-center">
-                        <span className="font-medium text-gray-900">{participant.name}</span>
-                        <span className="text-sm text-gray-500">Rs {participant.amount.toLocaleString()}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Place (for expenses) */}
-              {transaction.place && (
-                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                  <div className="w-5 h-5 rounded-full bg-gray-200"></div>
-                  <div>
-                    <div className="text-sm text-gray-500">Place</div>
-                    <div className="font-medium text-gray-900">{transaction.place}</div>
-                  </div>
-                </div>
-              )}
-
-              {/* Note */}
-              {transaction.note && (
-                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                  <div className="text-sm text-gray-500 mb-1">Note</div>
-                  <div className="font-medium text-gray-900">{transaction.note}</div>
-                </div>
-              )}
-
-              {/* Wallet Balance Changes (for wallet transactions) */}
-              {(transaction.walletBalanceBefore !== undefined || transaction.walletBalanceAfter !== undefined) && (
-                <div className="space-y-3">
-                  {transaction.walletBalanceBefore !== undefined && (
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                      <CreditCard className="w-5 h-5 text-gray-400" />
-                      <div>
-                        <div className="text-sm text-gray-500">Wallet Balance Before</div>
-                        <div className="font-medium text-gray-900">Rs {transaction.walletBalanceBefore.toLocaleString()}</div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {transaction.walletBalanceAfter !== undefined && (
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                      <CreditCard className="w-5 h-5 text-emerald-500" />
-                      <div>
-                        <div className="text-sm text-gray-500">Wallet Balance After</div>
-                        <div className="font-medium text-gray-900">Rs {transaction.walletBalanceAfter.toLocaleString()}</div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Balance Change Summary */}
-                  {transaction.walletBalanceBefore !== undefined && transaction.walletBalanceAfter !== undefined && (
-                    <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                        transaction.walletBalanceAfter > transaction.walletBalanceBefore ? 'bg-emerald-500' : 'bg-red-500'
-                      }`}>
-                        <span className="text-xs text-white font-bold">
-                          {transaction.walletBalanceAfter > transaction.walletBalanceBefore ? '+' : '-'}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-500">Balance Change</div>
-                        <div className={`font-bold ${
-                          transaction.walletBalanceAfter > transaction.walletBalanceBefore ? 'text-emerald-600' : 'text-red-500'
-                        }`}>
-                          {transaction.walletBalanceAfter > transaction.walletBalanceBefore ? '+' : ''}
-                          Rs {Math.abs(transaction.walletBalanceAfter - transaction.walletBalanceBefore).toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
             <button
               onClick={onClose}
-              className="w-full mt-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all"
+              className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+            >
+              <span className="text-gray-600 text-lg">×</span>
+            </button>
+          </div>
+
+          {/* Scrollable content */}
+          <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+            <div className="p-6">
+              {/* Transaction header */}
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{transaction.title}</h3>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
+                  Rs {transaction.amount.toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-500">{transaction.date}</div>
+              </div>
+
+              <div className="space-y-4">
+                {/* Group Information */}
+                {transactionGroup && (
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <Users className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-gray-500">Group</div>
+                      <div className="font-medium text-gray-900 truncate">{transactionGroup.name}</div>
+                      <div className="text-xs text-gray-500">{transactionGroup.members.length} members</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Paid By (for expenses) */}
+                {transaction.paidByName && (
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <User className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-gray-500">Paid by</div>
+                      <div className="font-medium text-gray-900 truncate">{transaction.paidByName}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Payment Details (for payments) */}
+                {transaction.fromName && transaction.toName && (
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <ArrowUpRight className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-gray-500">Payment</div>
+                      <div className="font-medium text-gray-900 truncate">{transaction.fromName} → {transaction.toName}</div>
+                      {transaction.method && (
+                        <div className="text-xs text-gray-500 capitalize">via {transaction.method}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Participants (for expenses) */}
+                {transaction.participants && transaction.participants.length > 0 && (
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <div className="text-sm text-gray-500 mb-3">Participants ({transaction.participants.length})</div>
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {transaction.participants.map((participant: any, index: number) => (
+                        <div key={index} className="flex justify-between items-center">
+                          <span className="font-medium text-gray-900 truncate flex-1 mr-2">{participant.name}</span>
+                          <span className="text-sm text-gray-500 flex-shrink-0">Rs {participant.amount.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Place (for expenses) */}
+                {transaction.place && (
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <div className="w-5 h-5 rounded-full bg-gray-300 flex-shrink-0"></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-gray-500">Place</div>
+                      <div className="font-medium text-gray-900 truncate">{transaction.place}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Note */}
+                {transaction.note && (
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <div className="text-sm text-gray-500 mb-2">Note</div>
+                    <div className="font-medium text-gray-900 break-words">{transaction.note}</div>
+                  </div>
+                )}
+
+                {/* Wallet Balance Changes (for wallet transactions) */}
+                {(transaction.walletBalanceBefore !== undefined || transaction.walletBalanceAfter !== undefined) && (
+                  <div className="space-y-3">
+                    {transaction.walletBalanceBefore !== undefined && (
+                      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <CreditCard className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-gray-500">Wallet Balance Before</div>
+                          <div className="font-medium text-gray-900">Rs {transaction.walletBalanceBefore.toLocaleString()}</div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {transaction.walletBalanceAfter !== undefined && (
+                      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <CreditCard className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-gray-500">Wallet Balance After</div>
+                          <div className="font-medium text-gray-900">Rs {transaction.walletBalanceAfter.toLocaleString()}</div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Balance Change Summary */}
+                    {transaction.walletBalanceBefore !== undefined && transaction.walletBalanceAfter !== undefined && (
+                      <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          transaction.walletBalanceAfter > transaction.walletBalanceBefore ? 'bg-emerald-500' : 'bg-red-500'
+                        }`}>
+                          <span className="text-xs text-white font-bold">
+                            {transaction.walletBalanceAfter > transaction.walletBalanceBefore ? '+' : '-'}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-gray-500">Balance Change</div>
+                          <div className={`font-bold ${
+                            transaction.walletBalanceAfter > transaction.walletBalanceBefore ? 'text-emerald-600' : 'text-red-500'
+                          }`}>
+                            {transaction.walletBalanceAfter > transaction.walletBalanceBefore ? '+' : ''}
+                            Rs {Math.abs(transaction.walletBalanceAfter - transaction.walletBalanceBefore).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Fixed footer with close button */}
+          <div className="p-4 border-t border-gray-100 bg-white flex-shrink-0">
+            <button
+              onClick={onClose}
+              className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg"
             >
               Close
             </button>
@@ -417,11 +417,105 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 pb-20 safe-area-pt">
-      {/* Header - Mobile Optimized */}
+      {/* Header with Enhanced Personalization */}
       <div className="mobile-padding pt-8 pb-6">
         <div className="mb-6">
-          <div className="text-sm text-gray-500 mb-1">{getGreeting()}</div>
-          <h1 className="text-3xl font-bold text-gray-900">{user?.name || "User"}</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="text-sm text-gray-500">{getGreeting()}</div>
+            <div className="flex gap-1">
+              {/* Weather-like emoji based on time */}
+              {(() => {
+                const hour = new Date().getHours();
+                if (hour < 6) return "🌙";
+                if (hour < 12) return "☀️";
+                if (hour < 18) return "🌤️";
+                return "🌆";
+              })()}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-gray-900">{user?.name || "User"}</h1>
+            <div className="flex gap-1">
+              {/* Motivational emoji based on balance */}
+              {walletBalance > 10000 ? "💰" : walletBalance > 5000 ? "💵" : walletBalance > 1000 ? "💳" : "🪙"}
+            </div>
+          </div>
+          
+          {/* Quick Stats Bar */}
+          <div className="mt-4 flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-1">
+              <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
+              <span>{groups.length} {groups.length === 1 ? 'Group' : 'Groups'}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+              <span>{allTransactions.length} Transactions</span>
+            </div>
+            {totalToReceive > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                <span>Money incoming!</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Personalized Insights & Achievements */}
+        <div className="mb-6">
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-white/50">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-700">Your Financial Snapshot</h3>
+              <div className="text-lg">📊</div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {/* Achievement badges */}
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-3 border border-emerald-100">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">
+                    {walletBalance > 20000 ? "🏆" : walletBalance > 10000 ? "🥇" : walletBalance > 5000 ? "🥈" : "🥉"}
+                  </span>
+                  <span className="text-xs font-semibold text-emerald-700">
+                    {walletBalance > 20000 ? "High Roller" : walletBalance > 10000 ? "Gold Saver" : walletBalance > 5000 ? "Silver Saver" : "Getting Started"}
+                  </span>
+                </div>
+                <div className="text-[10px] text-emerald-600">
+                  {walletBalance > 20000 ? "Excellent financial management!" : 
+                   walletBalance > 10000 ? "Great savings discipline!" : 
+                   walletBalance > 5000 ? "Building good habits!" : "Every journey starts here!"}
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-3 border border-blue-100">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">
+                    {groups.length >= 5 ? "🌟" : groups.length >= 3 ? "👥" : groups.length >= 1 ? "🤝" : "👋"}
+                  </span>
+                  <span className="text-xs font-semibold text-blue-700">
+                    {groups.length >= 5 ? "Social Butterfly" : groups.length >= 3 ? "Group Master" : groups.length >= 1 ? "Team Player" : "Solo Explorer"}
+                  </span>
+                </div>
+                <div className="text-[10px] text-blue-600">
+                  {groups.length >= 5 ? "Managing multiple groups like a pro!" : 
+                   groups.length >= 3 ? "Balancing expenses across groups!" : 
+                   groups.length >= 1 ? "Sharing expenses responsibly!" : "Ready to create your first group!"}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick tip */}
+            <div className="mt-3 p-2 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">💡</span>
+                <span className="text-xs text-yellow-700 font-medium">
+                  {totalToPay > totalToReceive ? "Tip: Consider settling some debts to improve your balance!" :
+                   totalToReceive > totalToPay ? "Great! You have more money coming in than going out." :
+                   allTransactions.length === 0 ? "Start by creating a group and adding your first expense!" :
+                   "Your finances are perfectly balanced! 🎯"}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Error and Success Alerts */}
@@ -476,20 +570,27 @@ const Dashboard = () => {
             Money available to spend
           </div>
           
-          {/* Ghost projection - "Wow" feature */}
+          {/* Ghost projection - "Wow" feature with enhanced personalization */}
           <div className="mt-4 pt-3 border-t border-white/60">
-            <div className="flex items-center gap-2">
-              <div className="text-sm opacity-90 text-white font-medium">
-                After settlements: <span className="tabular-nums">Rs {(walletBalance + settlementDelta).toLocaleString()}</span>
-              </div>
-              <Tooltip 
-                content="This shows what your wallet balance will be after all pending group settlements are completed."
-                position="top"
-              >
-                <div className="w-4 h-4 rounded-full bg-white/30 flex items-center justify-center cursor-help">
-                  <span className="text-[10px] font-bold text-white">?</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="text-4xl opacity-100 text-red-500 font-bold tracking-wide bg-yellow-300 p-4">
+                  TESTING CHANGE - After settlements: <span className="tabular-nums text-5xl">Rs {(walletBalance + settlementDelta).toLocaleString()}</span>
                 </div>
-              </Tooltip>
+                <Tooltip 
+                  content="This shows what your wallet balance will be after all pending group settlements are completed."
+                  position="top"
+                >
+                  <div className="w-4 h-4 rounded-full bg-white/30 flex items-center justify-center cursor-help">
+                    <span className="text-[10px] font-bold text-white">?</span>
+                  </div>
+                </Tooltip>
+              </div>
+              
+              {/* Smart insights */}
+              <div className="text-[10px] opacity-60 text-white">
+                {settlementDelta > 0 ? "💸 Payday coming!" : settlementDelta < 0 ? "⚡ Settlement due" : "✨ All settled"}
+              </div>
             </div>
           </div>
         </div>
@@ -559,45 +660,53 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Quick Actions - Refined & Professional */}
+        {/* Quick Actions - Enhanced with Personality */}
         <div className="grid grid-cols-3 gap-3 mt-6">
           <button
             onClick={handleAddExpense}
-            className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 active:scale-95 transition-all duration-200 text-center group border border-white/50 shadow-sm min-h-[44px]"
+            className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 active:scale-95 transition-all duration-200 text-center group border border-white/50 shadow-sm min-h-[44px] hover:shadow-md"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mb-3 mx-auto border border-emerald-200 group-hover:border-emerald-300 group-active:scale-95 transition-all">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mb-3 mx-auto border border-emerald-200 group-hover:border-emerald-300 group-active:scale-95 transition-all group-hover:shadow-sm">
               <Plus className="w-5 h-5 text-emerald-600" />
             </div>
             <div className="text-gray-700 font-semibold text-sm">Add Expense</div>
+            <div className="text-[10px] text-gray-500 mt-1">Split bills easily</div>
           </button>
           
           <button
             onClick={handleReceivedMoney}
-            className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 active:scale-95 transition-all duration-200 text-center group border border-white/50 shadow-sm min-h-[44px]"
+            className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 active:scale-95 transition-all duration-200 text-center group border border-white/50 shadow-sm min-h-[44px] hover:shadow-md"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mb-3 mx-auto border border-emerald-200 group-hover:border-emerald-300 group-active:scale-95 transition-all">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mb-3 mx-auto border border-emerald-200 group-hover:border-emerald-300 group-active:scale-95 transition-all group-hover:shadow-sm">
               <ArrowDownLeft className="w-5 h-5 text-emerald-600" />
             </div>
             <div className="text-gray-700 font-semibold text-sm">Received</div>
+            <div className="text-[10px] text-gray-500 mt-1">Record payments</div>
           </button>
           
           <button
             onClick={handleNewGroup}
-            className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 active:scale-95 transition-all duration-200 text-center group border border-white/50 shadow-sm min-h-[44px]"
+            className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 active:scale-95 transition-all duration-200 text-center group border border-white/50 shadow-sm min-h-[44px] hover:shadow-md"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mb-3 mx-auto border border-emerald-200 group-hover:border-emerald-300 group-active:scale-95 transition-all">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mb-3 mx-auto border border-emerald-200 group-hover:border-emerald-300 group-active:scale-95 transition-all group-hover:shadow-sm">
               <User className="w-5 h-5 text-emerald-600" />
             </div>
             <div className="text-gray-700 font-semibold text-sm">New Group</div>
+            <div className="text-[10px] text-gray-500 mt-1">Start sharing</div>
           </button>
         </div>
 
-        {/* Recent Transactions - Mobile Optimized */}
+        {/* Recent Transactions - Enhanced with Personality */}
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Recent Transactions</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold text-gray-900">Recent Activity</h2>
+              <span className="text-lg">📈</span>
+            </div>
             {allTransactions.length > 5 && (
-              <button className="text-emerald-600 text-sm font-medium">View All</button>
+              <button className="text-emerald-600 text-sm font-medium hover:text-emerald-700 transition-colors">
+                View All
+              </button>
             )}
           </div>
           
@@ -648,17 +757,22 @@ const Dashboard = () => {
             </div>
           ) : (
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-12 text-center shadow-sm border border-white/50">
-              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-200">
-                <CreditCard className="w-8 h-8 text-emerald-500" />
+              <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-200">
+                <div className="text-2xl">🚀</div>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No transactions yet</h3>
-              <p className="text-gray-500 mb-6">Start by creating a group or adding an expense</p>
-              <button
-                onClick={groups.length === 0 ? handleNewGroup : handleAddExpense}
-                className="py-3 px-6 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all"
-              >
-                {groups.length === 0 ? "Create Your First Group" : "Add Your First Expense"}
-              </button>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready to start your journey?</h3>
+              <p className="text-gray-500 mb-6">Your financial adventure begins with your first transaction!</p>
+              <div className="flex flex-col gap-3 max-w-xs mx-auto">
+                <button
+                  onClick={groups.length === 0 ? handleNewGroup : handleAddExpense}
+                  className="py-3 px-6 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg hover:shadow-xl"
+                >
+                  {groups.length === 0 ? "🎯 Create Your First Group" : "💰 Add Your First Expense"}
+                </button>
+                <div className="text-xs text-gray-400">
+                  {groups.length === 0 ? "Start by adding friends or roommates" : "Split your first bill with the group"}
+                </div>
+              </div>
             </div>
           )}
         </div>
