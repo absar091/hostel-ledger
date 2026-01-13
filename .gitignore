@@ -22,7 +22,9 @@ dist-ssr
 # Firebase
 firebase-debug.log
 .firebase/
-*.json
+firebase-debug.*.log
+.firebaserc
+firebase.json
 
 # Editor directories and files
 .vscode/*
