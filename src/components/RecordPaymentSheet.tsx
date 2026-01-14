@@ -258,7 +258,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
             <div className="space-y-6 animate-fade-in">
               {/* Member Details Card */}
               {selectedMemberData && (
-                <div className="glass-card p-4 bg-cyan-500/10 border-cyan-400/20">
+                <div className="glass-card p-4 bg-emerald-50 border-emerald-200">
                   <div className="flex items-start gap-3 mb-3">
                     <Avatar name={selectedMemberData.name} size="md" />
                     <div className="flex-1">
@@ -273,7 +273,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                             💸 You owe Rs {selectedMemberData.settlement.toPay.toLocaleString()}
                           </span>
                         ) : (
-                          <span className="text-cyan-400">✅ All settled up</span>
+                          <span className="text-emerald-600">✅ All settled up</span>
                         )}
                       </div>
                     </div>
@@ -281,10 +281,10 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   
                   {/* Payment Details */}
                   {selectedMemberData.paymentDetails && Object.keys(selectedMemberData.paymentDetails).length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-cyan-400/20">
+                    <div className="mt-3 pt-3 border-t border-emerald-200">
                       <div className="flex items-center gap-2 mb-2">
-                        <CreditCard className="w-4 h-4 text-cyan-400" />
-                        <span className="text-sm font-medium text-cyan-400">Payment Details</span>
+                        <CreditCard className="w-4 h-4 text-emerald-600" />
+                        <span className="text-sm font-medium text-emerald-600">Payment Details</span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         {selectedMemberData.paymentDetails.jazzCash && (
@@ -317,14 +317,14 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   
                   {/* Quick Amount Suggestion */}
                   {selectedMemberData.settlement.toReceive > 0 && (
-                    <div className="mt-3 pt-3 border-t border-cyan-400/20">
+                    <div className="mt-3 pt-3 border-t border-emerald-200">
                       <div className="flex items-center gap-2 mb-2">
-                        <Info className="w-4 h-4 text-cyan-400" />
-                        <span className="text-sm font-medium text-cyan-400">Quick Fill</span>
+                        <Info className="w-4 h-4 text-emerald-600" />
+                        <span className="text-sm font-medium text-emerald-600">Quick Fill</span>
                       </div>
                       <button
                         onClick={() => setAmount(selectedMemberData.settlement.toReceive.toString())}
-                        className="text-xs bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 px-3 py-1 rounded-lg transition-colors"
+                        className="text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg transition-colors font-medium"
                       >
                         Full Amount: Rs {selectedMemberData.settlement.toReceive.toLocaleString()}
                       </button>

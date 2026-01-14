@@ -113,9 +113,9 @@ const Groups = () => {
                       </div>
                     </div>
                     
-                    <div className="text-right">
-                      <div className="flex items-center gap-2 justify-end mb-1">
-                        <div className={`text-xl font-bold ${
+                    <div className="text-right flex-shrink-0">
+                      <div className="flex items-center gap-1 justify-end mb-1">
+                        <div className={`text-lg font-bold whitespace-nowrap ${
                           isPositive ? "text-emerald-600" : "text-red-600"
                         }`}>
                           {isPositive ? "+" : ""}Rs {Math.abs(balance).toLocaleString()}
@@ -128,15 +128,15 @@ const Groups = () => {
                           position="left"
                         />
                       </div>
-                      <div className="flex items-center gap-1 text-sm text-gray-500">
+                      <div className="flex items-center gap-1 text-xs text-gray-500 whitespace-nowrap">
                         {isPositive ? (
                           <>
-                            <TrendingDown className="w-4 h-4 text-emerald-500" />
+                            <TrendingDown className="w-3 h-3 text-emerald-500" />
                             <span>you'll receive</span>
                           </>
                         ) : (
                           <>
-                            <TrendingUp className="w-4 h-4 text-red-500" />
+                            <TrendingUp className="w-3 h-3 text-red-500" />
                             <span>you owe</span>
                           </>
                         )}
