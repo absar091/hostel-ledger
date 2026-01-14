@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/__/auth/action",
-      "destination": "/__auth-action.html"
+      "source": "/_/auth/action",
+      "destination": "/_auth-action.html"
     },
     {
       "source": "/(.*)",
