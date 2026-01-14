@@ -575,11 +575,11 @@ const Dashboard = () => {
             onClick={handleAddExpense}
             className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/90 active:scale-95 transition-all duration-200 text-center group border border-white/50 shadow-sm min-h-[44px] hover:shadow-md"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mb-3 mx-auto border border-emerald-200 group-hover:border-emerald-300 group-active:scale-95 transition-all group-hover:shadow-sm">
+            <div className="w-10 h-8 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center mb-3 mx-auto border border-emerald-200 group-hover:border-emerald-300 group-active:scale-95 transition-all group-hover:shadow-sm">
               <Plus className="w-5 h-5 text-emerald-600" />
             </div>
             <div className="text-gray-700 font-semibold text-sm">Add Expense</div>
-            <div className="text-[10px] text-gray-500 mt-1">Split bills easily</div>
+            <div className="text-[10px] text-gray-500 mt-1"></div>
           </button>
           
           <button
@@ -590,7 +590,7 @@ const Dashboard = () => {
               <ArrowDownLeft className="w-5 h-5 text-emerald-600" />
             </div>
             <div className="text-gray-700 font-semibold text-sm">Received</div>
-            <div className="text-[10px] text-gray-500 mt-1">Record payments</div>
+            <div className="text-[10px] text-gray-500 mt-1"></div>
           </button>
           
           <button
@@ -640,13 +640,22 @@ const Dashboard = () => {
                   <div className="flex-1 text-left">
                     <div className="font-medium text-gray-900 mb-1">{transaction.title}</div>
                     <div className="text-sm text-gray-500">
-                      {transaction.date}
-                      {transaction.type === "expense" && transaction.paidByName && (
-                        <span> • Paid by {transaction.paidByName}</span>
-                      )}
-                      {transaction.type === "payment" && transaction.fromName && transaction.toName && (
-                        <span> • {transaction.fromName} to {transaction.toName}</span>
-                      )}
+                      {(() => {
+                        const transactionGroup = groups.find(g => g.id === transaction.groupId);
+                        return (
+                          <>
+                            {transactionGroup && <span className="font-medium text-emerald-600">{transactionGroup.name}</span>}
+                            {transactionGroup && <span> • </span>}
+                            {transaction.date}
+                            {transaction.type === "expense" && transaction.paidByName && (
+                              <span> • Paid by {transaction.paidByName}</span>
+                            )}
+                            {transaction.type === "payment" && transaction.fromName && transaction.toName && (
+                              <span> • {transaction.fromName} to {transaction.toName}</span>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                   

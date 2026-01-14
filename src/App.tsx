@@ -20,80 +20,104 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Reusable Splash Screen Component
+const SplashScreen = () => {
+  return (
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-emerald-400 via-teal-300 to-green-300">
+      <div className="flex flex-col items-center">
+        
+        {/* LOGO - SVG for crisp display */}
+        <img
+          src="/only-logo.png"
+          alt="Hostel Ledger"
+          style={{ 
+            width: 200, 
+            height: 200,
+            mixBlendMode: "multiply",
+            filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.1))",
+            animation: "logoFadeIn 1s ease-out, logoPulse 2s ease-in-out infinite"
+          }}
+        />
+        
+        {/* TITLE - More  Closer to logo, slightly smaller for balance */}
+        <div
+          style={{
+            marginTop: 0,
+            fontSize: 30,
+            fontWeight: 800,
+            letterSpacing: "1px",
+            color: "#ffffffd4",
+            textAlign: "center",
+          }}
+        >
+          Hostel Ledger
+        </div>
+        
+        {/* LOADER */}
+        <div
+          style={{
+            marginTop: 40,
+            width: 35,
+            height: 35,
+            position: "relative",
+          }}
+        >
+          {[...Array(8)].map((_, i) => (
+            <span
+              key={i}
+              style={{
+                position: "absolute",
+                width: 4,
+                height: 4,
+                borderRadius: "50%",
+                backgroundColor: "rgba(255,255,255,0.9)",
+                top: "50%",
+                left: "50%",
+                transform: `rotate(${i * 45}deg) translateY(-12px)`,
+                animation: "fade 1s linear infinite",
+                animationDelay: `${i * 0.12}s`,
+              }}
+            />
+          ))}
+        </div>
+        
+        <style>{`
+          @keyframes fade {
+            0% { opacity: 1; }
+            100% { opacity: 0.15; }
+          }
+          
+          @keyframes logoFadeIn {
+            0% { 
+              opacity: 0;
+              transform: scale(0.8);
+            }
+            100% { 
+              opacity: 1;
+              transform: scale(1);
+            }
+          }
+          
+          @keyframes logoPulse {
+            0%, 100% { 
+              transform: scale(1);
+            }
+            50% { 
+              transform: scale(1.05);
+            }
+          }
+        `}</style>
+      </div>
+    </div>
+  );
+};
+
 // Protected Route wrapper with mobile-first loading
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useFirebaseAuth();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center mobile-padding relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-32 h-32 bg-emerald-200/30 rounded-full blur-2xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-10 w-40 h-40 bg-teal-200/30 rounded-full blur-2xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-green-200/20 rounded-full blur-3xl animate-pulse delay-500"></div>
-        </div>
-
-        <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-12 text-center shadow-2xl border border-white/50 relative z-10 max-w-md w-full">
-          {/* Logo and Brand */}
-          <div className="mb-8">
-            <div className="w-20 h-20 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl animate-bounce">
-              <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z"/>
-                <path d="M9 12l2 2 4-4" stroke="white" strokeWidth="2" fill="none"/>
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
-              Hostel Ledger
-            </h1>
-            <p className="text-gray-600 text-sm">Smart expense sharing for students</p>
-          </div>
-
-          {/* Innovative Loading Animation */}
-          <div className="mb-8">
-            {/* Money flow animation */}
-            <div className="relative h-16 mb-6">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex space-x-2">
-                  {[...Array(5)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-3 h-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full animate-pulse"
-                      style={{
-                        animationDelay: `${i * 0.2}s`,
-                        animationDuration: '1.5s'
-                      }}
-                    ></div>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Floating money icons */}
-              <div className="absolute top-0 left-1/4 animate-bounce delay-300">
-                <span className="text-2xl">💰</span>
-              </div>
-              <div className="absolute top-0 right-1/4 animate-bounce delay-700">
-                <span className="text-2xl">🏠</span>
-              </div>
-              <div className="absolute bottom-0 left-1/3 animate-bounce delay-1000">
-                <span className="text-2xl">👥</span>
-              </div>
-            </div>
-
-            {/* Progress bar with gradient */}
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-4 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500 rounded-full animate-pulse"></div>
-            </div>
-
-            {/* Loading text with typewriter effect */}
-            <div className="text-gray-700 font-medium">
-              <span className="inline-block animate-pulse">Preparing your financial dashboard</span>
-              <span className="animate-ping ml-1">...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <SplashScreen />;
   }
 
   if (!user) {
@@ -108,75 +132,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useFirebaseAuth();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center mobile-padding relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-32 h-32 bg-emerald-200/30 rounded-full blur-2xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-10 w-40 h-40 bg-teal-200/30 rounded-full blur-2xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-green-200/20 rounded-full blur-3xl animate-pulse delay-500"></div>
-        </div>
-
-        <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-12 text-center shadow-2xl border border-white/50 relative z-10 max-w-md w-full">
-          {/* Logo and Brand */}
-          <div className="mb-8">
-            <div className="w-20 h-20 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl animate-bounce">
-              <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z"/>
-                <path d="M9 12l2 2 4-4" stroke="white" strokeWidth="2" fill="none"/>
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
-              Hostel Ledger
-            </h1>
-            <p className="text-gray-600 text-sm">Welcome back! Getting things ready...</p>
-          </div>
-
-          {/* Innovative Loading Animation */}
-          <div className="mb-8">
-            {/* Money flow animation */}
-            <div className="relative h-16 mb-6">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex space-x-2">
-                  {[...Array(5)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-3 h-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full animate-pulse"
-                      style={{
-                        animationDelay: `${i * 0.2}s`,
-                        animationDuration: '1.5s'
-                      }}
-                    ></div>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Floating icons */}
-              <div className="absolute top-0 left-1/4 animate-bounce delay-300">
-                <span className="text-2xl">🔐</span>
-              </div>
-              <div className="absolute top-0 right-1/4 animate-bounce delay-700">
-                <span className="text-2xl">✨</span>
-              </div>
-              <div className="absolute bottom-0 left-1/3 animate-bounce delay-1000">
-                <span className="text-2xl">🚀</span>
-              </div>
-            </div>
-
-            {/* Progress bar with gradient */}
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-4 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500 rounded-full animate-pulse"></div>
-            </div>
-
-            {/* Loading text with typewriter effect */}
-            <div className="text-gray-700 font-medium">
-              <span className="inline-block animate-pulse">Initializing your session</span>
-              <span className="animate-ping ml-1">...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <SplashScreen />;
   }
 
   if (user) {

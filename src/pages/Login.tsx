@@ -43,7 +43,7 @@ const Login = () => {
         {/* Logo */}
         <div className="mb-8 text-center animate-fade-in">
           <img 
-            src="/logo.png" 
+            src="/only-logo.png" 
             alt="Hostel Ledger Logo" 
             className="w-40 h-40 mx-auto object-contain opacity-90 mb-6"
           />

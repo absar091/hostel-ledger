@@ -12,13 +12,13 @@
   "categories": ["finance", "productivity", "utilities"],
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/only-logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/logo.png",
+      "src": "/only-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -31,7 +31,7 @@
   ],
   "screenshots": [
     {
-      "src": "/logo.png",
+      "src": "/only-logo.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
@@ -46,7 +46,7 @@
       "url": "/add-expense",
       "icons": [
         {
-          "src": "/logo.png",
+          "src": "/only-logo.png",
           "sizes": "96x96"
         }
       ]
@@ -58,7 +58,7 @@
       "url": "/groups",
       "icons": [
         {
-          "src": "/logo.png",
+          "src": "/only-logo.png",
           "sizes": "96x96"
         }
       ]

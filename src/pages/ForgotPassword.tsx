@@ -55,27 +55,25 @@ const ForgotPassword = () => {
         <div className="w-full max-w-md">
           {/* Success State */}
           <div className="text-center mb-8">
-            <div className="mb-8">
-              <img 
-                src="/logo.png" 
-                alt="Hostel Ledger Logo" 
-                className="w-32 h-32 mx-auto object-contain opacity-90 mb-4"
-              />
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">Check Your Email</h2>
-              <p className="text-gray-600">
-                We've sent password reset instructions to
-              </p>
-              <p className="text-emerald-600 font-medium">{email}</p>
-            </div>
+            <img 
+              src="/only-logo.png" 
+              alt="Hostel Ledger Logo" 
+              className="w-32 h-32 mx-auto object-contain opacity-90 mb-4"
+            />
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Check Your Email</h2>
+            <p className="text-gray-600">
+              We've sent password reset instructions to
+            </p>
+            <p className="text-emerald-600 font-medium mt-1">{email}</p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-lg rounded-3xl p-8 shadow-xl border border-white/50">
+          <div className="space-y-6">
             <div className="text-center space-y-4">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                <Send className="w-6 h-6 text-green-600" />
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                <Send className="w-8 h-8 text-green-600" />
               </div>
               
-              <h2 className="text-xl font-semibold text-gray-900">Email Sent!</h2>
+              <h3 className="text-xl font-semibold text-gray-900">Email Sent!</h3>
               
               <p className="text-gray-600">
                 Click the link in your email to reset your password. This email is sent directly by Firebase for security.
@@ -94,7 +92,7 @@ const ForgotPassword = () => {
                   type="button"
                   variant="outline"
                   onClick={() => setEmailSent(false)}
-                  className="flex-1"
+                  className="flex-1 h-12"
                 >
                   Try Different Email
                 </Button>
@@ -102,7 +100,7 @@ const ForgotPassword = () => {
                 <Button
                   type="button"
                   onClick={() => navigate("/login")}
-                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+                  className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
                 >
                   Back to Login
                 </Button>
@@ -119,21 +117,19 @@ const ForgotPassword = () => {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="mb-8">
-            <img 
-              src="/logo.png" 
-              alt="Hostel Ledger Logo" 
-              className="w-32 h-32 mx-auto object-contain opacity-90 mb-4"
-            />
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Forgot Password?</h2>
-            <p className="text-gray-600">
-              No worries! Enter your email and we'll send you reset instructions.
-            </p>
-          </div>
+          <img 
+            src="/only-logo.png" 
+            alt="Hostel Ledger Logo" 
+            className="w-32 h-32 mx-auto object-contain opacity-90 mb-4"
+          />
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Forgot Password?</h2>
+          <p className="text-gray-600">
+            No worries! Enter your email and we'll send you reset instructions.
+          </p>
         </div>
 
         {/* Form */}
-        <div className="bg-white/80 backdrop-blur-lg rounded-3xl p-8 shadow-xl border border-white/50">
+        <div className="space-y-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -146,7 +142,7 @@ const ForgotPassword = () => {
                   placeholder="Enter your email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 pl-12"
+                  className="h-12 pl-12 border-2 focus:border-emerald-500 transition-all duration-300"
                   autoComplete="email"
                   autoFocus
                 />
@@ -173,7 +169,7 @@ const ForgotPassword = () => {
           </form>
 
           {/* Back to Login */}
-          <div className="mt-6 text-center">
+          <div className="text-center">
             <Link
               to="/login"
               className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
@@ -185,8 +181,8 @@ const ForgotPassword = () => {
         </div>
 
         {/* Help Text */}
-        <div className="mt-6 text-center text-sm text-gray-500">
-          <p>Remember your password? <Link to="/login" className="text-emerald-600 hover:underline">Sign in</Link></p>
+        <div className="mt-8 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
+          <p>Remember your password? <Link to="/login" className="text-emerald-600 hover:underline font-medium">Sign in</Link></p>
         </div>
       </div>
     </div>

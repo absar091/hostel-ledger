@@ -236,7 +236,7 @@ const Signup = () => {
         <div className="text-center mb-8">
           <div className="mb-8">
             <img 
-              src="/logo.png" 
+              src="/only-logo.png" 
               alt="Hostel Ledger Logo" 
               className="w-32 h-32 mx-auto object-contain opacity-90 mb-4"
             />
@@ -256,7 +256,7 @@ const Signup = () => {
                   <Input
                     value={formData.firstName}
                     onChange={(e) => handleInputChange('firstName', e.target.value)}
-                    placeholder="John"
+                    placeholder="Absar"
                     className="h-12 pl-12 border-2 focus:border-emerald-500 transition-all duration-300"
                   />
                 </div>
@@ -272,7 +272,7 @@ const Signup = () => {
                   <Input
                     value={formData.lastName}
                     onChange={(e) => handleInputChange('lastName', e.target.value)}
-                    placeholder="Doe"
+                    placeholder="Ahmad Rao"
                     className="h-12 pl-12 border-2 focus:border-emerald-500 transition-all duration-300"
                   />
                 </div>
@@ -290,7 +290,7 @@ const Signup = () => {
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   type="email"
-                  placeholder="john.doe@university.edu.pk"
+                  placeholder="absar.ahmad.rao@aarx.online"
                   className="h-12 pl-12 border-2 focus:border-emerald-500 transition-all duration-300"
                 />
               </div>
@@ -342,11 +342,6 @@ const Signup = () => {
         {currentView === 'password' && (
           <div className="space-y-6">
             <div className="text-center mb-6">
-              <img 
-                src="/logo.png" 
-                alt="Hostel Ledger Logo" 
-                className="w-24 h-24 mx-auto object-contain opacity-90 mb-4"
-              />
               <h2 className="text-xl font-semibold text-gray-900">Set Your Password</h2>
               <p className="text-gray-600 text-sm">Choose a strong password for your account</p>
             </div>

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Mail, Shield, ArrowLeft, RefreshCw } from "lucide-react";
+import { Shield, ArrowLeft, RefreshCw } from "lucide-react";
 import { verifyVerificationCode, resendVerificationCode, getVerificationTimeRemaining } from "@/lib/verificationStore";
 import { sendVerificationEmail, sendWelcomeEmail } from "@/lib/email";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
@@ -166,18 +166,16 @@ const VerifyEmail = () => {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="mb-8">
-            <img 
-              src="/logo.png" 
-              alt="Hostel Ledger Logo" 
-              className="w-32 h-32 mx-auto object-contain opacity-90 mb-4"
-            />
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Check Your Email</h2>
-            <p className="text-gray-600">
-              We've sent a 6-digit verification code to
-            </p>
-            <p className="text-emerald-600 font-medium">{email}</p>
-          </div>
+          <img 
+            src="/only-logo.png" 
+            alt="Hostel Ledger Logo" 
+            className="w-32 h-32 mx-auto object-contain opacity-90 mb-4"
+          />
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Check Your Email</h2>
+          <p className="text-gray-600">
+            We've sent a 6-digit verification code to
+          </p>
+          <p className="text-emerald-600 font-medium mt-1">{email}</p>
         </div>
 
         {/* Form - Direct on page like signup */}
@@ -191,7 +189,7 @@ const VerifyEmail = () => {
               placeholder="000000"
               value={code}
               onChange={handleCodeChange}
-              onKeyPress={handleKeyPress}
+              onKeyDown={(e) => e.key === 'Enter' && code.length === 6 && handleVerify()}
               className="h-14 text-center text-2xl font-mono tracking-widest border-2 focus:border-emerald-500 transition-all duration-300"
               maxLength={6}
               autoComplete="one-time-code"
@@ -268,7 +266,7 @@ const VerifyEmail = () => {
         {/* Help Text */}
         <div className="mt-8 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
           <p>Check your spam folder if you don't see the email</p>
-          <p>The code expires in 10 minutes</p>
+          <p className="mt-1">The code expires in 10 minutes</p>
         </div>
       </div>
     </div>
