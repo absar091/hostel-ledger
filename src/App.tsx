@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { FirebaseAuthProvider, useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { FirebaseDataProvider } from "@/contexts/FirebaseDataContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import EmailVerificationGate from "@/components/EmailVerificationGate";
 import Index from "./pages/Index";
 import Groups from "./pages/Groups";
 import GroupDetail from "./pages/GroupDetail";
@@ -112,7 +113,7 @@ const SplashScreen = () => {
   );
 };
 
-// Protected Route wrapper with mobile-first loading
+// Protected Route wrapper with mobile-first loading and email verification
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useFirebaseAuth();
 
@@ -124,7 +125,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  // Wrap with EmailVerificationGate to ensure email is verified
+  return (
+    <EmailVerificationGate>
+      {children}
+    </EmailVerificationGate>
+  );
 };
 
 // Public Route wrapper with mobile-first loading

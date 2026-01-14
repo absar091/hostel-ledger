@@ -21,12 +21,23 @@ const VerifyEmail = () => {
   const email = location.state?.email || "";
   const type = location.state?.type || "signup";
 
-  // Update countdown timer
+  // Update countdown timer and prevent back navigation
   useEffect(() => {
     if (!email) {
       navigate("/signup");
       return;
     }
+
+    // Prevent back navigation during verification
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
+      toast.error("Please complete email verification first");
+      window.history.pushState(null, '', window.location.pathname);
+    };
+
+    // Push initial state
+    window.history.pushState(null, '', window.location.pathname);
+    window.addEventListener('popstate', handlePopState);
 
     const updateTimer = async () => {
       const remaining = await getVerificationTimeRemaining(email);
@@ -35,7 +46,11 @@ const VerifyEmail = () => {
 
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [email, navigate]);
 
   const formatTime = (ms: number) => {
@@ -153,11 +168,79 @@ const VerifyEmail = () => {
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 6);
     setCode(value);
+    
+    // Auto-verify when 6 digits are entered
+    if (value.length === 6) {
+      // Small delay to show the complete code before verifying
+      setTimeout(() => {
+        handleVerifyWithCode(value);
+      }, 300);
+    }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && code.length === 6) {
-      handleVerify();
+  const handleVerifyWithCode = async (codeToVerify: string) => {
+    if (!codeToVerify || codeToVerify.length !== 6) {
+      toast.error("Please enter a valid 6-digit code");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Verify the code using Firestore
+      const result = await verifyVerificationCode(email, codeToVerify);
+      
+      if (!result.success) {
+        toast.error(result.error || "Invalid verification code");
+        setIsLoading(false);
+        return;
+      }
+
+      // If verification successful and it's signup, mark email as verified
+      if (type === 'signup') {
+        if (!firebaseUser) {
+          toast.error("User session not found. Please try signing up again.");
+          navigate("/signup");
+          return;
+        }
+
+        // Mark email as verified in our database
+        const verificationResult = await markEmailAsVerified(firebaseUser.uid);
+        
+        if (verificationResult.success) {
+          // Send welcome email
+          try {
+            const pendingSignup = sessionStorage.getItem('pendingSignup');
+            const userName = pendingSignup 
+              ? `${JSON.parse(pendingSignup).firstName} ${JSON.parse(pendingSignup).lastName}`
+              : firebaseUser.displayName || "User";
+            
+            await sendWelcomeEmail(email, userName);
+            console.log('✅ Welcome email sent successfully');
+          } catch (emailError) {
+            console.warn('⚠️ Welcome email failed (non-critical):', emailError);
+            // Don't block the flow if welcome email fails
+          }
+          
+          // Clean up session storage
+          sessionStorage.removeItem('pendingSignup');
+          toast.success("Email verified successfully! Welcome to Hostel Ledger!");
+          navigate("/");
+        } else {
+          console.error('❌ Failed to mark email as verified:', verificationResult.error);
+          toast.error("Failed to complete verification. Please try again.");
+        }
+      } else {
+        // Handle other verification types (password reset, etc.)
+        toast.success("Email verified successfully!");
+        navigate("/reset-password", { state: { email, verified: true } });
+      }
+
+    } catch (error: any) {
+      console.error("Verification error:", error);
+      toast.error("Verification failed. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -189,7 +272,7 @@ const VerifyEmail = () => {
               placeholder="000000"
               value={code}
               onChange={handleCodeChange}
-              onKeyDown={(e) => e.key === 'Enter' && code.length === 6 && handleVerify()}
+              onKeyDown={(e) => e.key === 'Enter' && code.length === 6 && handleVerifyWithCode(code)}
               className="h-14 text-center text-2xl font-mono tracking-widest border-2 focus:border-emerald-500 transition-all duration-300"
               maxLength={6}
               autoComplete="one-time-code"
@@ -201,7 +284,7 @@ const VerifyEmail = () => {
           </div>
 
           <Button
-            onClick={handleVerify}
+            onClick={() => handleVerifyWithCode(code)}
             disabled={isLoading || code.length !== 6}
             className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
           >
@@ -249,18 +332,8 @@ const VerifyEmail = () => {
             )}
           </div>
 
-          {/* Back Link */}
-          <div className="text-center">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => navigate(-1)}
-              className="text-gray-600 hover:text-gray-800"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-          </div>
+          {/* Back Link - Removed to prevent skipping verification */}
+          {/* Users must verify their email to continue */}
         </div>
 
         {/* Help Text */}

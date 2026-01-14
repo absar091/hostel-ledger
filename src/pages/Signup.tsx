@@ -202,13 +202,13 @@ const Signup = () => {
 
       toast.dismiss("sending-code");
       
-      // Step 4: Store user data for verification page
+      // Step 4: Store minimal user data for verification page (NO PASSWORD!)
       sessionStorage.setItem('pendingSignup', JSON.stringify({
         email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        university: formData.university,
-        password: formData.password // Store for completion after verification
+        university: formData.university
+        // NEVER store password in browser storage - it's already in Firebase Auth
       }));
       
       toast.success("Account created! Please check your email for verification code.");

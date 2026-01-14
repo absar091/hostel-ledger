@@ -33,6 +33,7 @@ export interface UserProfile {
   walletBalance: number; // Available Budget (actual money you have)
   settlements: { [groupId: string]: { [personId: string]: { toReceive: number; toPay: number } } }; // CORRECTED: Group-aware settlement tracking
   createdAt: string;
+  emailVerified?: boolean; // Email verification status
 }
 
 interface FirebaseAuthContextType {
@@ -102,10 +103,17 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       logger.debug("Fetching user profile", { uid });
       const userRef = ref(database, `users/${uid}`);
-      const snapshot = await retryOperation(() => get(userRef));
+      const verificationRef = ref(database, `emailVerification/${uid}`);
       
-      if (snapshot.exists()) {
-        const userData = snapshot.val();
+      const [userSnapshot, verificationSnapshot] = await Promise.all([
+        retryOperation(() => get(userRef)),
+        retryOperation(() => get(verificationRef))
+      ]);
+      
+      if (userSnapshot.exists()) {
+        const userData = userSnapshot.val();
+        const verificationData = verificationSnapshot.exists() ? verificationSnapshot.val() : {};
+        
         logger.debug("User profile loaded from database", { uid });
         const userProfile: UserProfile = {
           uid,
@@ -116,7 +124,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           paymentDetails: userData.paymentDetails || {},
           walletBalance: isNaN(userData.walletBalance) ? 0 : (userData.walletBalance || 0),
           settlements: userData.settlements || {},
-          createdAt: userData.createdAt
+          createdAt: userData.createdAt,
+          emailVerified: verificationData.emailVerified || false
         };
         
         setUser(userProfile);
@@ -135,7 +144,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
             paymentDetails: {},
             walletBalance: 0,
             settlements: {},
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            emailVerified: false
           };
           
           await retryOperation(() => set(userRef, newUserProfile));
@@ -459,6 +469,14 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         emailVerified: true,
         verifiedAt: new Date().toISOString()
       });
+
+      // Update user profile in memory
+      if (user && user.uid === uid) {
+        setUser({
+          ...user,
+          emailVerified: true
+        });
+      }
 
       console.log('✅ Email marked as verified for user:', uid);
       return { success: true };
