@@ -92,9 +92,21 @@ const Groups = () => {
         {groups.length > 0 ? (
           <div className="space-y-4">
             {groups.map((group) => {
-              const currentUserMember = group.members.find((m) => m.isCurrentUser);
-              const balance = currentUserMember?.balance || 0;
-              const isPositive = balance >= 0;
+              // Get settlements for this specific group
+              const { getSettlements } = useFirebaseAuth();
+              const groupSettlements = getSettlements(group.id);
+              
+              // Calculate totals
+              let toReceive = 0;
+              let toPay = 0;
+              
+              Object.values(groupSettlements).forEach((settlement: any) => {
+                toReceive += settlement.toReceive || 0;
+                toPay += settlement.toPay || 0;
+              });
+              
+              const hasReceivable = toReceive > 0;
+              const hasPayable = toPay > 0;
               
               return (
                 <button
@@ -116,36 +128,33 @@ const Groups = () => {
                     </div>
                     
                     <div className="text-right flex-shrink-0">
-                      <div className="flex items-center gap-1 justify-end mb-1">
-                        <div className={`text-lg font-bold whitespace-nowrap ${
-                          isPositive ? "text-emerald-600" : "text-red-600"
-                        }`}>
-                          {isPositive ? "+" : ""}Rs {Math.abs(balance).toLocaleString()}
+                      {!hasReceivable && !hasPayable ? (
+                        <div className="text-sm text-emerald-600 font-medium">
+                          ✓ All settled
                         </div>
-                        <Tooltip 
-                          content={isPositive 
-                            ? "This is the total amount group members owe you in this group." 
-                            : "This is the total amount you owe to group members in this group."
-                          }
-                          position="left"
-                        />
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-gray-500 whitespace-nowrap">
-                        {isPositive ? (
-                          <>
-                            <TrendingDown className="w-3 h-3 text-emerald-500" />
-                            <span>you'll receive</span>
-                          </>
-                        ) : (
-                          <>
-                            <TrendingUp className="w-3 h-3 text-red-500" />
-                            <span>you owe</span>
-                          </>
-                        )}
-                      </div>
+                      ) : (
+                        <div className="space-y-1">
+                          {hasReceivable && (
+                            <div className="flex items-center gap-1 justify-end">
+                              <TrendingDown className="w-3 h-3 text-emerald-500" />
+                              <span className="text-sm font-semibold text-emerald-600 whitespace-nowrap">
+                                +Rs {toReceive.toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                          {hasPayable && (
+                            <div className="flex items-center gap-1 justify-end">
+                              <TrendingUp className="w-3 h-3 text-red-500" />
+                              <span className="text-sm font-semibold text-red-600 whitespace-nowrap">
+                                -Rs {toPay.toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     
-                    <ChevronRight className="w-6 h-6 text-gray-400" />
+                    <ChevronRight className="w-6 h-6 text-gray-400 flex-shrink-0" />
                   </div>
                 </button>
               );

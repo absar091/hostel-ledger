@@ -37,7 +37,7 @@ const GroupDetail = () => {
   
   const group = id ? getGroupById(id) : undefined;
   const transactions = id ? getTransactionsByGroup(id) : [];
-  const settlements = getSettlements();
+  const settlements = id ? getSettlements(id) : {};
 
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
