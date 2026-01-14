@@ -106,7 +106,7 @@ const VerifyEmail = () => {
           // Clean up session storage
           sessionStorage.removeItem('pendingSignup');
           toast.success("Email verified successfully! Welcome to Hostel Ledger!");
-          navigate("/");
+          navigate("/download-app");
         } else {
           console.error('❌ Failed to mark email as verified:', verificationResult.error);
           toast.error("Failed to complete verification. Please try again.");
@@ -225,7 +225,7 @@ const VerifyEmail = () => {
           // Clean up session storage
           sessionStorage.removeItem('pendingSignup');
           toast.success("Email verified successfully! Welcome to Hostel Ledger!");
-          navigate("/");
+          navigate("/download-app");
         } else {
           console.error('❌ Failed to mark email as verified:', verificationResult.error);
           toast.error("Failed to complete verification. Please try again.");

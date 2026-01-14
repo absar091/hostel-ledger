@@ -18,6 +18,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import Budget from "./pages/Budget";
 import Activity from "./pages/Activity";
+import DownloadApp from "./pages/DownloadApp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -156,6 +157,7 @@ const AppRoutes = () => (
     <Route path="/verify-email" element={<VerifyEmail />} />
     <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
     <Route path="/reset-password" element={<ResetPassword />} />
+    <Route path="/download-app" element={<ProtectedRoute><DownloadApp /></ProtectedRoute>} />
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
     <Route path="/group/:id" element={<ProtectedRoute><GroupDetail /></ProtectedRoute>} />

@@ -207,7 +207,8 @@ const Signup = () => {
         email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        university: formData.university
+        university: formData.university,
+        isNewUser: true // Mark as new user for download page
         // NEVER store password in browser storage - it's already in Firebase Auth
       }));
       
