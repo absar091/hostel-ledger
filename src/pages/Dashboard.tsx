@@ -67,6 +67,8 @@ const Dashboard = () => {
       navigate("/profile");
     } else if (tab === "groups") {
       navigate("/groups");
+    } else if (tab === "activity") {
+      navigate("/activity");
     } else {
       setActiveTab(tab);
     }

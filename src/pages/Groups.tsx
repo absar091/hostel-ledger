@@ -21,6 +21,8 @@ const Groups = () => {
       navigate("/");
     } else if (tab === "profile") {
       navigate("/profile");
+    } else if (tab === "activity") {
+      navigate("/activity");
     } else if (tab === "add") {
       setShowCreateGroup(true);
     } else {
