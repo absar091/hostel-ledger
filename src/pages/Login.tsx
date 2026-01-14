@@ -64,7 +64,7 @@ const Login = () => {
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 pl-12 bg-white/70 backdrop-blur-sm border-gray-200 text-gray-900 placeholder:text-gray-400"
+                className="h-12 pl-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-900 placeholder:text-gray-400 transition-all duration-300"
                 autoComplete="email"
               />
             </div>
@@ -79,7 +79,7 @@ const Login = () => {
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-12 pl-12 pr-12 bg-white/70 backdrop-blur-sm border-gray-200 text-gray-900 placeholder:text-gray-400"
+                className="h-12 pl-12 pr-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-900 placeholder:text-gray-400 transition-all duration-300"
                 autoComplete="current-password"
               />
               <button

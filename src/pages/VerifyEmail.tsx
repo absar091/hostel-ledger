@@ -273,7 +273,7 @@ const VerifyEmail = () => {
               value={code}
               onChange={handleCodeChange}
               onKeyDown={(e) => e.key === 'Enter' && code.length === 6 && handleVerifyWithCode(code)}
-              className="h-14 text-center text-2xl font-mono tracking-widest border-2 focus:border-emerald-500 transition-all duration-300"
+              className="h-14 text-center text-2xl font-mono tracking-widest bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300"
               maxLength={6}
               autoComplete="one-time-code"
               autoFocus

@@ -257,7 +257,7 @@ const Signup = () => {
                     value={formData.firstName}
                     onChange={(e) => handleInputChange('firstName', e.target.value)}
                     placeholder="Absar"
-                    className="h-12 pl-12 border-2 focus:border-emerald-500 transition-all duration-300"
+                    className="h-12 pl-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300"
                   />
                 </div>
                 {errors.firstName && (
@@ -273,7 +273,7 @@ const Signup = () => {
                     value={formData.lastName}
                     onChange={(e) => handleInputChange('lastName', e.target.value)}
                     placeholder="Ahmad Rao"
-                    className="h-12 pl-12 border-2 focus:border-emerald-500 transition-all duration-300"
+                    className="h-12 pl-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300"
                   />
                 </div>
                 {errors.lastName && (
@@ -291,7 +291,7 @@ const Signup = () => {
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   type="email"
                   placeholder="absar.ahmad.rao@aarx.online"
-                  className="h-12 pl-12 border-2 focus:border-emerald-500 transition-all duration-300"
+                  className="h-12 pl-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300"
                 />
               </div>
               {errors.email && (
@@ -310,7 +310,7 @@ const Signup = () => {
                   value={formData.university}
                   onChange={(e) => handleInputChange('university', e.target.value)}
                   placeholder="University of Punjab"
-                  className="h-12 pl-12 border-2 focus:border-emerald-500 transition-all duration-300"
+                  className="h-12 pl-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300"
                 />
               </div>
               {errors.university && (
@@ -355,7 +355,7 @@ const Signup = () => {
                   onChange={(e) => handleInputChange('password', e.target.value)}
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
-                  className="h-12 pl-12 pr-12 border-2 focus:border-emerald-500 transition-all duration-300"
+                  className="h-12 pl-12 pr-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300"
                 />
                 <button
                   type="button"
@@ -413,7 +413,7 @@ const Signup = () => {
                   onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
-                  className="h-12 pl-12 pr-12 border-2 focus:border-emerald-500 transition-all duration-300"
+                  className="h-12 pl-12 pr-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300"
                 />
                 <button
                   type="button"
@@ -428,60 +428,46 @@ const Signup = () => {
               )}
             </div>
 
-            {/* Terms and Conditions */}
-            <div className="space-y-3">
-              <div className="flex items-start space-x-3">
+            {/* Terms and Conditions - Single Line */}
+            <div className="space-y-2">
+              <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
                 <Checkbox 
-                  checked={formData.termsAccepted}
-                  onCheckedChange={(checked) => handleInputChange('termsAccepted', checked)}
-                  className="mt-1 border-2 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                  checked={formData.termsAccepted && formData.privacyAccepted}
+                  onCheckedChange={(checked) => {
+                    handleInputChange('termsAccepted', checked);
+                    handleInputChange('privacyAccepted', checked);
+                  }}
+                  className="border-2 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                 />
-                <div className="text-sm">
-                  <label className="text-gray-700">
-                    I agree to the{" "}
-                    <Link to="/terms" className="text-emerald-600 hover:text-emerald-700 font-medium underline">
-                      Terms and Conditions
-                    </Link>
-                  </label>
-                  {errors.termsAccepted && (
-                    <p className="text-red-500 text-sm mt-1">{errors.termsAccepted}</p>
-                  )}
-                </div>
+                <label className="text-sm text-gray-700 cursor-pointer flex-1">
+                  I agree to the{" "}
+                  <Link to="/terms" className="text-emerald-600 hover:text-emerald-700 font-medium underline">
+                    Terms & Conditions
+                  </Link>
+                  {" "}and{" "}
+                  <Link to="/privacy" className="text-emerald-600 hover:text-emerald-700 font-medium underline">
+                    Privacy Policy
+                  </Link>
+                </label>
               </div>
-
-              <div className="flex items-start space-x-3">
-                <Checkbox 
-                  checked={formData.privacyAccepted}
-                  onCheckedChange={(checked) => handleInputChange('privacyAccepted', checked)}
-                  className="mt-1 border-2 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
-                />
-                <div className="text-sm">
-                  <label className="text-gray-700">
-                    I agree to the{" "}
-                    <Link to="/privacy" className="text-emerald-600 hover:text-emerald-700 font-medium underline">
-                      Privacy Policy
-                    </Link>
-                  </label>
-                  {errors.privacyAccepted && (
-                    <p className="text-red-500 text-sm mt-1">{errors.privacyAccepted}</p>
-                  )}
-                </div>
-              </div>
+              {(errors.termsAccepted || errors.privacyAccepted) && (
+                <p className="text-red-500 text-sm">You must accept the terms and privacy policy to continue</p>
+              )}
             </div>
 
             <div className="flex gap-3">
               <Button
                 onClick={() => setCurrentView('basic')}
                 variant="outline"
-                className="flex-1 h-12"
+                className="h-12 px-6 border-2 text-gray-600 hover:bg-gray-50"
               >
                 Back
               </Button>
               
               <Button
                 onClick={handleCreateAccount}
-                disabled={isLoading}
-                className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+                disabled={isLoading || !formData.termsAccepted || !formData.privacyAccepted}
+                className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">

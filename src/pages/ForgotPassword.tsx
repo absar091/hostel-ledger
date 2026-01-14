@@ -142,7 +142,7 @@ const ForgotPassword = () => {
                   placeholder="Enter your email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 pl-12 border-2 focus:border-emerald-500 transition-all duration-300"
+                  className="h-12 pl-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300"
                   autoComplete="email"
                   autoFocus
                 />
