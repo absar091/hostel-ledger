@@ -76,14 +76,14 @@ const ForgotPassword = () => {
               <h3 className="text-xl font-semibold text-gray-900">Email Sent!</h3>
               
               <p className="text-gray-600">
-                Click the link in your email to reset your password. This email is sent directly by Firebase for security.
+                Click the link in your email to reset your password.
               </p>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-                <p className="text-sm text-blue-800">
-                  <strong>Important:</strong>
+              <div className="bg-gray-50 border border-emarld-200 rounded-lg p-4 mt-4">
+                <p className="text-sm text-emarld-800">
+                  <strong>Don't Forget To</strong>
                   <br />
-                  Check your spam folder if you don't see it within a few minutes.
+                   Check your spam folder if you don't see it within a few minutes.
                 </p>
               </div>
 
