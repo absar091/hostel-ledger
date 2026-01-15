@@ -75,13 +75,13 @@ const GroupDetail = () => {
         
         if (t.type === "payment") {
           if (t.from === selectedMember.id && t.to === currentUser.id) {
-            // They paid you - they owe you less now, your balance with them improves
+            // They paid you - they owe you less now
             direction = "received";
-            balanceChange = t.amount; // FIXED: Positive because your balance improves
+            balanceChange = -t.amount; // Negative because they owe you LESS after paying
           } else if (t.from === currentUser.id && t.to === selectedMember.id) {
-            // You paid them - you owe them less now, your balance with them improves  
+            // You paid them - you owe them less now
             direction = "gave";
-            balanceChange = t.amount; // FIXED: Positive because your balance improves
+            balanceChange = t.amount; // Positive because you owe them LESS (your debt decreases)
           }
         } else if (t.type === "expense") {
           if (t.paidBy === currentUser.id) {
