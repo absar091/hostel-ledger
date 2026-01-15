@@ -29,6 +29,7 @@ export interface UserProfile {
   name: string;
   phone?: string | null;
   avatar?: string | null;
+  photoURL?: string | null; // Profile picture URL from Cloudinary
   paymentDetails: PaymentDetails;
   walletBalance: number; // Available Budget (actual money you have)
   settlements: { [groupId: string]: { [personId: string]: { toReceive: number; toPay: number } } }; // CORRECTED: Group-aware settlement tracking
@@ -58,6 +59,8 @@ interface FirebaseAuthContextType {
   checkEmailExists: (email: string) => Promise<boolean>;
   markEmailAsVerified: (uid: string) => Promise<{ success: boolean; error?: string }>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>;
+  uploadProfilePicture: (file: File) => Promise<{ success: boolean; url?: string; error?: string }>;
+  removeProfilePicture: () => Promise<{ success: boolean; error?: string }>;
   addMoneyToWallet: (amount: number) => Promise<{ success: boolean; error?: string }>;
   deductMoneyFromWallet: (amount: number) => Promise<{ success: boolean; error?: string }>;
   getWalletBalance: () => number;
@@ -515,6 +518,56 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const uploadProfilePicture = async (file: File): Promise<{ success: boolean; url?: string; error?: string }> => {
+    if (!user || !firebaseUser) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    try {
+      // Import upload function
+      const { uploadToCloudinary } = await import('@/lib/cloudinary');
+      
+      // Upload to Cloudinary
+      const result = await uploadToCloudinary(file);
+      
+      if (!result.success || !result.url) {
+        return { success: false, error: result.error || "Failed to upload image" };
+      }
+
+      // Update user profile with new photo URL
+      const updateResult = await updateUserProfile({ photoURL: result.url });
+      
+      if (!updateResult.success) {
+        return { success: false, error: "Failed to save profile picture" };
+      }
+
+      return { success: true, url: result.url };
+    } catch (error: any) {
+      console.error("Upload profile picture error:", error);
+      return { success: false, error: error.message || "Failed to upload profile picture" };
+    }
+  };
+
+  const removeProfilePicture = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!user || !firebaseUser) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    try {
+      // Remove photo URL from profile
+      const result = await updateUserProfile({ photoURL: null });
+      
+      if (!result.success) {
+        return { success: false, error: "Failed to remove profile picture" };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error("Remove profile picture error:", error);
+      return { success: false, error: error.message || "Failed to remove profile picture" };
+    }
+  };
+
   const addMoneyToWallet = async (amount: number): Promise<{ success: boolean; error?: string }> => {
     if (!user) {
       return { success: false, error: "User not authenticated" };
@@ -855,6 +908,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       checkEmailExists,
       markEmailAsVerified,
       updateUserProfile,
+      uploadProfilePicture,
+      removeProfilePicture,
       addMoneyToWallet,
       deductMoneyFromWallet,
       getWalletBalance,

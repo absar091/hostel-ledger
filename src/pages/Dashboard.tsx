@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowUpRight, ArrowDownLeft, Plus, User, CreditCard, Users } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import Avatar from "@/components/Avatar";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
 import RecordPaymentSheet from "@/components/RecordPaymentSheet";
 import CreateGroupSheet from "@/components/CreateGroupSheet";
@@ -423,10 +424,12 @@ const Dashboard = () => {
       <div className="mobile-padding pt-8 pb-6">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
-            {/* Profile Avatar */}
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
-              {user?.name?.charAt(0).toUpperCase() || "U"}
-            </div>
+            {/* Profile Avatar with Photo */}
+            <Avatar 
+              name={user?.name || "User"} 
+              photoURL={user?.photoURL} 
+              size="lg" 
+            />
             <div>
               <div className="text-sm text-gray-500">{getGreeting()}</div>
               <h1 className="text-2xl font-bold text-gray-900">{user?.name || "User"}</h1>
