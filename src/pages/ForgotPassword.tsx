@@ -8,7 +8,7 @@ import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
-  const { sendPasswordResetEmail } = useFirebaseAuth();
+  const { sendPasswordResetEmail, checkEmailExists } = useFirebaseAuth();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -31,6 +31,17 @@ const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
+      // Check if email exists in our system
+      toast.loading("Checking email...", { id: "email-check" });
+      const emailExists = await checkEmailExists(email);
+      toast.dismiss("email-check");
+
+      if (!emailExists) {
+        toast.error("No account found with this email address");
+        setIsLoading(false);
+        return;
+      }
+
       // Use Firebase's built-in password reset
       const result = await sendPasswordResetEmail(email);
       
