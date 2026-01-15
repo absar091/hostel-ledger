@@ -93,11 +93,14 @@ const loadEmailTemplate = (templateName, variables = {}) => {
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT),
-  secure: false, // true for 465, false for other ports
+  secure: true, // true for 465 (SSL), false for 587 (TLS)
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  tls: {
+    rejectUnauthorized: true
+  }
 });
 
 // Verify email configuration on startup
@@ -227,7 +230,7 @@ app.post('/api/send-verification', emailLimiter, async (req, res) => {
       <body>
         <div class="container">
           <div class="header">
-            <h1>🏠 Hostel Ledger</h1>
+            <h1> Hostel Ledger</h1>
             <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">Welcome to smart expense sharing!</p>
           </div>
           
@@ -271,7 +274,7 @@ app.post('/api/send-verification', emailLimiter, async (req, res) => {
     const mailOptions = {
       from: process.env.EMAIL_FROM,
       to: email,
-      subject: '🔐 Verify Your Hostel Ledger Account',
+      subject: ' Verify Your Hostel Ledger Account',
       html: html,
       text: `Hi ${name}!\n\nYour verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nBest regards,\nHostel Ledger Team`
     };
@@ -325,7 +328,7 @@ app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
       <body>
         <div class="container">
           <div class="header">
-            <h1 style="color: white; margin: 0;">🔑 Password Reset</h1>
+            <h1 style="color: white; margin: 0;"> Password Reset</h1>
           </div>
           
           <div class="content">
@@ -484,7 +487,7 @@ app.post('/api/send-transaction-alert', emailLimiter, async (req, res) => {
     const mailOptions = {
       from: process.env.EMAIL_FROM,
       to: email,
-      subject: `💰 Transaction Alert - ${transactionType} in ${groupName}`,
+      subject: `Transaction Alert - ${transactionType} in ${groupName}`,
       html: html,
       text: `Transaction Alert\n\nHello ${name},\n\nA new transaction has been recorded on your Hostel Ledger account.\n\nType: ${transactionType}\nAmount: ${amount}\nGroup: ${groupName}\nDate: ${date}\nDescription: ${description}\n\nBest regards,\nHostel Ledger Team`
     };

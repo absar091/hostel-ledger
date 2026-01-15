@@ -1,0 +1,20 @@
+# Force correct MIME type for XML files
+<IfModule mod_mime.c>
+  AddType application/xml .xml
+  AddType text/xml .xml
+</IfModule>
+
+# Ensure sitemap.xml is served as XML
+<Files "sitemap.xml">
+  ForceType application/xml
+</Files>
+
+# Ensure robots.txt is served correctly
+<Files "robots.txt">
+  ForceType text/plain
+</Files>
+
+# Enable GZIP compression
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/xml
+</IfModule>

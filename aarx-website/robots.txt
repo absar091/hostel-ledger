@@ -6,6 +6,7 @@ Allow: /
 
 # Sitemaps
 Sitemap: https://aarx.online/sitemap.xml
+Sitemap: https://aarx.online/sitemap_index.xml
 
 # Crawl-delay (optional, helps prevent server overload)
 Crawl-delay: 1
