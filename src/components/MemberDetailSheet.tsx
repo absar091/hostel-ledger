@@ -47,27 +47,64 @@ interface MemberDetailSheetProps {
   onPayToMember?: () => void; // New: Pay your debt to member
 }
 
-// Calculate running balances for ledger view - FIXED LOGIC
-const calculateBalanceHistory = (transactions: Transaction[], currentBalance: number) => {
-  const history: { transaction: Transaction; balanceBefore: number; balanceAfter: number }[] = [];
+// Calculate running balances for ledger view - Track separate debts
+const calculateBalanceHistory = (
+  transactions: Transaction[], 
+  currentTheyOweYou: number, 
+  currentYouOweThem: number
+) => {
+  const history: { 
+    transaction: Transaction; 
+    theyOweYouBefore: number; 
+    youOweThemBefore: number;
+    theyOweYouAfter: number; 
+    youOweThemAfter: number;
+  }[] = [];
   
-  let runningBalance = currentBalance;
+  let runningTheyOweYou = currentTheyOweYou;
+  let runningYouOweThem = currentYouOweThem;
   
   // Transactions are in reverse chronological order (newest first)
   // Work backwards to calculate the balance progression
   for (const transaction of transactions) {
-    const balanceAfter = runningBalance;
-    // The balance before = current balance - the change that transaction made
-    const balanceBefore = runningBalance - transaction.balanceChange;
+    const theyOweYouAfter = runningTheyOweYou;
+    const youOweThemAfter = runningYouOweThem;
+    
+    // Calculate before balances based on transaction type
+    let theyOweYouBefore = theyOweYouAfter;
+    let youOweThemBefore = youOweThemAfter;
+    
+    if (transaction.balanceChange > 0) {
+      // Positive change = they owe you more (or you owe them less)
+      if (transaction.direction === "received") {
+        // They owe you more (expense where you paid)
+        theyOweYouBefore = theyOweYouAfter - transaction.balanceChange;
+      } else {
+        // You owe them less (you paid them)
+        youOweThemBefore = youOweThemAfter + transaction.balanceChange;
+      }
+    } else if (transaction.balanceChange < 0) {
+      // Negative change = they owe you less (or you owe them more)
+      if (transaction.direction === "received") {
+        // They owe you less (they paid you)
+        theyOweYouBefore = theyOweYouAfter - transaction.balanceChange;
+      } else {
+        // You owe them more (expense where they paid)
+        youOweThemBefore = youOweThemAfter + transaction.balanceChange;
+      }
+    }
     
     history.push({
       transaction,
-      balanceBefore,
-      balanceAfter,
+      theyOweYouBefore,
+      youOweThemBefore,
+      theyOweYouAfter,
+      youOweThemAfter,
     });
     
     // Move to the previous balance for next iteration
-    runningBalance = balanceBefore;
+    runningTheyOweYou = theyOweYouBefore;
+    runningYouOweThem = youOweThemBefore;
   }
   
   return history;
@@ -87,9 +124,8 @@ const MemberDetailSheet = ({
   // Use settlementInfo if provided, otherwise fallback to balance
   const theyOweYou = settlementInfo?.theyOweYou || (member.balance > 0 ? member.balance : 0);
   const youOweThem = settlementInfo?.youOweThem || (member.balance < 0 ? Math.abs(member.balance) : 0);
-  const netBalance = theyOweYou - youOweThem; // Positive = they owe you net
 
-  const balanceHistory = calculateBalanceHistory(transactions, netBalance);
+  const balanceHistory = calculateBalanceHistory(transactions, theyOweYou, youOweThem);
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
@@ -223,7 +259,7 @@ const MemberDetailSheet = ({
             <h3 className="font-semibold text-gray-900 mb-3">Balance Ledger with {member.name}</h3>
             
             {balanceHistory.length > 0 ? (
-              balanceHistory.map(({ transaction, balanceBefore, balanceAfter }) => (
+              balanceHistory.map(({ transaction, theyOweYouBefore, youOweThemBefore, theyOweYouAfter, youOweThemAfter }) => (
                 <div
                   key={transaction.id}
                   className="rounded-xl p-4 bg-white border border-gray-100 shadow-sm"
@@ -277,16 +313,26 @@ const MemberDetailSheet = ({
                     </div>
                   </div>
 
-                  {/* Balance Change Ledger - Clearer format */}
+                  {/* Balance Change Ledger - Show separate debts */}
                   <div className="bg-gray-50 rounded-lg p-3 mt-2">
                     <div className="flex items-center justify-between text-sm">
                       <div className="text-center flex-1">
                         <p className="text-gray-500 text-xs mb-1">Before</p>
-                        <p className={`font-medium ${balanceBefore > 0 ? "text-emerald-600" : balanceBefore < 0 ? "text-red-600" : "text-gray-500"}`}>
-                          {balanceBefore === 0 ? "Settled" : 
-                           balanceBefore > 0 ? `They owe Rs ${balanceBefore}` : 
-                           `You owe Rs ${Math.abs(balanceBefore)}`}
-                        </p>
+                        <div className="space-y-0.5">
+                          {theyOweYouBefore > 0 && (
+                            <p className="font-medium text-emerald-600 text-xs">
+                              They owe Rs {theyOweYouBefore}
+                            </p>
+                          )}
+                          {youOweThemBefore > 0 && (
+                            <p className="font-medium text-red-600 text-xs">
+                              You owe Rs {youOweThemBefore}
+                            </p>
+                          )}
+                          {theyOweYouBefore === 0 && youOweThemBefore === 0 && (
+                            <p className="font-medium text-gray-500 text-xs">Settled</p>
+                          )}
+                        </div>
                       </div>
                       <ArrowRight className="w-4 h-4 text-gray-400 mx-2" />
                       <div className="text-center flex-1">
@@ -300,11 +346,21 @@ const MemberDetailSheet = ({
                       <ArrowRight className="w-4 h-4 text-gray-400 mx-2" />
                       <div className="text-center flex-1">
                         <p className="text-gray-500 text-xs mb-1">After</p>
-                        <p className={`font-medium ${balanceAfter > 0 ? "text-emerald-600" : balanceAfter < 0 ? "text-red-600" : "text-gray-500"}`}>
-                          {balanceAfter === 0 ? "Settled" : 
-                           balanceAfter > 0 ? `They owe Rs ${balanceAfter}` : 
-                           `You owe Rs ${Math.abs(balanceAfter)}`}
-                        </p>
+                        <div className="space-y-0.5">
+                          {theyOweYouAfter > 0 && (
+                            <p className="font-medium text-emerald-600 text-xs">
+                              They owe Rs {theyOweYouAfter}
+                            </p>
+                          )}
+                          {youOweThemAfter > 0 && (
+                            <p className="font-medium text-red-600 text-xs">
+                              You owe Rs {youOweThemAfter}
+                            </p>
+                          )}
+                          {theyOweYouAfter === 0 && youOweThemAfter === 0 && (
+                            <p className="font-medium text-gray-500 text-xs">Settled</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

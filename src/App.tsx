@@ -175,13 +175,21 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner 
-            position="top-center" 
+            position="top-center"
+            expand={false}
+            richColors
             toastOptions={{
               style: {
-                background: 'hsl(var(--card))',
-                color: 'hsl(var(--card-foreground))',
-                border: '1px solid hsl(var(--border))',
+                background: 'white',
+                color: '#1f2937',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
               },
+              className: 'sonner-toast',
             }}
           />
           <BrowserRouter

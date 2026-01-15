@@ -8,9 +8,6 @@ import RecordPaymentSheet from "@/components/RecordPaymentSheet";
 import CreateGroupSheet from "@/components/CreateGroupSheet";
 import AddMoneySheet from "@/components/AddMoneySheet";
 import PaymentConfirmationSheet from "@/components/PaymentConfirmationSheet";
-import ErrorAlert from "@/components/ErrorAlert";
-import SuccessAlert from "@/components/SuccessAlert";
-
 import { toast } from "sonner";
 import Tooltip from "@/components/Tooltip";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
@@ -34,8 +31,6 @@ const Dashboard = () => {
     amount: number;
     groupId?: string;
   } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   // Get all transactions including wallet transactions
   const allTransactions = getAllTransactions();
@@ -104,7 +99,6 @@ const Dashboard = () => {
     place: string;
   }) => {
     try {
-      setError(null);
       const result = await addExpense({
         groupId: data.groupId,
         amount: data.amount,
@@ -115,18 +109,11 @@ const Dashboard = () => {
       });
       
       if (result.success) {
-        setSuccess(` Added expense of Rs ${data.amount.toLocaleString()}`);
         toast.success(`Added expense of Rs ${data.amount.toLocaleString()}`);
       } else {
-        if (result.error?.includes("Insufficient")) {
-          setError("insufficient_funds");
-        } else {
-          setError(result.error || "Failed to add expense");
-        }
         toast.error(result.error || "Failed to add expense");
       }
     } catch (error) {
-      setError("network_error");
       toast.error("Network error. Please check your Internet connection.");
     }
   };
@@ -141,7 +128,6 @@ const Dashboard = () => {
     if (!user) return;
     
     try {
-      setError(null);
       const result = await recordPayment({
         groupId: data.groupId,
         fromMember: data.fromMember,
@@ -154,14 +140,11 @@ const Dashboard = () => {
       if (result.success) {
         const group = groups.find((g) => g.id === data.groupId);
         const memberName = group?.members.find((m) => m.id === data.fromMember)?.name;
-        setSuccess(` Recorded Rs ${data.amount.toLocaleString()} from ${memberName}`);
         toast.success(`Recorded Rs ${data.amount.toLocaleString()} from ${memberName}`);
       } else {
-        setError(result.error || "Failed to record payment");
         toast.error(result.error || "Failed to record payment");
       }
     } catch (error) {
-      setError("network_error");
       toast.error("Network error. Please check your Internet connection.");
     }
   };
@@ -436,27 +419,6 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-
-        {/* Error and Success Alerts */}
-        {error && (
-          <ErrorAlert
-            type={error.includes("Insufficient") ? "insufficient_funds" : 
-                  error.includes("network") ? "network_error" : "general"}
-            message={typeof error === "string" ? error : undefined}
-            onDismiss={() => setError(null)}
-            onAddMoney={() => {
-              setError(null);
-              setShowAddMoney(true);
-            }}
-          />
-        )}
-        
-        {success && (
-          <SuccessAlert
-            message={success}
-            onDismiss={() => setSuccess(null)}
-          />
-        )}
       </div>
 
       {/* Dashboard Cards - Production-Grade Fintech UI */}
