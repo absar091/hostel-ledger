@@ -240,6 +240,10 @@ const Signup = () => {
               src="/only-logo.png" 
               alt="Hostel Ledger Logo" 
               className="w-32 h-32 mx-auto object-contain opacity-90 mb-4"
+              loading="eager"
+              fetchPriority="high"
+              width="128"
+              height="128"
             />
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">Join Hostel Ledger</h2>
             <p className="text-gray-600">Create your account</p>

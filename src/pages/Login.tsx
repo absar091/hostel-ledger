@@ -46,6 +46,10 @@ const Login = () => {
             src="/only-logo.png" 
             alt="Hostel Ledger Logo" 
             className="w-40 h-40 mx-auto object-contain opacity-90 mb-6"
+            loading="eager"
+            fetchPriority="high"
+            width="160"
+            height="160"
           />
           <div className="text-center">
             <h1 className="text-4xl font-bold text-gray-900 leading-tight mb-2">Hostel Ledger</h1>
