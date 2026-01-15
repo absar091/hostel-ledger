@@ -201,10 +201,10 @@
         <div class="animate-fade-in-up delay-200">
           <div class="relative">
             <!-- Phone Mockup -->
-            <div class="bg-white rounded-[3rem] shadow-2xl p-4 max-w-sm mx-auto border-8 border-gray-800">
-              <div class="bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 rounded-[2rem] overflow-hidden">
+            <div class="bg-white rounded-[3rem] shadow-2xl p-4 max-w-sm mx-auto border-8 border-gray-800" style="min-height: 500px;">
+              <div class="bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 rounded-[2rem] overflow-hidden h-full">
                 <!-- Simulated App Screenshot -->
-                <div class="p-6 space-y-4">
+                <div class="p-6 space-y-6 h-full flex flex-col justify-center">
                   <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold text-lg">
                       U
@@ -470,7 +470,9 @@
           </p>
           <div class="flex items-center gap-3">
             <p class="text-gray-300 text-sm">A Product By</p>
-            <img src="https://hostel-ledger.vercel.app/aarx-logo.png" alt="AARX Labs" class="h-8 w-auto">
+            <a href="https://aarx.online" target="_blank" rel="noopener noreferrer">
+              <img src="https://hostel-ledger.vercel.app/aarx-logo.png" alt="AARX Labs" class="h-8 w-auto hover:opacity-80 transition-opacity">
+            </a>
             <span class="text-white font-semibold text-sm">Labs</span>
           </div>
         </div>
@@ -496,7 +498,7 @@
     async function installPWA() {
       if (!deferredPrompt) {
         // If no install prompt available, redirect to app
-        window.location.href = 'https://hostel-ledger.vercel.app/signup';
+        window.location.href = 'https://app.hostelledger.aarx.online/signup';
         return;
       }
       
