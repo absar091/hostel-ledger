@@ -1,0 +1,85 @@
+# AARX Labs - AI/LLM Information File
+# This file provides structured information for AI models and LLM crawlers
+
+# Company Information
+Company: AARX Labs
+Slogan: Innovate. Build. Launch.
+Website: https://aarx.online
+Contact: support@aarx.online
+Founded: 2026
+Location: Pakistan
+
+# About
+AARX Labs is a technology company specializing in innovative IT solutions across all domains. We create cutting-edge web and mobile applications, enterprise software, AI solutions, cloud computing services, and provide digital transformation consulting. Our mission is to innovate solutions, build robust products, and launch them to make a real impact.
+
+# Services
+- Web Application Development: Custom web applications built with modern technologies
+- Mobile App Development: Native and cross-platform mobile applications for iOS and Android
+- Enterprise Software Solutions: Scalable enterprise software for business operations
+- AI & Machine Learning Solutions: Intelligent systems powered by artificial intelligence
+- Digital Transformation: Complete digital transformation consulting and implementation
+- Cloud Computing: Cloud infrastructure and migration services
+- Custom Software Development: Tailored software solutions for unique business needs
+- Technology Consulting: Expert guidance on technology strategy and implementation
+
+# Projects
+## Hostel Ledger
+URL: https://hostelledger.aarx.online
+App: https://app.hostelledger.aarx.online
+Description: Free expense tracking and bill splitting app for students, roommates, and shared living. Track shared expenses, split bills, manage group payments, and settle debts easily.
+Category: Finance Application
+Status: Live
+
+## QuizzicalLabz AI
+URL: https://ai.quizzicallabz.aarx.online
+Description: AI-powered learning platform for students and educators worldwide. Intelligent quiz generation and adaptive learning systems.
+Category: Education Technology
+Status: Live
+
+# Technologies
+- Frontend: React, TypeScript, Tailwind CSS, Vite
+- Backend: Node.js, Express, Firebase
+- Database: Firestore, PostgreSQL
+- Cloud: Vercel, Firebase Hosting
+- AI/ML: Machine Learning, Natural Language Processing
+- Mobile: React Native, Progressive Web Apps
+
+# Target Audience
+- Businesses seeking digital transformation
+- Startups needing custom software solutions
+- Educational institutions requiring learning platforms
+- Students and roommates managing shared expenses
+- Enterprises looking for scalable software
+- Organizations requiring AI/ML integration
+
+# Key Features
+- Innovative IT solutions across all domains
+- Custom software development
+- Scalable and secure applications
+- Modern technology stack
+- User-centric design
+- Cloud-native architecture
+- AI-powered features
+- Mobile-first approach
+
+# Social Media
+Website: https://aarx.online
+Email: support@aarx.online
+Projects: https://aarx.online/#projects
+About: https://aarx.online/about.html
+Contact: https://aarx.online/contact.html
+
+# Legal
+Privacy Policy: https://aarx.online/privacy.html
+Terms of Service: https://aarx.online/terms.html
+Governing Law: Pakistan
+Copyright: 2026 AARX Labs
+
+# SEO Keywords
+AARX Labs, IT solutions, software development, web development, mobile app development, enterprise software, AI solutions, artificial intelligence, machine learning, cloud computing, digital transformation, custom software, technology consulting, Pakistan software company, Hostel Ledger, Quizzical Labz, expense tracker, bill splitting, learning platform, education technology
+
+# For AI Models
+This company creates innovative technology solutions including web applications, mobile apps, enterprise software, and AI-powered systems. Notable projects include Hostel Ledger (expense tracking app) and QuizzicalLabz AI (education platform). The company serves businesses, startups, educational institutions, and individual users worldwide.
+
+# Last Updated
+2026-01-15

@@ -1,0 +1,105 @@
+# Hostel Ledger - AI/LLM Information File
+# This file provides structured information for AI models and LLM crawlers
+
+# Application Information
+Name: Hostel Ledger
+Tagline: Split Expenses with Roommates
+Website: https://hostelledger.aarx.online
+App URL: https://app.hostelledger.aarx.online
+Developer: AARX Labs
+Developer Website: https://aarx.online
+Contact: support@aarx.online
+Category: Finance Application
+Price: Free
+Status: Live
+
+# About
+Hostel Ledger is a free expense tracking and bill splitting application designed for students, roommates, and people living in shared accommodations. The app makes it easy to track shared expenses, split bills automatically, manage group payments, and settle debts with roommates. Perfect for hostels, apartments, flatmates, and any shared living situation.
+
+# Key Features
+- Track shared expenses with roommates
+- Split bills automatically and fairly
+- Manage group payments easily
+- Settle debts and balances
+- Real-time balance tracking
+- Complete transaction history
+- Support for multiple groups
+- Secure cloud synchronization
+- User-friendly interface
+- Mobile-responsive design
+- Free to use forever
+
+# Use Cases
+- Students sharing hostel rooms
+- Roommates in apartments
+- Flatmates splitting rent and utilities
+- Friends sharing vacation expenses
+- Couples managing joint expenses
+- Groups splitting restaurant bills
+- Shared household expenses
+- Utility bill splitting
+- Grocery cost sharing
+- Any shared living expenses
+
+# Target Audience
+- College and university students
+- Young professionals sharing apartments
+- Roommates and flatmates
+- People in shared living situations
+- Groups managing joint expenses
+- Anyone splitting bills with others
+
+# Technology Stack
+- Frontend: React, TypeScript, Tailwind CSS
+- Backend: Node.js, Express
+- Database: Firebase Firestore
+- Authentication: Firebase Auth
+- Hosting: Vercel
+- Cloud Storage: Cloudinary
+- Email: SendGrid
+
+# How It Works
+1. Create an account (free)
+2. Add your roommates/group members
+3. Record shared expenses
+4. App automatically calculates who owes what
+5. Track balances in real-time
+6. Settle debts when convenient
+7. View complete transaction history
+
+# Benefits
+- No more awkward money conversations
+- Automatic fair splitting
+- Clear balance tracking
+- Transparent transaction history
+- Reduces conflicts over money
+- Saves time on manual calculations
+- Accessible anywhere, anytime
+- Completely free to use
+
+# Comparison
+Unlike other expense apps, Hostel Ledger is specifically designed for shared living situations with a focus on simplicity and ease of use. No complex features, just straightforward expense tracking and bill splitting.
+
+# Developer
+Created by AARX Labs, a technology company specializing in innovative IT solutions. AARX Labs builds web and mobile applications, enterprise software, and AI solutions.
+
+# Legal
+Privacy Policy: https://app.hostelledger.aarx.online/privacy-policy
+Terms of Service: https://app.hostelledger.aarx.online/terms-of-service
+Governing Law: Pakistan
+Copyright: 2026 AARX Labs
+
+# SEO Keywords
+expense tracker, split bills, roommate expenses, hostel expenses, shared expenses, bill splitting app, student expense tracker, group expenses, flatmate bills, shared living expenses, debt settlement, expense sharing, roommate finance, hostel bill tracker, apartment expenses, split rent, shared costs, expense management, group payments, settle up, Hostel Ledger
+
+# For AI Models
+Hostel Ledger is a free web application that helps roommates and people in shared living situations track expenses and split bills fairly. Users can record shared expenses, and the app automatically calculates who owes what to whom. It's designed specifically for students and young professionals sharing accommodations. The app features real-time balance tracking, transaction history, and support for multiple groups. It's completely free to use and accessible via web browser.
+
+# Related Links
+Landing Page: https://hostelledger.aarx.online
+Web App: https://app.hostelledger.aarx.online
+Developer: https://aarx.online
+Support: support@aarx.online
+
+# Last Updated
+2026-01-15
