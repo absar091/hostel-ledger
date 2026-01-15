@@ -118,18 +118,23 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         const verificationData = verificationSnapshot.exists() ? verificationSnapshot.val() : {};
         
         logger.debug("User profile loaded from database", { uid });
+        console.log('[fetchUserProfile] Raw userData from Firebase:', userData);
+        
         const userProfile: UserProfile = {
           uid,
           email: userData.email,
           name: userData.name,
           phone: userData.phone,
           avatar: userData.avatar,
+          photoURL: userData.photoURL || null, // Load profile picture URL
           paymentDetails: userData.paymentDetails || {},
           walletBalance: isNaN(userData.walletBalance) ? 0 : (userData.walletBalance || 0),
           settlements: userData.settlements || {},
           createdAt: userData.createdAt,
           emailVerified: verificationData.emailVerified || false
         };
+        
+        console.log('[fetchUserProfile] Constructed userProfile with photoURL:', userProfile.photoURL);
         
         setUser(userProfile);
         logger.setUserId(uid);
@@ -495,21 +500,33 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      console.log('[updateUserProfile] Input data:', data);
+      
       // Clean data to remove undefined values
       const cleanData = Object.fromEntries(
         Object.entries(data).filter(([_, value]) => value !== undefined)
       );
 
-      // Convert undefined to null for Firebase
+      console.log('[updateUserProfile] Clean data:', cleanData);
+
+      // Convert undefined to null for Firebase (though they're already filtered)
       const firebaseData = Object.fromEntries(
         Object.entries(cleanData).map(([key, value]) => [key, value === undefined ? null : value])
       );
 
+      console.log('[updateUserProfile] Firebase data:', firebaseData);
+
       const userRef = ref(database, `users/${user.uid}`);
       await update(userRef, firebaseData);
       
+      console.log('[updateUserProfile] Firebase update successful');
+      
       // Update local state
-      setUser(prev => prev ? { ...prev, ...cleanData } : null);
+      setUser(prev => {
+        const newUser = prev ? { ...prev, ...cleanData } : null;
+        console.log('[updateUserProfile] New local user state:', newUser);
+        return newUser;
+      });
       
       return { success: true };
     } catch (error: any) {

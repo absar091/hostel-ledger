@@ -7,6 +7,7 @@ import { FirebaseAuthProvider, useFirebaseAuth } from "@/contexts/FirebaseAuthCo
 import { FirebaseDataProvider } from "@/contexts/FirebaseDataContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import EmailVerificationGate from "@/components/EmailVerificationGate";
+import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import Groups from "./pages/Groups";
 import GroupDetail from "./pages/GroupDetail";
@@ -19,6 +20,9 @@ import Profile from "./pages/Profile";
 import Budget from "./pages/Budget";
 import Activity from "./pages/Activity";
 import DownloadApp from "./pages/DownloadApp";
+import About from "./pages/About";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -164,6 +168,9 @@ const AppRoutes = () => (
     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
     <Route path="/budget" element={<ProtectedRoute><Budget /></ProtectedRoute>} />
     <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
+    <Route path="/about" element={<ProtectedRoute><About /></ProtectedRoute>} />
+    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+    <Route path="/terms-of-service" element={<TermsOfService />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
@@ -198,6 +205,7 @@ const App = () => (
               v7_relativeSplatPath: true,
             }}
           >
+            <ScrollToTop />
             <FirebaseAuthProvider>
               <FirebaseDataProvider>
                 <AppRoutes />

@@ -296,7 +296,7 @@ const Profile = () => {
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-2">Preferences</h3>
           
           <button
-            onClick={() => setShowNotificationSheet(true)}
+            onClick={() => toast.info("Notification settings coming soon!")}
             className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-gray-200 hover:shadow-md transition-all animate-slide-up"
             style={{ animationDelay: "0.15s" }}
           >
@@ -311,7 +311,7 @@ const Profile = () => {
           </button>
 
           <button
-            onClick={() => setShowSecuritySheet(true)}
+            onClick={() => toast.info("Security settings coming soon!")}
             className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-gray-200 hover:shadow-md transition-all animate-slide-up"
             style={{ animationDelay: "0.2s" }}
           >
@@ -331,7 +331,7 @@ const Profile = () => {
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-2">Support</h3>
           
           <button
-            onClick={() => setShowAboutSheet(true)}
+            onClick={() => navigate("/about")}
             className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-gray-200 hover:shadow-md transition-all animate-slide-up"
             style={{ animationDelay: "0.25s" }}
           >
