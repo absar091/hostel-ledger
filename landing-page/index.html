@@ -36,6 +36,13 @@
   <link rel="icon" type="image/png" href="https://hostelledger.aarx.online/only-logo.png">
   <link rel="apple-touch-icon" href="https://hostelledger.aarx.online/only-logo.png">
   
+  <!-- Preconnect to external domains for faster loading -->
+  <link rel="preconnect" href="https://cdn.tailwindcss.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://app.hostelledger.aarx.online">
+  <link rel="dns-prefetch" href="https://aarx.online">
+  
   <!-- Canonical URL -->
   <link rel="canonical" href="https://hostelledger.aarx.online/">
   
@@ -45,8 +52,8 @@
   <!-- Robots -->
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind CSS CDN with defer -->
+  <script src="https://cdn.tailwindcss.com" defer></script>
   
   <!-- Custom Tailwind Config -->
   <script>
@@ -275,7 +282,7 @@
       <div class="flex items-center justify-between">
         <!-- Logo -->
         <div class="flex items-center gap-3">
-          <img src="/only-logo.png" alt="Hostel Ledger Logo" class="w-10 h-10">
+          <img src="/only-logo.png" alt="Hostel Ledger Logo" width="40" height="40" class="w-10 h-10">
           <span class="text-xl font-bold text-gray-900">Hostel Ledger</span>
         </div>
         
@@ -290,8 +297,8 @@
         </div>
         
         <!-- Mobile Menu Button -->
-        <button id="mobile-menu-btn" class="md:hidden p-2">
-          <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button id="mobile-menu-btn" aria-label="Toggle mobile menu" class="md:hidden p-2">
+          <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
           </svg>
         </button>
@@ -309,6 +316,8 @@
     </nav>
   </header>
 
+  <!-- Main Content -->
+  <main>
   
   <!-- Hero Section -->
   <section class="pt-32 pb-20 px-6">
@@ -571,6 +580,8 @@
   </section>
 
   
+  </main>
+  
   <!-- Footer -->
   <footer class="bg-gray-900 text-gray-300 py-16 px-6">
     <div class="max-w-7xl mx-auto">
@@ -578,7 +589,7 @@
         <!-- Company Info -->
         <div class="md:col-span-2">
           <div class="flex items-center gap-3 mb-4">
-            <img src="/only-logo.png" alt="Hostel Ledger Logo" class="w-10 h-10">
+            <img src="/only-logo.png" alt="Hostel Ledger Logo" width="40" height="40" class="w-10 h-10">
             <span class="text-xl font-bold text-white">Hostel Ledger</span>
           </div>
           <p class="text-gray-400 leading-relaxed mb-6">
@@ -629,7 +640,7 @@
           <div class="flex items-center gap-3">
             <p class="text-gray-300 text-sm">A Product By</p>
             <a href="https://aarx.online" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <img src="https://hostel-ledger.vercel.app/aarx-logo.png" alt="AARX Labs" class="h-8 w-auto">
+              <img src="https://hostel-ledger.vercel.app/aarx-logo.png" alt="AARX Labs Logo" width="32" height="32" class="h-8 w-auto">
               <span class="text-white font-semibold text-sm">Labs</span>
             </a>
           </div>
