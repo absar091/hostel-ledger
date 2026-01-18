@@ -385,7 +385,7 @@ const Profile = () => {
               className="inline-block hover:opacity-80 transition-opacity"
             >
               <img 
-                src="https://hostel-ledger.vercel.app/new-aarx-logo.png" 
+                src="https://hostel-ledger.vercel.app/real-aarx-logo.png" 
                 alt="AARX Labs" 
                 className="h-6 w-auto"
               />

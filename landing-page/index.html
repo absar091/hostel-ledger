@@ -83,8 +83,8 @@
     }
     
     .loading-logo {
-      width: 80px;
-      height: 80px;
+      width: 120px;
+      height: 120px;
       animation: pulse 2s ease-in-out infinite;
     }
     
@@ -148,13 +148,24 @@
   <!-- Tailwind CSS CDN - Load asynchronously -->
   <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
   <script>
-    // Remove no-js class
+    // Remove no-js class immediately
     document.documentElement.classList.remove('no-js');
+    
+    // Show content after a short delay even if CSS doesn't load
+    let cssLoaded = false;
+    let timeoutId = setTimeout(() => {
+      if (!cssLoaded) {
+        document.querySelector('.main-content').classList.add('loaded');
+        document.querySelector('.loading-screen').classList.add('hidden');
+      }
+    }, 3000); // 3 second fallback
     
     // Load Tailwind CSS
     const script = document.createElement('script');
     script.src = 'https://cdn.tailwindcss.com';
     script.onload = function() {
+      cssLoaded = true;
+      clearTimeout(timeoutId);
       // Show content after CSS loads
       setTimeout(() => {
         document.querySelector('.main-content').classList.add('loaded');
@@ -162,6 +173,13 @@
           document.querySelector('.loading-screen').classList.add('hidden');
         }, 300);
       }, 100);
+    };
+    script.onerror = function() {
+      // If CDN fails, still show content
+      cssLoaded = true;
+      clearTimeout(timeoutId);
+      document.querySelector('.main-content').classList.add('loaded');
+      document.querySelector('.loading-screen').classList.add('hidden');
     };
     document.head.appendChild(script);
   </script>
@@ -468,7 +486,7 @@
       <div class="flex items-center justify-between">
         <!-- Logo -->
         <div class="flex items-center gap-3">
-          <img src="/only-logo.png" alt="Hostel Ledger Logo" width="40" height="40" class="w-10 h-10">
+          <img src="https://hostelledger.aarx.online/real-aarx-logo.png" alt="Hostel Ledger Logo" width="56" height="56" class="w-14 h-14 opacity-90" style="filter: brightness(1.1) contrast(1.1); image-rendering: -webkit-optimize-contrast;">
           <span class="text-xl font-bold text-gray-900">Hostel Ledger</span>
         </div>
         
@@ -775,7 +793,7 @@
         <!-- Company Info -->
         <div class="md:col-span-2">
           <div class="flex items-center gap-3 mb-4">
-            <img src="/only-logo.png" alt="Hostel Ledger Logo" width="40" height="40" class="w-10 h-10">
+            <img src="https://hostelledger.aarx.online/real-aarx-logo.png" alt="Hostel Ledger Logo" width="48" height="48" class="w-12 h-12 opacity-90" style="filter: brightness(1.1) contrast(1.1); image-rendering: -webkit-optimize-contrast;">
             <span class="text-xl font-bold text-white">Hostel Ledger</span>
           </div>
           <p class="text-gray-400 leading-relaxed mb-6">
