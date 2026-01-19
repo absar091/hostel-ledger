@@ -43,34 +43,21 @@ const ToReceive = () => {
 
   // Calculate people who owe money to the current user
   const peopleWhoOweMe = useMemo(() => {
-    if (!user) {
-      console.log('ToReceive: No user object available');
-      return [];
-    }
-    
-    console.log('ToReceive: User settlements:', user.settlements);
+    if (!user) return [];
     
     const people: PersonToReceiveFrom[] = [];
 
     // Use the settlements system from FirebaseAuth context
     groups.forEach((group) => {
-      console.log(`ToReceive: Processing group ${group.name} (${group.id})`);
-      
       const currentUserMember = group.members.find((m) => m.isCurrentUser);
-      if (!currentUserMember) {
-        console.log(`ToReceive: Current user not found in group ${group.name}`);
-        return;
-      }
+      if (!currentUserMember) return;
 
       group.members.forEach((member) => {
         if (member.isCurrentUser) return;
 
         // Get settlements for this specific group and person
         const settlements = user.settlements?.[group.id]?.[member.id];
-        console.log(`ToReceive: Settlements for ${member.name} in ${group.name}:`, settlements);
-        
         if (settlements && settlements.toReceive > 0) {
-          console.log(`ToReceive: Adding ${member.name} who owes Rs ${settlements.toReceive}`);
           people.push({
             id: member.id,
             name: member.name,
@@ -84,8 +71,6 @@ const ToReceive = () => {
       });
     });
 
-    console.log('ToReceive: Final people list:', people);
-    
     // Sort by amount (highest first)
     return people.sort((a, b) => b.amount - a.amount);
   }, [groups, user]);
@@ -162,44 +147,48 @@ const ToReceive = () => {
               <button
                 key={`${person.id}-${person.groupId}`}
                 onClick={() => handlePersonClick(person)}
-                className="w-full bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-emerald-200 transition-all duration-200 text-left"
+                className="w-full bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-emerald-200 transition-all duration-200 text-left"
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-start gap-4">
                   {/* Avatar */}
                   <Avatar name={person.name} size="md" />
                   
                   {/* Person Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-semibold text-gray-900 truncate">{person.name}</h3>
-                      <div className="text-xl font-bold text-emerald-600 tabular-nums">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-gray-900 text-lg truncate">{person.name}</h3>
+                      <div className="text-2xl font-bold text-emerald-600 tabular-nums">
                         Rs {person.amount.toLocaleString()}
                       </div>
                     </div>
                     
-                    {/* Group Info */}
-                    <div className="flex items-center gap-2 mb-2">
-                      <Users className="w-3 h-3 text-gray-400" />
-                      <span className="text-sm text-gray-500 truncate">{person.groupName}</span>
-                    </div>
-
                     {/* Contact Info */}
                     {person.phone && (
                       <div className="flex items-center gap-2 mb-2">
-                        <Phone className="w-3 h-3 text-gray-400" />
-                        <span className="text-sm text-gray-500">{person.phone}</span>
+                        <Phone className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm text-gray-600">{person.phone}</span>
                       </div>
                     )}
 
                     {/* Payment Details */}
                     {formatPaymentDetails(person.paymentDetails) && (
-                      <div className="flex items-start gap-2">
-                        <CreditCard className="w-3 h-3 text-gray-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-xs text-gray-500 leading-relaxed">
+                      <div className="flex items-start gap-2 mb-3">
+                        <CreditCard className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm text-gray-600 leading-relaxed">
                           {formatPaymentDetails(person.paymentDetails)}
                         </span>
                       </div>
                     )}
+
+                    {/* Group Info - At Bottom */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                      <div className="w-5 h-5 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-lg flex items-center justify-center">
+                        <Users className="w-3 h-3 text-emerald-600" />
+                      </div>
+                      <span className="text-xs text-gray-500 font-medium">{person.groupName}</span>
+                      <span className="text-xs text-gray-400">•</span>
+                      <span className="text-xs text-gray-400">Tap to view group</span>
+                    </div>
                   </div>
                 </div>
               </button>
