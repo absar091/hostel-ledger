@@ -12,6 +12,7 @@ import PWAInstallButton from "@/components/PWAInstallButton";
 import NotificationIcon from "@/components/NotificationIcon";
 import OnboardingTour from "@/components/OnboardingTour";
 import PageGuide from "@/components/PageGuide";
+import ShareButton from "@/components/ShareButton";
 import { toast } from "sonner";
 import Tooltip from "@/components/Tooltip";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
@@ -502,7 +503,8 @@ const Dashboard = () => {
             </div>
           </div>
           {/* PWA Install Button or Notification Icon */}
-          <div className="flex-shrink-0">
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <ShareButton variant="icon" />
             {isInstalled ? <NotificationIcon /> : <PWAInstallButton />}
           </div>
         </div>

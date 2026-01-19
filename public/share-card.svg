@@ -1,0 +1,102 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ecfdf5;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#f0fdfa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f0fdf4;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="cardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#14b8a6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#059669;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d9488;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- Main Content Container -->
+  <g transform="translate(80, 80)">
+    <!-- Left Side - Text Content -->
+    <g>
+      <!-- App Icon -->
+      <circle cx="60" cy="60" r="40" fill="url(#iconGradient)" />
+      <text x="60" y="72" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="32" font-weight="bold">💰</text>
+      
+      <!-- App Title -->
+      <text x="120" y="50" fill="#1f2937" font-family="Arial, sans-serif" font-size="48" font-weight="bold">Hostel Ledger</text>
+      <text x="120" y="85" fill="#6b7280" font-family="Arial, sans-serif" font-size="24">Split Expenses with Ease</text>
+      
+      <!-- Description -->
+      <text x="0" y="160" fill="#374151" font-family="Arial, sans-serif" font-size="28" font-weight="600">🎯 Smart expense splitting for students & groups</text>
+      <text x="0" y="200" fill="#4b5563" font-family="Arial, sans-serif" font-size="22">✨ Track shared expenses, settle debts instantly</text>
+      <text x="0" y="240" fill="#4b5563" font-family="Arial, sans-serif" font-size="22">📱 Perfect for roommates, hostels, and friend groups</text>
+      
+      <!-- Features -->
+      <g transform="translate(0, 300)">
+        <rect x="0" y="0" width="500" height="120" rx="20" fill="white" opacity="0.8" />
+        <text x="20" y="35" fill="#059669" font-family="Arial, sans-serif" font-size="18" font-weight="bold">✓ Split bills automatically</text>
+        <text x="20" y="60" fill="#059669" font-family="Arial, sans-serif" font-size="18" font-weight="bold">✓ Track who owes what</text>
+        <text x="20" y="85" fill="#059669" font-family="Arial, sans-serif" font-size="18" font-weight="bold">✓ Settle up with ease</text>
+        
+        <text x="280" y="35" fill="#059669" font-family="Arial, sans-serif" font-size="18" font-weight="bold">✓ Group expense management</text>
+        <text x="280" y="60" fill="#059669" font-family="Arial, sans-serif" font-size="18" font-weight="bold">✓ Real-time notifications</text>
+        <text x="280" y="85" fill="#059669" font-family="Arial, sans-serif" font-size="18" font-weight="bold">✓ Secure & private</text>
+      </g>
+      
+      <!-- URL -->
+      <text x="0" y="480" fill="#10b981" font-family="Arial, sans-serif" font-size="24" font-weight="bold">hostelledger.aarx.online</text>
+    </g>
+    
+    <!-- Right Side - App Preview -->
+    <g transform="translate(600, 0)">
+      <!-- Phone Frame -->
+      <rect x="0" y="0" width="280" height="470" rx="30" fill="#1f2937" />
+      <rect x="10" y="10" width="260" height="450" rx="25" fill="url(#bgGradient)" />
+      
+      <!-- Screen Content -->
+      <g transform="translate(30, 40)">
+        <!-- Header -->
+        <text x="0" y="25" fill="#1f2937" font-family="Arial, sans-serif" font-size="16" font-weight="bold">Good evening 👋</text>
+        <text x="0" y="45" fill="#1f2937" font-family="Arial, sans-serif" font-size="20" font-weight="bold">Welcome!</text>
+        
+        <!-- Balance Card -->
+        <rect x="0" y="70" width="220" height="100" rx="15" fill="url(#cardGradient)" />
+        <text x="15" y="90" fill="white" font-family="Arial, sans-serif" font-size="12" opacity="0.9">AVAILABLE BALANCE</text>
+        <text x="15" y="115" fill="white" font-family="Arial, sans-serif" font-size="24" font-weight="bold">Rs 2,450</text>
+        <text x="15" y="135" fill="white" font-family="Arial, sans-serif" font-size="10" opacity="0.8">After settlements: Rs 3,200</text>
+        
+        <!-- Settlement Cards -->
+        <rect x="0" y="190" width="105" height="80" rx="12" fill="white" />
+        <text x="10" y="210" fill="#10b981" font-family="Arial, sans-serif" font-size="10" font-weight="bold">TO RECEIVE</text>
+        <text x="10" y="230" fill="#10b981" font-family="Arial, sans-serif" font-size="16" font-weight="bold">Rs 750</text>
+        <text x="10" y="250" fill="#6b7280" font-family="Arial, sans-serif" font-size="8">View details</text>
+        
+        <rect x="115" y="190" width="105" height="80" rx="12" fill="white" />
+        <text x="125" y="210" fill="#f59e0b" font-family="Arial, sans-serif" font-size="10" font-weight="bold">YOU OWE</text>
+        <text x="125" y="230" fill="#f59e0b" font-family="Arial, sans-serif" font-size="16" font-weight="bold">Rs 0</text>
+        <text x="125" y="250" fill="#6b7280" font-family="Arial, sans-serif" font-size="8">All paid up!</text>
+        
+        <!-- Action Buttons -->
+        <rect x="0" y="290" width="65" height="60" rx="10" fill="white" />
+        <text x="32" y="315" fill="#1f2937" font-family="Arial, sans-serif" font-size="20">➕</text>
+        <text x="32" y="335" fill="#1f2937" font-family="Arial, sans-serif" font-size="8" text-anchor="middle">Add</text>
+        
+        <rect x="75" y="290" width="65" height="60" rx="10" fill="white" />
+        <text x="107" y="315" fill="#10b981" font-family="Arial, sans-serif" font-size="20">💰</text>
+        <text x="107" y="335" fill="#1f2937" font-family="Arial, sans-serif" font-size="8" text-anchor="middle">Receive</text>
+        
+        <rect x="150" y="290" width="70" height="60" rx="10" fill="white" />
+        <text x="185" y="315" fill="#14b8a6" font-family="Arial, sans-serif" font-size="20">👥</text>
+        <text x="185" y="335" fill="#1f2937" font-family="Arial, sans-serif" font-size="8" text-anchor="middle">Group</text>
+      </g>
+    </g>
+  </g>
+  
+  <!-- Bottom Brand -->
+  <text x="600" y="600" text-anchor="middle" fill="#6b7280" font-family="Arial, sans-serif" font-size="16">Made with ❤️ for students and groups</text>
+</svg>

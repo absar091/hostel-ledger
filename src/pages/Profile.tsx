@@ -11,6 +11,7 @@ import {
 import Avatar from "@/components/Avatar";
 import BottomNav from "@/components/BottomNav";
 import PWAInstallButton from "@/components/PWAInstallButton";
+import ShareButton from "@/components/ShareButton";
 import LogoutConfirmDialog from "@/components/LogoutConfirmDialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -174,7 +175,10 @@ const Profile = () => {
       <header className="px-4 pt-8 pb-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-          <PWAInstallButton />
+          <div className="flex items-center gap-3">
+            <ShareButton variant="icon" />
+            <PWAInstallButton />
+          </div>
         </div>
 
         {/* Profile Card - Simple white card */}
@@ -299,6 +303,16 @@ const Profile = () => {
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
+        </div>
+
+        {/* Share Section */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-2">Share & Connect</h3>
+          
+          <ShareButton 
+            variant="card" 
+            className="animate-slide-up" 
+          />
         </div>
 
         {/* Preferences Section */}
