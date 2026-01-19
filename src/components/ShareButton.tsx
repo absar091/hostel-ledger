@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Share2, Copy, Check, MessageCircle, Send } from "lucide-react";
+import { Share2, Copy, Check, MessageCircle, Send } from "@/lib/icons";
 import { toast } from "sonner";
 
 interface ShareButtonProps {

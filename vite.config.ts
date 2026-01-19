@@ -19,12 +19,37 @@ export default defineConfig(({ mode }) => ({
     // Optimize chunk splitting for better caching
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'router': ['react-router-dom'],
-          'firebase': ['firebase/app', 'firebase/auth', 'firebase/database', 'firebase/firestore'],
-          'ui-components': ['@radix-ui/react-dialog', '@radix-ui/react-tooltip', '@radix-ui/react-select'],
-          'utils': ['date-fns', 'clsx', 'tailwind-merge'],
+        manualChunks: (id) => {
+          // Group all node_modules into vendor chunks
+          if (id.includes('node_modules')) {
+            // React ecosystem
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'react-vendor';
+            }
+            // Firebase
+            if (id.includes('firebase')) {
+              return 'firebase';
+            }
+            // UI components (Radix, etc.)
+            if (id.includes('@radix-ui') || id.includes('cmdk') || id.includes('vaul')) {
+              return 'ui-vendor';
+            }
+            // Icons - group all Lucide icons together
+            if (id.includes('lucide-react')) {
+              return 'icons';
+            }
+            // Other utilities
+            if (id.includes('date-fns') || id.includes('clsx') || id.includes('tailwind-merge') || id.includes('sonner')) {
+              return 'utils-vendor';
+            }
+            // Everything else from node_modules
+            return 'vendor';
+          }
+          
+          // Group app pages together if they're small
+          if (id.includes('/pages/') && !id.includes('Dashboard') && !id.includes('GroupDetail')) {
+            return 'app-pages';
+          }
         },
       },
     },

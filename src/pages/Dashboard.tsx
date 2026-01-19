@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowUpRight, ArrowDownLeft, Plus, User, CreditCard, Users } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Plus, User, CreditCard, Users } from "@/lib/icons";
 import BottomNav from "@/components/BottomNav";
 import Avatar from "@/components/Avatar";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
