@@ -1,0 +1,1 @@
+JWT_SECRET    SMTP_HOST smtp.gmail.com  SMTP_PORT 587 SMTP_USER ahmadraoabsar@gmail.com SMTP_PASS uzpk gcix ebfh sfrg EMAIL_FROM Hostel Ledger<noreply@quizzicallabz.qzz.io>

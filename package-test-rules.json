@@ -1,0 +1,13 @@
+{
+  "name": "firebase-rules-testing",
+  "version": "1.0.0",
+  "description": "Testing Firebase Database Rules for Hostel Ledger",
+  "type": "module",
+  "scripts": {
+    "test:rules": "node test-firebase-rules.js",
+    "test:browser": "open test-firebase-rules-browser.html"
+  },
+  "dependencies": {
+    "firebase": "^10.7.1"
+  }
+}

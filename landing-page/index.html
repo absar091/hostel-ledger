@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- SEO Meta Tags -->
+  <title>Hostel Ledger - Split Expenses with Roommates | Free Expense Tracker & Bill Splitting App</title>
+  <meta name="description" content="Hostel Ledger is a free expense tracking and bill splitting app for students, roommates, and shared living. Easily track shared expenses, split bills, manage group payments, and settle debts. Perfect for hostels, apartments, and flatmates.">
+  <meta name="keywords" content="expense tracker, split bills, roommate expenses, hostel expenses, shared expenses, bill splitting app, student expense tracker, group expenses, flatmate bills, shared living expenses, debt settlement, expense sharing, roommate finance, hostel bill tracker, apartment expenses, split rent, shared costs, expense management, group payments, settle up">
+  <meta name="author" content="Hostel Ledger by AARX Labs">
+  <meta name="robots" content="index, follow">
+  <meta name="language" content="English">
+  <meta name="revisit-after" content="7 days">
+  <meta name="distribution" content="global">
+  <meta name="rating" content="general">
+  <meta name="theme-color" content="#10b981">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://hostelledger.aarx.online/">
+  <meta property="og:title" content="Hostel Ledger - Split Expenses with Roommates | Free Expense Tracker">
+  <meta property="og:description" content="Track shared expenses, split bills, and settle debts with your roommates easily. Free expense sharing app for students and shared living.">
+  <meta property="og:image" content="https://hostelledger.aarx.online/real-aarx-logo.png">
+  <meta property="og:site_name" content="Hostel Ledger">
+  <meta property="og:locale" content="en_US">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://hostelledger.aarx.online/">
+  <meta property="twitter:title" content="Hostel Ledger - Split Expenses with Roommates">
+  <meta property="twitter:description" content="Track shared expenses, split bills, and settle debts with your roommates easily. Free expense sharing app for students.">
+  <meta property="twitter:image" content="https://hostelledger.aarx.online/real-aarx-logo.png">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="https://hostelledger.aarx.online/only-logo.png">
+  <link rel="apple-touch-icon" href="https://hostelledger.aarx.online/only-logo.png">
+  
+  <!-- Preconnect to external domains for faster loading -->
+  <link rel="preconnect" href="https://cdn.tailwindcss.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://app.hostelledger.aarx.online">
+  <link rel="dns-prefetch" href="https://aarx.online">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://hostelledger.aarx.online/">
+  
+  <!-- Sitemap -->
+  <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
+  
+  <!-- Robots -->
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  
+  <!-- Critical CSS - Inline for immediate styling -->
+  <style>
+    /* Critical styles to prevent FOUC */
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.3s ease-out;
+    }
+    
+    .loading-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .loading-logo {
+      width: 120px;
+      height: 120px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+    }
+    
+    /* Hide content until CSS loads */
+    .main-content {
+      opacity: 0;
+      transition: opacity 0.3s ease-in;
+    }
+    
+    .main-content.loaded {
+      opacity: 1;
+    }
+    
+    /* Fallback for no-js */
+    .no-js .loading-screen {
+      display: none;
+    }
+    
+    .no-js .main-content {
+      opacity: 1;
+    }
+    
+    /* Basic responsive layout */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    
+    .hero-section {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: white;
+    }
+    
+    .btn-primary {
+      background: #ffffff;
+      color: #10b981;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-block;
+      margin-top: 1rem;
+      transition: transform 0.2s ease;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+  
+  <!-- Tailwind CSS CDN - Load asynchronously -->
+  <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+  <script>
+    // Remove no-js class immediately
+    document.documentElement.classList.remove('no-js');
+    
+    // Show content after a short delay even if CSS doesn't load
+    let cssLoaded = false;
+    let timeoutId = setTimeout(() => {
+      if (!cssLoaded) {
+        document.querySelector('.main-content').classList.add('loaded');
+        document.querySelector('.loading-screen').classList.add('hidden');
+      }
+    }, 3000); // 3 second fallback
+    
+    // Load Tailwind CSS
+    const script = document.createElement('script');
+    script.src = 'https://cdn.tailwindcss.com';
+    script.onload = function() {
+      cssLoaded = true;
+      clearTimeout(timeoutId);
+      // Show content after CSS loads
+      setTimeout(() => {
+        document.querySelector('.main-content').classList.add('loaded');
+        setTimeout(() => {
+          document.querySelector('.loading-screen').classList.add('hidden');
+        }, 300);
+      }, 100);
+    };
+    script.onerror = function() {
+      // If CDN fails, still show content
+      cssLoaded = true;
+      clearTimeout(timeoutId);
+      document.querySelector('.main-content').classList.add('loaded');
+      document.querySelector('.loading-screen').classList.add('hidden');
+    };
+    document.head.appendChild(script);
+  </script>
+  
+  <noscript>
+    <style>
+      .loading-screen { display: none; }
+      .main-content { opacity: 1; }
+    </style>
+    <link rel="stylesheet" href="https://cdn.tailwindcss.com">
+  </noscript>
+  
+  <!-- Custom Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            emerald: {
+              50: '#ecfdf5',
+              500: '#10b981',
+              600: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Structured Data / Schema.org -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Hostel Ledger",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Web, Android, iOS",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "priceValidUntil": "2025-12-31",
+      "availability": "https://schema.org/InStock",
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+        "merchantReturnDays": 30,
+        "returnMethod": "https://schema.org/ReturnByMail"
+      },
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "value": "0",
+          "currency": "USD"
+        },
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "businessDays": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+          },
+          "cutoffTime": "23:59",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 0,
+            "maxValue": 1,
+            "unitCode": "DAY"
+          }
+        }
+      }
+    },
+    "description": "Free expense tracking and bill splitting app for students, roommates, and shared living. Track shared expenses, split bills, manage group payments, and settle debts easily.",
+    "url": "https://app.hostelledger.aarx.online",
+    "image": "https://hostelledger.aarx.online/real-aarx-logo.png",
+    "screenshot": "https://hostelledger.aarx.online/real-aarx-logo.png",
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "5.0",
+      "ratingCount": "1"
+    },
+    "author": {
+      "@type": "Organization",
+      "name": "AARX Labs",
+      "url": "https://aarx.online"
+    },
+    "provider": {
+      "@type": "Organization",
+      "name": "AARX Labs",
+      "url": "https://aarx.online"
+    },
+    "featureList": [
+      "Track shared expenses with roommates",
+      "Split bills automatically",
+      "Manage group payments",
+      "Settle debts easily",
+      "Real-time balance tracking",
+      "Transaction history",
+      "Multiple group support",
+      "Secure cloud sync",
+      "Free to use"
+    ],
+    "softwareVersion": "1.0",
+    "datePublished": "2024-01-01",
+    "dateModified": "2026-01-15",
+    "inLanguage": "en",
+    "copyrightYear": "2026",
+    "copyrightHolder": {
+      "@type": "Organization",
+      "name": "AARX Labs"
+    }
+  }
+  </script>
+  
+  <!-- WebApplication Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Hostel Ledger",
+    "url": "https://app.hostelledger.aarx.online",
+    "description": "Split expenses with roommates, track shared bills, and settle debts easily. Perfect for students and shared living.",
+    "applicationCategory": "Finance",
+    "operatingSystem": "All",
+    "browserRequirements": "Requires JavaScript. Requires HTML5.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "priceValidUntil": "2025-12-31",
+      "availability": "https://schema.org/InStock",
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+        "merchantReturnDays": 30
+      },
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "value": "0",
+          "currency": "USD"
+        },
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "businessDays": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+          },
+          "cutoffTime": "23:59",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "minValue": 0,
+            "maxValue": 1,
+            "unitCode": "DAY"
+          }
+        }
+      }
+    }
+  }
+  </script>
+  
+  <!-- Organization Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "AARX Labs",
+    "url": "https://aarx.online",
+    "logo": "https://hostel-ledger.vercel.app/real-aarx-logo.png",
+    "email": "support@aarx.online",
+    "description": "Technology company specializing in innovative IT solutions",
+    "slogan": "Innovate. Build. Launch."
+  }
+  </script>
+  
+  <!-- Product Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "Hostel Ledger",
+    "description": "Free expense tracking and bill splitting app for students and roommates",
+    "brand": {
+      "@type": "Brand",
+      "name": "AARX Labs"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "5.0",
+      "reviewCount": "1"
+    }
+  }
+  </script>
+  
+  <!-- WebSite Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Hostel Ledger",
+    "url": "https://hostelledger.aarx.online",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://hostelledger.aarx.online/?s={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+  
+  <!-- BreadcrumbList Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://hostelledger.aarx.online"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Features",
+        "item": "https://hostelledger.aarx.online/#features"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Download",
+        "item": "https://hostelledger.aarx.online/#download"
+      },
+      {
+        "@type": "ListItem",
+        "position": 4,
+        "name": "Launch App",
+        "item": "https://app.hostelledger.aarx.online"
+      }
+    ]
+  }
+  </script>
+  
+  <style>
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .animate-fade-in-up {
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+    
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    .aarx-logo {
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    
+    .aarx-x {
+      background: linear-gradient(135deg, #06b6d4, #0ea5e9, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 900;
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50">
+  
+  <!-- Loading Screen -->
+  <div class="loading-screen">
+    <img src="https://hostelledger.aarx.online/real-aarx-logo.png" alt="Loading..." class="loading-logo">
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+  
+  <!-- Header/Navigation -->
+  <header class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-b border-gray-200 z-50">
+    <nav class="max-w-7xl mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        <!-- Logo -->
+        <div class="flex items-center gap-3">
+          <img src="https://hostelledger.aarx.online/real-aarx-logo.png" alt="Hostel Ledger Logo" width="56" height="56" class="w-14 h-14 opacity-90" style="filter: brightness(1.1) contrast(1.1); image-rendering: -webkit-optimize-contrast;">
+          <span class="text-xl font-bold text-gray-900">Hostel Ledger</span>
+        </div>
+        
+        <!-- Desktop Navigation -->
+        <div class="hidden md:flex items-center gap-8">
+          <a href="#features" class="text-gray-600 hover:text-emerald-600 transition-colors">Features</a>
+          <a href="#how-it-works" class="text-gray-600 hover:text-emerald-600 transition-colors">How It Works</a>
+          <a href="#about" class="text-gray-600 hover:text-emerald-600 transition-colors">About</a>
+          <button id="nav-download-btn" class="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg">
+            Download App
+          </button>
+        </div>
+        
+        <!-- Mobile Menu Button -->
+        <button id="mobile-menu-btn" aria-label="Toggle mobile menu" class="md:hidden p-2">
+          <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Mobile Menu -->
+      <div id="mobile-menu" class="hidden md:hidden mt-4 pb-4 space-y-3">
+        <a href="#features" class="block text-gray-600 hover:text-emerald-600 transition-colors">Features</a>
+        <a href="#how-it-works" class="block text-gray-600 hover:text-emerald-600 transition-colors">How It Works</a>
+        <a href="#about" class="block text-gray-600 hover:text-emerald-600 transition-colors">About</a>
+        <button id="mobile-download-btn" class="w-full px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg">
+          Download App
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+  
+  <!-- Hero Section -->
+  <section class="pt-32 pb-20 px-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <!-- Left: Text Content -->
+        <div class="space-y-6 animate-fade-in-up">
+          <h1 class="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight">
+            Split Expenses with <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500">Roommates</span> Easily
+          </h1>
+          <p class="text-xl text-gray-600 leading-relaxed">
+            Track shared expenses, split bills fairly, and settle debts with your hostel mates. No more awkward money conversations.
+          </p>
+          
+          <!-- CTA Buttons -->
+          <div class="flex flex-col sm:flex-row gap-4 pt-4">
+            <button id="hero-download-btn" class="px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all shadow-xl hover:shadow-2xl text-lg flex items-center justify-center gap-2">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              Download Free App
+            </button>
+            <a href="#how-it-works" class="px-8 py-4 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all shadow-lg text-lg text-center border-2 border-gray-200">
+              See How It Works
+            </a>
+          </div>
+          
+          <!-- Trust Indicators -->
+          <div class="flex items-center gap-6 pt-6">
+            <div>
+              <div class="font-bold text-gray-900">100% Free</div>
+              <div class="text-sm text-gray-500">No Hidden Costs</div>
+            </div>
+            <div class="h-12 w-px bg-gray-300"></div>
+            <div>
+              <div class="font-bold text-gray-900">Secure</div>
+              <div class="text-sm text-gray-500">Your Data Protected</div>
+            </div>
+            <div class="h-12 w-px bg-gray-300"></div>
+            <div>
+              <div class="font-bold text-gray-900">Easy to Use</div>
+              <div class="text-sm text-gray-500">Simple Interface</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right: Hero Image/Mockup -->
+        <div class="animate-fade-in-up delay-200">
+          <div class="relative">
+            <!-- Phone Mockup -->
+            <div class="bg-white rounded-[3rem] shadow-2xl p-4 max-w-sm mx-auto border-8 border-gray-800" style="min-height: 500px;">
+              <div class="bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 rounded-[2rem] overflow-hidden h-full">
+                <!-- Simulated App Screenshot -->
+                <div class="p-6 space-y-6 h-full flex flex-col justify-center">
+                  <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold text-lg">
+                      U
+                    </div>
+                    <div>
+                      <div class="text-sm text-gray-500">Good afternoon</div>
+                      <div class="font-bold text-gray-900">User</div>
+                    </div>
+                  </div>
+                  
+                  <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-3xl p-6 text-white">
+                    <div class="text-xs uppercase opacity-90 mb-2">Available Balance</div>
+                    <div class="text-4xl font-bold">Rs 2,500</div>
+                  </div>
+                  
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white rounded-2xl p-4 shadow-sm">
+                      <div class="text-xs text-emerald-700 mb-1">To Receive</div>
+                      <div class="text-xl font-bold text-emerald-700">Rs 400</div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-4 shadow-sm">
+                      <div class="text-xs text-red-700 mb-1">To Pay</div>
+                      <div class="text-xl font-bold text-red-600">Rs 0</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- No floating elements -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <!-- Features Section -->
+  <section id="features" class="py-20 px-6 bg-white">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Everything You Need</h2>
+        <p class="text-xl text-gray-600">Manage shared expenses like a pro</p>
+      </div>
+      
+      <div class="grid md:grid-cols-3 gap-8">
+        <!-- Feature 1 -->
+        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-8 hover:shadow-xl transition-all">
+          <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-4">Split Bills Instantly</h3>
+          <p class="text-gray-600 leading-relaxed">
+            Add an expense and automatically split it among group members. Fair and transparent calculations every time.
+          </p>
+        </div>
+        
+        <!-- Feature 2 -->
+        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-8 hover:shadow-xl transition-all">
+          <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-4">Create Groups</h3>
+          <p class="text-gray-600 leading-relaxed">
+            Organize expenses by creating groups for your hostel room, friends, or any shared living situation.
+          </p>
+        </div>
+        
+        <!-- Feature 3 -->
+        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-8 hover:shadow-xl transition-all">
+          <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-4">Track Everything</h3>
+          <p class="text-gray-600 leading-relaxed">
+            See who owes what, track payment history, and get a clear overview of all your shared expenses.
+          </p>
+        </div>
+        
+        <!-- Feature 4 -->
+        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-8 hover:shadow-xl transition-all">
+          <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-4">Secure & Private</h3>
+          <p class="text-gray-600 leading-relaxed">
+            Your financial data is encrypted and secure. We never share your information with third parties.
+          </p>
+        </div>
+        
+        <!-- Feature 5 -->
+        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-8 hover:shadow-xl transition-all">
+          <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-4">Lightning Fast</h3>
+          <p class="text-gray-600 leading-relaxed">
+            Works offline and syncs when you're back online. No waiting, no lag, just smooth experience.
+          </p>
+        </div>
+        
+        <!-- Feature 6 -->
+        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-8 hover:shadow-xl transition-all">
+          <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-4">Simple & Easy</h3>
+          <p class="text-gray-600 leading-relaxed">
+            No complicated setup. Add expenses in seconds and let the app handle all the math for you.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- How It Works Section -->
+  <section id="how-it-works" class="py-20 px-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">How It Works</h2>
+        <p class="text-xl text-gray-600">Get started in 3 simple steps</p>
+      </div>
+      
+      <div class="grid md:grid-cols-3 gap-12">
+        <!-- Step 1 -->
+        <div class="text-center">
+          <div class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+            <span class="text-3xl font-bold text-white">1</span>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-4">Create a Group</h3>
+          <p class="text-gray-600 leading-relaxed">
+            Add your roommates or friends to a group. Give it a name and you're ready to go.
+          </p>
+        </div>
+        
+        <!-- Step 2 -->
+        <div class="text-center">
+          <div class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+            <span class="text-3xl font-bold text-white">2</span>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-4">Add Expenses</h3>
+          <p class="text-gray-600 leading-relaxed">
+            When someone pays for something shared, add it to the app. It automatically splits the cost.
+          </p>
+        </div>
+        
+        <!-- Step 3 -->
+        <div class="text-center">
+          <div class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+            <span class="text-3xl font-bold text-white">3</span>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-4">Settle Up</h3>
+          <p class="text-gray-600 leading-relaxed">
+            See who owes what and settle debts easily. Keep track of all payments in one place.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- About Section -->
+  <section id="about" class="py-20 px-6 bg-white">
+    <div class="max-w-4xl mx-auto text-center">
+      <h2 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Built for Students, By Students</h2>
+      <p class="text-xl text-gray-600 leading-relaxed mb-8">
+        Hostel Ledger was created to solve the everyday problem of managing shared expenses in hostels and shared accommodations. 
+        We understand the awkwardness of asking for money and the confusion of who paid for what. 
+        That's why we built a simple, transparent, and free solution that makes splitting expenses effortless.
+      </p>
+      <p class="text-lg text-gray-500 leading-relaxed">
+        Whether you're sharing a room, an apartment, or just splitting bills with friends, 
+        Hostel Ledger keeps everyone on the same page and eliminates money-related stress.
+      </p>
+    </div>
+  </section>
+  
+  <!-- Download CTA Section -->
+  <section class="py-20 px-6 bg-gradient-to-br from-emerald-500 to-teal-500">
+    <div class="max-w-4xl mx-auto text-center text-white">
+      <h2 class="text-4xl md:text-5xl font-bold mb-6">Ready to Get Started?</h2>
+      <p class="text-xl mb-10 opacity-90">
+        Download Hostel Ledger now and start managing your shared expenses like a pro. It's 100% free!
+      </p>
+      <button id="cta-download-btn" class="px-12 py-5 bg-white text-emerald-600 font-bold rounded-xl hover:bg-gray-100 transition-all shadow-2xl text-xl flex items-center justify-center gap-3 mx-auto">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+        </svg>
+        Download  App
+      </button>
+      <p class="mt-6 text-sm opacity-75">
+        Works on all devices • No credit card required • Always free
+      </p>
+    </div>
+  </section>
+
+  
+  </main>
+  
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-gray-300 py-16 px-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid md:grid-cols-4 gap-12 mb-12">
+        <!-- Company Info -->
+        <div class="md:col-span-2">
+          <div class="flex items-center gap-3 mb-4">
+            <img src="https://hostelledger.aarx.online/real-aarx-logo.png" alt="Hostel Ledger Logo" width="48" height="48" class="w-12 h-12 opacity-90" style="filter: brightness(1.1) contrast(1.1); image-rendering: -webkit-optimize-contrast;">
+            <span class="text-xl font-bold text-white">Hostel Ledger</span>
+          </div>
+          <p class="text-gray-400 leading-relaxed mb-6">
+            The easiest way to split expenses with roommates and friends. Track shared bills, settle debts, and keep everyone happy.
+          </p>
+          <div class="flex gap-4">
+            <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-emerald-600 transition-colors">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            </a>
+            <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-emerald-600 transition-colors">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
+            </a>
+            <a href="#" class="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-emerald-600 transition-colors">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z"/></svg>
+            </a>
+          </div>
+        </div>
+        
+        <!-- Quick Links -->
+        <div>
+          <h3 class="text-white font-bold mb-4">Product</h3>
+          <ul class="space-y-3">
+            <li><a href="#features" class="hover:text-emerald-400 transition-colors">Features</a></li>
+            <li><a href="#how-it-works" class="hover:text-emerald-400 transition-colors">How It Works</a></li>
+            <li><a href="#" class="hover:text-emerald-400 transition-colors">Pricing</a></li>
+            <li><a href="#" class="hover:text-emerald-400 transition-colors">FAQ</a></li>
+          </ul>
+        </div>
+        
+        <!-- Company -->
+        <div>
+          <h3 class="text-white font-bold mb-4">Company</h3>
+          <ul class="space-y-3">
+            <li><a href="https://aarx.online" target="_blank" rel="noopener noreferrer" class="hover:text-emerald-400 transition-colors">AARX Labs</a></li>
+            <li><a href="mailto:support@aarx.online" class="hover:text-emerald-400 transition-colors">Contact</a></li>
+            <li><a href="https://app.hostelledger.aarx.online/privacy-policy" target="_blank" rel="noopener noreferrer" class="hover:text-emerald-400 transition-colors">Privacy Policy</a></li>
+            <li><a href="hhttps://app.hostelledger.aarx.online/terms-of-service" target="_blank" rel="noopener noreferrer" class="hover:text-emerald-400 transition-colors">Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- Bottom Bar -->
+      <div class="border-t border-gray-800 pt-8">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+          <p class="text-gray-400 text-sm">
+            © 2026 Hostel Ledger. All rights reserved.
+          </p>
+          <div class="flex items-center gap-3">
+            <p class="text-gray-300 text-sm">A Product By</p>
+            <a href="https://aarx.online" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <img src="https://hostel-ledger.vercel.app/real-aarx-logo.png" alt="AARX Labs Logo" width="32" height="32" class="h-8 w-auto">
+              <span class="text-white font-semibold text-sm">Labs</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  
+  <!-- PWA Install Script -->
+  <script>
+    let deferredPrompt;
+    
+    // Listen for the beforeinstallprompt event
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later
+      deferredPrompt = e;
+      console.log('PWA install prompt available');
+    });
+    
+    // Function to trigger PWA install
+    async function installPWA() {
+      if (!deferredPrompt) {
+        // If no install prompt available, redirect to app
+        window.location.href = 'https://app.hostelledger.aarx.online/signup';
+        return;
+      }
+      
+      // Show the install prompt
+      deferredPrompt.prompt();
+      
+      // Wait for the user to respond to the prompt
+      const { outcome } = await deferredPrompt.userChoice;
+      
+      if (outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+      } else {
+        console.log('User dismissed the install prompt');
+      }
+      
+      // Clear the deferredPrompt
+      deferredPrompt = null;
+    }
+    
+    // Attach install function to all download buttons
+    document.getElementById('nav-download-btn').addEventListener('click', installPWA);
+    document.getElementById('mobile-download-btn').addEventListener('click', installPWA);
+    document.getElementById('hero-download-btn').addEventListener('click', installPWA);
+    document.getElementById('cta-download-btn').addEventListener('click', installPWA);
+    
+    // Mobile menu toggle
+    document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    });
+    
+    // Close mobile menu when clicking a link
+    document.querySelectorAll('#mobile-menu a').forEach(link => {
+      link.addEventListener('click', () => {
+        document.getElementById('mobile-menu').classList.add('hidden');
+      });
+    });
+  </script>
+  
+  </div> <!-- End main-content -->
+  
+</body>
+</html>

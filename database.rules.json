@@ -1,0 +1,53 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid && auth != null",
+        ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt']) && newData.child('uid').val() === auth.uid"
+      }
+    },
+    "groups": {
+      "$groupId": {
+        ".read": "auth != null && (root.child('userGroups').child(auth.uid).child($groupId).exists() || data.child('createdBy').val() === auth.uid)",
+        ".write": "auth != null && (root.child('userGroups').child(auth.uid).child($groupId).exists() || data.child('createdBy').val() === auth.uid || !data.exists())",
+        ".validate": "newData.hasChildren(['name', 'emoji', 'members', 'createdBy', 'createdAt'])"
+      }
+    },
+    "userGroups": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid && auth != null"
+      }
+    },
+    "transactions": {
+      "$transactionId": {
+        ".read": "auth != null && root.child('userTransactions').child(auth.uid).child($transactionId).exists()",
+        ".write": "auth != null && (root.child('userTransactions').child(auth.uid).child($transactionId).exists() || !data.exists())",
+        ".validate": "newData.hasChildren(['groupId', 'type', 'amount', 'createdAt']) && newData.child('amount').isNumber() && newData.child('amount').val() > 0"
+      }
+    },
+    "userTransactions": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid && auth != null"
+      }
+    },
+    "verificationCodes": {
+      "$codeId": {
+        ".read": "auth == null",
+        ".write": "auth == null",
+        ".validate": "newData.hasChildren(['email', 'code', 'createdAt']) && newData.child('code').isString() && newData.child('email').isString()"
+      }
+    },
+    "emailVerification": {
+      "$uid": {
+        ".read": "$uid === auth.uid || auth == null",
+        ".write": "$uid === auth.uid || auth == null",
+        ".validate": "newData.hasChildren(['email', 'emailVerified'])"
+      }
+    }
+  }
+}

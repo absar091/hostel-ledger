@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email System Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .test-section { background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        button { background: #10b981; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #059669; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 5px; }
+        .success { background: #d1fae5; color: #065f46; }
+        .error { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+    <h1>🏠 Hostel Ledger - Email System Test</h1>
+    
+    <div class="test-section">
+        <h3>📧 Email System Status</h3>
+        <p>Current mode: <strong>Development with EmailJS fallback</strong></p>
+        <p>In development mode, emails are shown as alerts and logged to console.</p>
+    </div>
+
+    <div class="test-section">
+        <h3>🔐 Test Verification Email</h3>
+        <input type="email" id="testEmail" placeholder="Enter your email" style="padding: 8px; width: 200px;">
+        <button onclick="testVerificationEmail()">Send Verification Email</button>
+        <div id="verificationResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>🔑 Test Password Reset Email</h3>
+        <input type="email" id="resetEmail" placeholder="Enter your email" style="padding: 8px; width: 200px;">
+        <button onclick="testPasswordReset()">Send Password Reset</button>
+        <div id="resetResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📋 Instructions</h3>
+        <ol>
+            <li>Enter your email address in the fields above</li>
+            <li>Click the test buttons</li>
+            <li>In development mode, you'll see alerts with email content</li>
+            <li>Check browser console for full email HTML</li>
+            <li>To enable real emails, set up EmailJS (see EMAIL_SETUP_GUIDE.md)</li>
+        </ol>
+    </div>
+
+    <script type="module">
+        // Import email functions (this would work in the actual app)
+        // For this test, we'll simulate the functions
+        
+        window.testVerificationEmail = async function() {
+            const email = document.getElementById('testEmail').value;
+            const resultDiv = document.getElementById('verificationResult');
+            
+            if (!email) {
+                resultDiv.innerHTML = '<div class="error">Please enter an email address</div>';
+                return;
+            }
+            
+            try {
+                // Simulate the email sending process
+                const code = Math.floor(100000 + Math.random() * 900000).toString();
+                
+                // Show development mode alert
+                alert(`📧 Verification Email Sent!\n\nTo: ${email}\nCode: ${code}\n\n(Development Mode - In production, this would be sent via EmailJS or backend API)`);
+                
+                // Log to console
+                console.log('📧 Verification Email Details:');
+                console.log('To:', email);
+                console.log('Code:', code);
+                console.log('Subject: 🔐 Verify Your Hostel Ledger Account');
+                
+                resultDiv.innerHTML = `<div class="success">✅ Verification email sent! Code: ${code}</div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        };
+        
+        window.testPasswordReset = async function() {
+            const email = document.getElementById('resetEmail').value;
+            const resultDiv = document.getElementById('resetResult');
+            
+            if (!email) {
+                resultDiv.innerHTML = '<div class="error">Please enter an email address</div>';
+                return;
+            }
+            
+            try {
+                // Simulate the email sending process
+                const resetLink = `http://localhost:5173/reset-password?token=mock-token-${Date.now()}`;
+                
+                // Show development mode alert
+                alert(`📧 Password Reset Email Sent!\n\nTo: ${email}\nReset Link: ${resetLink}\n\n(Development Mode - In production, this would be sent via EmailJS or backend API)`);
+                
+                // Log to console
+                console.log('📧 Password Reset Email Details:');
+                console.log('To:', email);
+                console.log('Reset Link:', resetLink);
+                console.log('Subject: 🔑 Reset Your Hostel Ledger Password');
+                
+                resultDiv.innerHTML = `<div class="success">✅ Password reset email sent!</div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        };
+    </script>
+</body>
+</html>

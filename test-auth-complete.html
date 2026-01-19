@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Auth Flow Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .step {
+            margin: 15px 0;
+            padding: 15px;
+            border-left: 4px solid #10b981;
+            background: #f0fdf4;
+        }
+        .step h3 {
+            margin: 0 0 10px 0;
+            color: #065f46;
+        }
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #10b981;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 4px;
+            border-left: 4px solid #d1d5db;
+        }
+        .checklist li.completed {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+        .checklist li.failed {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        .app-link {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 10px 5px;
+            font-weight: bold;
+        }
+        .app-link:hover {
+            background: #059669;
+        }
+        .screenshot-placeholder {
+            width: 100%;
+            height: 200px;
+            background: #f3f4f6;
+            border: 2px dashed #d1d5db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Complete Authentication Flow Test</h1>
+    <p>This guide will help you test the complete new authentication system.</p>
+
+    <!-- Quick Links -->
+    <div class="test-section">
+        <h2>🚀 Quick Access</h2>
+        <a href="http://localhost:8081/" class="app-link" target="_blank">Open Main App</a>
+        <a href="http://localhost:8081/signup" class="app-link" target="_blank">Go to Signup</a>
+        <a href="http://localhost:8081/login" class="app-link" target="_blank">Go to Login</a>
+        <a href="test-auth-flow.html" class="app-link" target="_blank">Backend Tests</a>
+    </div>
+
+    <!-- Test Checklist -->
+    <div class="test-section">
+        <h2>✅ Testing Checklist</h2>
+        <p>Follow these steps to test the complete authentication flow:</p>
+        
+        <ul class="checklist">
+            <li id="step-1">
+                <strong>Step 1:</strong> Backend connectivity test
+                <div class="screenshot-placeholder">Backend health check result will appear here</div>
+                <button onclick="testBackend()">Test Backend</button>
+                <div id="backend-result"></div>
+            </li>
+            
+            <li id="step-2">
+                <strong>Step 2:</strong> Open signup page and verify layout
+                <div class="screenshot-placeholder">Signup page should match login page style (no card)</div>
+            </li>
+            
+            <li id="step-3">
+                <strong>Step 3:</strong> Fill basic information (first step)
+                <div class="screenshot-placeholder">Basic info form: Name, Email, University</div>
+            </li>
+            
+            <li id="step-4">
+                <strong>Step 4:</strong> Continue to password step
+                <div class="screenshot-placeholder">Password form with strength indicator</div>
+            </li>
+            
+            <li id="step-5">
+                <strong>Step 5:</strong> Create account (immediate Firebase user creation)
+                <div class="screenshot-placeholder">Account creation success message</div>
+            </li>
+            
+            <li id="step-6">
+                <strong>Step 6:</strong> Verify email page layout
+                <div class="screenshot-placeholder">Email verification page (no card, matches signup style)</div>
+            </li>
+            
+            <li id="step-7">
+                <strong>Step 7:</strong> Check email and enter code
+                <div class="screenshot-placeholder">Email with 6-digit verification code</div>
+            </li>
+            
+            <li id="step-8">
+                <strong>Step 8:</strong> Successful verification and redirect
+                <div class="screenshot-placeholder">Dashboard/home page after verification</div>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Detailed Test Steps -->
+    <div class="test-section">
+        <h2>📋 Detailed Test Instructions</h2>
+        
+        <div class="step">
+            <h3><span class="step-number">1</span>Signup Page Layout Test</h3>
+            <p><strong>Expected:</strong> Signup page should look like login page (fields directly on page background, no separate card)</p>
+            <p><strong>Test:</strong> Navigate to signup page and verify visual consistency</p>
+            <p><strong>Check:</strong> Two-step flow (basic info → password) without calling them "steps"</p>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">2</span>Account Creation Test</h3>
+            <p><strong>Expected:</strong> User account created immediately in Firebase when clicking "Create Account"</p>
+            <p><strong>Test:</strong> Fill form and create account</p>
+            <p><strong>Check:</strong> User should be created but marked as email unverified</p>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">3</span>Email Verification Layout Test</h3>
+            <p><strong>Expected:</strong> Verification page should match signup style (no card)</p>
+            <p><strong>Test:</strong> Check verification page layout</p>
+            <p><strong>Check:</strong> Fields should be directly on page background</p>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">4</span>Email Verification Flow Test</h3>
+            <p><strong>Expected:</strong> Email verification marks user as verified and redirects to home</p>
+            <p><strong>Test:</strong> Enter verification code</p>
+            <p><strong>Check:</strong> Should redirect to "/" (home/dashboard) not "/dashboard"</p>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">5</span>Error Handling Test</h3>
+            <p><strong>Test scenarios:</strong></p>
+            <ul>
+                <li>Try creating account with existing email</li>
+                <li>Enter wrong verification code</li>
+                <li>Test resend verification code</li>
+                <li>Test form validation</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Known Issues -->
+    <div class="test-section">
+        <h2>🔧 Recent Fixes Applied</h2>
+        <div class="success">
+            <h3>✅ Fixed Issues:</h3>
+            <ul>
+                <li><strong>Verification page layout:</strong> Removed card, fields now directly on page</li>
+                <li><strong>404 dashboard error:</strong> Fixed navigation to use "/" instead of "/dashboard"</li>
+                <li><strong>Session storage:</strong> Fixed mismatch between signup and verification pages</li>
+                <li><strong>Enter key support:</strong> Added keyboard support for verification code input</li>
+            </ul>
+        </div>
+        
+        <div class="info">
+            <h3>🔄 Current Flow:</h3>
+            <ol>
+                <li>User fills signup form (two steps)</li>
+                <li>Firebase user created immediately (emailVerified: false)</li>
+                <li>Verification code sent via backend email API</li>
+                <li>User enters code on verification page</li>
+                <li>Email marked as verified in database</li>
+                <li>User redirected to home page ("/")</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        async function testBackend() {
+            const resultDiv = document.getElementById('backend-result');
+            const step1 = document.getElementById('step-1');
+            
+            resultDiv.innerHTML = '<div class="info">🔄 Testing backend...</div>';
+            
+            try {
+                const response = await fetch('https://hostel-ledger-backend.vercel.app/health');
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    resultDiv.innerHTML = '<div class="success">✅ Backend is working: ' + data + '</div>';
+                    step1.classList.add('completed');
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ Backend error: ' + response.status + '</div>';
+                    step1.classList.add('failed');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">❌ Backend connection failed: ' + error.message + '</div>';
+                step1.classList.add('failed');
+            }
+        }
+
+        // Auto-test backend on page load
+        window.addEventListener('load', () => {
+            testBackend();
+        });
+
+        // Add click handlers for checklist items
+        document.querySelectorAll('.checklist li').forEach((item, index) => {
+            if (index > 0) { // Skip the first item (backend test)
+                item.addEventListener('click', () => {
+                    if (item.classList.contains('completed')) {
+                        item.classList.remove('completed');
+                    } else {
+                        item.classList.add('completed');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

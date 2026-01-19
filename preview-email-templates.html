@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Templates Preview</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .preview-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .template-section {
+            margin: 40px 0;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .template-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #064e3b;
+            margin-bottom: 10px;
+        }
+        .template-description {
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
+        .email-preview {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+        .preview-header {
+            background: #f9fafb;
+            padding: 10px 15px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        .email-content {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .nav-tab {
+            padding: 10px 20px;
+            background: #e5e7eb;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .nav-tab.active {
+            background: #10b981;
+            color: white;
+        }
+        .template-content {
+            display: none;
+        }
+        .template-content.active {
+            display: block;
+        }
+        .integration-info {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .integration-info h4 {
+            margin: 0 0 10px 0;
+            color: #065f46;
+        }
+        .integration-info code {
+            background: #dcfce7;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <h1 style="text-align: center; color: #064e3b; margin-bottom: 10px;">📧 Hostel Ledger Email Templates</h1>
+        <p style="text-align: center; color: #6b7280; margin-bottom: 40px;">Professional email templates for user communications</p>
+        
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTemplate('verification')">🔐 Verification Email</button>
+            <button class="nav-tab" onclick="showTemplate('welcome')">🎉 Welcome Email</button>
+            <button class="nav-tab" onclick="showTemplate('transaction')">💰 Transaction Alert</button>
+        </div>
+
+        <!-- Verification Email Template -->
+        <div id="verification" class="template-content active">
+            <div class="template-section">
+                <div class="template-title">🔐 Email Verification Template</div>
+                <div class="template-description">
+                    Sent when users sign up for a new account. Contains a 6-digit verification code.
+                </div>
+                
+                <div class="email-preview">
+                    <div class="preview-header">
+                        📧 Subject: Verify your email | From: Hostel Ledger &lt;noreply@hostelledger.com&gt;
+                    </div>
+                    <div class="email-content">
+                        <iframe src="data:text/html;charset=utf-8,<!DOCTYPE html><html><head><meta charset='UTF-8' /><title>Email Verification</title></head><body style='margin:0;padding:0;background:#eafaf3;font-family:Arial, Helvetica, sans-serif;'><table width='100%' cellpadding='0' cellspacing='0'><tr><td align='center' style='padding:40px 16px;'><table width='600' cellpadding='0' cellspacing='0' style='max-width:600px;background:#ffffff;border-radius:16px;box-shadow:0 8px 30px rgba(16,185,129,0.12);overflow:hidden;'><tr><td align='center' style='padding:32px 24px 16px;'><img src='https://hostel-ledger.vercel.app/hostel-ledger.png' alt='Hostel Ledger' width='170' style='display:block;height:auto;'/></td></tr><tr><td style='padding:0 32px;'><div style='height:1px;background:#e5f4ee;'></div></td></tr><tr><td style='padding:24px 32px 0;font-size:22px;font-weight:600;color:#064e3b;'>Verify your email</td></tr><tr><td style='padding:14px 32px 0;font-size:15px;color:#065f46;line-height:1.7;'>Hello John Doe,<br><br>Welcome to <strong>Hostel Ledger</strong>. Use the verification code below to confirm your email address.</td></tr><tr><td align='center' style='padding:28px 32px;'><div style='background:#ecfdf5;color:#064e3b;font-size:32px;font-weight:700;letter-spacing:6px;padding:16px 28px;border-radius:12px;font-family:monospace;display:inline-block;'>123456</div></td></tr><tr><td style='padding:0 32px;font-size:14px;color:#047857;line-height:1.6;'>This verification code will expire in <strong>10 minutes</strong>. For your security, do not share this code with anyone.</td></tr><tr><td style='padding:18px 32px 0;font-size:13px;color:#059669;line-height:1.6;'>If you didn't create an account with Hostel Ledger, you can safely ignore this email.</td></tr><tr><td style='padding:20px 32px 0;font-size:12px;color:#047857;line-height:1.6;'>By using Hostel Ledger, you agree to our <a href='https://hostel-ledger.vercel.app/terms' style='color:#10b981;text-decoration:none;font-weight:600;'>Terms & Conditions</a> and <a href='https://hostel-ledger.vercel.app/privacy' style='color:#10b981;text-decoration:none;font-weight:600;'>Privacy Policy</a>.</td></tr><tr><td style='padding:28px 32px 32px;border-top:1px solid #e5f4ee;font-size:12px;color:#6b7280;text-align:center;'>© 2026 Hostel Ledger. All rights reserved by AARX Technologies.<br><span style='font-size:11px;color:#9ca3af;'>Split expenses with ease</span></td></tr></table></td></tr></table></body></html>" 
+                               width="100%" height="500" frameborder="0"></iframe>
+                    </div>
+                </div>
+                
+                <div class="integration-info">
+                    <h4>🔧 Integration</h4>
+                    <p><strong>Triggered:</strong> When user signs up for new account</p>
+                    <p><strong>Endpoint:</strong> <code>POST /api/send-verification-new</code></p>
+                    <p><strong>Variables:</strong> <code>{{USER_NAME}}</code>, <code>{{CODE}}</code></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Welcome Email Template -->
+        <div id="welcome" class="template-content">
+            <div class="template-section">
+                <div class="template-title">🎉 Welcome Email Template</div>
+                <div class="template-description">
+                    Sent after users successfully verify their email address. Welcomes them to the platform.
+                </div>
+                
+                <div class="email-preview">
+                    <div class="preview-header">
+                        📧 Subject: Welcome to Hostel Ledger! | From: Hostel Ledger &lt;noreply@hostelledger.com&gt;
+                    </div>
+                    <div class="email-content">
+                        <iframe src="data:text/html;charset=utf-8,<!DOCTYPE html><html><head><meta charset='UTF-8' /><title>Welcome to Hostel Ledger</title></head><body style='margin:0;padding:0;background:#eafaf3;font-family:Arial,Helvetica,sans-serif;'><table width='100%' cellpadding='0' cellspacing='0'><tr><td align='center' style='padding:40px 16px;'><table width='600' cellpadding='0' cellspacing='0' style='max-width:600px;background:#ffffff;border-radius:16px;box-shadow:0 8px 30px rgba(16,185,129,0.12);overflow:hidden;'><tr><td align='center' style='padding:32px 24px 16px;'><img src='https://hostel-ledger.vercel.app/hostel-ledger.png' alt='Hostel Ledger' width='170'/></td></tr><tr><td style='padding:0 32px;'><div style='height:1px;background:#e5f4ee;'></div></td></tr><tr><td style='padding:26px 32px 0;font-size:22px;font-weight:600;color:#064e3b;'>Welcome to Hostel Ledger</td></tr><tr><td style='padding:14px 32px 0;font-size:15px;color:#065f46;line-height:1.7;'>Hello John Doe,<br><br>Your account has been successfully created and verified.<br><br>You can now start tracking shared expenses, settling balances, and managing hostel finances with ease.</td></tr><tr><td align='center' style='padding:28px 32px;'><a href='https://hostel-ledger.vercel.app' style='background:#34d399;color:#064e3b;padding:14px 34px;border-radius:12px;text-decoration:none;font-weight:600;'>Open Hostel Ledger</a></td></tr><tr><td style='padding:0 32px;font-size:14px;color:#047857;line-height:1.6;'>💡 Tip: Create your first group and add expenses to see real-time balances.</td></tr><tr><td style='padding:20px 32px 0;font-size:12px;color:#047857;'>By using Hostel Ledger, you agree to our <a href='https://hostel-ledger.vercel.app/terms' style='color:#10b981;font-weight:600;text-decoration:none;'>Terms</a> and <a href='https://hostel-ledger.vercel.app/privacy' style='color:#10b981;font-weight:600;text-decoration:none;'>Privacy Policy</a>.</td></tr><tr><td style='padding:28px 32px 32px;border-top:1px solid #e5f4ee;font-size:12px;color:#6b7280;text-align:center;'>© 2026 Hostel Ledger. All rights reserved by AARX Technologies.</td></tr></table></td></tr></table></body></html>" 
+                               width="100%" height="500" frameborder="0"></iframe>
+                    </div>
+                </div>
+                
+                <div class="integration-info">
+                    <h4>🔧 Integration</h4>
+                    <p><strong>Triggered:</strong> After successful email verification</p>
+                    <p><strong>Endpoint:</strong> <code>POST /api/send-welcome</code></p>
+                    <p><strong>Variables:</strong> <code>{{USER_NAME}}</code></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Alert Template -->
+        <div id="transaction" class="template-content">
+            <div class="template-section">
+                <div class="template-title">💰 Transaction Alert Template</div>
+                <div class="template-description">
+                    Sent when any transaction (expense, payment, settlement) is created in a group.
+                </div>
+                
+                <div class="email-preview">
+                    <div class="preview-header">
+                        📧 Subject: Transaction Alert - New Expense in Hostel Room 101 | From: Hostel Ledger &lt;noreply@hostelledger.com&gt;
+                    </div>
+                    <div class="email-content">
+                        <iframe src="data:text/html;charset=utf-8,<!DOCTYPE html><html><head><meta charset='UTF-8' /><title>Transaction Alert</title></head><body style='margin:0;padding:0;background:#eafaf3;font-family:Arial, Helvetica, sans-serif;'><table width='100%' cellpadding='0' cellspacing='0'><tr><td align='center' style='padding:40px 16px;'><table width='600' cellpadding='0' cellspacing='0' style='max-width:600px;background:#ffffff;border-radius:16px;box-shadow:0 8px 30px rgba(16,185,129,0.12);overflow:hidden;'><tr><td align='center' style='padding:32px 24px 16px;'><img src='https://hostel-ledger.vercel.app/hostel-ledger.png' alt='Hostel Ledger' width='170'/></td></tr><tr><td style='padding:0 32px;'><div style='height:1px;background:#e5f4ee;'></div></td></tr><tr><td style='padding:24px 32px 0;font-size:22px;font-weight:600;color:#064e3b;'>Transaction alert</td></tr><tr><td style='padding:14px 32px 0;font-size:15px;color:#065f46;line-height:1.7;'>Hello Jane Smith,<br><br>A new transaction has been recorded on your <strong>Hostel Ledger</strong> account.</td></tr><tr><td style='padding:20px 32px;'><div style='background:#ecfdf5;border:1px solid #d1fae5;border-radius:12px;padding:16px;font-size:14px;color:#065f46;line-height:1.7;'><strong>Type:</strong> New Expense<br><strong>Amount:</strong> Rs 1,500<br><strong>Group:</strong> Hostel Room 101<br><strong>Date:</strong> January 13, 2026 at 3:30 PM<br><strong>Description:</strong> Grocery shopping for the week</div></td></tr><tr><td style='padding:0 32px;font-size:14px;color:#047857;line-height:1.6;'>This transaction has been successfully added and reflected in your balances. You can review full details anytime in the app.</td></tr><tr><td align='center' style='padding:28px 32px;'><a href='https://hostel-ledger.vercel.app' style='background:#34d399;color:#064e3b;padding:14px 34px;border-radius:12px;text-decoration:none;font-weight:600;'>View Transaction</a></td></tr><tr><td style='padding:18px 32px 0;font-size:13px;color:#059669;line-height:1.6;'>If you don't recognize this transaction, please review it in the app or contact your group members for clarification.</td></tr><tr><td style='padding:20px 32px 0;font-size:12px;color:#047857;line-height:1.6;'>By using Hostel Ledger, you agree to our <a href='https://hostel-ledger.vercel.app/terms' style='color:#10b981;text-decoration:none;font-weight:600;'>Terms & Conditions</a> and <a href='https://hostel-ledger.vercel.app/privacy' style='color:#10b981;text-decoration:none;font-weight:600;'>Privacy Policy</a>.</td></tr><tr><td style='padding:28px 32px 32px;border-top:1px solid #e5f4ee;font-size:12px;color:#6b7280;text-align:center;'>© 2026 Hostel Ledger. All rights reserved by AARX Technologies.<br><span style='font-size:11px;color:#9ca3af;'>This is an automated transaction notification</span></td></tr></table></td></tr></table></body></html>" 
+                               width="100%" height="500" frameborder="0"></iframe>
+                    </div>
+                </div>
+                
+                <div class="integration-info">
+                    <h4>🔧 Integration</h4>
+                    <p><strong>Triggered:</strong> When any transaction is created in a group</p>
+                    <p><strong>Endpoint:</strong> <code>POST /api/send-transaction-alert</code></p>
+                    <p><strong>Variables:</strong> <code>{{USER_NAME}}</code>, <code>{{TRANSACTION_TYPE}}</code>, <code>{{AMOUNT}}</code>, <code>{{GROUP_NAME}}</code>, <code>{{DATE}}</code>, <code>{{DESCRIPTION}}</code></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deployment Instructions -->
+        <div class="template-section" style="margin-top: 60px;">
+            <div class="template-title">🚀 Deployment Instructions</div>
+            <div class="template-description">
+                Follow these steps to deploy the new email system:
+            </div>
+            
+            <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h4 style="margin: 0 0 15px 0; color: #1f2937;">Step 1: Deploy Backend</h4>
+                <pre style="background: #1f2937; color: #f9fafb; padding: 15px; border-radius: 6px; overflow-x: auto; margin: 0;"><code>cd backend-server
+vercel --prod</code></pre>
+            </div>
+            
+            <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h4 style="margin: 0 0 15px 0; color: #1f2937;">Step 2: Test New System</h4>
+                <pre style="background: #1f2937; color: #f9fafb; padding: 15px; border-radius: 6px; overflow-x: auto; margin: 0;"><code>node test-new-email-system.js</code></pre>
+            </div>
+            
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h4 style="margin: 0 0 15px 0; color: #065f46;">✅ What's Ready</h4>
+                <ul style="margin: 0; color: #047857;">
+                    <li>✅ Three professional email templates created</li>
+                    <li>✅ Backend server updated with new endpoints</li>
+                    <li>✅ Frontend integration functions added</li>
+                    <li>✅ Welcome email integrated into verification flow</li>
+                    <li>✅ Transaction notification system ready</li>
+                </ul>
+            </div>
+            
+            <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h4 style="margin: 0 0 15px 0; color: #92400e;">⚠️ Next Steps</h4>
+                <ul style="margin: 0; color: #b45309;">
+                    <li>🚀 Deploy backend to activate new endpoints</li>
+                    <li>🧪 Test complete signup flow with new templates</li>
+                    <li>💰 Integrate transaction alerts into expense creation</li>
+                    <li>⚙️ Add user preferences for email notifications</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTemplate(templateId) {
+            // Hide all templates
+            document.querySelectorAll('.template-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected template
+            document.getElementById(templateId).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

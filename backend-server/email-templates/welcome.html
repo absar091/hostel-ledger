@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to Hostel Ledger</title>
+    <style>
+        /* Mobile-first responsive styles */
+        @media only screen and (max-width: 600px) {
+            .container {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .content {
+                padding: 16px !important;
+            }
+            .card {
+                margin: 0 8px !important;
+                border-radius: 12px !important;
+            }
+            .logo {
+                width: 140px !important;
+            }
+            .title {
+                font-size: 20px !important;
+                padding: 20px 24px 0 !important;
+            }
+            .text {
+                padding: 12px 24px 0 !important;
+                font-size: 14px !important;
+            }
+            .cta {
+                padding: 24px 24px !important;
+            }
+            .button {
+                padding: 12px 28px !important;
+                font-size: 14px !important;
+                display: inline-block !important;
+                width: auto !important;
+                min-width: 140px !important;
+            }
+            .tips {
+                padding: 0 24px !important;
+                font-size: 13px !important;
+            }
+            .legal {
+                padding: 16px 24px 0 !important;
+                font-size: 11px !important;
+            }
+            .footer {
+                padding: 24px 24px 24px !important;
+                font-size: 11px !important;
+            }
+        }
+    </style>
+</head>
+<body style="margin:0;padding:0;background:#eafaf3;font-family:Arial,Helvetica,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" class="container">
+        <tr>
+            <td align="center" class="content" style="padding:40px 16px;">
+                <table width="600" cellpadding="0" cellspacing="0" class="card" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;box-shadow:0 8px 30px rgba(16,185,129,0.12);overflow:hidden;">
+                    <!-- Logo -->
+                    <tr>
+                        <td align="center" style="padding:32px 24px 16px;">
+                            <img src="https://hostel-ledger.vercel.app/only-logo.png" alt="Hostel Ledger" class="logo" width="170" style="max-width:100%;height:auto;"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:0 32px;">
+                            <div style="height:1px;background:#e5f4ee;"></div>
+                        </td>
+                    </tr>
+                    <!-- Title -->
+                    <tr>
+                        <td class="title" style="padding:26px 32px 0;font-size:22px;font-weight:600;color:#064e3b;">
+                            Welcome to Hostel Ledger
+                        </td>
+                    </tr>
+                    <!-- Message -->
+                    <tr>
+                        <td class="text" style="padding:14px 32px 0;font-size:15px;color:#065f46;line-height:1.7;">
+                            Hello {{USER_NAME}},<br><br>
+                            Your account has been successfully created and verified.<br><br>
+                            You can now start tracking shared expenses, settling balances, and managing hostel finances with ease.
+                        </td>
+                    </tr>
+                    <!-- CTA -->
+                    <tr>
+                        <td align="center" class="cta" style="padding:28px 32px;">
+                            <a href="https://hostel-ledger.vercel.app" class="button" style="background:#34d399;color:#064e3b;padding:14px 34px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block;text-align:center;min-width:120px;">
+                                Open Hostel Ledger
+                            </a>
+                        </td>
+                    </tr>
+                    <!-- Tips -->
+                    <tr>
+                        <td class="tips" style="padding:0 32px;font-size:14px;color:#047857;line-height:1.6;">
+                            💡 Tip: Create your first group and add expenses to see real-time balances.
+                        </td>
+                    </tr>
+                    <!-- Legal -->
+                    <tr>
+                        <td class="legal" style="padding:20px 32px 0;font-size:12px;color:#047857;">
+                            By using Hostel Ledger, you agree to our 
+                            <a href="https://hostel-ledger.vercel.app/terms" style="color:#10b981;font-weight:600;text-decoration:none;">Terms</a> 
+                            and 
+                            <a href="https://hostel-ledger.vercel.app/privacy" style="color:#10b981;font-weight:600;text-decoration:none;">Privacy Policy</a>.
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td class="footer" style="padding:28px 32px 32px;border-top:1px solid #e5f4ee;font-size:12px;color:#6b7280;text-align:center;">
+                            <div style="margin-bottom:12px;">
+                                <a href="https://aarx.online" target="_blank" style="display:inline-block;">
+                                    <img src="https://hostel-ledger.vercel.app/aarx-logo.webp" alt="AARX Labs" style="height:32px;width:auto;display:inline-block;"/>
+                                </a>
+                            </div>
+                            © 2026 Hostel Ledger. All rights reserved.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

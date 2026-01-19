@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Rules Testing</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+        .test-pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #059669;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .summary {
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #10b981;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Firebase Rules Testing Dashboard</h1>
+        <p>This tool tests both Firebase Realtime Database and Firestore rules to ensure no permission errors occur during normal operations.</p>
+        
+        <div class="test-section">
+            <h3>Test Controls</h3>
+            <button id="runTests" onclick="runAllTests()">🚀 Run All Tests</button>
+            <button id="runRealtimeTests" onclick="runRealtimeTests()">📊 Test Realtime Database</button>
+            <button id="runFirestoreTests" onclick="runFirestoreTests()">🔥 Test Firestore</button>
+            <button id="clearResults" onclick="clearResults()">🧹 Clear Results</button>
+        </div>
+
+        <div class="summary" id="summary" style="display: none;">
+            <h3>📊 Test Summary</h3>
+            <div class="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div id="summaryStats"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔥 Realtime Database Results</h3>
+            <div id="realtimeResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🏢 Firestore Results</h3>
+            <div id="firestoreResults"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase configuration for hostel-ledger project
+        const firebaseConfig = {
+            apiKey: "AIzaSyDnbnq_aO1JHFshsY4RmBoU0NiHOqnq9mU",
+            authDomain: "hostel-ledger.firebaseapp.com",
+            databaseURL: "https://hostel-ledger-default-rtdb.firebaseio.com",
+            projectId: "hostel-ledger",
+            storageBucket: "hostel-ledger.firebasestorage.app",
+            messagingSenderId: "841373188948",
+            appId: "1:841373188948:web:16c8dea6cfbdbaaebf7ec1",
+            measurementId: "G-Z6GXYNNGYM"
+        };
+
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getDatabase, ref, set, get, push, update, remove } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const firestore = getFirestore(app);
+
+        // Test data
+        const testUser = {
+            email: 'test-rules@example.com',
+            password: 'testpassword123',
+            name: 'Rules Test User'
+        };
+
+        const testUser2 = {
+            email: 'test-rules2@example.com',
+            password: 'testpassword123',
+            name: 'Rules Test User 2'
+        };
+
+        // Test tracking
+        let testResults = {
+            passed: 0,
+            failed: 0,
+            total: 0,
+            errors: []
+        };
+
+        // Global test data
+        window.testData = {};
+
+        // Utility functions
+        function logTest(testName, success, error = null, container = 'realtimeResults') {
+            testResults.total++;
+            const resultDiv = document.createElement('div');
+            resultDiv.className = success ? 'test-result test-pass' : 'test-result test-fail';
+            
+            if (success) {
+                resultDiv.innerHTML = `✅ ${testName}`;
+                testResults.passed++;
+            } else {
+                resultDiv.innerHTML = `❌ ${testName}: ${error}`;
+                testResults.failed++;
+                testResults.errors.push({ test: testName, error });
+            }
+            
+            document.getElementById(container).appendChild(resultDiv);
+            updateSummary();
+        }
+
+        function logInfo(message, container = 'realtimeResults') {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test-result test-info';
+            resultDiv.innerHTML = `ℹ️ ${message}`;
+            document.getElementById(container).appendChild(resultDiv);
+        }
+
+        function updateSummary() {
+            const summary = document.getElementById('summary');
+            const progressBar = document.getElementById('progressBar');
+            const summaryStats = document.getElementById('summaryStats');
+            
+            summary.style.display = 'block';
+            
+            const successRate = testResults.total > 0 ? (testResults.passed / testResults.total) * 100 : 0;
+            progressBar.style.width = `${successRate}%`;
+            
+            summaryStats.innerHTML = `
+                <strong>Passed:</strong> ${testResults.passed} | 
+                <strong>Failed:</strong> ${testResults.failed} | 
+                <strong>Total:</strong> ${testResults.total} | 
+                <strong>Success Rate:</strong> ${successRate.toFixed(1)}%
+            `;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Realtime Database Tests
+        async function testRealtimeDatabase() {
+            logInfo('Starting Realtime Database tests...', 'realtimeResults');
+            
+            let user1, user2;
+            
+            try {
+                // Test 1: Create/login test user
+                try {
+                    user1 = await createUserWithEmailAndPassword(auth, testUser.email, testUser.password);
+                    logTest('Create test user', true, null, 'realtimeResults');
+                } catch (error) {
+                    if (error.code === 'auth/email-already-in-use') {
+                        user1 = await signInWithEmailAndPassword(auth, testUser.email, testUser.password);
+                        logTest('Sign in existing test user', true, null, 'realtimeResults');
+                    } else {
+                        throw error;
+                    }
+                }
+
+                // Test 2: User can create their own profile
+                try {
+                    const userProfile = {
+                        uid: user1.user.uid,
+                        email: testUser.email,
+                        name: testUser.name,
+                        walletBalance: 0,
+                        settlements: {},
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    await set(ref(database, `users/${user1.user.uid}`), userProfile);
+                    logTest('User can create own profile', true, null, 'realtimeResults');
+                } catch (error) {
+                    logTest('User can create own profile', false, error.message, 'realtimeResults');
+                }
+
+                // Test 3: User can read their own profile
+                try {
+                    const snapshot = await get(ref(database, `users/${user1.user.uid}`));
+                    if (snapshot.exists()) {
+                        logTest('User can read own profile', true, null, 'realtimeResults');
+                    } else {
+                        logTest('User can read own profile', false, 'Profile not found', 'realtimeResults');
+                    }
+                } catch (error) {
+                    logTest('User can read own profile', false, error.message, 'realtimeResults');
+                }
+
+                // Test 4: User can update their own profile
+                try {
+                    await update(ref(database, `users/${user1.user.uid}`), {
+                        name: 'Updated Test User',
+                        walletBalance: 100
+                    });
+                    logTest('User can update own profile', true, null, 'realtimeResults');
+                } catch (error) {
+                    logTest('User can update own profile', false, error.message, 'realtimeResults');
+                }
+
+                // Test 5: User can create a group
+                try {
+                    const groupData = {
+                        name: 'Test Group',
+                        emoji: '🏠',
+                        members: [
+                            {
+                                id: user1.user.uid,
+                                name: 'Test User',
+                                isCurrentUser: true
+                            }
+                        ],
+                        createdBy: user1.user.uid,
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    const groupRef = push(ref(database, 'groups'));
+                    const groupId = groupRef.key;
+                    
+                    await set(groupRef, groupData);
+                    await set(ref(database, `userGroups/${user1.user.uid}/${groupId}`), true);
+                    
+                    logTest('User can create group', true, null, 'realtimeResults');
+                    window.testData.groupId = groupId;
+                } catch (error) {
+                    logTest('User can create group', false, error.message, 'realtimeResults');
+                }
+
+                // Test 6: User can create transactions
+                try {
+                    const transactionData = {
+                        groupId: window.testData.groupId,
+                        type: 'expense',
+                        title: 'Test Expense',
+                        amount: 50,
+                        date: new Date().toLocaleDateString(),
+                        paidBy: user1.user.uid,
+                        paidByName: 'Test User',
+                        participants: [{
+                            id: user1.user.uid,
+                            name: 'Test User',
+                            amount: 50
+                        }],
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    const transactionRef = push(ref(database, 'transactions'));
+                    const transactionId = transactionRef.key;
+                    
+                    await set(transactionRef, transactionData);
+                    await set(ref(database, `userTransactions/${user1.user.uid}/${transactionId}`), true);
+                    
+                    logTest('User can create transactions', true, null, 'realtimeResults');
+                    window.testData.transactionId = transactionId;
+                } catch (error) {
+                    logTest('User can create transactions', false, error.message, 'realtimeResults');
+                }
+
+                // Test 7: User can read their transactions
+                try {
+                    const snapshot = await get(ref(database, `transactions/${window.testData.transactionId}`));
+                    if (snapshot.exists()) {
+                        logTest('User can read own transactions', true, null, 'realtimeResults');
+                    } else {
+                        logTest('User can read own transactions', false, 'Transaction not found', 'realtimeResults');
+                    }
+                } catch (error) {
+                    logTest('User can read own transactions', false, error.message, 'realtimeResults');
+                }
+
+                // Test 8: Create second user for permission tests
+                try {
+                    user2 = await createUserWithEmailAndPassword(auth, testUser2.email, testUser2.password);
+                    logTest('Create test user 2', true, null, 'realtimeResults');
+                } catch (error) {
+                    if (error.code === 'auth/email-already-in-use') {
+                        user2 = await signInWithEmailAndPassword(auth, testUser2.email, testUser2.password);
+                        logTest('Sign in existing test user 2', true, null, 'realtimeResults');
+                    } else {
+                        throw error;
+                    }
+                }
+
+                // Test 9: User 2 cannot read User 1's profile
+                try {
+                    const snapshot = await get(ref(database, `users/${user1.user.uid}`));
+                    logTest('User 2 cannot read User 1 profile', false, 'Should have been denied', 'realtimeResults');
+                } catch (error) {
+                    if (error.message.includes('permission') || error.message.includes('denied')) {
+                        logTest('User 2 cannot read User 1 profile', true, null, 'realtimeResults');
+                    } else {
+                        logTest('User 2 cannot read User 1 profile', false, error.message, 'realtimeResults');
+                    }
+                }
+
+                // Test 10: Email verification
+                await signInWithEmailAndPassword(auth, testUser.email, testUser.password);
+                try {
+                    await set(ref(database, `emailVerification/${user1.user.uid}`), {
+                        email: testUser.email,
+                        emailVerified: true,
+                        verifiedAt: new Date().toISOString()
+                    });
+                    logTest('User can set email verification', true, null, 'realtimeResults');
+                } catch (error) {
+                    logTest('User can set email verification', false, error.message, 'realtimeResults');
+                }
+
+            } catch (error) {
+                logTest('Realtime Database setup', false, error.message, 'realtimeResults');
+            }
+        }
+
+        // Firestore Tests
+        async function testFirestore() {
+            logInfo('Starting Firestore tests...', 'firestoreResults');
+            
+            try {
+                // Sign in as user 1
+                const user1 = await signInWithEmailAndPassword(auth, testUser.email, testUser.password);
+                
+                // Test 1: User can create their own profile in Firestore
+                try {
+                    const userProfile = {
+                        uid: user1.user.uid,
+                        email: testUser.email,
+                        name: testUser.name,
+                        walletBalance: 0,
+                        settlements: {},
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    await setDoc(doc(firestore, 'users', user1.user.uid), userProfile);
+                    logTest('User can create own profile', true, null, 'firestoreResults');
+                } catch (error) {
+                    logTest('User can create own profile', false, error.message, 'firestoreResults');
+                }
+
+                // Test 2: User can read their own profile from Firestore
+                try {
+                    const docSnap = await getDoc(doc(firestore, 'users', user1.user.uid));
+                    if (docSnap.exists()) {
+                        logTest('User can read own profile', true, null, 'firestoreResults');
+                    } else {
+                        logTest('User can read own profile', false, 'Profile not found', 'firestoreResults');
+                    }
+                } catch (error) {
+                    logTest('User can read own profile', false, error.message, 'firestoreResults');
+                }
+
+                // Test 3: User can update their own profile in Firestore
+                try {
+                    await updateDoc(doc(firestore, 'users', user1.user.uid), {
+                        name: 'Updated Firestore User',
+                        walletBalance: 200
+                    });
+                    logTest('User can update own profile', true, null, 'firestoreResults');
+                } catch (error) {
+                    logTest('User can update own profile', false, error.message, 'firestoreResults');
+                }
+
+                // Test 4: User can create a group in Firestore
+                try {
+                    const groupData = {
+                        name: 'Firestore Test Group',
+                        emoji: '🏢',
+                        members: [
+                            {
+                                id: user1.user.uid,
+                                name: 'Test User',
+                                isCurrentUser: true
+                            }
+                        ],
+                        createdBy: user1.user.uid,
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    const groupRef = await addDoc(collection(firestore, 'groups'), groupData);
+                    const groupId = groupRef.id;
+                    
+                    await setDoc(doc(firestore, 'userGroups', user1.user.uid), {
+                        [groupId]: true
+                    });
+                    
+                    logTest('User can create group', true, null, 'firestoreResults');
+                    window.testData.firestoreGroupId = groupId;
+                } catch (error) {
+                    logTest('User can create group', false, error.message, 'firestoreResults');
+                }
+
+                // Test 5: User can create transactions in Firestore
+                try {
+                    const transactionData = {
+                        groupId: window.testData.firestoreGroupId,
+                        type: 'expense',
+                        title: 'Firestore Test Expense',
+                        amount: 100,
+                        date: new Date().toLocaleDateString(),
+                        paidBy: user1.user.uid,
+                        paidByName: 'Test User',
+                        participants: [{
+                            id: user1.user.uid,
+                            name: 'Test User',
+                            amount: 100
+                        }],
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    const transactionRef = await addDoc(collection(firestore, 'transactions'), transactionData);
+                    const transactionId = transactionRef.id;
+                    
+                    await setDoc(doc(firestore, 'userTransactions', user1.user.uid), {
+                        [transactionId]: true
+                    });
+                    
+                    logTest('User can create transactions', true, null, 'firestoreResults');
+                    window.testData.firestoreTransactionId = transactionId;
+                } catch (error) {
+                    logTest('User can create transactions', false, error.message, 'firestoreResults');
+                }
+
+                // Test 6: Sign in as user 2 for permission tests
+                const user2 = await signInWithEmailAndPassword(auth, testUser2.email, testUser2.password);
+
+                // Test 7: User 2 cannot read User 1's profile in Firestore
+                try {
+                    const docSnap = await getDoc(doc(firestore, 'users', user1.user.uid));
+                    logTest('User 2 cannot read User 1 profile', false, 'Should have been denied', 'firestoreResults');
+                } catch (error) {
+                    if (error.message.includes('permission') || error.message.includes('denied') || error.code === 'permission-denied') {
+                        logTest('User 2 cannot read User 1 profile', true, null, 'firestoreResults');
+                    } else {
+                        logTest('User 2 cannot read User 1 profile', false, error.message, 'firestoreResults');
+                    }
+                }
+
+            } catch (error) {
+                logTest('Firestore setup', false, error.message, 'firestoreResults');
+            }
+        }
+
+        // Cleanup function
+        async function cleanup() {
+            logInfo('Cleaning up test data...', 'realtimeResults');
+            
+            try {
+                await signInWithEmailAndPassword(auth, testUser.email, testUser.password);
+                
+                // Clean up Realtime Database
+                if (window.testData.transactionId) {
+                    await remove(ref(database, `transactions/${window.testData.transactionId}`));
+                    await remove(ref(database, `userTransactions/${auth.currentUser.uid}/${window.testData.transactionId}`));
+                }
+                
+                if (window.testData.groupId) {
+                    await remove(ref(database, `groups/${window.testData.groupId}`));
+                    await remove(ref(database, `userGroups/${auth.currentUser.uid}/${window.testData.groupId}`));
+                }
+                
+                await remove(ref(database, `users/${auth.currentUser.uid}`));
+                await remove(ref(database, `emailVerification/${auth.currentUser.uid}`));
+                
+                // Clean up Firestore
+                if (window.testData.firestoreTransactionId) {
+                    await deleteDoc(doc(firestore, 'transactions', window.testData.firestoreTransactionId));
+                    await deleteDoc(doc(firestore, 'userTransactions', auth.currentUser.uid));
+                }
+                
+                if (window.testData.firestoreGroupId) {
+                    await deleteDoc(doc(firestore, 'groups', window.testData.firestoreGroupId));
+                    await deleteDoc(doc(firestore, 'userGroups', auth.currentUser.uid));
+                }
+                
+                await deleteDoc(doc(firestore, 'users', auth.currentUser.uid));
+                
+                logInfo('Cleanup completed', 'realtimeResults');
+                
+            } catch (error) {
+                logInfo(`Cleanup had some issues: ${error.message}`, 'realtimeResults');
+            }
+            
+            await signOut(auth);
+        }
+
+        // Global functions for buttons
+        window.runAllTests = async function() {
+            clearResults();
+            document.getElementById('runTests').disabled = true;
+            document.getElementById('runTests').innerHTML = '<span class="loading"></span> Running Tests...';
+            
+            try {
+                await testRealtimeDatabase();
+                await sleep(2000);
+                await testFirestore();
+                await cleanup();
+                
+                if (testResults.failed === 0) {
+                    logInfo('🎉 All tests passed! Your Firebase rules are working correctly.', 'realtimeResults');
+                } else {
+                    logInfo('⚠️ Some tests failed. Please check your Firebase rules configuration.', 'realtimeResults');
+                }
+            } catch (error) {
+                logTest('Test runner', false, error.message, 'realtimeResults');
+            } finally {
+                document.getElementById('runTests').disabled = false;
+                document.getElementById('runTests').innerHTML = '🚀 Run All Tests';
+            }
+        };
+
+        window.runRealtimeTests = async function() {
+            document.getElementById('realtimeResults').innerHTML = '';
+            await testRealtimeDatabase();
+        };
+
+        window.runFirestoreTests = async function() {
+            document.getElementById('firestoreResults').innerHTML = '';
+            await testFirestore();
+        };
+
+        window.clearResults = function() {
+            document.getElementById('realtimeResults').innerHTML = '';
+            document.getElementById('firestoreResults').innerHTML = '';
+            document.getElementById('summary').style.display = 'none';
+            testResults = { passed: 0, failed: 0, total: 0, errors: [] };
+            window.testData = {};
+        };
+    </script>
+</body>
+</html>

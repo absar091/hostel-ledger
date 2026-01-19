@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Preload Critical Resources for LCP -->
+    <link rel="preload" href="/only-logo.png" as="image" fetchpriority="high" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
+    
+    <!-- App Info -->
+    <title>Hostel Ledger - Split Expenses with Ease</title>
+    <meta name="description" content="Split expenses with ease using Hostel Ledger. Perfect for hostel students, roommates, and groups to track shared expenses and settle debts." />
+    <meta name="author" content="AbsarAhmadRao" />
+    <meta name="keywords" content="expense tracker, split bills, hostel expenses, shared expenses, money management, student finance" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/only-logo.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/only-logo.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/only-logo.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/only-logo.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/only-logo.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/only-logo.png" />
+    <link rel="icon" type="image/png" sizes="128x128" href="/only-logo.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/only-logo.png" />
+    <link rel="apple-touch-icon" href="/only-logo.png" />
+    <link rel="apple-touch-icon" sizes="57x57" href="/only-logo.png" />
+    <link rel="apple-touch-icon" sizes="60x60" href="/only-logo.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/only-logo.png" />
+    <link rel="apple-touch-icon" sizes="76x76" href="/only-logo.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="/only-logo.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="/only-logo.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="/only-logo.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/only-logo.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/only-logo.png" />
+    
+    <!-- Theme Colors -->
+    <meta name="theme-color" content="#10b981" />
+    <meta name="msapplication-TileColor" content="#10b981" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Hostel Ledger" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://hostel-ledger.vercel.app/" />
+    <meta property="og:title" content="Hostel Ledger - Split Expenses with Ease" />
+    <meta property="og:description" content="Split expenses with ease using Hostel Ledger. Perfect for hostel students, roommates, and groups to track shared expenses and settle debts." />
+    <meta property="og:image" content="https://hostel-ledger.vercel.app/only-logo.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://hostel-ledger.vercel.app/" />
+    <meta name="twitter:title" content="Hostel Ledger - Split Expenses with Ease" />
+    <meta name="twitter:description" content="Split expenses with ease using Hostel Ledger. Perfect for hostel students, roommates, and groups to track shared expenses and settle debts." />
+    <meta name="twitter:image" content="https://hostel-ledger.vercel.app/only-logo.png" />
+    
+    <!-- Additional SEO -->
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
+    <meta name="revisit-after" content="7 days" />
+    
+    <!-- Inline Critical CSS for faster initial render -->
+    <style>
+      #root {
+        min-height: 100vh;
+        background: linear-gradient(to bottom right, #ecfdf5, #f0fdfa, #f0fdf4);
+      }
+      /* Prevent layout shift */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

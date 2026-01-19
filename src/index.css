@@ -1,0 +1,431 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Theme - Clean white/gray design matching screenshot */
+    --background: 210 20% 98%;
+    --foreground: 220 27% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 27% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 27% 8%;
+
+    /* Primary - Teal/Emerald for buttons and accents */
+    --primary: 162 88% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Light gray cards */
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 220 27% 20%;
+
+    --muted: 210 20% 94%;
+    --muted-foreground: 220 15% 45%;
+
+    /* Accent - Bright teal for highlights */
+    --accent: 162 88% 35%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 90%;
+    --input: 220 15% 95%;
+    --ring: 162 88% 40%;
+
+    --radius: 1rem;
+
+    /* Custom semantic colors - Light theme */
+    --positive: 162 88% 35%;
+    --positive-soft: 162 40% 92%;
+    --negative: 0 72% 51%;
+    --negative-soft: 0 40% 95%;
+    --neutral: 220 70% 50%;
+
+    /* Gradients - Light theme with teal accents */
+    --gradient-wallet: linear-gradient(135deg, hsl(162, 88%, 40%) 0%, hsl(172, 80%, 45%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(210, 20%, 98%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(20, 184, 166, 0.1) 100%);
+
+    /* Shadows - Light theme */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    --shadow-wallet: 0 20px 40px -15px hsl(162 88% 40% / 0.25);
+    --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 27% 20%;
+    --sidebar-primary: 162 88% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 20% 96%;
+    --sidebar-accent-foreground: 220 27% 20%;
+    --sidebar-border: 220 15% 90%;
+    --sidebar-ring: 162 88% 40%;
+  }
+
+  /* Dark theme */
+  .dark {
+    --background: 220 27% 8%;
+    --foreground: 210 40% 98%;
+    --card: 220 27% 10%;
+    --card-foreground: 210 40% 98%;
+    --popover: 220 27% 10%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 162 88% 45%;
+    --primary-foreground: 220 27% 8%;
+    --secondary: 220 27% 14%;
+    --secondary-foreground: 210 40% 90%;
+    --muted: 220 27% 16%;
+    --muted-foreground: 210 40% 60%;
+    --accent: 162 88% 50%;
+    --accent-foreground: 220 27% 8%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 27% 18%;
+    --input: 220 27% 14%;
+    --ring: 162 88% 45%;
+    --positive: 162 88% 50%;
+    --positive-soft: 162 40% 20%;
+    --negative: 0 72% 55%;
+    --negative-soft: 0 40% 20%;
+    --gradient-wallet: linear-gradient(135deg, hsl(162, 88%, 45%) 0%, hsl(172, 80%, 50%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(220, 27%, 10%) 0%, hsl(220, 27%, 8%) 100%);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    @apply min-h-screen overflow-x-hidden;
+    background: hsl(var(--background));
+  }
+
+  /* Typography */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold text-foreground;
+  }
+
+  h1 { @apply text-2xl sm:text-3xl lg:text-4xl; }
+  h2 { @apply text-xl sm:text-2xl lg:text-3xl; }
+  h3 { @apply text-lg sm:text-xl lg:text-2xl; }
+  h4 { @apply text-base sm:text-lg lg:text-xl; }
+
+  .text-currency-large { @apply text-3xl sm:text-4xl font-bold; }
+  .text-currency-medium { @apply text-xl sm:text-2xl font-semibold; }
+  .text-currency-small { @apply text-lg sm:text-xl font-medium; }
+}
+
+@layer components {
+  /* Mobile-first container */
+  .container-mobile {
+    @apply w-full max-w-sm mx-auto px-4 sm:max-w-md md:max-w-lg lg:max-w-xl;
+  }
+
+  /* Clean glass cards for light theme */
+  .glass-card {
+    @apply backdrop-blur-xl border rounded-2xl;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+  }
+
+  .glass-card-strong {
+    @apply backdrop-blur-xl border rounded-2xl;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  .glass-button {
+    @apply backdrop-blur-md border rounded-xl;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(220, 220, 220, 0.5);
+    transition: all 0.2s ease;
+  }
+
+  .glass-button:hover {
+    background: rgba(255, 255, 255, 1);
+    border: 1px solid rgba(200, 200, 200, 0.8);
+  }
+
+  /* Teal/Emerald themed buttons */
+  .btn-primary-teal {
+    @apply bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-medium rounded-xl px-6 py-3;
+    @apply hover:from-emerald-600 hover:to-teal-600 transition-all duration-200;
+    @apply shadow-lg hover:shadow-xl;
+  }
+
+  .btn-secondary-teal {
+    @apply bg-emerald-50 text-emerald-600 border border-emerald-200 font-medium rounded-xl px-6 py-3;
+    @apply hover:bg-emerald-100 hover:border-emerald-300 transition-all duration-200;
+  }
+
+  /* Mobile-optimized cards with light theme */
+  .mobile-card {
+    @apply backdrop-blur-xl border rounded-2xl p-4 sm:p-6;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+  }
+
+  .mobile-card:hover {
+    box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  /* Wallet card with teal gradient */
+  .wallet-card {
+    background: var(--gradient-wallet);
+    @apply text-white rounded-2xl p-6 shadow-wallet;
+  }
+
+  /* Settlement cards with light theme */
+  .settlement-positive {
+    @apply backdrop-blur-xl border rounded-xl p-4;
+    background: hsl(162, 88%, 95%);
+    border: 1px solid hsl(162, 88%, 80%);
+    color: hsl(162, 88%, 30%);
+  }
+
+  .settlement-negative {
+    @apply backdrop-blur-xl border rounded-xl p-4;
+    background: hsl(0, 72%, 97%);
+    border: 1px solid hsl(0, 72%, 85%);
+    color: hsl(0, 72%, 45%);
+  }
+
+  /* Mobile navigation with light theme */
+  .mobile-nav {
+    @apply fixed bottom-0 left-0 right-0 backdrop-blur-xl border-t z-50 safe-area-pb;
+    background: rgba(255, 255, 255, 0.95);
+    border-top: 1px solid hsl(var(--border));
+  }
+
+  /* Safe area padding for mobile */
+  .safe-area-pt { padding-top: env(safe-area-inset-top); }
+  .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-area-pl { padding-left: env(safe-area-inset-left); }
+  .safe-area-pr { padding-right: env(safe-area-inset-right); }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .gradient-wallet {
+    background: var(--gradient-wallet);
+  }
+
+  .gradient-glass {
+    background: var(--gradient-glass);
+  }
+
+  .shadow-wallet {
+    box-shadow: var(--shadow-wallet);
+  }
+
+  .shadow-glass {
+    box-shadow: var(--shadow-glass);
+  }
+
+  /* Mobile-specific utilities */
+  .mobile-padding {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  .mobile-margin {
+    @apply mx-4 sm:mx-6 lg:mx-8;
+  }
+
+  /* Touch-friendly sizing */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Responsive text */
+  .text-responsive {
+    @apply text-sm sm:text-base lg:text-lg;
+  }
+
+  /* Tabular numbers for consistent digit spacing */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  /* Text utilities for light theme */
+  .text-glass-primary {
+    color: hsl(var(--foreground));
+    font-weight: 600;
+  }
+
+  .text-glass-secondary {
+    color: hsl(var(--muted-foreground));
+    font-weight: 500;
+  }
+
+  .text-glass-muted {
+    color: hsl(var(--muted-foreground));
+    opacity: 0.8;
+    font-weight: 400;
+  }
+}
+
+/* Custom scrollbar - Light theme */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary));
+}
+
+/* Animations matching HTML design */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.6); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+/* Animation utilities */
+.animate-fadeIn {
+  animation: fadeIn 0.6s ease;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.5s ease forwards;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background-size: 200px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Mobile viewport fixes */
+@supports (height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+}
+
+/* Prevent zoom on input focus (iOS) */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Mobile-first responsive breakpoints */
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+  
+  .mobile-only {
+    @apply block;
+  }
+  
+  .desktop-only {
+    @apply hidden;
+  }
+}
+
+@media (min-width: 641px) {
+  .mobile-only {
+    @apply hidden;
+  }
+  
+  .desktop-only {
+    @apply block;
+  }
+}

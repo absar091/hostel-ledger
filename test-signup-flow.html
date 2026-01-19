@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Signup Flow</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f0fdf4;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        .error {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        .info {
+            background-color: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Signup Flow</h1>
+        <p>This page tests the signup flow by sending a verification email through the backend API.</p>
+        
+        <form id="testForm">
+            <div class="form-group">
+                <label for="email">Email Address:</label>
+                <input type="email" id="email" value="test@example.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="name">Full Name:</label>
+                <input type="text" id="name" value="Test User" required>
+            </div>
+            
+            <button type="submit" id="submitBtn">🚀 Test Verification Email</button>
+        </form>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://hostel-ledger-backend.vercel.app';
+        
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const name = document.getElementById('name').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const resultDiv = document.getElementById('result');
+            
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Testing...';
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing backend connection...\n';
+            
+            try {
+                // Step 1: Test health endpoint
+                resultDiv.textContent += '1. Testing health endpoint...\n';
+                const healthResponse = await fetch(`${API_URL}/health`);
+                
+                if (!healthResponse.ok) {
+                    throw new Error(`Health check failed: ${healthResponse.status} ${healthResponse.statusText}`);
+                }
+                
+                const healthData = await healthResponse.json();
+                resultDiv.textContent += `✅ Health check passed: ${healthData.message}\n\n`;
+                
+                // Step 2: Test verification email
+                resultDiv.textContent += '2. Testing verification email...\n';
+                const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+                
+                const emailResponse = await fetch(`${API_URL}/api/send-verification`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        code: verificationCode,
+                        name: name
+                    })
+                });
+                
+                const emailData = await emailResponse.json();
+                
+                if (emailResponse.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent += `✅ Verification email sent successfully!\n`;
+                    resultDiv.textContent += `📧 Message ID: ${emailData.messageId}\n`;
+                    resultDiv.textContent += `🔢 Verification Code: ${verificationCode}\n\n`;
+                    resultDiv.textContent += `🎉 Backend API is working correctly!\n`;
+                    resultDiv.textContent += `The signup flow should now work in the main application.`;
+                } else {
+                    throw new Error(`Email API failed: ${emailResponse.status} - ${emailData.error || emailData.message}`);
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent += `❌ Error: ${error.message}\n\n`;
+                
+                if (error.message.includes('Failed to fetch')) {
+                    resultDiv.textContent += `💡 Possible causes:\n`;
+                    resultDiv.textContent += `- Backend is not deployed or not responding\n`;
+                    resultDiv.textContent += `- CORS configuration issue\n`;
+                    resultDiv.textContent += `- Network connectivity problem\n\n`;
+                    resultDiv.textContent += `🔧 Try redeploying the backend with the latest changes.`;
+                } else if (error.message.includes('429')) {
+                    resultDiv.textContent += `⚠️ Rate limiting is active (this is expected behavior)\n`;
+                    resultDiv.textContent += `The backend is working but has hit rate limits.`;
+                }
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 Test Verification Email';
+            }
+        });
+    </script>
+</body>
+</html>

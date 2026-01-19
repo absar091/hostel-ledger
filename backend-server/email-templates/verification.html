@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Verification</title>
+    <style>
+        /* Mobile-first responsive styles */
+        @media only screen and (max-width: 600px) {
+            .container {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .content {
+                padding: 16px !important;
+            }
+            .card {
+                margin: 0 8px !important;
+                border-radius: 12px !important;
+            }
+            .logo {
+                width: 140px !important;
+            }
+            .title {
+                font-size: 20px !important;
+                padding: 20px 24px 0 !important;
+            }
+            .text {
+                padding: 12px 24px 0 !important;
+                font-size: 14px !important;
+            }
+            .otp-container {
+                padding: 24px 24px !important;
+            }
+            .otp-code {
+                font-size: 28px !important;
+                letter-spacing: 4px !important;
+                padding: 14px 20px !important;
+            }
+            .info {
+                padding: 0 24px !important;
+                font-size: 13px !important;
+            }
+            .security {
+                padding: 16px 24px 0 !important;
+                font-size: 12px !important;
+            }
+            .legal {
+                padding: 16px 24px 0 !important;
+                font-size: 11px !important;
+            }
+            .footer {
+                padding: 24px 24px 24px !important;
+                font-size: 11px !important;
+            }
+        }
+    </style>
+</head>
+<body style="margin:0;padding:0;background:#eafaf3;font-family:Arial, Helvetica, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" class="container">
+        <tr>
+            <td align="center" class="content" style="padding:40px 16px;">
+                <!-- Card -->
+                <table width="600" cellpadding="0" cellspacing="0" class="card" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;box-shadow:0 8px 30px rgba(16,185,129,0.12);overflow:hidden;">
+                    <!-- Logo -->
+                    <tr>
+                        <td align="center" style="padding:32px 24px 16px;">
+                            <img src="https://hostel-ledger.vercel.app/only-logo.png" alt="Hostel Ledger" class="logo" width="170" style="display:block;height:auto;max-width:100%;"/>
+                        </td>
+                    </tr>
+                    <!-- Divider -->
+                    <tr>
+                        <td style="padding:0 32px;">
+                            <div style="height:1px;background:#e5f4ee;"></div>
+                        </td>
+                    </tr>
+                    <!-- Title -->
+                    <tr>
+                        <td class="title" style="padding:24px 32px 0;font-size:22px;font-weight:600;color:#064e3b;">
+                            Verify your email
+                        </td>
+                    </tr>
+                    <!-- Message -->
+                    <tr>
+                        <td class="text" style="padding:14px 32px 0;font-size:15px;color:#065f46;line-height:1.7;">
+                            Hello {{USER_NAME}},<br><br>
+                            Welcome to <strong>Hostel Ledger</strong>. Use the verification code below to confirm your email address.
+                        </td>
+                    </tr>
+                    <!-- OTP CODE -->
+                    <tr>
+                        <td align="center" class="otp-container" style="padding:28px 32px;">
+                            <div class="otp-code" style="background:#ecfdf5;color:#064e3b;font-size:32px;font-weight:700;letter-spacing:6px;padding:16px 28px;border-radius:12px;font-family:monospace;display:inline-block;text-align:center;">
+                                {{CODE}}
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- OTP Info -->
+                    <tr>
+                        <td class="info" style="padding:0 32px;font-size:14px;color:#047857;line-height:1.6;">
+                            This verification code will expire in <strong>10 minutes</strong>. For your security, do not share this code with anyone.
+                        </td>
+                    </tr>
+                    <!-- Security Note -->
+                    <tr>
+                        <td class="security" style="padding:18px 32px 0;font-size:13px;color:#059669;line-height:1.6;">
+                            If you didn't create an account with Hostel Ledger, you can safely ignore this email.
+                        </td>
+                    </tr>
+                    <!-- Legal -->
+                    <tr>
+                        <td class="legal" style="padding:20px 32px 0;font-size:12px;color:#047857;line-height:1.6;">
+                            By using Hostel Ledger, you agree to our 
+                            <a href="https://hostel-ledger.vercel.app/terms" style="color:#10b981;text-decoration:none;font-weight:600;">Terms & Conditions</a> 
+                            and 
+                            <a href="https://hostel-ledger.vercel.app/privacy" style="color:#10b981;text-decoration:none;font-weight:600;">Privacy Policy</a>.
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td class="footer" style="padding:28px 32px 32px;border-top:1px solid #e5f4ee;font-size:12px;color:#6b7280;text-align:center;">
+                            <div style="margin-bottom:12px;">
+                                <a href="https://aarx.online" target="_blank" style="display:inline-block;">
+                                    <img src="https://hostel-ledger.vercel.app/aarx-logo.webp" alt="AARX Labs" style="height:32px;width:auto;display:inline-block;"/>
+                                </a>
+                            </div>
+                            © 2026 Hostel Ledger. All rights reserved.<br>
+                            <span style="font-size:11px;color:#9ca3af;">Split expenses with ease</span>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
