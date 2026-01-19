@@ -1,7 +1,7 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getDatabase } from 'firebase/database';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
+import { getDatabase, Database } from 'firebase/database';
+import { getFirestore, Firestore } from 'firebase/firestore';
 
 // Your Firebase configuration for hostel-ledger project
 const firebaseConfig = {
@@ -31,17 +31,47 @@ if (missingVars.length > 0) {
   throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
 }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Lazy initialization to improve startup performance
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let database: Database | null = null;
+let db: Firestore | null = null;
 
-// Initialize Firebase Authentication and get a reference to the service
-export const auth = getAuth(app);
+const initializeFirebase = () => {
+  if (!app) {
+    app = initializeApp(firebaseConfig);
+  }
+  return app;
+};
 
-// Initialize Realtime Database and get a reference to the service
-export const database = getDatabase(app);
+export const getFirebaseAuth = () => {
+  if (!auth) {
+    const firebaseApp = initializeFirebase();
+    auth = getAuth(firebaseApp);
+  }
+  return auth;
+};
 
-// Initialize Cloud Firestore and get a reference to the service
-export const db = getFirestore(app);
+export const getFirebaseDatabase = () => {
+  if (!database) {
+    const firebaseApp = initializeFirebase();
+    database = getDatabase(firebaseApp);
+  }
+  return database;
+};
+
+export const getFirebaseFirestore = () => {
+  if (!db) {
+    const firebaseApp = initializeFirebase();
+    db = getFirestore(firebaseApp);
+  }
+  return db;
+};
+
+// Legacy exports for backward compatibility
+export { getFirebaseAuth as auth };
+export { getFirebaseDatabase as database };
+export { getFirebaseFirestore as db };
 
 // Default export
-export default app;
+export default initializeFirebase;
