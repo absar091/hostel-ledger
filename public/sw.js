@@ -1,5 +1,5 @@
 // Service Worker for Hostel Ledger PWA
-const CACHE_NAME = 'hostel-ledger-v1';
+const CACHE_NAME = 'hostel-ledger-v2';
 const STATIC_CACHE_URLS = [
   '/',
   '/login',
@@ -52,7 +52,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - improved caching strategy
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') {
@@ -65,11 +65,40 @@ self.addEventListener('fetch', (event) => {
     event.request.url.includes('googleapis.com') ||
     event.request.url.includes('cloudinary.com') ||
     event.request.url.includes('fonts.googleapis.com') ||
-    event.request.url.includes('fonts.gstatic.com')
+    event.request.url.includes('fonts.gstatic.com') ||
+    event.request.url.includes('chrome-extension') ||
+    event.request.url.includes('moz-extension')
   ) {
     return;
   }
 
+  // Handle JavaScript modules with proper MIME type checking
+  if (event.request.url.includes('.js') || event.request.url.includes('.mjs')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Check if response is valid and has correct MIME type
+          if (response && response.status === 200 && 
+              (response.headers.get('content-type')?.includes('javascript') ||
+               response.headers.get('content-type')?.includes('application/javascript'))) {
+            
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache for JS files
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Handle other requests
   event.respondWith(
     caches.match(event.request)
       .then((cachedResponse) => {
@@ -91,11 +120,13 @@ self.addEventListener('fetch', (event) => {
             // Clone the response
             const responseToCache = response.clone();
 
-            // Cache the response for future use
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
+            // Cache the response for future use (except for HTML documents in production)
+            if (!event.request.url.includes('.html') || event.request.destination !== 'document') {
+              caches.open(CACHE_NAME)
+                .then((cache) => {
+                  cache.put(event.request, responseToCache);
+                });
+            }
 
             return response;
           })
