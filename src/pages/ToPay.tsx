@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowUpRight, Users, User, Phone, CreditCard } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Users, Phone, CreditCard } from "lucide-react";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import PageGuide from "@/components/PageGuide";
