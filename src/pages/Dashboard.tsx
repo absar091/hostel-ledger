@@ -504,7 +504,7 @@ const Dashboard = () => {
       </div>
 
       {/* Profile Greeting Section - Separate and Elegant */}
-      <div className="px-4 pt-6 pb-4">
+      <div className="px-2 pt-8 pb-10">
         <div className="flex items-center gap-4">
           {/* Profile Avatar */}
           <Avatar 
