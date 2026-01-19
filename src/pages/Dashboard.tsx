@@ -84,6 +84,8 @@ const Dashboard = () => {
     if (groups.length === 0) {
       toast.error("Create a group first to record payments");
       setShowCreateGroup(true);
+    } else if (totalToReceive <= 0) {
+      toast.error("No pending payments to record. Nobody owes you money right now.");
     } else {
       setShowRecordPayment(true);
     }
@@ -482,10 +484,10 @@ const Dashboard = () => {
         </div>
 
         <div className="space-y-4">
-          {/* Settlement Delta Card - Modern fintech style */}
+          {/* Settlement Delta Card - Crisp, no blur */}
           <button 
             onClick={() => navigate("/groups")}
-            className="w-full bg-white/95 backdrop-blur-sm rounded-3xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_48px_rgba(0,0,0,0.1)] active:scale-[0.99] transition-all duration-300 text-left border border-gray-100/50"
+            className="w-full bg-white rounded-3xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_48px_rgba(0,0,0,0.1)] active:scale-[0.99] transition-all duration-300 text-left border border-gray-100"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
@@ -513,30 +515,40 @@ const Dashboard = () => {
             </div>
           </button>
 
-          {/* Receive / Owe Split Cards - Modern minimal design */}
+          {/* Receive / Owe Split Cards - Crisp design */}
           <div className="grid grid-cols-2 gap-3">
             <button 
               onClick={() => navigate("/groups")}
-              className="bg-white/95 backdrop-blur-sm border border-gray-100/50 rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_32px_rgba(16,185,129,0.08)] active:scale-[0.99] transition-all duration-300 text-left group"
+              className={`border rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] active:scale-[0.99] transition-all duration-300 text-left group ${
+                totalToReceive <= 0 
+                  ? 'bg-gray-50 border-gray-200 cursor-default' 
+                  : 'bg-white border-gray-100 hover:shadow-[0_8px_32px_rgba(16,185,129,0.08)]'
+              }`}
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                  <span className="text-xs font-medium tracking-wide uppercase text-gray-600">To Receive</span>
+                  <div className={`w-1.5 h-1.5 rounded-full ${totalToReceive <= 0 ? 'bg-gray-400' : 'bg-emerald-500'}`}></div>
+                  <span className={`text-xs font-medium tracking-wide uppercase ${totalToReceive <= 0 ? 'text-gray-500' : 'text-gray-600'}`}>
+                    To Receive
+                  </span>
                 </div>
-                <svg className="w-4 h-4 text-gray-300 group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
-                </svg>
+                {totalToReceive > 0 && (
+                  <svg className="w-4 h-4 text-gray-300 group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                  </svg>
+                )}
               </div>
-              <div className="text-2xl font-bold text-emerald-600 tabular-nums mb-1">
+              <div className={`text-2xl font-bold tabular-nums mb-1 ${totalToReceive <= 0 ? 'text-gray-500' : 'text-emerald-600'}`}>
                 Rs {totalToReceive.toLocaleString()}
               </div>
-              <div className="text-[10px] text-gray-500">View details</div>
+              <div className={`text-[10px] ${totalToReceive <= 0 ? 'text-gray-400' : 'text-gray-500'}`}>
+                {totalToReceive <= 0 ? 'All settled up! 🎉' : 'View details'}
+              </div>
             </button>
             
             <button 
               onClick={() => navigate("/groups")}
-              className="bg-white/95 backdrop-blur-sm border border-gray-100/50 rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_32px_rgba(251,146,60,0.08)] active:scale-[0.99] transition-all duration-300 text-left group"
+              className="bg-white border border-gray-100 rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_32px_rgba(251,146,60,0.08)] active:scale-[0.99] transition-all duration-300 text-left group"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -555,11 +567,11 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Quick Actions - Enhanced with better micro-interactions */}
+        {/* Quick Actions - Crisp, no blur effects */}
         <div className="grid grid-cols-3 gap-3 mt-6">
           <button
             onClick={handleAddExpense}
-            className="bg-white/95 backdrop-blur-sm rounded-3xl p-4 hover:bg-white hover:shadow-[0_8px_32px_rgba(0,0,0,0.08)] active:scale-[0.98] transition-all duration-300 text-center group border border-gray-100/50"
+            className="bg-white rounded-3xl p-4 hover:bg-gray-50 hover:shadow-[0_8px_32px_rgba(0,0,0,0.08)] active:scale-[0.98] transition-all duration-300 text-center group border border-gray-100"
           >
             <div className="w-11 h-11 bg-gray-50 rounded-2xl flex items-center justify-center mb-3 mx-auto group-hover:bg-gray-100 group-hover:scale-105 transition-all duration-200">
               <Plus className="w-5 h-5 text-gray-600" />
@@ -570,18 +582,31 @@ const Dashboard = () => {
           
           <button
             onClick={handleReceivedMoney}
-            className="bg-white/95 backdrop-blur-sm rounded-3xl p-4 hover:bg-white hover:shadow-[0_8px_32px_rgba(16,185,129,0.1)] active:scale-[0.98] transition-all duration-300 text-center group border border-gray-100/50"
+            disabled={totalToReceive <= 0}
+            className={`rounded-3xl p-4 active:scale-[0.98] transition-all duration-300 text-center group border ${
+              totalToReceive <= 0 
+                ? 'bg-gray-100 border-gray-200 cursor-not-allowed opacity-60' 
+                : 'bg-white border-gray-100 hover:bg-gray-50 hover:shadow-[0_8px_32px_rgba(16,185,129,0.1)]'
+            }`}
           >
-            <div className="w-11 h-11 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-3 mx-auto group-hover:from-emerald-600 group-hover:to-emerald-700 group-hover:scale-105 transition-all duration-200 shadow-sm">
-              <ArrowDownLeft className="w-5 h-5 text-white" />
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-3 mx-auto transition-all duration-200 shadow-sm ${
+              totalToReceive <= 0
+                ? 'bg-gray-200'
+                : 'bg-gradient-to-br from-emerald-500 to-emerald-600 group-hover:from-emerald-600 group-hover:to-emerald-700 group-hover:scale-105'
+            }`}>
+              <ArrowDownLeft className={`w-5 h-5 ${totalToReceive <= 0 ? 'text-gray-400' : 'text-white'}`} />
             </div>
-            <div className="text-gray-900 font-semibold text-sm mb-1 leading-tight">Received</div>
-            <div className="text-[11px] text-gray-500 leading-relaxed">Record payment</div>
+            <div className={`font-semibold text-sm mb-1 leading-tight ${totalToReceive <= 0 ? 'text-gray-500' : 'text-gray-900'}`}>
+              Received
+            </div>
+            <div className={`text-[11px] leading-relaxed ${totalToReceive <= 0 ? 'text-gray-400' : 'text-gray-500'}`}>
+              {totalToReceive <= 0 ? 'No pending payments' : 'Record payment'}
+            </div>
           </button>
           
           <button
             onClick={handleNewGroup}
-            className="bg-white/95 backdrop-blur-sm rounded-3xl p-4 hover:bg-white hover:shadow-[0_8px_32px_rgba(20,184,166,0.1)] active:scale-[0.98] transition-all duration-300 text-center group border border-gray-100/50"
+            className="bg-white rounded-3xl p-4 hover:bg-gray-50 hover:shadow-[0_8px_32px_rgba(20,184,166,0.1)] active:scale-[0.98] transition-all duration-300 text-center group border border-gray-100"
           >
             <div className="w-11 h-11 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center mb-3 mx-auto group-hover:from-teal-600 group-hover:to-teal-700 group-hover:scale-105 transition-all duration-200 shadow-sm">
               <Users className="w-6 h-6 text-white" />
@@ -603,12 +628,12 @@ const Dashboard = () => {
           </div>
           
           {allTransactions.length > 0 ? (
-            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden border border-gray-100/50">
+            <div className="bg-white rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden border border-gray-100">
               {allTransactions.slice(0, 8).map((transaction, index) => (
                 <button
                   key={transaction.id}
                   onClick={() => setSelectedTransaction(transaction)}
-                  className="w-full p-4 flex items-center gap-4 hover:bg-gray-50/80 transition-all duration-200 border-b border-gray-100/50 last:border-b-0 group"
+                  className="w-full p-4 flex items-center gap-4 hover:bg-gray-50 transition-all duration-200 border-b border-gray-100 last:border-b-0 group"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className={`w-10 h-10 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform duration-200 ${
@@ -658,7 +683,7 @@ const Dashboard = () => {
               ))}
             </div>
           ) : (
-            <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-12 text-center shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-gray-100/50">
+            <div className="bg-white rounded-3xl p-12 text-center shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-gray-100">
               <div className="w-16 h-16 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">💸</span>
               </div>
