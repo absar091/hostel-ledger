@@ -20,18 +20,31 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          'react-vendor': ['react', 'react-dom'],
+          'router': ['react-router-dom'],
+          'firebase': ['firebase/app', 'firebase/auth', 'firebase/database', 'firebase/firestore'],
+          'ui-components': ['@radix-ui/react-dialog', '@radix-ui/react-tooltip', '@radix-ui/react-select'],
+          'utils': ['date-fns', 'clsx', 'tailwind-merge'],
         },
       },
     },
     // Reduce chunk size warnings threshold
     chunkSizeWarningLimit: 1000,
-    // Enable minification (using esbuild, the default)
+    // Enable minification
     minify: 'esbuild',
+    // Target modern browsers for smaller bundles
+    target: 'es2020',
+    // Optimize CSS
+    cssMinify: true,
   },
   // Optimize dependencies
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
+    exclude: ['firebase'],
+  },
+  // Enable esbuild for faster builds
+  esbuild: {
+    target: 'es2020',
+    minify: true,
   },
 }));

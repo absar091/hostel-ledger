@@ -2,9 +2,20 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Register Service Worker for PWA functionality
+// Hide initial loading screen when React starts
+setTimeout(() => {
+  if (window.hideInitialLoading) {
+    window.hideInitialLoading();
+  }
+}, 50);
+
+// Render the app immediately
+createRoot(document.getElementById("root")!).render(<App />);
+
+// Register Service Worker for PWA functionality (deferred)
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+  // Defer service worker registration to not block initial load
+  setTimeout(() => {
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
         console.log('SW registered: ', registration);
@@ -12,14 +23,5 @@ if ('serviceWorker' in navigator) {
       .catch((registrationError) => {
         console.log('SW registration failed: ', registrationError);
       });
-  });
+  }, 2000);
 }
-
-// Hide initial loading screen when React starts
-setTimeout(() => {
-  if (window.hideInitialLoading) {
-    window.hideInitialLoading();
-  }
-}, 100);
-
-createRoot(document.getElementById("root")!).render(<App />);
