@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ArrowLeft, Settings, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TimelineItem from "@/components/TimelineItem";
 import Avatar from "@/components/Avatar";
+import PageGuide from "@/components/PageGuide";
 import { useNavigate, useParams } from "react-router-dom";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
 import RecordPaymentSheet from "@/components/RecordPaymentSheet";
@@ -13,6 +14,7 @@ import { toast } from "sonner";
 import { Plus, HandCoins } from "lucide-react";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 import {
   Tooltip,
   TooltipContent,
@@ -24,7 +26,8 @@ const GroupDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { getGroupById, getTransactionsByGroup, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup } = useFirebaseData();
-  const { getSettlements } = useFirebaseAuth();
+  const { getSettlements, user } = useFirebaseAuth();
+  const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   
   const [activeTab, setActiveTab] = useState<"ledger" | "members" | "summary">("ledger");
   const [showAddExpense, setShowAddExpense] = useState(false);
@@ -34,6 +37,19 @@ const GroupDetail = () => {
   const [showMemberDetail, setShowMemberDetail] = useState(false);
   const [showMemberSettlement, setShowMemberSettlement] = useState(false);
   const [settlementMember, setSettlementMember] = useState<{ id: string; name: string; avatar?: string } | null>(null);
+  const [showGroupGuide, setShowGroupGuide] = useState(false);
+
+  // Check if we should show page guide
+  useEffect(() => {
+    if (shouldShowPageGuide('group-detail')) {
+      setShowGroupGuide(true);
+    }
+  }, [shouldShowPageGuide]);
+
+  const handleGroupGuideClose = () => {
+    setShowGroupGuide(false);
+    markPageGuideShown('group-detail');
+  };
   
   const group = id ? getGroupById(id) : undefined;
   const transactions = id ? getTransactionsByGroup(id) : [];
@@ -569,6 +585,20 @@ const GroupDetail = () => {
           groupId={group.id}
         />
       )}
+
+      {/* Group Detail Page Guide */}
+      <PageGuide
+        title="Group Management"
+        description="This is your group's control center. View expenses, manage members, and track who owes what to whom."
+        tips={[
+          "Switch between Ledger, Members, and Summary tabs",
+          "Tap + to add new expenses to this group",
+          "Tap on members to see payment details or settle debts"
+        ]}
+        emoji="🏢"
+        show={showGroupGuide}
+        onClose={handleGroupGuideClose}
+      />
     </div>
   );
 };

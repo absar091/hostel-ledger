@@ -1,11 +1,43 @@
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import PageGuide from "@/components/PageGuide";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 
 const About = () => {
   const navigate = useNavigate();
+  const { user } = useFirebaseAuth();
+  const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
+  const [showPageGuide, setShowPageGuide] = useState(false);
+
+  useEffect(() => {
+    if (shouldShowPageGuide('about')) {
+      setShowPageGuide(true);
+    }
+  }, [shouldShowPageGuide]);
+
+  const handleClosePageGuide = () => {
+    setShowPageGuide(false);
+    markPageGuideShown('about');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 pb-8">
+      {/* Page Guide */}
+      <PageGuide
+        title="About Hostel Ledger ℹ️"
+        description="Learn more about the app, its features, and the team behind it."
+        tips={[
+          "Discover all the features and capabilities of Hostel Ledger",
+          "Learn about AARX Labs, the company that built this app",
+          "Find contact information and legal documents here"
+        ]}
+        emoji="📖"
+        show={showPageGuide}
+        onClose={handleClosePageGuide}
+      />
+
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="mobile-padding py-4 flex items-center gap-3">

@@ -11,6 +11,7 @@ import {
 import Avatar from "@/components/Avatar";
 import BottomNav from "@/components/BottomNav";
 import PWAInstallButton from "@/components/PWAInstallButton";
+import LogoutConfirmDialog from "@/components/LogoutConfirmDialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Tooltip from "@/components/Tooltip";
@@ -39,6 +40,7 @@ const Profile = () => {
   const [showEditSheet, setShowEditSheet] = useState(false);
   const [showPaymentSheet, setShowPaymentSheet] = useState(false);
   const [showPhotoOptionsSheet, setShowPhotoOptionsSheet] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   
   // Edit form state
@@ -91,6 +93,10 @@ const Profile = () => {
     logout();
     navigate("/login");
     toast.success("Logged out successfully");
+  };
+
+  const handleLogoutClick = () => {
+    setShowLogoutDialog(true);
   };
 
   const handlePhotoClick = () => {
@@ -367,7 +373,7 @@ const Profile = () => {
 
         {/* Logout */}
         <button
-          onClick={handleLogout}
+          onClick={handleLogoutClick}
           className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 animate-slide-up border border-red-200 hover:shadow-md hover:border-red-300 transition-all"
           style={{ animationDelay: "0.35s" }}
         >
@@ -401,6 +407,13 @@ const Profile = () => {
 
       {/* Bottom Navigation */}
       <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+
+      {/* Logout Confirmation Dialog */}
+      <LogoutConfirmDialog
+        open={showLogoutDialog}
+        onOpenChange={setShowLogoutDialog}
+        onConfirm={handleLogout}
+      />
 
       {/* Edit Profile Sheet */}
       <Sheet open={showEditSheet} onOpenChange={setShowEditSheet}>

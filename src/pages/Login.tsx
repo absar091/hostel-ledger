@@ -1,18 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
 import { Mail, Lock, Eye, EyeOff, Wallet } from "lucide-react";
+import PageGuide from "@/components/PageGuide";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useFirebaseAuth();
+  const { login, user } = useFirebaseAuth();
+  const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPageGuide, setShowPageGuide] = useState(false);
+
+  useEffect(() => {
+    if (shouldShowPageGuide('login')) {
+      setShowPageGuide(true);
+    }
+  }, [shouldShowPageGuide]);
+
+  const handleClosePageGuide = () => {
+    setShowPageGuide(false);
+    markPageGuideShown('login');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +53,20 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex flex-col">
+      {/* Page Guide */}
+      <PageGuide
+        title="Welcome Back! 👋"
+        description="Sign in to access your expense tracking dashboard and manage your shared finances."
+        tips={[
+          "Use your registered email and password to sign in",
+          "Forgot your password? Use the reset link below the form",
+          "New to Hostel Ledger? Create an account to get started"
+        ]}
+        emoji="🔐"
+        show={showPageGuide}
+        onClose={handleClosePageGuide}
+      />
+
       {/* Header */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         {/* Logo */}

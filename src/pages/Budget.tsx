@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, Wallet, TrendingDown, TrendingUp, PiggyBank } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
+import PageGuide from "@/components/PageGuide";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 interface BudgetEntry {
   id: string;
@@ -21,10 +23,12 @@ const Budget = () => {
   const navigate = useNavigate();
   const { user } = useFirebaseAuth();
   const { groups, transactions } = useFirebaseData();
+  const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   
   const [showAddFunds, setShowAddFunds] = useState(false);
   const [fundAmount, setFundAmount] = useState("");
   const [fundNote, setFundNote] = useState("");
+  const [showPageGuide, setShowPageGuide] = useState(false);
   const [budgetEntries, setBudgetEntries] = useState<BudgetEntry[]>(() => {
     if (user) {
       const saved = localStorage.getItem(`${BUDGET_KEY}_${user.uid}`);
@@ -32,6 +36,17 @@ const Budget = () => {
     }
     return [];
   });
+
+  useEffect(() => {
+    if (shouldShowPageGuide('budget')) {
+      setShowPageGuide(true);
+    }
+  }, [shouldShowPageGuide]);
+
+  const handleClosePageGuide = () => {
+    setShowPageGuide(false);
+    markPageGuideShown('budget');
+  };
 
   // Calculate total funds added
   const totalFunds = useMemo(() => {
@@ -95,6 +110,20 @@ const Budget = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 pb-8">
+      {/* Page Guide */}
+      <PageGuide
+        title="Budget Tracker 💰"
+        description="Keep track of your monthly allowance and spending to stay within budget."
+        tips={[
+          "Add your monthly allowance or pocket money using 'Add Funds'",
+          "Your remaining budget considers money you've spent and what others owe you",
+          "Green numbers mean money coming to you, red means money you owe"
+        ]}
+        emoji="📊"
+        show={showPageGuide}
+        onClose={handleClosePageGuide}
+      />
+
       {/* Header */}
       <header className="px-4 pt-8 pb-4">
         <div className="flex items-center gap-3 mb-6">
@@ -131,7 +160,7 @@ const Budget = () => {
       {/* Stats Grid */}
       <main className="px-4 space-y-6">
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white/50">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
                 <Wallet className="w-4 h-4 text-emerald-600" />
@@ -143,7 +172,7 @@ const Budget = () => {
             </div>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white/50">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
                 <TrendingDown className="w-4 h-4 text-red-500" />
@@ -155,7 +184,7 @@ const Budget = () => {
             </div>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white/50">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-emerald-500" />
@@ -167,7 +196,7 @@ const Budget = () => {
             </div>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white/50">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
                 <TrendingDown className="w-4 h-4 text-red-500" />
@@ -189,7 +218,7 @@ const Budget = () => {
               {budgetEntries.map((entry) => (
                 <div
                   key={entry.id}
-                  className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white/50 flex items-center justify-between"
+                  className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between"
                 >
                   <div>
                     <div className="font-medium text-gray-900">{entry.note}</div>
@@ -202,7 +231,7 @@ const Budget = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 bg-white/80 backdrop-blur-sm rounded-xl border border-white/50">
+            <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
               <PiggyBank className="w-12 h-12 mx-auto text-gray-400 mb-3" />
               <h3 className="font-semibold text-gray-900 mb-1">No funds added yet</h3>
               <p className="text-sm text-gray-500 mb-4">

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   ArrowUpRight, 
@@ -9,18 +9,35 @@ import {
   Activity as ActivityIcon
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import PageGuide from "@/components/PageGuide";
 import { Input } from "@/components/ui/input";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 const Activity = () => {
   const navigate = useNavigate();
   const { getAllTransactions, groups } = useFirebaseData();
+  const { user } = useFirebaseAuth();
+  const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("activity");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "expense" | "payment" | "wallet">("all");
   const [filterDate, setFilterDate] = useState<"all" | "today" | "week" | "month">("all");
+  const [showActivityGuide, setShowActivityGuide] = useState(false);
+
+  // Check if we should show page guide
+  useEffect(() => {
+    if (shouldShowPageGuide('activity')) {
+      setShowActivityGuide(true);
+    }
+  }, [shouldShowPageGuide]);
+
+  const handleActivityGuideClose = () => {
+    setShowActivityGuide(false);
+    markPageGuideShown('activity');
+  };
 
   const allTransactions = getAllTransactions();
 
@@ -317,6 +334,20 @@ const Activity = () => {
           </div>
         )}
       </div>
+
+      {/* Activity Page Guide */}
+      <PageGuide
+        title="Activity History"
+        description="See all your transactions, payments, and expense history in one place. Track your financial activity across all groups."
+        tips={[
+          "Use filters to find specific transactions quickly",
+          "Search by description, amount, or group name",
+          "Tap any transaction to see detailed information"
+        ]}
+        emoji="📊"
+        show={showActivityGuide}
+        onClose={handleActivityGuideClose}
+      />
 
       {/* Bottom Navigation */}
       <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />

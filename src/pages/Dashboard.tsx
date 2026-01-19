@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowUpRight, ArrowDownLeft, Plus, User, CreditCard, Users } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
@@ -9,15 +9,27 @@ import CreateGroupSheet from "@/components/CreateGroupSheet";
 import AddMoneySheet from "@/components/AddMoneySheet";
 import PaymentConfirmationSheet from "@/components/PaymentConfirmationSheet";
 import PWAInstallButton from "@/components/PWAInstallButton";
+import NotificationIcon from "@/components/NotificationIcon";
+import OnboardingTour from "@/components/OnboardingTour";
+import PageGuide from "@/components/PageGuide";
 import { toast } from "sonner";
 import Tooltip from "@/components/Tooltip";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, getWalletBalance, getTotalToReceive, getTotalToPay, getSettlementDelta } = useFirebaseAuth();
   const { groups, createGroup, addExpense, recordPayment, addMoneyToWallet, payMyDebt, getAllTransactions } = useFirebaseData();
+  const { isInstalled } = usePWAInstall();
+  const { 
+    shouldShowOnboarding, 
+    shouldShowPageGuide, 
+    markOnboardingComplete, 
+    markPageGuideShown
+  } = useUserPreferences(user?.uid);
   
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("home");
   const [showAddExpense, setShowAddExpense] = useState(false);
@@ -32,6 +44,64 @@ const Dashboard = () => {
     amount: number;
     groupId?: string;
   } | null>(null);
+
+  // Onboarding and guide states
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showDashboardGuide, setShowDashboardGuide] = useState(false);
+
+  // Check if we should show onboarding or guides
+  useEffect(() => {
+    if (shouldShowOnboarding()) {
+      setShowOnboarding(true);
+    } else if (shouldShowPageGuide('dashboard')) {
+      setShowDashboardGuide(true);
+    }
+  }, [shouldShowOnboarding, shouldShowPageGuide]);
+
+  // Onboarding steps
+  const onboardingSteps = [
+    {
+      id: 'welcome',
+      title: 'Welcome to Hostel Ledger! 🎉',
+      description: 'Your smart companion for splitting expenses with friends, roommates, and groups. Let\'s get you started!',
+      emoji: '👋'
+    },
+    {
+      id: 'wallet',
+      title: 'Your Digital Wallet 💰',
+      description: 'This shows your available balance. Add money here and track what you can spend right now.',
+      emoji: '💳'
+    },
+    {
+      id: 'settlements',
+      title: 'Smart Settlements 🧮',
+      description: 'See who owes you money and who you need to pay. We calculate everything automatically!',
+      emoji: '⚖️'
+    },
+    {
+      id: 'actions',
+      title: 'Quick Actions ⚡',
+      description: 'Add expenses, record payments, and create groups with just a tap. Everything you need is here!',
+      emoji: '🚀'
+    },
+    {
+      id: 'ready',
+      title: 'You\'re All Set! ✨',
+      description: 'Start by creating your first group and adding your friends. Happy expense splitting!',
+      emoji: '🎯'
+    }
+  ];
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    markOnboardingComplete();
+    toast.success("Welcome aboard! 🎉");
+  };
+
+  const handleDashboardGuideClose = () => {
+    setShowDashboardGuide(false);
+    markPageGuideShown('dashboard');
+  };
 
   // Get all transactions including wallet transactions
   const allTransactions = getAllTransactions();
@@ -412,7 +482,7 @@ const Dashboard = () => {
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 z-50"></div>
       
       {/* Header with Enhanced Personalization and Better Typography */}
-      <div className="pt-9 pb-6 px-4">
+      <div className="pt-9 pb-2 px-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             {/* Profile Avatar with Photo */}
@@ -431,9 +501,20 @@ const Dashboard = () => {
               </h1>
             </div>
           </div>
-          {/* PWA Install Button */}
+          {/* PWA Install Button or Notification Icon */}
           <div className="flex-shrink-0">
-            <PWAInstallButton />
+            {isInstalled ? <NotificationIcon /> : <PWAInstallButton />}
+          </div>
+        </div>
+      </div>
+
+      {/* Inspirational Quote Section */}
+      <div className="px-4 pb-4">
+        <div className="bg-white/60 rounded-2xl p-4 border border-white/50">
+          <div className="text-center">
+            <p className="text-sm text-gray-600 italic leading-relaxed">
+              "Every penny saved is a penny earned. Track smart, spend wise! 💡"
+            </p>
           </div>
         </div>
       </div>
@@ -441,8 +522,7 @@ const Dashboard = () => {
       {/* Dashboard Cards - Production-Grade Fintech UI */}
       <div className="mobile-padding">
         {/* Available Balance Card - Modern emerald/teal design */}
-        <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 rounded-3xl p-6 shadow-[0_12px_40px_rgba(16,185,129,0.2)] animate-[slideUp_0.5s_ease_forwards] text-white hover:shadow-[0_16px_48px_rgba(16,185,129,0.25)] active:scale-[0.99] transition-all duration-300 cursor-pointer mb-6"
-             onClick={() => setShowAddMoney(true)}>
+        <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 rounded-3xl p-6 shadow-[0_12px_40px_rgba(16,185,129,0.2)] animate-[slideUp_0.5s_ease_forwards] text-white hover:shadow-[0_16px_48px_rgba(16,185,129,0.25)] transition-all duration-300 mb-6 relative">
           <div className="flex justify-between items-start mb-3">
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium tracking-wide uppercase text-white/90">Available Balance</span>
@@ -456,7 +536,8 @@ const Dashboard = () => {
               </Tooltip>
             </div>
             <button 
-              className="bg-white/20 backdrop-blur-sm border-0 text-white w-10 h-10 rounded-2xl text-2xl cursor-pointer hover:bg-white/30 active:scale-95 transition-all flex items-center justify-center"
+              onClick={() => setShowAddMoney(true)}
+              className="bg-white/20 border-0 text-white w-10 h-10 rounded-2xl text-2xl cursor-pointer hover:bg-white/30 active:scale-95 transition-all flex items-center justify-center"
             >
               <Plus className="w-5 h-5" />
             </button>
@@ -518,7 +599,7 @@ const Dashboard = () => {
           {/* Receive / Owe Split Cards - Crisp design */}
           <div className="grid grid-cols-2 gap-3">
             <button 
-              onClick={() => navigate("/groups")}
+              onClick={() => navigate("/to-receive")}
               className={`border rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] active:scale-[0.99] transition-all duration-300 text-left group ${
                 totalToReceive <= 0 
                   ? 'bg-gray-50 border-gray-200 cursor-default' 
@@ -533,9 +614,7 @@ const Dashboard = () => {
                   </span>
                 </div>
                 {totalToReceive > 0 && (
-                  <svg className="w-4 h-4 text-gray-300 group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <ArrowDownLeft className="w-4 h-4 text-emerald-400 group-hover:text-emerald-500 transition-colors" />
                 )}
               </div>
               <div className={`text-2xl font-bold tabular-nums mb-1 ${totalToReceive <= 0 ? 'text-gray-500' : 'text-emerald-600'}`}>
@@ -547,17 +626,15 @@ const Dashboard = () => {
             </button>
             
             <button 
-              onClick={() => navigate("/groups")}
+              onClick={() => navigate("/to-pay")}
               className="bg-white border border-gray-100 rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_32px_rgba(251,146,60,0.08)] active:scale-[0.99] transition-all duration-300 text-left group"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
-                  <span className="text-xs font-medium tracking-wide uppercase text-gray-600">To Pay</span>
+                  <span className="text-xs font-medium tracking-wide uppercase text-gray-600">You Owe</span>
                 </div>
-                <svg className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
-                </svg>
+                <ArrowUpRight className="w-4 h-4 text-orange-400 group-hover:text-orange-500 transition-colors" />
               </div>
               <div className="text-2xl font-bold text-orange-600 tabular-nums mb-1">
                 Rs {totalToPay.toLocaleString()}
@@ -712,6 +789,27 @@ const Dashboard = () => {
           onClose={() => setSelectedTransaction(null)}
         />
       )}
+
+      {/* Onboarding Tour */}
+      <OnboardingTour
+        open={showOnboarding}
+        onClose={handleOnboardingComplete}
+        steps={onboardingSteps}
+      />
+
+      {/* Dashboard Page Guide */}
+      <PageGuide
+        title="Dashboard Overview"
+        description="This is your financial command center! Here you can see your balance, pending settlements, and recent activity."
+        tips={[
+          "Tap the wallet card to add money",
+          "Use quick actions to split bills instantly",
+          "Check recent activity to track all transactions"
+        ]}
+        emoji="🏠"
+        show={showDashboardGuide}
+        onClose={handleDashboardGuideClose}
+      />
 
       {/* Bottom Navigation */}
       <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />

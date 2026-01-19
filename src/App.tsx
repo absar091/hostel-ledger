@@ -24,6 +24,8 @@ import InstallApp from "./pages/InstallApp";
 import About from "./pages/About";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import ToReceive from "./pages/ToReceive";
+import ToPay from "./pages/ToPay";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,7 +33,7 @@ const queryClient = new QueryClient();
 // Reusable Splash Screen Component
 const SplashScreen = () => {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-emerald-400 via-teal-300 to-green-300">
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50">
       <div className="flex flex-col items-center">
         
         {/* LOGO - SVG for crisp display */}
@@ -39,34 +41,33 @@ const SplashScreen = () => {
           src="/only-logo.png"
           alt="Hostel Ledger"
           style={{ 
-            width: 200, 
-            height: 200,
-            mixBlendMode: "multiply",
-            filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.1))",
-            animation: "logoFadeIn 1s ease-out, logoPulse 2s ease-in-out infinite"
+            width: 120, 
+            height: 120,
+            filter: "drop-shadow(0 4px 12px rgba(16, 185, 129, 0.15))",
+            animation: "logoFadeIn 0.8s ease-out, logoFloat 3s ease-in-out infinite"
           }}
         />
         
-        {/* TITLE - More  Closer to logo, slightly smaller for balance */}
+        {/* TITLE - More refined and subtle */}
         <div
           style={{
-            marginTop: 0,
-            fontSize: 30,
-            fontWeight: 800,
-            letterSpacing: "1px",
-            color: "#ffffffd4",
+            marginTop: 24,
+            fontSize: 28,
+            fontWeight: 700,
+            letterSpacing: "-0.5px",
+            color: "#047857",
             textAlign: "center",
           }}
         >
           Hostel Ledger
         </div>
         
-        {/* LOADER */}
+        {/* LOADER - More subtle and refined */}
         <div
           style={{
-            marginTop: 40,
-            width: 35,
-            height: 35,
+            marginTop: 32,
+            width: 32,
+            height: 32,
             position: "relative",
           }}
         >
@@ -75,15 +76,15 @@ const SplashScreen = () => {
               key={i}
               style={{
                 position: "absolute",
-                width: 4,
-                height: 4,
+                width: 3,
+                height: 3,
                 borderRadius: "50%",
-                backgroundColor: "rgba(255,255,255,0.9)",
+                backgroundColor: "#10b981",
                 top: "50%",
                 left: "50%",
                 transform: `rotate(${i * 45}deg) translateY(-12px)`,
-                animation: "fade 1s linear infinite",
-                animationDelay: `${i * 0.12}s`,
+                animation: "fade 1.2s linear infinite",
+                animationDelay: `${i * 0.15}s`,
               }}
             />
           ))}
@@ -92,26 +93,26 @@ const SplashScreen = () => {
         <style>{`
           @keyframes fade {
             0% { opacity: 1; }
-            100% { opacity: 0.15; }
+            100% { opacity: 0.2; }
           }
           
           @keyframes logoFadeIn {
             0% { 
               opacity: 0;
-              transform: scale(0.8);
+              transform: scale(0.9) translateY(10px);
             }
             100% { 
               opacity: 1;
-              transform: scale(1);
+              transform: scale(1) translateY(0);
             }
           }
           
-          @keyframes logoPulse {
+          @keyframes logoFloat {
             0%, 100% { 
-              transform: scale(1);
+              transform: translateY(0px);
             }
             50% { 
-              transform: scale(1.05);
+              transform: translateY(-8px);
             }
           }
         `}</style>
@@ -170,6 +171,8 @@ const AppRoutes = () => (
     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
     <Route path="/budget" element={<ProtectedRoute><Budget /></ProtectedRoute>} />
     <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
+    <Route path="/to-receive" element={<ProtectedRoute><ToReceive /></ProtectedRoute>} />
+    <Route path="/to-pay" element={<ProtectedRoute><ToPay /></ProtectedRoute>} />
     <Route path="/about" element={<ProtectedRoute><About /></ProtectedRoute>} />
     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
     <Route path="/terms-of-service" element={<TermsOfService />} />

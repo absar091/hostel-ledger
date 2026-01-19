@@ -12,13 +12,28 @@ import {
   X
 } from "lucide-react";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import PageGuide from "@/components/PageGuide";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 const DownloadApp = () => {
   const navigate = useNavigate();
   const { user } = useFirebaseAuth();
+  const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
+  const [showPageGuide, setShowPageGuide] = useState(false);
+
+  useEffect(() => {
+    if (shouldShowPageGuide('download-app')) {
+      setShowPageGuide(true);
+    }
+  }, [shouldShowPageGuide]);
+
+  const handleClosePageGuide = () => {
+    setShowPageGuide(false);
+    markPageGuideShown('download-app');
+  };
 
   useEffect(() => {
     // Listen for the beforeinstallprompt event
@@ -79,6 +94,20 @@ const DownloadApp = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center p-4">
+      {/* Page Guide */}
+      <PageGuide
+        title="Install the App 📱"
+        description="Get the best experience by installing Hostel Ledger as a native app on your device."
+        tips={[
+          "Installing the app gives you faster loading and offline access",
+          "You'll get push notifications for important updates",
+          "The app works just like any other app on your phone"
+        ]}
+        emoji="⬇️"
+        show={showPageGuide}
+        onClose={handleClosePageGuide}
+      />
+
       <div className="w-full max-w-2xl">
         {/* Skip Button */}
         <div className="flex justify-end mb-4">
@@ -92,10 +121,10 @@ const DownloadApp = () => {
         </div>
 
         {/* Main Card */}
-        <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl overflow-hidden border border-white/50">
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-200">
           {/* Header Section */}
           <div className="bg-gradient-to-br from-emerald-500 to-teal-500 p-8 text-center text-white">
-            <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-6 border-2 border-white/30">
+            <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center mx-auto mb-6 border-2 border-white/30">
               <Smartphone className="w-10 h-10 text-white" />
             </div>
             <h1 className="text-3xl font-bold mb-3">Get the Best Experience</h1>

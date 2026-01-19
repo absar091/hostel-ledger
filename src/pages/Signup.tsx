@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,14 +20,18 @@ import {
 import { sendVerificationEmail } from "@/lib/email";
 import { storeVerificationCode } from "@/lib/verificationStore";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import PageGuide from "@/components/PageGuide";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { signup, checkEmailExists } = useFirebaseAuth();
+  const { signup, checkEmailExists, user } = useFirebaseAuth();
+  const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   const [currentView, setCurrentView] = useState<'basic' | 'password'>('basic');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPageGuide, setShowPageGuide] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -42,6 +46,17 @@ const Signup = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (shouldShowPageGuide('signup')) {
+      setShowPageGuide(true);
+    }
+  }, [shouldShowPageGuide]);
+
+  const handleClosePageGuide = () => {
+    setShowPageGuide(false);
+    markPageGuideShown('signup');
+  };
 
   // Password strength calculation
   const calculatePasswordStrength = (password: string) => {
@@ -232,6 +247,20 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center p-4">
+      {/* Page Guide */}
+      <PageGuide
+        title="Create Your Account 🚀"
+        description="Join Hostel Ledger to start tracking shared expenses with your roommates and friends."
+        tips={[
+          "Fill in your basic information first, then set a secure password",
+          "Use your real name so friends can easily find and add you",
+          "Choose a strong password with uppercase, lowercase, numbers, and symbols"
+        ]}
+        emoji="📝"
+        show={showPageGuide}
+        onClose={handleClosePageGuide}
+      />
+
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">

@@ -1,11 +1,43 @@
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import PageGuide from "@/components/PageGuide";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 
 const PrivacyPolicy = () => {
   const navigate = useNavigate();
+  const { user } = useFirebaseAuth();
+  const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
+  const [showPageGuide, setShowPageGuide] = useState(false);
+
+  useEffect(() => {
+    if (shouldShowPageGuide('privacy-policy')) {
+      setShowPageGuide(true);
+    }
+  }, [shouldShowPageGuide]);
+
+  const handleClosePageGuide = () => {
+    setShowPageGuide(false);
+    markPageGuideShown('privacy-policy');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 pb-8">
+      {/* Page Guide */}
+      <PageGuide
+        title="Privacy Policy 🔒"
+        description="Learn how we protect your data and what information we collect to provide our services."
+        tips={[
+          "We use industry-standard security measures to protect your data",
+          "Your financial information is encrypted and never shared with third parties",
+          "You can delete your account and all data at any time"
+        ]}
+        emoji="🛡️"
+        show={showPageGuide}
+        onClose={handleClosePageGuide}
+      />
+
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="mobile-padding py-4 flex items-center gap-3">

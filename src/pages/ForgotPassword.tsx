@@ -1,17 +1,32 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Mail, ArrowLeft, Send } from "lucide-react";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import PageGuide from "@/components/PageGuide";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
-  const { sendPasswordResetEmail, checkEmailExists } = useFirebaseAuth();
+  const { sendPasswordResetEmail, checkEmailExists, user } = useFirebaseAuth();
+  const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [showPageGuide, setShowPageGuide] = useState(false);
+
+  useEffect(() => {
+    if (shouldShowPageGuide('forgot-password')) {
+      setShowPageGuide(true);
+    }
+  }, [shouldShowPageGuide]);
+
+  const handleClosePageGuide = () => {
+    setShowPageGuide(false);
+    markPageGuideShown('forgot-password');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,6 +144,20 @@ const ForgotPassword = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center p-4">
+      {/* Page Guide */}
+      <PageGuide
+        title="Reset Your Password 🔑"
+        description="Enter your email address and we'll send you instructions to reset your password."
+        tips={[
+          "Make sure to enter the email address you used to create your account",
+          "Check your spam folder if you don't see the reset email",
+          "The reset link will expire after 24 hours for security"
+        ]}
+        emoji="📧"
+        show={showPageGuide}
+        onClose={handleClosePageGuide}
+      />
+
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">

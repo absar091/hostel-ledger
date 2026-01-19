@@ -1,20 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Users, ChevronRight, Plus, TrendingUp, TrendingDown } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import CreateGroupSheet from "@/components/CreateGroupSheet";
+import PageGuide from "@/components/PageGuide";
 import Tooltip from "@/components/Tooltip";
 import { toast } from "sonner";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 const Groups = () => {
   const navigate = useNavigate();
   const { user } = useFirebaseAuth();
   const { groups, createGroup } = useFirebaseData();
+  const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("groups");
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showGroupsGuide, setShowGroupsGuide] = useState(false);
+
+  // Check if we should show page guide
+  useEffect(() => {
+    if (shouldShowPageGuide('groups')) {
+      setShowGroupsGuide(true);
+    }
+  }, [shouldShowPageGuide]);
+
+  const handleGroupsGuideClose = () => {
+    setShowGroupsGuide(false);
+    markPageGuideShown('groups');
+  };
 
   const handleTabChange = (tab: typeof activeTab) => {
     if (tab === "home") {
@@ -182,6 +198,20 @@ const Groups = () => {
 
       {/* Bottom Navigation */}
       <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+
+      {/* Groups Page Guide */}
+      <PageGuide
+        title="Groups & Expenses"
+        description="Manage your expense groups here. Create groups with friends, roommates, or colleagues to split bills easily."
+        tips={[
+          "Tap the + button to create your first group",
+          "Add members with their phone numbers for easy identification",
+          "Each group shows your balance - green means you'll receive money, red means you owe"
+        ]}
+        emoji="👥"
+        show={showGroupsGuide}
+        onClose={handleGroupsGuideClose}
+      />
 
       {/* Create Group Sheet */}
       <CreateGroupSheet

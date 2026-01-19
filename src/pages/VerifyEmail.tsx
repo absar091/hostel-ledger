@@ -7,19 +7,34 @@ import { Shield, ArrowLeft, RefreshCw } from "lucide-react";
 import { verifyVerificationCode, resendVerificationCode, getVerificationTimeRemaining } from "@/lib/verificationStore";
 import { sendVerificationEmail, sendWelcomeEmail } from "@/lib/email";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import PageGuide from "@/components/PageGuide";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 const VerifyEmail = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { markEmailAsVerified, firebaseUser } = useFirebaseAuth();
+  const { markEmailAsVerified, firebaseUser, user } = useFirebaseAuth();
+  const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [showPageGuide, setShowPageGuide] = useState(false);
   
   const email = location.state?.email || "";
   const type = location.state?.type || "signup";
+
+  useEffect(() => {
+    if (shouldShowPageGuide('verify-email')) {
+      setShowPageGuide(true);
+    }
+  }, [shouldShowPageGuide]);
+
+  const handleClosePageGuide = () => {
+    setShowPageGuide(false);
+    markPageGuideShown('verify-email');
+  };
 
   // Update countdown timer and prevent back navigation
   useEffect(() => {
@@ -246,6 +261,20 @@ const VerifyEmail = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center p-4">
+      {/* Page Guide */}
+      <PageGuide
+        title="Verify Your Email 📧"
+        description="Check your email for a 6-digit verification code to complete your account setup."
+        tips={[
+          "Enter the 6-digit code sent to your email address",
+          "Check your spam folder if you don't see the email",
+          "The code expires in 10 minutes for security"
+        ]}
+        emoji="🔐"
+        show={showPageGuide}
+        onClose={handleClosePageGuide}
+      />
+
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
