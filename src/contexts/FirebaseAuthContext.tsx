@@ -11,7 +11,7 @@ import {
   fetchSignInMethodsForEmail
 } from "firebase/auth";
 import { ref, set, get, update, push, onValue, off } from "firebase/database";
-import { getFirebaseAuth, getFirebaseDatabase } from "@/lib/firebase";
+import { auth, database } from "@/lib/firebase";
 import { logger } from "@/lib/logger";
 import { retryOperation } from "@/lib/transaction";
 import { 
