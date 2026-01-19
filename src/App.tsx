@@ -90,6 +90,29 @@ const SplashScreen = () => {
           ))}
         </div>
         
+        {/* INSPIRATIONAL QUOTE - Elegant and motivational */}
+        <div
+          style={{
+            marginTop: 48,
+            maxWidth: 320,
+            textAlign: "center",
+            padding: "0 20px",
+          }}
+        >
+          <p
+            style={{
+              fontSize: 16,
+              fontStyle: "italic",
+              color: "#6b7280",
+              lineHeight: 1.6,
+              fontWeight: 500,
+              animation: "quoteSlideUp 1s ease-out 0.5s both",
+            }}
+          >
+            "Every penny saved is a penny earned. Track smart, spend wise! 💡"
+          </p>
+        </div>
+        
         <style>{`
           @keyframes fade {
             0% { opacity: 1; }
@@ -113,6 +136,17 @@ const SplashScreen = () => {
             }
             50% { 
               transform: translateY(-8px);
+            }
+          }
+          
+          @keyframes quoteSlideUp {
+            0% { 
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            100% { 
+              opacity: 1;
+              transform: translateY(0);
             }
           }
         `}</style>

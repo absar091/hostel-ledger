@@ -4,7 +4,6 @@ import FinancialInfoDialog from "./FinancialInfoDialog";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -30,13 +29,12 @@ const WalletCard = ({
   const settlementDelta = getSettlementDelta();
   
   return (
-    <TooltipProvider delayDuration={300}>
-      <div className="wallet-card mobile-margin mb-6">
-        {/* Available Budget Section - Mobile Optimized */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
+    <div className="wallet-card mobile-margin mb-6">
+      {/* Available Budget Section - Mobile Optimized */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
                 <div className="text-white/80 text-sm font-medium mb-1 flex items-center gap-2 cursor-help">
                   Available Budget
                   <FinancialInfoDialog type="availableBudget">
@@ -156,7 +154,7 @@ const WalletCard = ({
           </Tooltip>
         </div>
       </div>
-    </TooltipProvider>
+    </div>
   );
 };
 

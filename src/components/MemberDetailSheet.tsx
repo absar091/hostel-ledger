@@ -5,7 +5,6 @@ import { ArrowDownLeft, ArrowUpRight, HandCoins, Calendar, MapPin, CreditCard, B
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -195,9 +194,8 @@ const MemberDetailSheet = ({
           )}
 
           {/* Quick Actions - Both directions now available */}
-          <TooltipProvider delayDuration={300}>
-            <div className="flex gap-3 mb-6">
-              {/* Receive Payment Button */}
+          <div className="flex gap-3 mb-6">
+            {/* Receive Payment Button */}
               {theyOweYou > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -250,9 +248,8 @@ const MemberDetailSheet = ({
                     <p>Record a payment between you and {member.name}</p>
                   </TooltipContent>
                 </Tooltip>
-              )}
-            </div>
-          </TooltipProvider>
+            )}
+          </div>
 
           {/* Balance History Ledger */}
           <div className="space-y-3">

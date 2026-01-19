@@ -18,7 +18,6 @@ import { useUserPreferences } from "@/hooks/useUserPreferences";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -455,9 +454,8 @@ const GroupDetail = () => {
       </main>
 
       {/* Floating Action Buttons */}
-      <TooltipProvider delayDuration={300}>
-        <div className="fixed bottom-6 left-4 right-4 flex gap-3">
-          <Tooltip>
+      <div className="fixed bottom-6 left-4 right-4 flex gap-3">
+        <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 onClick={() => setShowRecordPayment(true)}
@@ -486,9 +484,8 @@ const GroupDetail = () => {
             <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800">
               <p>Add a shared expense and split it among members</p>
             </TooltipContent>
-          </Tooltip>
-        </div>
-      </TooltipProvider>
+        </Tooltip>
+      </div>
 
       {/* Add Expense Sheet */}
       <AddExpenseSheet

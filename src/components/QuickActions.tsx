@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -15,10 +14,9 @@ interface QuickActionsProps {
 
 const QuickActions = ({ onAddExpense, onReceivedMoney, onNewGroup }: QuickActionsProps) => {
   return (
-    <TooltipProvider delayDuration={300}>
-      <div className="grid grid-cols-3 gap-3 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-        <Tooltip>
-          <TooltipTrigger asChild>
+    <div className="grid grid-cols-3 gap-3 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+      <Tooltip>
+        <TooltipTrigger asChild>
             <Button
               onClick={onAddExpense}
               className="flex flex-col items-center gap-2 h-auto py-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-card"
@@ -70,7 +68,7 @@ const QuickActions = ({ onAddExpense, onReceivedMoney, onNewGroup }: QuickAction
           </TooltipContent>
         </Tooltip>
       </div>
-    </TooltipProvider>
+    </div>
   );
 };
 

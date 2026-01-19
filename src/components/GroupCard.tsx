@@ -2,7 +2,6 @@ import { ChevronRight, Users } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -18,9 +17,8 @@ const GroupCard = ({ name, balance, memberCount, emoji = "👥", onClick }: Grou
   const isPositive = balance >= 0;
   
   return (
-    <TooltipProvider delayDuration={400}>
-      <Tooltip>
-        <TooltipTrigger asChild>
+    <Tooltip>
+      <TooltipTrigger asChild>
           <button
             onClick={onClick}
             className="w-full bg-card rounded-xl p-4 shadow-card hover:shadow-card-hover transition-all duration-200 flex items-center gap-4 group"
@@ -51,9 +49,8 @@ const GroupCard = ({ name, balance, memberCount, emoji = "👥", onClick }: Grou
         </TooltipTrigger>
         <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800 max-w-xs">
           <p>Tap to view group details, expenses, and member balances</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+      </TooltipContent>
+    </Tooltip>
   );
 };
 

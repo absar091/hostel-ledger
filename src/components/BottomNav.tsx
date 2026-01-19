@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -30,9 +29,8 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
   ];
 
   return (
-    <TooltipProvider delayDuration={400}>
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-gray-100 safe-area-pb z-50 shadow-lg">
-        <div className="max-w-lg mx-auto flex items-center justify-around py-2">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-gray-100 safe-area-pb z-50 shadow-lg">
+      <div className="max-w-lg mx-auto flex items-center justify-around py-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -75,9 +73,8 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
               </Tooltip>
             );
           })}
-        </div>
-      </nav>
-    </TooltipProvider>
+      </div>
+    </nav>
   );
 };
 

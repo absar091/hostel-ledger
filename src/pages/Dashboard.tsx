@@ -483,7 +483,7 @@ const Dashboard = () => {
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 z-50"></div>
       
       {/* Header with Enhanced Personalization and Better Typography */}
-      <div className="pt-9 pb-2 px-4">
+      <div className="pt-9 pb-10 px-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             {/* Profile Avatar with Photo */}
@@ -510,21 +510,10 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Inspirational Quote Section */}
-      <div className="px-4 pb-4">
-        <div className="bg-white/60 rounded-2xl p-4 border border-white/50">
-          <div className="text-center">
-            <p className="text-sm text-gray-600 italic leading-relaxed">
-              "Every penny saved is a penny earned. Track smart, spend wise! 💡"
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Dashboard Cards - Production-Grade Fintech UI */}
-      <div className="mobile-padding">
+      <div className="mobile-padding pt-6">
         {/* Available Balance Card - Modern emerald/teal design */}
-        <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 rounded-3xl p-6 shadow-[0_12px_40px_rgba(16,185,129,0.2)] animate-[slideUp_0.5s_ease_forwards] text-white hover:shadow-[0_16px_48px_rgba(16,185,129,0.25)] transition-all duration-300 mb-6 relative">
+        <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 rounded-3xl p-6 shadow-[0_12px_40px_rgba(16,185,129,0.2)] animate-[slideUp_0.5s_ease_forwards] text-white hover:shadow-[0_16px_48px_rgba(16,185,129,0.25)] transition-all duration-300 mb-8 relative">
           <div className="flex justify-between items-start mb-3">
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium tracking-wide uppercase text-white/90">Available Balance</span>
@@ -566,7 +555,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Settlement Delta Card - Crisp, no blur */}
           <button 
             onClick={() => navigate("/groups")}
@@ -599,7 +588,7 @@ const Dashboard = () => {
           </button>
 
           {/* Receive / Owe Split Cards - Crisp design */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <button 
               onClick={() => navigate("/to-receive")}
               className={`border rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] active:scale-[0.99] transition-all duration-300 text-left group ${
@@ -647,7 +636,7 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Actions - Crisp, no blur effects */}
-        <div className="grid grid-cols-3 gap-3 mt-6">
+        <div className="grid grid-cols-3 gap-4 mt-8">
           <button
             onClick={handleAddExpense}
             className="bg-white rounded-3xl p-4 hover:bg-gray-50 hover:shadow-[0_8px_32px_rgba(0,0,0,0.08)] active:scale-[0.98] transition-all duration-300 text-center group border border-gray-100"
