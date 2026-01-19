@@ -482,36 +482,50 @@ const Dashboard = () => {
       {/* Full-width top accent border */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 z-50"></div>
       
-      {/* Header with Enhanced Personalization and Better Typography */}
-      <div className="pt-9 pb-10 px-4">
+      {/* App Header - Clean and Professional */}
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-100/50 pt-2 pb-3 px-4 sticky top-0 z-40">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {/* Profile Avatar with Photo */}
-            <Avatar 
-              name={user?.name || "User"} 
-              photoURL={user?.photoURL} 
-              size="lg" 
+          {/* App Logo and Name */}
+          <div className="flex items-center gap-3">
+            <img
+              src="/only-logo.png"
+              alt="Hostel Ledger"
+              className="w-8 h-8 object-contain"
             />
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">{greeting.emoji}</span>
-                <div className="text-sm font-medium text-gray-600">{greeting.text}</div>
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-                {user?.name ? `${user.name.split(' ')[0]}!` : "Welcome!"}
-              </h1>
-            </div>
+            <h1 className="text-lg font-bold text-gray-900 tracking-tight">Hostel Ledger</h1>
           </div>
-          {/* PWA Install Button or Notification Icon */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          
+          {/* Header Actions */}
+          <div className="flex items-center gap-3">
             <ShareButton variant="icon" />
             {isInstalled ? <NotificationIcon /> : <PWAInstallButton />}
           </div>
         </div>
       </div>
 
+      {/* Profile Greeting Section - Separate and Elegant */}
+      <div className="px-4 pt-6 pb-4">
+        <div className="flex items-center gap-4">
+          {/* Profile Avatar */}
+          <Avatar 
+            name={user?.name || "User"} 
+            photoURL={user?.photoURL} 
+            size="lg" 
+          />
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg">{greeting.emoji}</span>
+              <div className="text-sm font-medium text-gray-600">{greeting.text}</div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 leading-tight">
+              {user?.name ? `${user.name.split(' ')[0]}!` : "Welcome!"}
+            </h2>
+          </div>
+        </div>
+      </div>
+
       {/* Dashboard Cards - Production-Grade Fintech UI */}
-      <div className="mobile-padding pt-6">
+      <div className="mobile-padding pt-2">
         {/* Available Balance Card - Modern emerald/teal design */}
         <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 rounded-3xl p-6 shadow-[0_12px_40px_rgba(16,185,129,0.2)] animate-[slideUp_0.5s_ease_forwards] text-white hover:shadow-[0_16px_48px_rgba(16,185,129,0.25)] transition-all duration-300 mb-8 relative">
           <div className="flex justify-between items-start mb-3">
