@@ -566,7 +566,13 @@ const Dashboard = () => {
               </button>
             </div>
             
-            <div className="mt-8 glass rounded-2xl p-4 flex justify-between items-center border border-white/20">
+            <div className="mt-8 p-4 flex justify-between items-center" style={{ 
+              background: 'rgba(255, 255, 255, 0.1)', 
+              backdropFilter: 'blur(12px)', 
+              WebkitBackdropFilter: 'blur(12px)', 
+              borderRadius: '2rem',
+              boxShadow: 'inset 0 0 0 2px rgba(255, 255, 255, 0.2)'
+            }}>
               <div>
                 <p className="text-white/60 text-[10px] uppercase font-bold">After settlements</p>
                 <p className="text-lg font-semibold text-white">Rs {afterSettlementsBalance.toLocaleString()}</p>
