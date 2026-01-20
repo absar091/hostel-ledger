@@ -38,17 +38,8 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('lucide-react')) {
               return 'icons';
             }
-            // Other utilities
-            if (id.includes('date-fns') || id.includes('clsx') || id.includes('tailwind-merge') || id.includes('sonner')) {
-              return 'utils-vendor';
-            }
             // Everything else from node_modules
             return 'vendor';
-          }
-          
-          // Group app pages together if they're small
-          if (id.includes('/pages/') && !id.includes('Dashboard') && !id.includes('GroupDetail')) {
-            return 'app-pages';
           }
         },
       },
