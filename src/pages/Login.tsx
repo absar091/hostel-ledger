@@ -52,7 +52,30 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Top Accent Border - iPhone Style */}
+      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
+      
+      {/* App Header - iPhone Style Enhanced with #4a6850 */}
+      <div className="bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
+        <div className="flex items-center justify-center">
+          {/* App Logo and Name - Enhanced */}
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
+              <img
+                src="/only-logo.png"
+                alt="Hostel Ledger"
+                className="w-6 h-6 object-contain filter brightness-0 invert"
+              />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
+              <p className="text-xs text-[#4a6850]/80 font-bold">Split expenses with ease</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       {/* Page Guide */}
       <PageGuide
         title="Welcome Back! 👋"
@@ -68,57 +91,40 @@ const Login = () => {
       />
 
       {/* Header */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
-        {/* Logo */}
-        <div className="mb-8 text-center animate-fade-in">
-          <img 
-            src="/only-logo.png" 
-            alt="Hostel Ledger Logo" 
-            className="w-40 h-40 mx-auto object-contain opacity-90 mb-6"
-            loading="eager"
-            fetchpriority="high"
-            width="160"
-            height="160"
-          />
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 leading-tight mb-2">Hostel Ledger</h1>
-            <p className="text-gray-500 text-lg">Split expenses with ease</p>
-          </div>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 animate-slide-up">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-600">Email</label>
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
+        {/* Form - iPhone Style */}
+        <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6 animate-slide-up">
+          <div>
+            <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Email</label>
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
               <Input
                 type="email"
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 pl-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-900 placeholder:text-gray-400 transition-all duration-300"
+                className="h-14 pl-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl bg-white transition-all"
                 autoComplete="email"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-600">Password</label>
+          <div>
+            <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Password</label>
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
               <Input
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-12 pl-12 pr-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 text-gray-900 placeholder:text-gray-400 transition-all duration-300"
+                className="h-14 pl-14 pr-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl bg-white transition-all"
                 autoComplete="current-password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-[#4a6850]/60 hover:text-[#4a6850] transition-colors"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -127,24 +133,24 @@ const Login = () => {
 
           <Button 
             type="submit" 
-            className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg" 
+            className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50" 
             disabled={isLoading}
           >
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>
         </form>
 
-        {/* Sign up link */}
-        <p className="mt-8 text-center text-gray-500 animate-fade-in">
+        {/* Sign up link - iPhone Style */}
+        <p className="mt-8 text-center text-[#4a6850]/80 animate-fade-in font-bold">
           Don't have an account?{" "}
-          <Link to="/signup" className="text-emerald-600 font-medium hover:underline">
+          <Link to="/signup" className="text-[#4a6850] font-black hover:underline transition-all">
             Sign up
           </Link>
         </p>
 
-        {/* Forgot password link */}
-        <p className="mt-4 text-center text-gray-500 animate-fade-in">
-          <Link to="/forgot-password" className="text-emerald-600 font-medium hover:underline">
+        {/* Forgot password link - iPhone Style */}
+        <p className="mt-4 text-center text-[#4a6850]/80 animate-fade-in font-bold">
+          <Link to="/forgot-password" className="text-[#4a6850] font-black hover:underline transition-all">
             Forgot your password?
           </Link>
         </p>

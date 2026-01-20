@@ -260,7 +260,30 @@ const VerifyEmail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      {/* Top Accent Border - iPhone Style */}
+      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
+      
+      {/* App Header - iPhone Style Enhanced with #4a6850 */}
+      <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
+        <div className="flex items-center justify-center">
+          {/* App Logo and Name - Enhanced */}
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
+              <img
+                src="/only-logo.png"
+                alt="Hostel Ledger"
+                className="w-6 h-6 object-contain filter brightness-0 invert"
+              />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
+              <p className="text-xs text-[#4a6850]/80 font-bold">Split expenses with ease</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       {/* Page Guide */}
       <PageGuide
         title="Verify Your Email 📧"
@@ -275,29 +298,20 @@ const VerifyEmail = () => {
         onClose={handleClosePageGuide}
       />
 
-      <div className="w-full max-w-md">
-        {/* Header */}
+      <div className="w-full max-w-md pt-20">
+        {/* Header - iPhone Style */}
         <div className="text-center mb-8">
-          <img 
-            src="/only-logo.png" 
-            alt="Hostel Ledger Logo" 
-            className="w-32 h-32 mx-auto object-contain opacity-90 mb-4"
-            loading="eager"
-            fetchpriority="high"
-            width="128"
-            height="128"
-          />
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Check Your Email</h2>
-          <p className="text-gray-600">
+          <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Check Your Email</h2>
+          <p className="text-[#4a6850]/80 font-bold mb-2">
             We've sent a 6-digit verification code to
           </p>
-          <p className="text-emerald-600 font-medium mt-1">{email}</p>
+          <p className="text-[#4a6850] font-black">{email}</p>
         </div>
 
-        {/* Form - Direct on page like signup */}
-        <div className="space-y-6">
+        {/* Form - iPhone Style */}
+        <div className="space-y-8">
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
+            <label className="text-sm font-black text-[#4a6850]/80 mb-4 block uppercase tracking-wide">
               Verification Code
             </label>
             <Input
@@ -306,12 +320,12 @@ const VerifyEmail = () => {
               value={code}
               onChange={handleCodeChange}
               onKeyDown={(e) => e.key === 'Enter' && code.length === 6 && handleVerifyWithCode(code)}
-              className="h-14 text-center text-2xl font-mono tracking-widest bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300"
+              className="h-16 text-center text-3xl font-mono tracking-widest rounded-3xl border-[#4a6850]/20 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl bg-white transition-all"
               maxLength={6}
               autoComplete="one-time-code"
               autoFocus
             />
-            <p className="text-sm text-gray-500 mt-2 text-center">
+            <p className="text-sm text-[#4a6850]/80 mt-3 text-center font-bold">
               Enter the 6-digit code from your email
             </p>
           </div>
@@ -319,27 +333,27 @@ const VerifyEmail = () => {
           <Button
             onClick={() => handleVerifyWithCode(code)}
             disabled={isLoading || code.length !== 6}
-            className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+            className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
           >
             {isLoading ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Verifying...
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4" />
+              <div className="flex items-center gap-3">
+                <Shield className="w-5 h-5" />
                 Verify Email
               </div>
             )}
           </Button>
 
-          {/* Resend Section */}
-          <div className="text-center pt-4 border-t border-gray-200">
-            <p className="text-gray-600 mb-4">Didn't receive the code?</p>
+          {/* Resend Section - iPhone Style */}
+          <div className="text-center pt-6 border-t border-[#4a6850]/20">
+            <p className="text-[#4a6850]/80 mb-6 font-bold">Didn't receive the code?</p>
             
             {timeRemaining > 0 ? (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-[#4a6850]/80 font-bold">
                 Resend available in {formatTime(timeRemaining)}
               </p>
             ) : (
@@ -348,31 +362,28 @@ const VerifyEmail = () => {
                 variant="outline"
                 onClick={handleResend}
                 disabled={isResending}
-                className="w-full h-12 border-2 hover:border-emerald-500 transition-all duration-300"
+                className="w-full h-14 rounded-3xl border-2 border-[#4a6850]/20 text-[#4a6850] hover:bg-[#4a6850]/5 font-black shadow-lg hover:shadow-xl transition-all"
               >
                 {isResending ? (
-                  <div className="flex items-center gap-2">
-                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  <div className="flex items-center gap-3">
+                    <RefreshCw className="w-5 h-5 animate-spin" />
                     Sending...
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <RefreshCw className="w-4 h-4" />
+                  <div className="flex items-center gap-3">
+                    <RefreshCw className="w-5 h-5" />
                     Resend Code
                   </div>
                 )}
               </Button>
             )}
           </div>
-
-          {/* Back Link - Removed to prevent skipping verification */}
-          {/* Users must verify their email to continue */}
         </div>
 
-        {/* Help Text */}
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
+        {/* Help Text - iPhone Style */}
+        <div className="mt-10 pt-8 border-t border-[#4a6850]/20 text-center text-sm text-[#4a6850]/80 font-bold">
           <p>Check your spam folder if you don't see the email</p>
-          <p className="mt-1">The code expires in 10 minutes</p>
+          <p className="mt-2">The code expires in 10 minutes</p>
         </div>
       </div>
     </div>

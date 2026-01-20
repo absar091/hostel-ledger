@@ -246,7 +246,30 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      {/* Top Accent Border - iPhone Style */}
+      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
+      
+      {/* App Header - iPhone Style Enhanced with #4a6850 */}
+      <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
+        <div className="flex items-center justify-center">
+          {/* App Logo and Name - Enhanced */}
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
+              <img
+                src="/only-logo.png"
+                alt="Hostel Ledger"
+                className="w-6 h-6 object-contain filter brightness-0 invert"
+              />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
+              <p className="text-xs text-[#4a6850]/80 font-bold">Split expenses with ease</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       {/* Page Guide */}
       <PageGuide
         title="Create Your Account 🚀"
@@ -261,239 +284,222 @@ const Signup = () => {
         onClose={handleClosePageGuide}
       />
 
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="mb-8">
-            <img 
-              src="/only-logo.png" 
-              alt="Hostel Ledger Logo" 
-              className="w-32 h-32 mx-auto object-contain opacity-90 mb-4"
-              loading="eager"
-              fetchpriority="high"
-              width="128"
-              height="128"
-            />
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Join Hostel Ledger</h2>
-            <p className="text-gray-600">Create your account</p>
-          </div>
-        </div>
-
-        {/* Basic Information View */}
+      <div className="w-full max-w-md pt-20">
+        {/* Basic Information View - iPhone Style */}
         {currentView === 'basic' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">First Name</label>
+                <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">First Name</label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                   <Input
                     value={formData.firstName}
                     onChange={(e) => handleInputChange('firstName', e.target.value)}
                     placeholder="Absar"
-                    className="h-12 pl-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300"
+                    className="h-14 pl-12 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl bg-white transition-all"
                   />
                 </div>
                 {errors.firstName && (
-                  <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>
+                  <p className="text-red-500 text-sm mt-2 font-bold">{errors.firstName}</p>
                 )}
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Last Name</label>
+                <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Last Name</label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                   <Input
                     value={formData.lastName}
                     onChange={(e) => handleInputChange('lastName', e.target.value)}
                     placeholder="Ahmad Rao"
-                    className="h-12 pl-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300"
+                    className="h-14 pl-12 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl bg-white transition-all"
                   />
                 </div>
                 {errors.lastName && (
-                  <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>
+                  <p className="text-red-500 text-sm mt-2 font-bold">{errors.lastName}</p>
                 )}
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Email</label>
+              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Email</label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   type="email"
                   placeholder="absar.ahmad.rao@aarx.online"
-                  className="h-12 pl-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300"
+                  className="h-14 pl-12 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl bg-white transition-all"
                 />
               </div>
               {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                <p className="text-red-500 text-sm mt-2 font-bold">{errors.email}</p>
               )}
-              <p className="text-xs text-gray-500 mt-1">
-                Already have an account? <Link to="/login" className="text-emerald-600 hover:text-emerald-700 font-medium">Sign in here</Link>
+              <p className="text-xs text-[#4a6850]/80 mt-2 font-bold">
+                Already have an account? <Link to="/login" className="text-[#4a6850] hover:text-[#3d5643] font-black underline">Sign in here</Link>
               </p>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">University</label>
+              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">University</label>
               <div className="relative">
-                <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
                   value={formData.university}
                   onChange={(e) => handleInputChange('university', e.target.value)}
                   placeholder="University of Punjab"
-                  className="h-12 pl-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300"
+                  className="h-14 pl-12 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl bg-white transition-all"
                 />
               </div>
               {errors.university && (
-                <p className="text-red-500 text-sm mt-1">{errors.university}</p>
+                <p className="text-red-500 text-sm mt-2 font-bold">{errors.university}</p>
               )}
             </div>
 
             <Button
               onClick={handleContinue}
               disabled={isLoading}
-              className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+              className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
             >
               {isLoading ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Checking...
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   Continue
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-5 h-5" />
                 </div>
               )}
             </Button>
           </div>
         )}
 
-        {/* Password View */}
+        {/* Password View - iPhone Style */}
         {currentView === 'password' && (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Set Your Password</h2>
-              <p className="text-gray-600 text-sm">Choose a strong password for your account</p>
+          <div className="space-y-8">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight">Set Your Password</h2>
+              <p className="text-[#4a6850]/80 text-sm font-bold">Choose a strong password for your account</p>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Password</label>
+              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Password</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
-                  className="h-12 pl-12 pr-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300"
+                  className="h-14 pl-12 pr-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl bg-white transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4a6850]/60 hover:text-[#4a6850] transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+                <p className="text-red-500 text-sm mt-2 font-bold">{errors.password}</p>
               )}
             </div>
 
-            {/* Password Strength Indicator */}
+            {/* Password Strength Indicator - iPhone Style */}
             {formData.password && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">Password Strength:</span>
-                  <span className={`text-sm font-medium ${
-                    passwordStrength.strength === 'weak' ? 'text-red-500' :
-                    passwordStrength.strength === 'medium' ? 'text-yellow-500' : 'text-green-500'
+              <div className="bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl p-5 border border-[#4a6850]/20 shadow-lg">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-sm font-black text-[#4a6850]/80 uppercase tracking-wide">Password Strength:</span>
+                  <span className={`text-sm font-black px-3 py-1 rounded-2xl ${
+                    passwordStrength.strength === 'weak' ? 'bg-red-100 text-red-600' :
+                    passwordStrength.strength === 'medium' ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600'
                   }`}>
                     {passwordStrength.strength.charAt(0).toUpperCase() + passwordStrength.strength.slice(1)}
                   </span>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className={`flex items-center gap-1 ${passwordStrength.checks.length ? 'text-green-600' : 'text-gray-400'}`}>
-                    {passwordStrength.checks.length ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
-                    8+ characters
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className={`flex items-center gap-2 ${passwordStrength.checks.length ? 'text-green-600' : 'text-gray-400'}`}>
+                    {passwordStrength.checks.length ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                    <span className="font-bold">8+ characters</span>
                   </div>
-                  <div className={`flex items-center gap-1 ${passwordStrength.checks.uppercase ? 'text-green-600' : 'text-gray-400'}`}>
-                    {passwordStrength.checks.uppercase ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
-                    Uppercase letter
+                  <div className={`flex items-center gap-2 ${passwordStrength.checks.uppercase ? 'text-green-600' : 'text-gray-400'}`}>
+                    {passwordStrength.checks.uppercase ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                    <span className="font-bold">Uppercase letter</span>
                   </div>
-                  <div className={`flex items-center gap-1 ${passwordStrength.checks.lowercase ? 'text-green-600' : 'text-gray-400'}`}>
-                    {passwordStrength.checks.lowercase ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
-                    Lowercase letter
+                  <div className={`flex items-center gap-2 ${passwordStrength.checks.lowercase ? 'text-green-600' : 'text-gray-400'}`}>
+                    {passwordStrength.checks.lowercase ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                    <span className="font-bold">Lowercase letter</span>
                   </div>
-                  <div className={`flex items-center gap-1 ${passwordStrength.checks.numbers ? 'text-green-600' : 'text-gray-400'}`}>
-                    {passwordStrength.checks.numbers ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
-                    Number
+                  <div className={`flex items-center gap-2 ${passwordStrength.checks.numbers ? 'text-green-600' : 'text-gray-400'}`}>
+                    {passwordStrength.checks.numbers ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                    <span className="font-bold">Number</span>
                   </div>
                 </div>
               </div>
             )}
 
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Confirm Password</label>
+              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Confirm Password</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
                   value={formData.confirmPassword}
                   onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
-                  className="h-12 pl-12 pr-12 bg-white/80 border-2 border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300"
+                  className="h-14 pl-12 pr-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl bg-white transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4a6850]/60 hover:text-[#4a6850] transition-colors"
                 >
                   {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {errors.confirmPassword && (
-                <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
+                <p className="text-red-500 text-sm mt-2 font-bold">{errors.confirmPassword}</p>
               )}
             </div>
 
-            {/* Terms and Conditions - Single Line */}
-            <div className="space-y-2">
-              <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
+            {/* Terms and Conditions - iPhone Style */}
+            <div>
+              <div className="flex items-center space-x-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
                 <Checkbox 
                   checked={formData.termsAccepted && formData.privacyAccepted}
                   onCheckedChange={(checked) => {
                     handleInputChange('termsAccepted', checked);
                     handleInputChange('privacyAccepted', checked);
                   }}
-                  className="border-2 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                  className="border-2 data-[state=checked]:bg-[#4a6850] data-[state=checked]:border-[#4a6850] w-5 h-5"
                 />
-                <label className="text-sm text-gray-700 cursor-pointer flex-1">
+                <label className="text-sm text-[#4a6850]/80 cursor-pointer flex-1 font-bold">
                   I agree to the{" "}
-                  <Link to="/terms" className="text-emerald-600 hover:text-emerald-700 font-medium underline">
+                  <Link to="/terms" className="text-[#4a6850] hover:text-[#3d5643] font-black underline">
                     Terms & Conditions
                   </Link>
                   {" "}and{" "}
-                  <Link to="/privacy" className="text-emerald-600 hover:text-emerald-700 font-medium underline">
+                  <Link to="/privacy" className="text-[#4a6850] hover:text-[#3d5643] font-black underline">
                     Privacy Policy
                   </Link>
                 </label>
               </div>
               {(errors.termsAccepted || errors.privacyAccepted) && (
-                <p className="text-red-500 text-sm">You must accept the terms and privacy policy to continue</p>
+                <p className="text-red-500 text-sm mt-2 font-bold">You must accept the terms and privacy policy to continue</p>
               )}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <Button
                 onClick={() => setCurrentView('basic')}
                 variant="outline"
-                className="h-12 px-6 border-2 text-gray-600 hover:bg-gray-50"
+                className="h-14 px-8 rounded-3xl border-2 border-[#4a6850]/20 text-[#4a6850] hover:bg-[#4a6850]/5 font-black shadow-lg hover:shadow-xl transition-all"
               >
                 Back
               </Button>
@@ -501,10 +507,10 @@ const Signup = () => {
               <Button
                 onClick={handleCreateAccount}
                 disabled={isLoading || !formData.termsAccepted || !formData.privacyAccepted}
-                className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
               >
                 {isLoading ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <Loader2 className="w-5 h-5 animate-spin" />
                     Creating...
                   </div>
@@ -516,11 +522,11 @@ const Signup = () => {
           </div>
         )}
 
-        {/* Login Link */}
-        <div className="text-center mt-8 pt-6 border-t border-gray-200">
-          <p className="text-gray-600">
+        {/* Login Link - iPhone Style */}
+        <div className="text-center mt-10 pt-8 border-t border-[#4a6850]/20">
+          <p className="text-[#4a6850]/80 font-bold">
             Already have an account?{" "}
-            <Link to="/login" className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline transition-all duration-300">
+            <Link to="/login" className="text-[#4a6850] hover:text-[#3d5643] font-black hover:underline transition-all">
               Sign in here
             </Link>
           </p>

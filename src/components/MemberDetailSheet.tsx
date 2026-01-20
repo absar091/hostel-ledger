@@ -128,10 +128,10 @@ const MemberDetailSheet = ({
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white">
-        <SheetHeader className="flex-shrink-0 mb-6">
-          <SheetTitle className="text-center text-gray-900">Balance History</SheetTitle>
-          <SheetDescription className="text-center text-sm text-gray-500">
+      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white shadow-[0_25px_70px_rgba(74,104,80,0.3)] border-t-2 border-[#4a6850]/20 z-[100]">
+        <SheetHeader className="flex-shrink-0 mb-6 bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-3xl border-b border-[#4a6850]/10">
+          <SheetTitle className="text-center text-gray-900 font-black text-xl tracking-tight">Balance History</SheetTitle>
+          <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
             View transaction history and settlement details with this member
           </SheetDescription>
         </SheetHeader>
@@ -140,53 +140,53 @@ const MemberDetailSheet = ({
           {/* Member Summary with Separate Debt Display */}
           <div className="flex flex-col items-center mb-6">
             <Avatar name={member.name} size="lg" />
-            <h2 className="text-xl font-bold mt-3 text-gray-900">{member.name}</h2>
+            <h2 className="text-xl font-black mt-3 text-gray-900 tracking-tight">{member.name}</h2>
             
             {/* Separate Debt Display - NOT auto-balanced */}
             <div className="mt-3 space-y-2 text-center">
               {theyOweYou > 0 && (
-                <div className="text-emerald-600 font-semibold">
+                <div className="text-[#4a6850] font-black text-lg">
                   {member.name} owes you: Rs {theyOweYou.toLocaleString()}
                 </div>
               )}
               {youOweThem > 0 && (
-                <div className="text-red-600 font-semibold">
+                <div className="text-red-600 font-black text-lg">
                   You owe {member.name}: Rs {youOweThem.toLocaleString()}
                 </div>
               )}
               {theyOweYou === 0 && youOweThem === 0 && (
-                <div className="text-gray-500">✅ All settled up!</div>
+                <div className="text-[#4a6850] font-black">✅ All settled up!</div>
               )}
             </div>
           </div>
 
           {/* Payment Details */}
           {member.paymentDetails && Object.keys(member.paymentDetails).length > 0 && (
-            <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 mb-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Payment Details</h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 border border-[#4a6850]/20 rounded-3xl p-5 mb-6 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
+              <h3 className="font-black text-gray-900 mb-4 text-lg tracking-tight">Payment Details</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 {member.paymentDetails.jazzCash && (
                   <div>
-                    <p className="text-gray-500">JazzCash</p>
-                    <p className="font-medium text-gray-900">{member.paymentDetails.jazzCash}</p>
+                    <p className="text-[#4a6850]/80 font-bold uppercase tracking-wide text-xs">JazzCash</p>
+                    <p className="font-black text-gray-900 text-base">{member.paymentDetails.jazzCash}</p>
                   </div>
                 )}
                 {member.paymentDetails.easypaisa && (
                   <div>
-                    <p className="text-gray-500">Easypaisa</p>
-                    <p className="font-medium text-gray-900">{member.paymentDetails.easypaisa}</p>
+                    <p className="text-[#4a6850]/80 font-bold uppercase tracking-wide text-xs">Easypaisa</p>
+                    <p className="font-black text-gray-900 text-base">{member.paymentDetails.easypaisa}</p>
                   </div>
                 )}
                 {member.paymentDetails.bankName && (
                   <div>
-                    <p className="text-gray-500">{member.paymentDetails.bankName}</p>
-                    <p className="font-medium text-gray-900">{member.paymentDetails.accountNumber}</p>
+                    <p className="text-[#4a6850]/80 font-bold uppercase tracking-wide text-xs">{member.paymentDetails.bankName}</p>
+                    <p className="font-black text-gray-900 text-base">{member.paymentDetails.accountNumber}</p>
                   </div>
                 )}
                 {member.paymentDetails.raastId && (
                   <div>
-                    <p className="text-gray-500">Raast ID</p>
-                    <p className="font-medium text-gray-900">{member.paymentDetails.raastId}</p>
+                    <p className="text-[#4a6850]/80 font-bold uppercase tracking-wide text-xs">Raast ID</p>
+                    <p className="font-black text-gray-900 text-base">{member.paymentDetails.raastId}</p>
                   </div>
                 )}
               </div>
@@ -201,9 +201,9 @@ const MemberDetailSheet = ({
                   <TooltipTrigger asChild>
                     <Button 
                       onClick={onRecordPayment}
-                      className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
+                      className="flex-1 h-14 bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] hover:from-[#3d5643] hover:to-[#2f4336] transition-all"
                     >
-                      <ArrowDownLeft className="w-4 h-4 mr-2" />
+                      <ArrowDownLeft className="w-5 h-5 mr-2" />
                       Received from {member.name}
                     </Button>
                   </TooltipTrigger>
@@ -219,9 +219,9 @@ const MemberDetailSheet = ({
                   <TooltipTrigger asChild>
                     <Button 
                       onClick={onPayToMember}
-                      className="flex-1 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
+                      className="flex-1 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(59,130,246,0.3)] hover:shadow-[0_12px_40px_rgba(59,130,246,0.4)] hover:from-blue-700 hover:to-indigo-700 transition-all"
                     >
-                      <ArrowUpRight className="w-4 h-4 mr-2" />
+                      <ArrowUpRight className="w-5 h-5 mr-2" />
                       Pay to {member.name}
                     </Button>
                   </TooltipTrigger>
@@ -238,9 +238,9 @@ const MemberDetailSheet = ({
                     <Button 
                       onClick={onRecordPayment}
                       variant="outline"
-                      className="flex-1 h-12"
+                      className="flex-1 h-14 border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
                     >
-                      <HandCoins className="w-4 h-4 mr-2" />
+                      <HandCoins className="w-5 h-5 mr-2" />
                       Record Payment
                     </Button>
                   </TooltipTrigger>
@@ -253,109 +253,107 @@ const MemberDetailSheet = ({
 
           {/* Balance History Ledger */}
           <div className="space-y-3">
-            <h3 className="font-semibold text-gray-900 mb-3">Balance Ledger with {member.name}</h3>
+            <h3 className="font-black text-gray-900 mb-4 text-lg tracking-tight">Balance Ledger with {member.name}</h3>
             
             {balanceHistory.length > 0 ? (
               balanceHistory.map(({ transaction, theyOweYouBefore, youOweThemBefore, theyOweYouAfter, youOweThemAfter }) => (
                 <div
                   key={transaction.id}
-                  className="rounded-xl p-4 bg-white border border-gray-100 shadow-sm"
+                  className="rounded-3xl p-5 bg-white border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all"
                 >
                   {/* Transaction Header */}
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className={`w-12 h-12 rounded-3xl flex items-center justify-center shrink-0 shadow-lg ${
                       transaction.direction === "received"
-                        ? "bg-emerald-100"
-                        : "bg-red-100"
+                        ? "bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white"
+                        : "bg-gradient-to-br from-red-500 to-orange-500 text-white"
                     }`}>
                       {transaction.type === "payment" ? (
-                        <HandCoins className={`w-5 h-5 ${
-                          transaction.direction === "received" ? "text-emerald-600" : "text-red-600"
-                        }`} />
+                        <HandCoins className={`w-6 h-6 font-bold`} />
                       ) : transaction.direction === "received" ? (
-                        <ArrowDownLeft className="w-5 h-5 text-emerald-600" />
+                        <ArrowDownLeft className="w-6 h-6 font-bold" />
                       ) : (
-                        <ArrowUpRight className="w-5 h-5 text-red-600" />
+                        <ArrowUpRight className="w-6 h-6 font-bold" />
                       )}
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-900">{transaction.title}</div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                        <Calendar className="w-3 h-3" />
+                      <div className="font-black text-gray-900 text-lg tracking-tight">{transaction.title}</div>
+                      <div className="flex items-center gap-2 text-sm text-[#4a6850]/80 mt-2 font-bold">
+                        <Calendar className="w-4 h-4" />
                         <span>{transaction.date}</span>
                       </div>
                       {transaction.place && (
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <MapPin className="w-3 h-3" />
+                        <div className="flex items-center gap-2 text-sm text-[#4a6850]/80 font-bold">
+                          <MapPin className="w-4 h-4" />
                           <span>{transaction.place}</span>
                         </div>
                       )}
                       {transaction.method && (
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <div className="flex items-center gap-2 text-sm text-[#4a6850]/80 font-bold">
                           {transaction.method === "cash" ? (
-                            <Banknote className="w-3 h-3" />
+                            <Banknote className="w-4 h-4" />
                           ) : (
-                            <CreditCard className="w-3 h-3" />
+                            <CreditCard className="w-4 h-4" />
                           )}
                           <span className="capitalize">{transaction.method}</span>
                         </div>
                       )}
                     </div>
                     
-                    <div className={`font-bold ${
-                      transaction.direction === "received" ? "text-emerald-600" : "text-red-600"
+                    <div className={`font-black text-xl tracking-tight ${
+                      transaction.direction === "received" ? "text-[#4a6850]" : "text-red-600"
                     }`}>
-                      {transaction.direction === "received" ? "+" : "-"}Rs {transaction.amount}
+                      {transaction.direction === "received" ? "+" : "-"}Rs {transaction.amount.toLocaleString()}
                     </div>
                   </div>
 
                   {/* Balance Change Ledger - Show separate debts */}
-                  <div className="bg-gray-50 rounded-lg p-3 mt-2">
+                  <div className="bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl p-4 mt-3 border border-[#4a6850]/10">
                     <div className="flex items-center justify-between text-sm">
                       <div className="text-center flex-1">
-                        <p className="text-gray-500 text-xs mb-1">Before</p>
-                        <div className="space-y-0.5">
+                        <p className="text-[#4a6850]/80 text-xs mb-2 font-black uppercase tracking-wide">Before</p>
+                        <div className="space-y-1">
                           {theyOweYouBefore > 0 && (
-                            <p className="font-medium text-emerald-600 text-xs">
-                              They owe Rs {theyOweYouBefore}
+                            <p className="font-black text-[#4a6850] text-sm">
+                              They owe Rs {theyOweYouBefore.toLocaleString()}
                             </p>
                           )}
                           {youOweThemBefore > 0 && (
-                            <p className="font-medium text-red-600 text-xs">
-                              You owe Rs {youOweThemBefore}
+                            <p className="font-black text-red-600 text-sm">
+                              You owe Rs {youOweThemBefore.toLocaleString()}
                             </p>
                           )}
                           {theyOweYouBefore === 0 && youOweThemBefore === 0 && (
-                            <p className="font-medium text-gray-500 text-xs">Settled</p>
+                            <p className="font-black text-gray-500 text-sm">Settled</p>
                           )}
                         </div>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-gray-400 mx-2" />
+                      <ArrowRight className="w-5 h-5 text-[#4a6850]/60 mx-3" />
                       <div className="text-center flex-1">
-                        <p className="text-gray-500 text-xs mb-1">Change</p>
-                        <p className={`font-medium ${transaction.balanceChange > 0 ? "text-emerald-600" : transaction.balanceChange < 0 ? "text-red-600" : "text-gray-500"}`}>
-                          {transaction.balanceChange > 0 ? `+Rs ${transaction.balanceChange}` : 
-                           transaction.balanceChange < 0 ? `-Rs ${Math.abs(transaction.balanceChange)}` : 
+                        <p className="text-[#4a6850]/80 text-xs mb-2 font-black uppercase tracking-wide">Change</p>
+                        <p className={`font-black text-base ${transaction.balanceChange > 0 ? "text-[#4a6850]" : transaction.balanceChange < 0 ? "text-red-600" : "text-gray-500"}`}>
+                          {transaction.balanceChange > 0 ? `+Rs ${transaction.balanceChange.toLocaleString()}` : 
+                           transaction.balanceChange < 0 ? `-Rs ${Math.abs(transaction.balanceChange).toLocaleString()}` : 
                            "Rs 0"}
                         </p>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-gray-400 mx-2" />
+                      <ArrowRight className="w-5 h-5 text-[#4a6850]/60 mx-3" />
                       <div className="text-center flex-1">
-                        <p className="text-gray-500 text-xs mb-1">After</p>
-                        <div className="space-y-0.5">
+                        <p className="text-[#4a6850]/80 text-xs mb-2 font-black uppercase tracking-wide">After</p>
+                        <div className="space-y-1">
                           {theyOweYouAfter > 0 && (
-                            <p className="font-medium text-emerald-600 text-xs">
-                              They owe Rs {theyOweYouAfter}
+                            <p className="font-black text-[#4a6850] text-sm">
+                              They owe Rs {theyOweYouAfter.toLocaleString()}
                             </p>
                           )}
                           {youOweThemAfter > 0 && (
-                            <p className="font-medium text-red-600 text-xs">
-                              You owe Rs {youOweThemAfter}
+                            <p className="font-black text-red-600 text-sm">
+                              You owe Rs {youOweThemAfter.toLocaleString()}
                             </p>
                           )}
                           {theyOweYouAfter === 0 && youOweThemAfter === 0 && (
-                            <p className="font-medium text-gray-500 text-xs">Settled</p>
+                            <p className="font-black text-gray-500 text-sm">Settled</p>
                           )}
                         </div>
                       </div>
@@ -364,16 +362,20 @@ const MemberDetailSheet = ({
                 </div>
               ))
             ) : (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-3">🤝</div>
-                <p className="text-gray-500">No transactions with {member.name} yet</p>
+              <div className="text-center py-12 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
+                <div className="text-6xl mb-4">🤝</div>
+                <p className="text-[#4a6850]/80 font-bold text-lg">No transactions with {member.name} yet</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="pt-4 border-t border-gray-100 mt-auto bg-white">
-          <Button onClick={onClose} variant="secondary" className="w-full h-12">
+        <div className="pt-4 border-t border-[#4a6850]/10 mt-auto bg-white flex-shrink-0">
+          <Button 
+            onClick={onClose} 
+            variant="secondary" 
+            className="w-full h-14 rounded-3xl font-black shadow-lg hover:shadow-xl transition-all"
+          >
             Close
           </Button>
         </div>

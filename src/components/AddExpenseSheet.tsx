@@ -203,39 +203,43 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col">
-        <SheetHeader className="flex-shrink-0 mb-6">
-          <SheetTitle className="text-center">
+      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
+        <SheetHeader className="flex-shrink-0 mb-6 pt-2">
+          {/* Handle Bar */}
+          <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
+          
+          <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">
             {step === 1 && "Select Group"}
             {step === 2 && "Enter Amount"}
             {step === 3 && "Who Paid?"}
             {step === 4 && "Split Between"}
             {step === 5 && "Add Details"}
           </SheetTitle>
-          <SheetDescription className="text-center text-sm text-gray-500">
+          <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
             Add a new expense to split between group members
           </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto pb-4">
-          {/* Validation Errors */}
+          {/* Validation Errors - iPhone Style */}
           {validationErrors.length > 0 && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className="w-4 h-4 text-red-600" />
-                <span className="text-sm font-medium text-red-800">Please fix the following errors:</span>
+            <div className="mb-6 p-4 bg-red-50 border border-red-200/50 rounded-3xl shadow-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+                <span className="text-sm font-black text-red-800">Please fix the following errors:</span>
               </div>
-              <ul className="text-sm text-red-700 space-y-1">
+              <ul className="text-sm text-red-700 space-y-2">
                 {validationErrors.map((error, index) => (
-                  <li key={index}>• {error}</li>
+                  <li key={index} className="font-bold">• {error}</li>
                 ))}
               </ul>
             </div>
           )}
-          {/* Step 1: Select Group */}
+          
+          {/* Step 1: Select Group - iPhone Style */}
           {step === 1 && (
-            <div className="space-y-3 animate-fade-in">
-              <p className="text-sm text-muted-foreground mb-4">
+            <div className="space-y-4 animate-fade-in">
+              <p className="text-sm text-[#4a6850]/80 mb-6 text-center font-bold">
                 Which group is this expense for?
               </p>
               {groups.map((group) => (
@@ -243,24 +247,24 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
                   key={group.id}
                   onClick={() => setSelectedGroup(group.id)}
                   className={cn(
-                    "w-full flex items-center gap-4 p-4 rounded-xl transition-all",
+                    "w-full flex items-center gap-4 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl",
                     selectedGroup === group.id
-                      ? "bg-primary/10 border-2 border-primary"
-                      : "bg-secondary hover:bg-secondary/80"
+                      ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850] scale-105"
+                      : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5"
                   )}
                 >
-                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-2xl">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center text-2xl shadow-sm">
                     {group.emoji}
                   </div>
                   <div className="flex-1 text-left">
-                    <span className="font-medium">{group.name}</span>
-                    <p className="text-sm text-muted-foreground">
+                    <span className="font-black text-gray-900 tracking-tight">{group.name}</span>
+                    <p className="text-sm text-[#4a6850]/80 font-bold">
                       {group.members.length} members
                     </p>
                   </div>
                   {selectedGroup === group.id && (
-                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                      <Check className="w-4 h-4 text-primary-foreground" />
+                    <div className="w-7 h-7 rounded-full bg-[#4a6850] flex items-center justify-center shadow-lg">
+                      <Check className="w-4 h-4 text-white font-bold" />
                     </div>
                   )}
                 </button>
@@ -268,16 +272,16 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
             </div>
           )}
 
-          {/* Step 2: Enter Amount */}
+          {/* Step 2: Enter Amount - iPhone Style */}
           {step === 2 && (
-            <div className="text-center py-8 animate-fade-in">
+            <div className="text-center py-12 animate-fade-in">
               {selectedGroupData && (
-                <div className="inline-flex items-center gap-2 bg-secondary rounded-full px-3 py-1 mb-4">
-                  <span>{selectedGroupData.emoji}</span>
-                  <span className="text-sm font-medium">{selectedGroupData.name}</span>
+                <div className="inline-flex items-center gap-3 bg-[#4a6850]/10 rounded-3xl px-5 py-3 mb-8 border border-[#4a6850]/20">
+                  <span className="text-2xl">{selectedGroupData.emoji}</span>
+                  <span className="text-sm font-black text-[#4a6850]">{selectedGroupData.name}</span>
                 </div>
               )}
-              <div className="text-6xl font-bold text-foreground mb-4">
+              <div className="text-7xl font-black text-gray-900 mb-8 tracking-tighter tabular-nums">
                 Rs {amount || "0"}
               </div>
               <Input
@@ -285,17 +289,17 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
                 placeholder="Enter amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="text-center text-2xl h-14 max-w-xs mx-auto"
+                className="text-center text-3xl h-16 max-w-sm mx-auto rounded-3xl border-[#4a6850]/20 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
                 autoFocus
               />
             </div>
           )}
 
-          {/* Step 3: Who Paid */}
+          {/* Step 3: Who Paid - iPhone Style */}
           {step === 3 && (
-            <div className="space-y-3 animate-fade-in">
-              <div className="flex items-center gap-2 justify-center mb-4">
-                <p className="text-sm text-muted-foreground">Select who paid for this expense</p>
+            <div className="space-y-4 animate-fade-in">
+              <div className="flex items-center gap-3 justify-center mb-6">
+                <p className="text-sm text-[#4a6850]/80 font-bold text-center">Select who paid for this expense</p>
                 <Tooltip 
                   content="Choose the person who actually paid the money upfront. The app will calculate how much others owe them."
                   position="bottom"
@@ -306,17 +310,17 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
                   key={member.id}
                   onClick={() => setPaidBy(member.id)}
                   className={cn(
-                    "w-full flex items-center gap-4 p-4 rounded-xl transition-all",
+                    "w-full flex items-center gap-4 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl",
                     paidBy === member.id
-                      ? "bg-primary/10 border-2 border-primary"
-                      : "bg-secondary hover:bg-secondary/80"
+                      ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850] scale-105"
+                      : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5"
                   )}
                 >
                   <Avatar name={member.name} />
-                  <span className="font-medium flex-1 text-left">{member.name}</span>
+                  <span className="font-black flex-1 text-left text-gray-900 tracking-tight">{member.name}</span>
                   {paidBy === member.id && (
-                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                      <Check className="w-4 h-4 text-primary-foreground" />
+                    <div className="w-7 h-7 rounded-full bg-[#4a6850] flex items-center justify-center shadow-lg">
+                      <Check className="w-4 h-4 text-white font-bold" />
                     </div>
                   )}
                 </button>
@@ -324,11 +328,11 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
             </div>
           )}
 
-          {/* Step 4: Split Between */}
+          {/* Step 4: Split Between - iPhone Style */}
           {step === 4 && (
-            <div className="space-y-3 animate-fade-in">
-              <div className="flex items-center gap-2 justify-center mb-4">
-                <p className="text-sm text-muted-foreground">
+            <div className="space-y-4 animate-fade-in">
+              <div className="flex items-center gap-3 justify-center mb-6">
+                <p className="text-sm text-[#4a6850]/80 font-bold text-center">
                   Select everyone who shared this expense (including who paid)
                 </p>
                 <Tooltip 
@@ -344,44 +348,44 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
                     key={member.id}
                     onClick={() => toggleParticipant(member.id)}
                     className={cn(
-                      "w-full flex items-center gap-4 p-4 rounded-xl transition-all",
+                      "w-full flex items-center gap-4 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl",
                       isSelected
-                        ? "bg-primary/10 border-2 border-primary"
-                        : "bg-secondary hover:bg-secondary/80"
+                        ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850] scale-105"
+                        : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5"
                     )}
                   >
                     <Avatar name={member.name} />
                     <div className="flex-1 text-left">
-                      <span className="font-medium">{member.name}</span>
+                      <span className="font-black text-gray-900 tracking-tight">{member.name}</span>
                       {isSelected && (
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-[#4a6850] font-bold">
                           Rs {splitDetails.perPerson} share
                         </div>
                       )}
                     </div>
                     {isSelected && (
-                      <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                        <Check className="w-4 h-4 text-primary-foreground" />
+                      <div className="w-7 h-7 rounded-full bg-[#4a6850] flex items-center justify-center shadow-lg">
+                        <Check className="w-4 h-4 text-white font-bold" />
                       </div>
                     )}
                   </button>
                 );
               })}
 
-              {/* Split Summary */}
+              {/* Split Summary - iPhone Style */}
               {participants.length > 0 && paidBy && (
-                <div className="bg-secondary rounded-xl p-4 mt-4">
-                  <div className="text-sm text-muted-foreground mb-2">Split Summary</div>
-                  <div className="text-lg font-semibold">
+                <div className="bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl p-6 mt-6 border border-[#4a6850]/20 shadow-lg">
+                  <div className="text-sm text-[#4a6850]/80 mb-3 font-black uppercase tracking-wide">Split Summary</div>
+                  <div className="text-2xl font-black text-gray-900 tracking-tight">
                     Rs {splitDetails.perPerson} per person
                   </div>
                   {splitDetails.toReceive > 0 && (
-                    <div className="text-positive font-medium mt-1">
+                    <div className="text-[#4a6850] font-black mt-3 text-lg">
                       You will receive Rs {splitDetails.toReceive} from {splitDetails.othersCount} {splitDetails.othersCount === 1 ? 'person' : 'people'}
                     </div>
                   )}
                   {splitDetails.toGive > 0 && (
-                    <div className="text-negative font-medium mt-1">
+                    <div className="text-red-600 font-black mt-3 text-lg">
                       You owe Rs {splitDetails.toGive} to {paidByName}
                     </div>
                   )}
@@ -390,50 +394,51 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
             </div>
           )}
 
-          {/* Step 5: Add Details */}
+          {/* Step 5: Add Details - iPhone Style */}
           {step === 5 && (
-            <div className="space-y-4 animate-fade-in">
+            <div className="space-y-6 animate-fade-in">
               <div>
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
                   What was it for? (optional)
                 </label>
                 <Input
                   placeholder="e.g., Dinner, Chai, Groceries"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="h-12"
+                  className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
                   maxLength={100}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
                   Where? (optional)
                 </label>
                 <Input
                   placeholder="e.g., Student Café"
                   value={place}
                   onChange={(e) => setPlace(e.target.value)}
-                  className="h-12"
+                  className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
                   maxLength={100}
                 />
               </div>
               
-              <div className="bg-secondary rounded-xl p-4 mt-6">
-                <div className="text-sm text-muted-foreground mb-2">Summary</div>
-                <div className="font-semibold text-lg">Rs {amount}</div>
-                <div className="text-sm text-muted-foreground">
+              {/* Final Summary - iPhone Style */}
+              <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-6 mt-8 shadow-[0_25px_70px_rgba(74,104,80,0.3)] text-white">
+                <div className="text-sm text-white/90 mb-3 font-black uppercase tracking-wide">Final Summary</div>
+                <div className="font-black text-3xl tracking-tight mb-2">Rs {amount}</div>
+                <div className="text-sm text-white/90 font-bold">
                   Paid by {paidByName} • Split {participants.length} ways
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-white/90 font-bold">
                   Rs {splitDetails.perPerson} per person
                 </div>
                 {splitDetails.toReceive > 0 && (
-                  <div className="text-positive font-medium mt-2">
+                  <div className="text-emerald-200 font-black mt-3 text-lg">
                     You will receive Rs {splitDetails.toReceive}
                   </div>
                 )}
                 {splitDetails.toGive > 0 && (
-                  <div className="text-negative font-medium mt-2">
+                  <div className="text-orange-200 font-black mt-3 text-lg">
                     You owe Rs {splitDetails.toGive}
                   </div>
                 )}
@@ -442,13 +447,13 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
           )}
         </div>
 
-        <div className="flex-shrink-0 pt-4 border-t bg-background">
-          <div className="flex gap-3">
+        <div className="flex-shrink-0 pt-6 border-t border-[#4a6850]/10 bg-white">
+          <div className="flex gap-4">
             {step > 1 && (
               <Button
                 variant="secondary"
                 onClick={() => setStep((s) => s - 1)}
-                className="flex-1 h-12"
+                className="flex-1 h-14 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black border-0 shadow-lg hover:shadow-xl transition-all"
               >
                 Back
               </Button>
@@ -457,12 +462,15 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
               <Button
                 onClick={() => setStep((s) => s + 1)}
                 disabled={!canProceed()}
-                className="flex-1 h-12"
+                className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Continue <ChevronRight className="w-4 h-4 ml-1" />
+                Continue <ChevronRight className="w-5 h-5 ml-2 font-bold" />
               </Button>
             ) : (
-              <Button onClick={handleSubmit} className="flex-1 h-12">
+              <Button 
+                onClick={handleSubmit} 
+                className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all"
+              >
                 Add Expense
               </Button>
             )}

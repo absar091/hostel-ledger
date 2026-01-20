@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowUpRight, ArrowDownLeft, Plus, User, CreditCard, Users } from "@/lib/icons";
+import { TrendingUp, TrendingDown, ArrowRightLeft } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import Avatar from "@/components/Avatar";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
@@ -284,14 +285,14 @@ const Dashboard = () => {
   // Get greeting based on time with emoji
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return { text: "Good morning", emoji: "👋" };
+    if (hour < 12) return { text: "Good morning", emoji:"" };
     if (hour < 17) return { text: "Good afternoon", emoji: "☀️" };
     return { text: "Good evening", emoji: "🌙" };
   };
 
   const greeting = getGreeting();
 
-  // Transaction detail modal component
+  // Transaction detail modal component - iPhone Style
   const TransactionDetailModal = ({ transaction, onClose }: { transaction: any; onClose: () => void }) => {
     if (!transaction) return null;
 
@@ -299,161 +300,141 @@ const Dashboard = () => {
     const transactionGroup = groups.find(g => g.id === transaction.groupId);
 
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div className="bg-white w-full max-w-md max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl border border-gray-200 mx-auto">
-          {/* Header with close button */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                transaction.type === 'expense' ? 'bg-red-100 text-red-600' : 
-                transaction.type === 'payment' ? 'bg-emerald-100 text-emerald-600' : 'bg-emerald-100 text-emerald-600'
+      <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+        <div className="bg-white w-full max-w-md max-h-[90vh] overflow-hidden rounded-3xl shadow-[0_25px_70px_rgba(74,104,80,0.3)] border border-[#4a6850]/10 mx-auto">
+          {/* Header with close button - iPhone Style */}
+          <div className="flex items-center justify-between p-6 border-b border-[#4a6850]/10 bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 flex-shrink-0">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-3xl flex items-center justify-center shadow-lg ${
+                transaction.type === 'expense' ? 'bg-gradient-to-br from-red-500 to-orange-500 text-white' : 
+                transaction.type === 'payment' ? 'bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white' : 'bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white'
               }`}>
                 {transaction.type === 'expense' ? (
-                  <ArrowUpRight className="w-4 h-4" />
+                  <ArrowUpRight className="w-6 h-6 font-bold" />
                 ) : transaction.type === 'payment' ? (
-                  <ArrowDownLeft className="w-4 h-4" />
+                  <ArrowDownLeft className="w-6 h-6 font-bold" />
                 ) : (
-                  <CreditCard className="w-4 h-4" />
+                  <CreditCard className="w-6 h-6 font-bold" />
                 )}
               </div>
               <div>
-                <h2 className="font-semibold text-gray-900">Transaction Details</h2>
-                <p className="text-xs text-gray-500 capitalize">{transaction.type}</p>
+                <h2 className="font-black text-gray-900 text-lg tracking-tight">Transaction Details</h2>
+                <p className="text-sm text-[#4a6850]/80 capitalize font-bold">{transaction.type}</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-2xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all shadow-lg hover:shadow-xl"
             >
-              <span className="text-gray-600 text-lg">×</span>
+              <span className="text-gray-600 text-xl font-bold">×</span>
             </button>
           </div>
 
-          {/* Scrollable content */}
-          <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+          {/* Scrollable content - iPhone Style */}
+          <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 180px)' }}>
             <div className="p-6">
-              {/* Transaction header */}
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{transaction.title}</h3>
-                <div className="text-3xl font-bold text-gray-900 mb-1">
+              {/* Transaction header - iPhone Style */}
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">{transaction.title}</h3>
+                <div className="text-5xl font-black text-gray-900 mb-2 tracking-tighter tabular-nums">
                   Rs {transaction.amount.toLocaleString()}
                 </div>
-                <div className="text-sm text-gray-500">{transaction.date}</div>
+                <div className="text-sm text-[#4a6850]/80 font-bold">{transaction.date}</div>
               </div>
 
               <div className="space-y-4">
-                {/* Group Information */}
+                {/* Group Information - iPhone Style */}
                 {transactionGroup && (
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <Users className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                  <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                    <Users className="w-6 h-6 text-[#4a6850] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-gray-500">Group</div>
-                      <div className="font-medium text-gray-900 truncate">{transactionGroup.name}</div>
-                      <div className="text-xs text-gray-500">{transactionGroup.members.length} members</div>
+                      <div className="text-sm text-[#4a6850]/80 font-black uppercase tracking-wide">Group</div>
+                      <div className="font-black text-gray-900 truncate text-lg tracking-tight">{transactionGroup.name}</div>
+                      <div className="text-sm text-[#4a6850]/80 font-bold">{transactionGroup.members.length} members</div>
                     </div>
                   </div>
                 )}
 
-                {/* Paid By (for expenses) */}
+                {/* Paid By (for expenses) - iPhone Style */}
                 {transaction.paidByName && (
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <User className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                  <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                    <User className="w-6 h-6 text-[#4a6850] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-gray-500">Paid by</div>
-                      <div className="font-medium text-gray-900 truncate">{transaction.paidByName}</div>
+                      <div className="text-sm text-[#4a6850]/80 font-black uppercase tracking-wide">Paid by</div>
+                      <div className="font-black text-gray-900 truncate text-lg tracking-tight">{transaction.paidByName}</div>
                     </div>
                   </div>
                 )}
 
-                {/* Payment Details (for payments) */}
+                {/* Payment Details (for payments) - iPhone Style */}
                 {transaction.fromName && transaction.toName && (
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <ArrowUpRight className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                  <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                    <ArrowUpRight className="w-6 h-6 text-[#4a6850] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-gray-500">Payment</div>
-                      <div className="font-medium text-gray-900 truncate">{transaction.fromName} → {transaction.toName}</div>
+                      <div className="text-sm text-[#4a6850]/80 font-black uppercase tracking-wide">Payment</div>
+                      <div className="font-black text-gray-900 truncate text-lg tracking-tight">{transaction.fromName} → {transaction.toName}</div>
                       {transaction.method && (
-                        <div className="text-xs text-gray-500 capitalize">via {transaction.method}</div>
+                        <div className="text-sm text-[#4a6850]/80 capitalize font-bold">via {transaction.method}</div>
                       )}
                     </div>
                   </div>
                 )}
 
-                {/* Participants (for expenses) */}
+                {/* Participants (for expenses) - iPhone Style */}
                 {transaction.participants && transaction.participants.length > 0 && (
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <div className="text-sm text-gray-500 mb-3">Participants ({transaction.participants.length})</div>
-                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                  <div className="p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                    <div className="text-sm text-[#4a6850]/80 mb-4 font-black uppercase tracking-wide">Participants ({transaction.participants.length})</div>
+                    <div className="space-y-3 max-h-32 overflow-y-auto">
                       {transaction.participants.map((participant: any, index: number) => (
                         <div key={index} className="flex justify-between items-center">
-                          <span className="font-medium text-gray-900 truncate flex-1 mr-2">{participant.name}</span>
-                          <span className="text-sm text-gray-500 flex-shrink-0">Rs {participant.amount.toLocaleString()}</span>
+                          <span className="font-black text-gray-900 truncate flex-1 mr-3 tracking-tight">{participant.name}</span>
+                          <span className="text-sm text-[#4a6850] flex-shrink-0 font-black tabular-nums">Rs {participant.amount.toLocaleString()}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Place (for expenses) */}
+                {/* Place (for expenses) - iPhone Style */}
                 {transaction.place && (
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <div className="w-5 h-5 rounded-full bg-gray-300 flex-shrink-0"></div>
+                  <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                    <div className="w-6 h-6 rounded-full bg-[#4a6850]/20 flex-shrink-0 flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-[#4a6850]"></div>
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-gray-500">Place</div>
-                      <div className="font-medium text-gray-900 truncate">{transaction.place}</div>
+                      <div className="text-sm text-[#4a6850]/80 font-black uppercase tracking-wide">Place</div>
+                      <div className="font-black text-gray-900 truncate text-lg tracking-tight">{transaction.place}</div>
                     </div>
                   </div>
                 )}
 
-                {/* Note */}
+                {/* Note - iPhone Style */}
                 {transaction.note && (
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <div className="text-sm text-gray-500 mb-2">Note</div>
-                    <div className="font-medium text-gray-900 break-words">{transaction.note}</div>
+                  <div className="p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                    <div className="text-sm text-[#4a6850]/80 mb-3 font-black uppercase tracking-wide">Note</div>
+                    <div className="font-bold text-gray-900 break-words leading-relaxed">{transaction.note}</div>
                   </div>
                 )}
 
-                {/* Wallet Balance Changes (for wallet transactions) */}
+                {/* Wallet Balance Changes (for wallet transactions) - iPhone Style */}
                 {(transaction.walletBalanceBefore !== undefined || transaction.walletBalanceAfter !== undefined) && (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {transaction.walletBalanceBefore !== undefined && (
-                      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <CreditCard className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                      <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl border border-gray-200 shadow-lg">
+                        <CreditCard className="w-6 h-6 text-gray-500 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm text-gray-500">Wallet Balance Before</div>
-                          <div className="font-medium text-gray-900">Rs {transaction.walletBalanceBefore.toLocaleString()}</div>
+                          <div className="text-sm text-gray-500 font-black uppercase tracking-wide">Wallet Balance Before</div>
+                          <div className="font-black text-gray-900 text-lg tracking-tight tabular-nums">Rs {transaction.walletBalanceBefore.toLocaleString()}</div>
                         </div>
                       </div>
                     )}
                     
                     {transaction.walletBalanceAfter !== undefined && (
-                      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <CreditCard className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                      <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                        <CreditCard className="w-6 h-6 text-[#4a6850] flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm text-gray-500">Wallet Balance After</div>
-                          <div className="font-medium text-gray-900">Rs {transaction.walletBalanceAfter.toLocaleString()}</div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Balance Change Summary */}
-                    {transaction.walletBalanceBefore !== undefined && transaction.walletBalanceAfter !== undefined && (
-                      <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          transaction.walletBalanceAfter > transaction.walletBalanceBefore ? 'bg-emerald-500' : 'bg-red-500'
-                        }`}>
-                          <span className="text-xs text-white font-bold">
-                            {transaction.walletBalanceAfter > transaction.walletBalanceBefore ? '+' : '-'}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm text-gray-500">Balance Change</div>
-                          <div className={`font-bold ${
-                            transaction.walletBalanceAfter > transaction.walletBalanceBefore ? 'text-emerald-600' : 'text-red-500'
-                          }`}>
-                            {transaction.walletBalanceAfter > transaction.walletBalanceBefore ? '+' : ''}
-                            Rs {Math.abs(transaction.walletBalanceAfter - transaction.walletBalanceBefore).toLocaleString()}
-                          </div>
+                          <div className="text-sm text-[#4a6850]/80 font-black uppercase tracking-wide">Wallet Balance After</div>
+                          <div className="font-black text-gray-900 text-lg tracking-tight tabular-nums">Rs {transaction.walletBalanceAfter.toLocaleString()}</div>
                         </div>
                       </div>
                     )}
@@ -463,11 +444,11 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Fixed footer with close button */}
-          <div className="p-4 border-t border-gray-100 bg-white flex-shrink-0">
+          {/* Fixed footer with close button - iPhone Style */}
+          <div className="p-6 border-t border-[#4a6850]/10 bg-white flex-shrink-0">
             <button
               onClick={onClose}
-              className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg"
+              className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all"
             >
               Close
             </button>
@@ -478,24 +459,26 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 pb-20 safe-area-pt relative">
-      {/* Full-width top accent border */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 z-50"></div>
+    <div className="min-h-screen bg-white pb-20 safe-area-pt relative">
+      {/* iPhone-style top accent border - Enhanced */}
+      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
       
-      {/* App Header - Clean and Professional */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-100/50 pt-2 pb-3 px-4 sticky top-0 z-40">
+      {/* App Header - iPhone Style Enhanced with #4a6850 */}
+      <div className="bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
         <div className="flex items-center justify-between">
-          {/* App Logo and Name */}
+          {/* App Logo and Name - Enhanced */}
           <div className="flex items-center gap-3">
-            <img
-              src="/only-logo.png"
-              alt="Hostel Ledger"
-              className="w-8 h-8 object-contain"
-            />
-            <h1 className="text-lg font-bold text-gray-900 tracking-tight">Hostel Ledger</h1>
+            <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
+              <img
+                src="/only-logo.png"
+                alt="Hostel Ledger"
+                className="w-6 h-6 object-contain filter brightness-0 invert"
+              />
+            </div>
+            <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
           </div>
           
-          {/* Header Actions */}
+          {/* Header Actions - Enhanced */}
           <div className="flex items-center gap-3">
             <ShareButton variant="icon" />
             {isInstalled ? <NotificationIcon /> : <PWAInstallButton />}
@@ -503,21 +486,26 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Profile Greeting Section - Separate and Elegant */}
-      <div className="px-2 pt-8 pb-10">
+      {/* Profile Greeting Section - iPhone Style Enhanced with Fixed Emoji */}
+      <div className="px-4 pt-8 pb-10">
         <div className="flex items-center gap-4">
-          {/* Profile Avatar */}
-          <Avatar 
-            name={user?.name || "User"} 
-            photoURL={user?.photoURL} 
-            size="lg" 
-          />
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-lg">{greeting.emoji}</span>
-              <div className="text-sm font-medium text-gray-600">{greeting.text}</div>
+          {/* Enhanced Profile Avatar with iPhone-style shadow */}
+          <div className="relative">
+            <Avatar 
+              name={user?.name || "User"} 
+              photoURL={user?.photoURL} 
+              size="lg" 
+            />
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+              <div className="w-2 h-2 bg-white rounded-full"></div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 leading-tight">
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-2xl leading-none">{greeting.emoji}</span>
+              <div className="text-sm font-black text-[#4a6850]/80 tracking-wide uppercase">{greeting.text}</div>
+            </div>
+            <h2 className="text-3xl font-black text-gray-900 leading-tight tracking-tight">
               {user?.name ? `${user.name.split(' ')[0]}!` : "Welcome!"}
             </h2>
           </div>
@@ -526,226 +514,246 @@ const Dashboard = () => {
 
       {/* Dashboard Cards - Production-Grade Fintech UI */}
       <div className="mobile-padding pt-2">
-        {/* Available Balance Card - Modern emerald/teal design */}
-        <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 rounded-3xl p-6 shadow-[0_12px_40px_rgba(16,185,129,0.2)] animate-[slideUp_0.5s_ease_forwards] text-white hover:shadow-[0_16px_48px_rgba(16,185,129,0.25)] transition-all duration-300 mb-8 relative">
-          <div className="flex justify-between items-start mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium tracking-wide uppercase text-white/90">Available Balance</span>
+        {/* Section Label */}
+        <div className="mb-6">
+          <h2 className="text-lg font-black text-gray-900 tracking-tight opacity-60 uppercase text-xs">Overview</h2>
+        </div>
+
+        {/* PRIMARY CARD: Available Balance with Integrated Settlement Info */}
+        <div className="bg-gradient-to-br from-[#4a6850] via-[#3d5643] to-[#4a6850] rounded-3xl p-8 shadow-[0_30px_80px_rgba(74,104,80,0.5)] animate-[slideUp_0.5s_ease_forwards] text-white hover:shadow-[0_35px_90px_rgba(74,104,80,0.6)] transition-all duration-300 mb-10 relative border-t-4 border-[#5a7860]/50 border-l border-r border-b border-[#3d5643]/60">
+          {/* Subtle top highlight gradient */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-t-3xl"></div>
+          
+          <div className="flex justify-between items-start mb-6">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-black tracking-widest uppercase text-white/95">Available Balance</span>
               <Tooltip 
                 content="This is the actual money in your wallet that you can spend right now. It doesn't include money others owe you."
                 position="bottom"
               >
-                <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center cursor-help">
-                  <span className="text-[10px] font-bold text-white">?</span>
+                <div className="w-4 h-4 rounded-full bg-white/25 flex items-center justify-center cursor-help hover:bg-white/35 transition-colors">
+                  <span className="text-[10px] font-black text-white">?</span>
                 </div>
               </Tooltip>
             </div>
             <button 
               onClick={() => setShowAddMoney(true)}
-              className="bg-white/20 border-0 text-white w-10 h-10 rounded-2xl text-2xl cursor-pointer hover:bg-white/30 active:scale-95 transition-all flex items-center justify-center"
+              className="bg-white/20 border-0 text-white w-12 h-12 rounded-2xl cursor-pointer hover:bg-white/30 active:scale-95 transition-all flex items-center justify-center shadow-lg hover:shadow-xl"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-6 h-6 font-bold" />
             </button>
           </div>
-          <div className="text-4xl font-bold tracking-tight leading-tight mb-3 text-white tabular-nums">
+          
+          {/* HERO NUMBER - Main Balance */}
+          <div className="text-6xl font-black tracking-tighter leading-none mb-6 text-white tabular-nums drop-shadow-lg">
             Rs {walletBalance.toLocaleString()}
           </div>
           
-          {/* Subtle After Settlements - Secondary Info */}
-          <div className="pt-3 border-t border-white/20">
-            <div className="flex items-center gap-2">
-              <div className="text-xs text-white/80">
-                After settlements: <span className="tabular-nums font-medium text-white/90">Rs {(walletBalance + settlementDelta).toLocaleString()}</span>
+          {/* Integrated Settlement Information */}
+          <div className="space-y-3">
+            {/* After Settlements - Subtle */}
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-white/70 font-bold">
+                After settlements: <span className="tabular-nums font-black text-white/90">Rs {(walletBalance + settlementDelta).toLocaleString()}</span>
               </div>
               <Tooltip 
                 content="This shows what your wallet balance will be after all pending group settlements are completed."
                 position="top"
               >
-                <div className="w-3.5 h-3.5 rounded-full bg-white/20 flex items-center justify-center cursor-help">
-                  <span className="text-[9px] font-bold text-white">?</span>
+                <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center cursor-help hover:bg-white/30 transition-colors">
+                  <span className="text-[9px] font-black text-white/80">?</span>
                 </div>
               </Tooltip>
             </div>
+            
+            {/* Settlement Delta - Integrated with Color & Icon */}
+            {settlementDelta !== 0 && (
+              <div className="flex items-center gap-3 pt-2 border-t border-white/15">
+                <div className="flex items-center gap-2">
+                  {settlementDelta > 0 ? (
+                    <>
+                      <TrendingUp className="w-4 h-4 text-emerald-300" />
+                      <span className="text-sm font-black text-emerald-300">
+                        +Rs {settlementDelta.toLocaleString()}
+                      </span>
+                      <span className="text-xs bg-emerald-500/30 text-emerald-200 px-2 py-1 rounded-full font-bold">
+                        Incoming
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <TrendingDown className="w-4 h-4 text-orange-300" />
+                      <span className="text-sm font-black text-orange-300">
+                        −Rs {Math.abs(settlementDelta).toLocaleString()}
+                      </span>
+                      <span className="text-xs bg-orange-500/30 text-orange-200 px-2 py-1 rounded-full font-bold">
+                        Outgoing
+                      </span>
+                    </>
+                  )}
+                </div>
+                <button 
+                  onClick={() => navigate("/groups")}
+                  className="text-xs text-white/70 hover:text-white/90 font-bold underline transition-colors"
+                >
+                  View groups
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="space-y-6">
-          {/* Settlement Delta Card - Crisp, no blur */}
+        {/* SECONDARY CARDS: Receive / Owe - Enhanced Color Differentiation */}
+        <div className="grid grid-cols-2 gap-5 mb-10">
+          {/* To Receive - Bright Positive Blue-Green */}
           <button 
-            onClick={() => navigate("/groups")}
-            className="w-full bg-white rounded-3xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_48px_rgba(0,0,0,0.1)] active:scale-[0.99] transition-all duration-300 text-left border border-gray-100"
+            onClick={() => navigate("/to-receive")}
+            className={`border rounded-3xl p-5 shadow-[0_15px_40px_rgba(0,0,0,0.12)] active:scale-[0.98] transition-all duration-300 text-left group border-t-2 ${
+              totalToReceive <= 0 
+                ? 'bg-gradient-to-br from-gray-300 via-gray-400 to-gray-300 border-gray-200/50 cursor-default text-gray-600' 
+                : 'bg-gradient-to-br from-cyan-500 via-blue-500 to-teal-500 border-cyan-300/50 hover:shadow-[0_20px_50px_rgba(6,182,212,0.25)] text-white'
+            }`}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className={`w-2 h-2 rounded-full ${
-                  settlementDelta < 0 ? 'bg-orange-400' : 
-                  settlementDelta > 0 ? 'bg-emerald-400' : 'bg-gray-400'
-                }`}></div>
-                <span className="text-xs font-medium tracking-wide uppercase text-gray-600">Settlement Delta</span>
-              </div>
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                {settlementDelta < 0 && <span className="text-[10px] text-orange-600 bg-orange-50 px-2 py-1 rounded-full font-medium">Pending</span>}
-                {settlementDelta > 0 && <span className="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full font-medium">Incoming</span>}
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
-                </svg>
+                <TrendingUp className={`w-4 h-4 ${totalToReceive <= 0 ? 'text-gray-500' : 'text-white/90'}`} />
+                <span className={`text-xs font-black tracking-wider uppercase ${totalToReceive <= 0 ? 'text-gray-500' : 'text-white/95'}`}>
+                  TO RECEIVE
+                </span>
               </div>
+              {totalToReceive > 0 && (
+                <ArrowDownLeft className="w-4 h-4 text-white/80 group-hover:text-white transition-colors" />
+              )}
             </div>
-            <div className={`text-3xl font-bold tracking-tight mb-2 tabular-nums ${
-              settlementDelta < 0 ? 'text-orange-600' : settlementDelta > 0 ? 'text-emerald-600' : 'text-gray-900'
-            }`}>
-              Rs {settlementDelta > 0 ? '' : '−'}{Math.abs(settlementDelta).toLocaleString()}
+            <div className={`text-3xl font-black tabular-nums mb-2 ${totalToReceive <= 0 ? 'text-gray-600' : 'text-white'}`}>
+              Rs {totalToReceive.toLocaleString()}
             </div>
-            <div className="text-xs text-gray-500 font-medium">
-              Tap to view group details
+            <div className={`text-xs font-bold ${totalToReceive <= 0 ? 'text-gray-500' : 'text-white/85'}`}>
+              {totalToReceive <= 0 ? 'All settled up! 🎉' : 'View details'}
             </div>
           </button>
-
-          {/* Receive / Owe Split Cards - Crisp design */}
-          <div className="grid grid-cols-2 gap-4">
-            <button 
-              onClick={() => navigate("/to-receive")}
-              className={`border rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] active:scale-[0.99] transition-all duration-300 text-left group ${
-                totalToReceive <= 0 
-                  ? 'bg-gray-50 border-gray-200 cursor-default' 
-                  : 'bg-white border-gray-100 hover:shadow-[0_8px_32px_rgba(16,185,129,0.08)]'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className={`w-1.5 h-1.5 rounded-full ${totalToReceive <= 0 ? 'bg-gray-400' : 'bg-emerald-500'}`}></div>
-                  <span className={`text-xs font-medium tracking-wide uppercase ${totalToReceive <= 0 ? 'text-gray-500' : 'text-gray-600'}`}>
-                    To Receive
-                  </span>
-                </div>
-                {totalToReceive > 0 && (
-                  <ArrowDownLeft className="w-4 h-4 text-emerald-400 group-hover:text-emerald-500 transition-colors" />
-                )}
+          
+          {/* You Owe - Warm Orange-Red Gradient */}
+          <button 
+            onClick={() => navigate("/to-pay")}
+            className="bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 border border-orange-300/50 border-t-2 rounded-3xl p-5 shadow-[0_15px_40px_rgba(249,115,22,0.2)] hover:shadow-[0_20px_50px_rgba(249,115,22,0.3)] active:scale-[0.98] transition-all duration-300 text-left group text-white"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <TrendingDown className="w-4 h-4 text-white/90" />
+                <span className="text-xs font-black tracking-wider uppercase text-white/95">YOU OWE</span>
               </div>
-              <div className={`text-2xl font-bold tabular-nums mb-1 ${totalToReceive <= 0 ? 'text-gray-500' : 'text-emerald-600'}`}>
-                Rs {totalToReceive.toLocaleString()}
-              </div>
-              <div className={`text-[10px] ${totalToReceive <= 0 ? 'text-gray-400' : 'text-gray-500'}`}>
-                {totalToReceive <= 0 ? 'All settled up! 🎉' : 'View details'}
-              </div>
-            </button>
-            
-            <button 
-              onClick={() => navigate("/to-pay")}
-              className="bg-white border border-gray-100 rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_32px_rgba(251,146,60,0.08)] active:scale-[0.99] transition-all duration-300 text-left group"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
-                  <span className="text-xs font-medium tracking-wide uppercase text-gray-600">You Owe</span>
-                </div>
-                <ArrowUpRight className="w-4 h-4 text-orange-400 group-hover:text-orange-500 transition-colors" />
-              </div>
-              <div className="text-2xl font-bold text-orange-600 tabular-nums mb-1">
-                Rs {totalToPay.toLocaleString()}
-              </div>
-              <div className="text-[10px] text-gray-500">View details</div>
-            </button>
-          </div>
+              <ArrowUpRight className="w-4 h-4 text-white/80 group-hover:text-white transition-colors" />
+            </div>
+            <div className="text-3xl font-black text-white tabular-nums mb-2">
+              Rs {totalToPay.toLocaleString()}
+            </div>
+            <div className="text-xs font-bold text-white/85">View details</div>
+          </button>
         </div>
 
-        {/* Quick Actions - Crisp, no blur effects */}
-        <div className="grid grid-cols-3 gap-4 mt-8">
+        {/* Section Label for Actions */}
+        <div className="mb-6">
+          <h2 className="text-lg font-black text-gray-900 tracking-tight opacity-60 uppercase text-xs">Quick Actions</h2>
+        </div>
+
+        {/* ACTION BUTTONS: Reduced Visual Weight - Flat, Utility Style */}
+        <div className="grid grid-cols-3 gap-4 mb-8">
           <button
             onClick={handleAddExpense}
-            className="bg-white rounded-3xl p-4 hover:bg-gray-50 hover:shadow-[0_8px_32px_rgba(0,0,0,0.08)] active:scale-[0.98] transition-all duration-300 text-center group border border-gray-100"
+            className="bg-gradient-to-br from-[#4a6850]/80 to-[#3d5643]/80 rounded-2xl p-4 hover:from-[#4a6850] hover:to-[#3d5643] hover:shadow-[0_8px_25px_rgba(74,104,80,0.2)] active:scale-[0.98] transition-all duration-200 text-center group shadow-[0_4px_15px_rgba(74,104,80,0.15)]"
           >
-            <div className="w-11 h-11 bg-gray-50 rounded-2xl flex items-center justify-center mb-3 mx-auto group-hover:bg-gray-100 group-hover:scale-105 transition-all duration-200">
-              <Plus className="w-5 h-5 text-gray-600" />
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-3 mx-auto group-hover:bg-white/30 group-hover:scale-105 transition-all duration-200">
+              <Plus className="w-4 h-4 text-white font-bold" />
             </div>
-            <div className="text-gray-900 font-semibold text-sm mb-1 leading-tight">Add Expense</div>
-            <div className="text-[11px] text-gray-500 leading-relaxed">Split a bill</div>
+            <div className="text-white font-black text-sm mb-1 leading-tight">Add Expense</div>
+            <div className="text-xs text-white/80 font-bold leading-relaxed">Split a bill</div>
           </button>
           
           <button
             onClick={handleReceivedMoney}
             disabled={totalToReceive <= 0}
-            className={`rounded-3xl p-4 active:scale-[0.98] transition-all duration-300 text-center group border ${
+            className={`rounded-2xl p-4 active:scale-[0.98] transition-all duration-200 text-center group shadow-[0_4px_15px_rgba(0,0,0,0.1)] ${
               totalToReceive <= 0 
-                ? 'bg-gray-100 border-gray-200 cursor-not-allowed opacity-60' 
-                : 'bg-white border-gray-100 hover:bg-gray-50 hover:shadow-[0_8px_32px_rgba(16,185,129,0.1)]'
+                ? 'bg-gradient-to-br from-gray-300/80 to-gray-400/80 cursor-not-allowed opacity-70' 
+                : 'bg-gradient-to-br from-emerald-500/80 to-teal-500/80 hover:from-emerald-500 hover:to-teal-500 hover:shadow-[0_8px_25px_rgba(16,185,129,0.2)]'
             }`}
           >
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-3 mx-auto transition-all duration-200 shadow-sm ${
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 mx-auto transition-all duration-200 ${
               totalToReceive <= 0
-                ? 'bg-gray-200'
-                : 'bg-gradient-to-br from-emerald-500 to-emerald-600 group-hover:from-emerald-600 group-hover:to-emerald-700 group-hover:scale-105'
+                ? 'bg-white/20'
+                : 'bg-white/20 group-hover:bg-white/30 group-hover:scale-105'
             }`}>
-              <ArrowDownLeft className={`w-5 h-5 ${totalToReceive <= 0 ? 'text-gray-400' : 'text-white'}`} />
+              <ArrowDownLeft className={`w-4 h-4 font-bold ${totalToReceive <= 0 ? 'text-white/70' : 'text-white'}`} />
             </div>
-            <div className={`font-semibold text-sm mb-1 leading-tight ${totalToReceive <= 0 ? 'text-gray-500' : 'text-gray-900'}`}>
+            <div className={`font-black text-sm mb-1 leading-tight ${totalToReceive <= 0 ? 'text-white/70' : 'text-white'}`}>
               Received
             </div>
-            <div className={`text-[11px] leading-relaxed ${totalToReceive <= 0 ? 'text-gray-400' : 'text-gray-500'}`}>
-              {totalToReceive <= 0 ? 'No pending payments' : 'Record payment'}
+            <div className={`text-xs font-bold leading-relaxed ${totalToReceive <= 0 ? 'text-white/60' : 'text-white/80'}`}>
+              {totalToReceive <= 0 ? 'No pending' : 'Record payment'}
             </div>
           </button>
           
           <button
             onClick={handleNewGroup}
-            className="bg-white rounded-3xl p-4 hover:bg-gray-50 hover:shadow-[0_8px_32px_rgba(20,184,166,0.1)] active:scale-[0.98] transition-all duration-300 text-center group border border-gray-100"
+            className="bg-gradient-to-br from-blue-500/80 to-indigo-500/80 rounded-2xl p-4 hover:from-blue-500 hover:to-indigo-500 hover:shadow-[0_8px_25px_rgba(59,130,246,0.2)] active:scale-[0.98] transition-all duration-200 text-center group shadow-[0_4px_15px_rgba(59,130,246,0.15)]"
           >
-            <div className="w-11 h-11 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center mb-3 mx-auto group-hover:from-teal-600 group-hover:to-teal-700 group-hover:scale-105 transition-all duration-200 shadow-sm">
-              <Users className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-3 mx-auto group-hover:bg-white/30 group-hover:scale-105 transition-all duration-200">
+              <Users className="w-4 h-4 text-white font-bold" />
             </div>
-            <div className="text-gray-900 font-semibold text-sm mb-1 leading-tight">New Group</div>
-            <div className="text-[11px] text-gray-500 leading-relaxed">Start sharing</div>
+            <div className="text-white font-black text-sm mb-1 leading-tight">New Group</div>
+            <div className="text-xs text-white/80 font-bold leading-relaxed">Start sharing</div>
           </button>
         </div>
 
-        {/* Recent Transactions - Enhanced typography and polish */}
-        <div className="mt-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-900 leading-tight">Recent Activity</h2>
+        {/* Recent Transactions - iPhone Style Enhanced with #4a6850 Theme */}
+        <div className="mt-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-black text-gray-900 leading-tight tracking-tight">Recent Activity</h2>
             {allTransactions.length > 5 && (
-              <button className="text-emerald-600 text-sm font-medium hover:text-emerald-700 hover:bg-emerald-50 px-3 py-1.5 rounded-xl transition-all duration-200">
+              <button className="text-[#4a6850] text-sm font-black hover:text-[#3d5643] hover:bg-[#4a6850]/10 px-4 py-2 rounded-2xl transition-all duration-200 border border-[#4a6850]/20 shadow-sm hover:shadow-md">
                 View All
               </button>
             )}
           </div>
           
           {allTransactions.length > 0 ? (
-            <div className="bg-white rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden border border-gray-100">
+            <div className="bg-white rounded-3xl shadow-[0_20px_60px_rgba(74,104,80,0.12)] overflow-hidden border border-[#4a6850]/10">
               {allTransactions.slice(0, 8).map((transaction, index) => (
                 <button
                   key={transaction.id}
                   onClick={() => setSelectedTransaction(transaction)}
-                  className="w-full p-4 flex items-center gap-4 hover:bg-gray-50 transition-all duration-200 border-b border-gray-100 last:border-b-0 group"
+                  className="w-full p-5 flex items-center gap-4 hover:bg-[#4a6850]/5 active:bg-[#4a6850]/10 transition-all duration-200 border-b border-[#4a6850]/8 last:border-b-0 group"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform duration-200 ${
-                    transaction.type === 'expense' ? 'bg-orange-50 text-orange-600' : 
-                    transaction.type === 'payment' ? 'bg-emerald-50 text-emerald-600' : 'bg-emerald-50 text-emerald-600'
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform duration-200 shadow-lg ${
+                    transaction.type === 'expense' ? 'bg-gradient-to-br from-orange-500 to-red-500 text-white' : 
+                    transaction.type === 'payment' ? 'bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white' : 'bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white'
                   }`}>
                     {transaction.type === 'expense' ? (
-                      <ArrowUpRight className="w-4 h-4" />
+                      <ArrowUpRight className="w-5 h-5 font-bold" />
                     ) : transaction.type === 'payment' ? (
-                      <ArrowDownLeft className="w-4 h-4" />
+                      <ArrowDownLeft className="w-5 h-5 font-bold" />
                     ) : (
-                      <CreditCard className="w-4 h-4" />
+                      <CreditCard className="w-5 h-5 font-bold" />
                     )}
                   </div>
                   
                   <div className="flex-1 text-left">
-                    <div className="font-semibold text-gray-900 mb-0.5 leading-tight">{transaction.title}</div>
-                    <div className="text-sm text-gray-500 leading-relaxed">
+                    <div className="font-black text-gray-900 mb-1 leading-tight tracking-tight">{transaction.title}</div>
+                    <div className="text-sm text-gray-600 leading-relaxed">
                       {(() => {
                         const transactionGroup = groups.find(g => g.id === transaction.groupId);
                         return (
                           <>
-                            {transactionGroup && <span className="font-medium text-emerald-600">{transactionGroup.name}</span>}
-                            {transactionGroup && <span className="text-gray-400"> • </span>}
-                            <span className="text-gray-500">{transaction.date}</span>
+                            {transactionGroup && <span className="font-black text-[#4a6850]">{transactionGroup.name}</span>}
+                            {transactionGroup && <span className="text-gray-400 font-bold"> • </span>}
+                            <span className="text-gray-600 font-bold">{transaction.date}</span>
                             {transaction.type === "expense" && transaction.paidByName && (
-                              <span className="text-gray-400"> • Paid by {transaction.paidByName}</span>
+                              <span className="text-gray-500 font-medium"> • Paid by {transaction.paidByName}</span>
                             )}
                             {transaction.type === "payment" && transaction.fromName && transaction.toName && (
-                              <span className="text-gray-400"> • {transaction.fromName} to {transaction.toName}</span>
+                              <span className="text-gray-500 font-medium"> • {transaction.fromName} to {transaction.toName}</span>
                             )}
                           </>
                         );
@@ -754,9 +762,9 @@ const Dashboard = () => {
                   </div>
                   
                   <div className="text-right">
-                    <div className={`font-bold tabular-nums leading-tight ${
+                    <div className={`font-black tabular-nums leading-tight text-lg tracking-tight ${
                       transaction.type === 'expense' ? 'text-orange-600' : 
-                      transaction.type === 'payment' ? 'text-emerald-600' : 'text-emerald-600'
+                      transaction.type === 'payment' ? 'text-[#4a6850]' : 'text-[#4a6850]'
                     }`}>
                       {transaction.type === 'expense' ? '-' : '+'}Rs {transaction.amount.toLocaleString()}
                     </div>

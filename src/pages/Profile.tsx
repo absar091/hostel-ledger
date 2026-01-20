@@ -170,34 +170,68 @@ const Profile = () => {
   const memberSince = user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 pb-20">
-      {/* Header */}
+    <div className="min-h-screen bg-white pb-20">
+      {/* iPhone-style top accent border */}
+      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
+      
+      {/* App Header - iPhone Style Enhanced with #4a6850 */}
+      <div className="bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
+        <div className="flex items-center justify-between">
+          {/* App Logo and Name - Enhanced */}
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
+              <img
+                src="/only-logo.png"
+                alt="Hostel Ledger"
+                className="w-6 h-6 object-contain filter brightness-0 invert"
+              />
+            </div>
+            <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
+          </div>
+          
+          {/* Header Actions - Enhanced */}
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl flex items-center justify-center shadow-lg">
+              <User className="w-7 h-7 text-white font-bold" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Header - iPhone Style Enhanced */}
       <header className="px-4 pt-8 pb-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Profile</h1>
           <div className="flex items-center gap-3">
             <ShareButton variant="icon" />
             <PWAInstallButton />
           </div>
         </div>
 
-        {/* Profile Card - Simple white card */}
-        <div className="bg-white rounded-3xl p-6 shadow-lg animate-fade-in border border-gray-100">
-          <div className="flex items-start gap-4 mb-4">
-            {/* Avatar - Clickable */}
+        {/* Profile Card - iPhone Style with #4a6850 */}
+        <div className="bg-white rounded-3xl p-7 shadow-[0_25px_70px_rgba(74,104,80,0.15)] animate-fade-in border border-[#4a6850]/10">
+          <div className="flex items-start gap-5 mb-5">
+            {/* Avatar - Enhanced iPhone Style */}
             <button
               onClick={handlePhotoClick}
               disabled={isUploadingPhoto}
               className="relative group cursor-pointer"
             >
-              <Avatar name={user?.name || "User"} photoURL={user?.photoURL} size="xl" />
+              <div className="relative">
+                <Avatar name={user?.name || "User"} photoURL={user?.photoURL} size="xl" />
+                
+                {/* Status Indicator */}
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-full flex items-center justify-center shadow-lg border-3 border-white">
+                  <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
+                </div>
+              </div>
               
-              {/* Camera Icon Overlay - Shows on Hover */}
-              <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* Camera Icon Overlay - Enhanced */}
+              <div className="absolute inset-0 bg-[#4a6850]/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
                 {isUploadingPhoto ? (
-                  <Loader2 className="w-6 h-6 text-white animate-spin" />
+                  <Loader2 className="w-7 h-7 text-white animate-spin" />
                 ) : (
-                  <Camera className="w-6 h-6 text-white" />
+                  <Camera className="w-7 h-7 text-white font-bold" />
                 )}
               </div>
             </button>
@@ -212,36 +246,36 @@ const Profile = () => {
             />
 
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-gray-900">{user?.name}</h2>
-              <p className="text-gray-600 text-sm flex items-center gap-1 mt-1">
-                <Mail className="w-3 h-3" />
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-1">{user?.name}</h2>
+              <p className="text-[#4a6850]/80 text-sm flex items-center gap-2 mt-1 font-bold">
+                <Mail className="w-4 h-4" />
                 {user?.email}
               </p>
               {user?.phone && (
-                <p className="text-gray-600 text-sm flex items-center gap-1 mt-1">
-                  <Phone className="w-3 h-3" />
+                <p className="text-[#4a6850]/80 text-sm flex items-center gap-2 mt-1 font-bold">
+                  <Phone className="w-4 h-4" />
                   {user.phone}
                 </p>
               )}
-              <p className="text-gray-500 text-xs flex items-center gap-1 mt-2">
-                <Calendar className="w-3 h-3" />
+              <p className="text-[#4a6850]/60 text-xs flex items-center gap-2 mt-3 font-black">
+                <Calendar className="w-4 h-4" />
                 Member since {memberSince}
               </p>
             </div>
           </div>
           
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-100">
-            <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-gray-500 text-xs">Email Status</p>
-              <p className="font-semibold text-sm flex items-center gap-1 mt-1 text-emerald-600">
+          {/* Quick Stats - Enhanced iPhone Style */}
+          <div className="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-[#4a6850]/10">
+            <div className="bg-[#4a6850]/5 rounded-2xl p-4 border border-[#4a6850]/10">
+              <p className="text-[#4a6850]/70 text-xs font-black uppercase tracking-wide">Email Status</p>
+              <p className="font-black text-sm flex items-center gap-2 mt-2 text-[#4a6850]">
                 <Check className="w-4 h-4" />
                 Verified
               </p>
             </div>
-            <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-gray-500 text-xs">Payment Methods</p>
-              <p className="font-semibold text-sm mt-1 text-gray-900">
+            <div className="bg-[#4a6850]/5 rounded-2xl p-4 border border-[#4a6850]/10">
+              <p className="text-[#4a6850]/70 text-xs font-black uppercase tracking-wide">Payment Methods</p>
+              <p className="font-black text-sm mt-2 text-gray-900">
                 {hasPaymentDetails ? Object.keys(user?.paymentDetails || {}).length : 0} Added
               </p>
             </div>
@@ -250,9 +284,9 @@ const Profile = () => {
       </header>
 
       <main className="px-4 space-y-6">
-        {/* Account Section */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-2">Account</h3>
+        {/* Account Section - iPhone Style Enhanced */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-black text-[#4a6850]/80 uppercase tracking-widest px-2">Account</h3>
           
           <button
             onClick={() => {
@@ -260,17 +294,17 @@ const Profile = () => {
               setEditPhone(user?.phone || "");
               setShowEditSheet(true);
             }}
-            className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-gray-200 hover:shadow-md transition-all animate-slide-up"
+            className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
             style={{ animationDelay: "0.05s" }}
           >
-            <div className="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center">
-              <User className="w-5 h-5 text-emerald-600" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <User className="w-6 h-6 text-[#4a6850] font-bold" />
             </div>
             <div className="flex-1 text-left">
-              <p className="font-semibold text-gray-900">Edit Profile</p>
-              <p className="text-sm text-gray-500">Update your name and phone</p>
+              <p className="font-black text-gray-900 tracking-tight">Edit Profile</p>
+              <p className="text-sm text-[#4a6850]/80 font-bold">Update your name and phone</p>
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
+            <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850] transition-colors" />
           </button>
 
           <button
@@ -282,26 +316,26 @@ const Profile = () => {
               setRaastId(user?.paymentDetails?.raastId || "");
               setShowPaymentSheet(true);
             }}
-            className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-gray-200 hover:shadow-md transition-all animate-slide-up"
+            className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
             style={{ animationDelay: "0.1s" }}
           >
-            <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-blue-600" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <CreditCard className="w-6 h-6 text-blue-600 font-bold" />
             </div>
             <div className="flex-1 text-left">
-              <div className="flex items-center gap-2">
-                <p className="font-semibold text-gray-900">Payment Details</p>
+              <div className="flex items-center gap-3">
+                <p className="font-black text-gray-900 tracking-tight">Payment Details</p>
                 {hasPaymentDetails && (
-                  <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                    <Check className="w-3 h-3 text-white" />
+                  <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-sm">
+                    <Check className="w-3.5 h-3.5 text-white font-bold" />
                   </div>
                 )}
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-[#4a6850]/80 font-bold">
                 {hasPaymentDetails ? `${Object.keys(user?.paymentDetails || {}).length} methods added` : "Add payment methods"}
               </p>
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
+            <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850] transition-colors" />
           </button>
         </div>
 
@@ -315,86 +349,86 @@ const Profile = () => {
           />
         </div>
 
-        {/* Preferences Section */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-2">Preferences</h3>
+        {/* Preferences Section - iPhone Style Enhanced */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-black text-[#4a6850]/80 uppercase tracking-widest px-2">Preferences</h3>
           
           <button
             onClick={() => toast.info("Notification settings coming soon!")}
-            className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-gray-200 hover:shadow-md transition-all animate-slide-up"
+            className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
             style={{ animationDelay: "0.15s" }}
           >
-            <div className="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center">
-              <Bell className="w-5 h-5 text-purple-600" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500/20 to-violet-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <Bell className="w-6 h-6 text-purple-600 font-bold" />
             </div>
             <div className="flex-1 text-left">
-              <p className="font-semibold text-gray-900">Notifications</p>
-              <p className="text-sm text-gray-500">Manage email and push notifications</p>
+              <p className="font-black text-gray-900 tracking-tight">Notifications</p>
+              <p className="text-sm text-[#4a6850]/80 font-bold">Manage email and push notifications</p>
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
+            <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850] transition-colors" />
           </button>
 
           <button
             onClick={() => toast.info("Security settings coming soon!")}
-            className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-gray-200 hover:shadow-md transition-all animate-slide-up"
+            className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
             style={{ animationDelay: "0.2s" }}
           >
-            <div className="w-11 h-11 rounded-xl bg-orange-100 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-orange-600" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <Shield className="w-6 h-6 text-orange-600 font-bold" />
             </div>
             <div className="flex-1 text-left">
-              <p className="font-semibold text-gray-900">Security & Privacy</p>
-              <p className="text-sm text-gray-500">Password, data export, delete account</p>
+              <p className="font-black text-gray-900 tracking-tight">Security & Privacy</p>
+              <p className="text-sm text-[#4a6850]/80 font-bold">Password, data export, delete account</p>
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
+            <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850] transition-colors" />
           </button>
         </div>
 
-        {/* Support Section */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-2">Support</h3>
+        {/* Support Section - iPhone Style Enhanced */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-black text-[#4a6850]/80 uppercase tracking-widest px-2">Support</h3>
           
           <button
             onClick={() => navigate("/about")}
-            className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-gray-200 hover:shadow-md transition-all animate-slide-up"
+            className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
             style={{ animationDelay: "0.25s" }}
           >
-            <div className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center">
-              <Info className="w-5 h-5 text-gray-600" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <Info className="w-6 h-6 text-[#4a6850] font-bold" />
             </div>
             <div className="flex-1 text-left">
-              <p className="font-semibold text-gray-900">About</p>
-              <p className="text-sm text-gray-500">Version, terms, privacy policy</p>
+              <p className="font-black text-gray-900 tracking-tight">About</p>
+              <p className="text-sm text-[#4a6850]/80 font-bold">Version, terms, privacy policy</p>
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
+            <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850] transition-colors" />
           </button>
 
           <a
             href="mailto:support@aarx.online"
-            className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm border border-gray-200 hover:shadow-md transition-all animate-slide-up"
+            className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
             style={{ animationDelay: "0.3s" }}
           >
-            <div className="w-11 h-11 rounded-xl bg-teal-100 flex items-center justify-center">
-              <HelpCircle className="w-5 h-5 text-teal-600" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500/20 to-cyan-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <HelpCircle className="w-6 h-6 text-teal-600 font-bold" />
             </div>
             <div className="flex-1 text-left">
-              <p className="font-semibold text-gray-900">Help & Support</p>
-              <p className="text-sm text-gray-500">Contact us for assistance</p>
+              <p className="font-black text-gray-900 tracking-tight">Help & Support</p>
+              <p className="text-sm text-[#4a6850]/80 font-bold">Contact us for assistance</p>
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
+            <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850] transition-colors" />
           </a>
         </div>
 
-        {/* Logout */}
+        {/* Logout - iPhone Style Enhanced */}
         <button
           onClick={handleLogoutClick}
-          className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 animate-slide-up border border-red-200 hover:shadow-md hover:border-red-300 transition-all"
+          className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 animate-slide-up border border-red-200/50 hover:shadow-[0_25px_70px_rgba(239,68,68,0.15)] hover:border-red-300 transition-all group"
           style={{ animationDelay: "0.35s" }}
         >
-          <div className="w-11 h-11 rounded-xl bg-red-100 flex items-center justify-center">
-            <LogOut className="w-5 h-5 text-red-600" />
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-500/20 to-pink-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <LogOut className="w-6 h-6 text-red-600 font-bold" />
           </div>
-          <p className="font-semibold text-red-600">Log Out</p>
+          <p className="font-black text-red-600 tracking-tight">Log Out</p>
         </button>
 
         {/* App Version */}

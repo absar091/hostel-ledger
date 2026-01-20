@@ -99,13 +99,13 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="h-[60vh] rounded-t-3xl flex flex-col">
-        <SheetHeader className="flex-shrink-0 mb-6">
-          <SheetTitle className="text-center flex items-center justify-center gap-3">
+      <SheetContent side="bottom" className="h-[60vh] rounded-t-3xl flex flex-col bg-white shadow-[0_25px_70px_rgba(74,104,80,0.3)] border-t-2 border-[#4a6850]/20 z-[100]">
+        <SheetHeader className="flex-shrink-0 mb-6 bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-3xl border-b border-[#4a6850]/10">
+          <SheetTitle className="text-center flex items-center justify-center gap-3 font-black text-xl tracking-tight text-gray-900">
             <Avatar name={member.name} size="sm" />
             {member.name} — Settlement Details
           </SheetTitle>
-          <SheetDescription className="text-center text-sm text-gray-500">
+          <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
             Manage payments and settlements with this group member
           </SheetDescription>
         </SheetHeader>
@@ -113,10 +113,10 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
         <div className="flex-1 overflow-y-auto space-y-6 pb-4">
           {isSettled ? (
             // All Settled State
-            <div className="text-center py-8">
-              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-green-600 mb-2">All Settled! 🎉</h3>
-              <p className="text-muted-foreground">
+            <div className="text-center py-12 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
+              <CheckCircle className="w-20 h-20 text-[#4a6850] mx-auto mb-6" />
+              <h3 className="text-2xl font-black text-[#4a6850] mb-3 tracking-tight">All Settled! 🎉</h3>
+              <p className="text-[#4a6850]/80 font-bold text-lg">
                 No pending payments with {member.name}
               </p>
             </div>
@@ -124,33 +124,33 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
             <div className="space-y-4">
               {/* What they owe you */}
               {hasReceivable && (
-                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                      <ArrowDownLeft className="w-5 h-5 text-green-600" />
+                <div className="bg-gradient-to-br from-[#4a6850]/10 to-[#3d5643]/10 border border-[#4a6850]/30 rounded-3xl p-6 shadow-[0_20px_60px_rgba(74,104,80,0.15)]">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-14 h-14 rounded-3xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center shadow-lg">
+                      <ArrowDownLeft className="w-7 h-7 text-white font-bold" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-green-800">
+                      <h4 className="font-black text-[#4a6850] text-lg tracking-tight">
                         {member.name} owes you
                       </h4>
-                      <p className="text-sm text-green-600">
+                      <p className="text-sm text-[#4a6850]/80 font-bold">
                         From expenses you paid on their behalf
                       </p>
                     </div>
                   </div>
                   
-                  <div className="text-3xl font-bold text-green-700 mb-4">
+                  <div className="text-4xl font-black text-[#4a6850] mb-6 tracking-tight tabular-nums">
                     Rs {memberSettlement.toReceive.toLocaleString()}
                   </div>
                   
                   {!showCustomReceive ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Button 
                         onClick={() => handleMarkReceived()}
                         disabled={isProcessing}
-                        className="w-full bg-green-600 hover:bg-green-700 text-white"
+                        className="w-full h-14 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all"
                       >
-                        <CheckCircle className="w-4 h-4 mr-2" />
+                        <CheckCircle className="w-5 h-5 mr-2" />
                         Mark Full Amount Received Rs {memberSettlement.toReceive.toLocaleString()}
                       </Button>
                       
@@ -158,16 +158,16 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                         onClick={() => setShowCustomReceive(true)}
                         disabled={isProcessing}
                         variant="outline"
-                        className="w-full border-green-300 text-green-700 hover:bg-green-50"
+                        className="w-full h-12 border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
                       >
                         <Edit3 className="w-4 h-4 mr-2" />
                         Partial Payment
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <div>
-                        <label className="text-sm font-medium text-green-800 mb-2 block">
+                        <label className="text-sm font-black text-[#4a6850] mb-3 block uppercase tracking-wide">
                           Amount Received
                         </label>
                         <Input
@@ -175,15 +175,15 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                           placeholder="Enter amount"
                           value={customReceiveAmount}
                           onChange={(e) => setCustomReceiveAmount(e.target.value)}
-                          className="border-green-300 focus:border-green-500"
+                          className="border-[#4a6850]/30 focus:border-[#4a6850] h-12 rounded-2xl font-bold text-lg"
                         />
                       </div>
                       
-                      <div className="flex gap-2">
+                      <div className="flex gap-3">
                         <Button 
                           onClick={handleCustomReceive}
                           disabled={isProcessing || !customReceiveAmount}
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                          className="flex-1 h-12 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
                           Mark Received
@@ -195,7 +195,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                             setCustomReceiveAmount("");
                           }}
                           variant="outline"
-                          className="flex-1"
+                          className="flex-1 h-12 border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
                         >
                           Cancel
                         </Button>
@@ -203,7 +203,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                     </div>
                   )}
                   
-                  <p className="text-xs text-green-600 mt-2 text-center">
+                  <p className="text-xs text-[#4a6850]/80 mt-3 text-center font-bold">
                     This will add money to your Available Budget
                   </p>
                 </div>
@@ -211,33 +211,33 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
 
               {/* What you owe them */}
               {hasPayable && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                      <ArrowUpRight className="w-5 h-5 text-red-600" />
+                <div className="bg-gradient-to-br from-red-50 to-orange-50 border border-red-300 rounded-3xl p-6 shadow-[0_20px_60px_rgba(239,68,68,0.15)]">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-14 h-14 rounded-3xl bg-gradient-to-br from-red-600 to-orange-600 flex items-center justify-center shadow-lg">
+                      <ArrowUpRight className="w-7 h-7 text-white font-bold" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-red-800">
+                      <h4 className="font-black text-red-800 text-lg tracking-tight">
                         You owe {member.name}
                       </h4>
-                      <p className="text-sm text-red-600">
+                      <p className="text-sm text-red-600 font-bold">
                         From expenses they paid on your behalf
                       </p>
                     </div>
                   </div>
                   
-                  <div className="text-3xl font-bold text-red-700 mb-4">
+                  <div className="text-4xl font-black text-red-700 mb-6 tracking-tight tabular-nums">
                     Rs {memberSettlement.toPay.toLocaleString()}
                   </div>
                   
                   {!showCustomPay ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Button 
                         onClick={() => handleMarkPaid()}
                         disabled={isProcessing}
-                        className="w-full bg-red-600 hover:bg-red-700 text-white"
+                        className="w-full h-14 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(239,68,68,0.3)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.4)] transition-all"
                       >
-                        <DollarSign className="w-4 h-4 mr-2" />
+                        <DollarSign className="w-5 h-5 mr-2" />
                         Pay Full Amount Rs {memberSettlement.toPay.toLocaleString()}
                       </Button>
                       
@@ -245,16 +245,16 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                         onClick={() => setShowCustomPay(true)}
                         disabled={isProcessing}
                         variant="outline"
-                        className="w-full border-red-300 text-red-700 hover:bg-red-50"
+                        className="w-full h-12 border-red-300 text-red-700 hover:bg-red-50 font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
                       >
                         <Edit3 className="w-4 h-4 mr-2" />
                         Partial Payment
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <div>
-                        <label className="text-sm font-medium text-red-800 mb-2 block">
+                        <label className="text-sm font-black text-red-800 mb-3 block uppercase tracking-wide">
                           Amount to Pay
                         </label>
                         <Input
@@ -262,15 +262,15 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                           placeholder="Enter amount"
                           value={customPayAmount}
                           onChange={(e) => setCustomPayAmount(e.target.value)}
-                          className="border-red-300 focus:border-red-500"
+                          className="border-red-300 focus:border-red-500 h-12 rounded-2xl font-bold text-lg"
                         />
                       </div>
                       
-                      <div className="flex gap-2">
+                      <div className="flex gap-3">
                         <Button 
                           onClick={handleCustomPay}
                           disabled={isProcessing || !customPayAmount}
-                          className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                          className="flex-1 h-12 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
                         >
                           <DollarSign className="w-4 h-4 mr-2" />
                           Mark Paid
@@ -282,7 +282,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                             setCustomPayAmount("");
                           }}
                           variant="outline"
-                          className="flex-1"
+                          className="flex-1 h-12 border-red-300 text-red-700 hover:bg-red-50 font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
                         >
                           Cancel
                         </Button>
@@ -290,21 +290,21 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                     </div>
                   )}
                   
-                  <p className="text-xs text-red-600 mt-2 text-center">
+                  <p className="text-xs text-red-600 mt-3 text-center font-bold">
                     This will deduct money from your Available Budget
                   </p>
                 </div>
               )}
 
               {/* Enterprise Note */}
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center mt-0.5">
-                    <CheckCircle className="w-4 h-4 text-blue-600" />
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-300 rounded-3xl p-6 shadow-[0_20px_60px_rgba(59,130,246,0.15)]">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mt-1 shadow-lg">
+                    <CheckCircle className="w-6 h-6 text-white font-bold" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-blue-900 mb-1">Enterprise-Safe Tracking</h4>
-                    <p className="text-sm text-blue-700">
+                    <h4 className="font-black text-blue-900 mb-2 text-lg tracking-tight">Enterprise-Safe Tracking</h4>
+                    <p className="text-sm text-blue-700 font-bold leading-relaxed">
                       These amounts are tracked separately and never auto-merged. 
                       Each settlement requires your explicit confirmation.
                     </p>
@@ -315,11 +315,11 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
           )}
         </div>
 
-        <div className="flex-shrink-0 pt-4 border-t bg-background">
+        <div className="flex-shrink-0 pt-4 border-t border-[#4a6850]/10 bg-white">
           <Button
             variant="secondary"
             onClick={onClose}
-            className="w-full h-12"
+            className="w-full h-14 rounded-3xl font-black shadow-lg hover:shadow-xl transition-all"
           >
             Close
           </Button>

@@ -147,23 +147,26 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col">
-        <SheetHeader className="flex-shrink-0 mb-4">
-          <SheetTitle className="text-center">
+      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 shadow-[0_-20px_60px_rgba(74,104,80,0.1)] z-[100]">
+        <SheetHeader className="flex-shrink-0 mb-6 pt-2">
+          {/* Handle Bar */}
+          <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
+          
+          <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">
             {step === 1 && "Select Group"}
             {step === 2 && "Who Paid You?"}
             {step === 3 && "Payment Details"}
           </SheetTitle>
-          <SheetDescription className="text-center text-sm text-gray-500">
+          <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
             Record a payment received from a group member
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-6 pb-4">
-          {/* Step 1: Select Group */}
+        <div className="flex-1 overflow-y-auto pb-4">
+          {/* Step 1: Select Group - iPhone Style */}
           {step === 1 && (
-            <div className="space-y-3 animate-fade-in">
-              <p className="text-sm text-muted-foreground mb-4">
+            <div className="space-y-4 animate-fade-in">
+              <p className="text-sm text-[#4a6850]/80 mb-6 text-center font-bold">
                 Which group is this payment from?
               </p>
               {groups.map((group) => (
@@ -171,24 +174,24 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   key={group.id}
                   onClick={() => setSelectedGroup(group.id)}
                   className={cn(
-                    "w-full flex items-center gap-4 p-4 rounded-xl transition-all",
+                    "w-full flex items-center gap-4 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl",
                     selectedGroup === group.id
-                      ? "bg-positive/10 border-2 border-positive"
-                      : "bg-secondary hover:bg-secondary/80"
+                      ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850] scale-105"
+                      : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5"
                   )}
                 >
-                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-2xl">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center text-2xl shadow-sm">
                     {group.emoji}
                   </div>
                   <div className="flex-1 text-left">
-                    <span className="font-medium">{group.name}</span>
-                    <p className="text-sm text-muted-foreground">
+                    <span className="font-black text-gray-900 tracking-tight">{group.name}</span>
+                    <p className="text-sm text-[#4a6850]/80 font-bold">
                       {group.members.length} members
                     </p>
                   </div>
                   {selectedGroup === group.id && (
-                    <div className="w-6 h-6 rounded-full bg-positive flex items-center justify-center">
-                      <Check className="w-4 h-4 text-primary-foreground" />
+                    <div className="w-7 h-7 rounded-full bg-[#4a6850] flex items-center justify-center shadow-lg">
+                      <Check className="w-4 h-4 text-white font-bold" />
                     </div>
                   )}
                 </button>
@@ -196,19 +199,19 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
             </div>
           )}
 
-          {/* Step 2: Who paid you */}
+          {/* Step 2: Who paid you - iPhone Style */}
           {step === 2 && (
             <div className="animate-fade-in">
               {selectedGroupData && (
-                <div className="inline-flex items-center gap-2 bg-secondary rounded-full px-3 py-1 mb-4">
-                  <span>{selectedGroupData.emoji}</span>
-                  <span className="text-sm font-medium">{selectedGroupData.name}</span>
+                <div className="inline-flex items-center gap-3 bg-[#4a6850]/10 rounded-3xl px-5 py-3 mb-8 border border-[#4a6850]/20 mx-auto">
+                  <span className="text-2xl">{selectedGroupData.emoji}</span>
+                  <span className="text-sm font-black text-[#4a6850]">{selectedGroupData.name}</span>
                 </div>
               )}
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-[#4a6850]/80 mb-6 text-center font-bold">
                 Who sent you money?
               </p>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {otherMembers.map((member) => {
                   const settlement = settlements[member.id] || { toReceive: 0, toPay: 0 };
                   const owesYou = settlement.toReceive > 0;
@@ -220,30 +223,30 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                       key={member.id}
                       onClick={() => setFromMember(member.id)}
                       className={cn(
-                        "w-full flex items-center gap-4 p-4 rounded-xl transition-all",
+                        "w-full flex items-center gap-4 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl",
                         fromMember === member.id
-                          ? "bg-positive/10 border-2 border-positive"
-                          : "bg-secondary hover:bg-secondary/80"
+                          ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850] scale-105"
+                          : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5"
                       )}
                     >
                       <Avatar name={member.name} />
                       <div className="flex-1 text-left">
-                        <div className="font-medium">{member.name}</div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="font-black text-gray-900 tracking-tight">{member.name}</div>
+                        <div className="text-sm font-bold">
                           {isSettled ? (
-                            "✅ All settled"
+                            <span className="text-[#4a6850]">✅ All settled</span>
                           ) : owesYou ? (
-                            <span className="text-green-400">Owes you Rs {settlement.toReceive.toLocaleString()}</span>
+                            <span className="text-[#4a6850]">Owes you Rs {settlement.toReceive.toLocaleString()}</span>
                           ) : youOwe ? (
-                            <span className="text-red-400">You owe Rs {settlement.toPay.toLocaleString()}</span>
+                            <span className="text-red-500">You owe Rs {settlement.toPay.toLocaleString()}</span>
                           ) : (
-                            "No pending settlements"
+                            <span className="text-gray-500">No pending settlements</span>
                           )}
                         </div>
                       </div>
                       {fromMember === member.id && (
-                        <div className="w-6 h-6 rounded-full bg-positive flex items-center justify-center">
-                          <Check className="w-4 h-4 text-primary-foreground" />
+                        <div className="w-7 h-7 rounded-full bg-[#4a6850] flex items-center justify-center shadow-lg">
+                          <Check className="w-4 h-4 text-white font-bold" />
                         </div>
                       )}
                     </button>
@@ -253,78 +256,78 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
             </div>
           )}
 
-          {/* Step 3: Amount and details */}
+          {/* Step 3: Amount and details - iPhone Style */}
           {step === 3 && (
             <div className="space-y-6 animate-fade-in">
-              {/* Member Details Card */}
+              {/* Member Details Card - iPhone Style */}
               {selectedMemberData && (
-                <div className="glass-card p-4 bg-emerald-50 border-emerald-200">
-                  <div className="flex items-start gap-3 mb-3">
+                <div className="bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl p-6 border border-[#4a6850]/20 shadow-lg">
+                  <div className="flex items-start gap-4 mb-4">
                     <Avatar name={selectedMemberData.name} size="md" />
                     <div className="flex-1">
-                      <h3 className="font-semibold text-foreground">{selectedMemberData.name}</h3>
-                      <div className="text-sm text-muted-foreground">
+                      <h3 className="font-black text-gray-900 text-lg tracking-tight">{selectedMemberData.name}</h3>
+                      <div className="text-sm font-bold">
                         {selectedMemberData.settlement.toReceive > 0 ? (
-                          <span className="text-green-400">
+                          <span className="text-[#4a6850]">
                             💰 Owes you Rs {selectedMemberData.settlement.toReceive.toLocaleString()}
                           </span>
                         ) : selectedMemberData.settlement.toPay > 0 ? (
-                          <span className="text-red-400">
+                          <span className="text-red-500">
                             💸 You owe Rs {selectedMemberData.settlement.toPay.toLocaleString()}
                           </span>
                         ) : (
-                          <span className="text-emerald-600">✅ All settled up</span>
+                          <span className="text-[#4a6850]">✅ All settled up</span>
                         )}
                       </div>
                     </div>
                   </div>
                   
-                  {/* Payment Details */}
+                  {/* Payment Details - iPhone Style */}
                   {selectedMemberData.paymentDetails && Object.keys(selectedMemberData.paymentDetails).length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-emerald-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <CreditCard className="w-4 h-4 text-emerald-600" />
-                        <span className="text-sm font-medium text-emerald-600">Payment Details</span>
+                    <div className="mt-4 pt-4 border-t border-[#4a6850]/20">
+                      <div className="flex items-center gap-3 mb-3">
+                        <CreditCard className="w-5 h-5 text-[#4a6850]" />
+                        <span className="text-sm font-black text-[#4a6850] uppercase tracking-wide">Payment Details</span>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
                         {selectedMemberData.paymentDetails.jazzCash && (
-                          <div>
-                            <span className="text-muted-foreground">JazzCash:</span>
-                            <div className="font-mono text-foreground">{selectedMemberData.paymentDetails.jazzCash}</div>
+                          <div className="bg-white rounded-2xl p-3 border border-[#4a6850]/10">
+                            <span className="text-[#4a6850]/70 font-bold block">JazzCash:</span>
+                            <div className="font-black text-gray-900 font-mono">{selectedMemberData.paymentDetails.jazzCash}</div>
                           </div>
                         )}
                         {selectedMemberData.paymentDetails.easypaisa && (
-                          <div>
-                            <span className="text-muted-foreground">Easypaisa:</span>
-                            <div className="font-mono text-foreground">{selectedMemberData.paymentDetails.easypaisa}</div>
+                          <div className="bg-white rounded-2xl p-3 border border-[#4a6850]/10">
+                            <span className="text-[#4a6850]/70 font-bold block">Easypaisa:</span>
+                            <div className="font-black text-gray-900 font-mono">{selectedMemberData.paymentDetails.easypaisa}</div>
                           </div>
                         )}
                         {selectedMemberData.paymentDetails.bankName && (
-                          <div>
-                            <span className="text-muted-foreground">Bank:</span>
-                            <div className="font-mono text-foreground">{selectedMemberData.paymentDetails.bankName}</div>
+                          <div className="bg-white rounded-2xl p-3 border border-[#4a6850]/10">
+                            <span className="text-[#4a6850]/70 font-bold block">Bank:</span>
+                            <div className="font-black text-gray-900 font-mono">{selectedMemberData.paymentDetails.bankName}</div>
                           </div>
                         )}
                         {selectedMemberData.paymentDetails.accountNumber && (
-                          <div>
-                            <span className="text-muted-foreground">Account:</span>
-                            <div className="font-mono text-foreground">{selectedMemberData.paymentDetails.accountNumber}</div>
+                          <div className="bg-white rounded-2xl p-3 border border-[#4a6850]/10">
+                            <span className="text-[#4a6850]/70 font-bold block">Account:</span>
+                            <div className="font-black text-gray-900 font-mono">{selectedMemberData.paymentDetails.accountNumber}</div>
                           </div>
                         )}
                       </div>
                     </div>
                   )}
                   
-                  {/* Quick Amount Suggestion */}
+                  {/* Quick Amount Suggestion - iPhone Style */}
                   {selectedMemberData.settlement.toReceive > 0 && (
-                    <div className="mt-3 pt-3 border-t border-emerald-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Info className="w-4 h-4 text-emerald-600" />
-                        <span className="text-sm font-medium text-emerald-600">Quick Fill</span>
+                    <div className="mt-4 pt-4 border-t border-[#4a6850]/20">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Info className="w-5 h-5 text-[#4a6850]" />
+                        <span className="text-sm font-black text-[#4a6850] uppercase tracking-wide">Quick Fill</span>
                       </div>
                       <button
                         onClick={() => setAmount(selectedMemberData.settlement.toReceive.toString())}
-                        className="text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg transition-colors font-medium"
+                        className="bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white px-5 py-3 rounded-2xl transition-all font-black shadow-lg hover:shadow-xl"
                       >
                         Full Amount: Rs {selectedMemberData.settlement.toReceive.toLocaleString()}
                       </button>
@@ -333,30 +336,30 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 </div>
               )}
 
-              {/* Amount */}
+              {/* Amount - iPhone Style */}
               <div>
-                <label className="text-sm font-medium text-muted-foreground mb-3 block">
+                <label className="text-sm font-black text-[#4a6850]/80 mb-4 block uppercase tracking-wide">
                   Amount received from {selectedMemberName}
                 </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
-                    Rs
-                  </span>
+                <div className="text-center mb-6">
+                  <div className="text-7xl font-black text-gray-900 mb-4 tracking-tighter tabular-nums">
+                    Rs {amount || "0"}
+                  </div>
                   <Input
                     type="number"
-                    placeholder="0"
+                    placeholder="Enter amount"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="text-2xl h-16 pl-12 font-semibold"
+                    className="text-center text-3xl h-16 max-w-sm mx-auto rounded-3xl border-[#4a6850]/20 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
                     autoFocus
                   />
                 </div>
               </div>
 
-              {/* Payment Method */}
+              {/* Payment Method - iPhone Style */}
               <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <label className="text-sm font-medium text-muted-foreground">
+                <div className="flex items-center gap-3 mb-4">
+                  <label className="text-sm font-black text-[#4a6850]/80 uppercase tracking-wide">
                     Payment method
                   </label>
                   <Tooltip 
@@ -364,70 +367,70 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     position="top"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => setMethod("cash")}
                     className={cn(
-                      "flex items-center justify-center gap-3 p-4 rounded-xl transition-all",
+                      "flex items-center justify-center gap-3 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl",
                       method === "cash"
-                        ? "bg-positive/10 border-2 border-positive"
-                        : "bg-secondary hover:bg-secondary/80"
+                        ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850] scale-105"
+                        : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5"
                     )}
                   >
                     <Banknote className={cn(
-                      "w-5 h-5",
-                      method === "cash" ? "text-positive" : "text-muted-foreground"
+                      "w-6 h-6 font-bold",
+                      method === "cash" ? "text-[#4a6850]" : "text-gray-500"
                     )} />
                     <span className={cn(
-                      "font-medium",
-                      method === "cash" ? "text-positive" : "text-foreground"
+                      "font-black tracking-tight",
+                      method === "cash" ? "text-[#4a6850]" : "text-gray-900"
                     )}>Cash</span>
                   </button>
                   
                   <button
                     onClick={() => setMethod("online")}
                     className={cn(
-                      "flex items-center justify-center gap-3 p-4 rounded-xl transition-all",
+                      "flex items-center justify-center gap-3 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl",
                       method === "online"
-                        ? "bg-positive/10 border-2 border-positive"
-                        : "bg-secondary hover:bg-secondary/80"
+                        ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850] scale-105"
+                        : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5"
                     )}
                   >
                     <Smartphone className={cn(
-                      "w-5 h-5",
-                      method === "online" ? "text-positive" : "text-muted-foreground"
+                      "w-6 h-6 font-bold",
+                      method === "online" ? "text-[#4a6850]" : "text-gray-500"
                     )} />
                     <span className={cn(
-                      "font-medium",
-                      method === "online" ? "text-positive" : "text-foreground"
+                      "font-black tracking-tight",
+                      method === "online" ? "text-[#4a6850]" : "text-gray-900"
                     )}>Online</span>
                   </button>
                 </div>
               </div>
 
-              {/* Note */}
+              {/* Note - iPhone Style */}
               <div>
-                <label className="text-sm font-medium text-muted-foreground mb-3 block">
+                <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
                   Note (optional)
                 </label>
                 <Input
                   placeholder="e.g., Mess payment for January"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="h-12"
+                  className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
                 />
               </div>
 
-              {/* Summary */}
+              {/* Summary - iPhone Style */}
               {parseFloat(amount) > 0 && (
-                <div className="bg-positive/5 border border-positive/20 rounded-xl p-4 animate-fade-in">
-                  <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-6 shadow-[0_25px_70px_rgba(74,104,80,0.3)] text-white animate-fade-in">
+                  <div className="flex items-center gap-4">
                     <Avatar name={selectedMemberName || ""} />
-                    <div>
-                      <div className="font-semibold text-positive">
+                    <div className="flex-1">
+                      <div className="font-black text-3xl tracking-tight text-white">
                         +Rs {amount}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-white/90 font-bold">
                         from {selectedMemberName} • {method}
                       </div>
                     </div>
@@ -438,13 +441,13 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
           )}
         </div>
 
-        <div className="flex-shrink-0 pt-4 border-t bg-background">
-          <div className="flex gap-3">
+        <div className="flex-shrink-0 pt-6 border-t border-[#4a6850]/10 bg-white">
+          <div className="flex gap-4">
             {step > 1 && (
               <Button
                 variant="secondary"
                 onClick={() => setStep((s) => s - 1)}
-                className="flex-1 h-12"
+                className="flex-1 h-14 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black border-0 shadow-lg hover:shadow-xl transition-all"
               >
                 Back
               </Button>
@@ -453,15 +456,15 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
               <Button
                 onClick={() => setStep((s) => s + 1)}
                 disabled={!canProceed()}
-                className="flex-1 h-12 bg-positive hover:bg-positive/90"
+                className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
               >
-                Continue <ChevronRight className="w-4 h-4 ml-1" />
+                Continue <ChevronRight className="w-5 h-5 ml-2 font-bold" />
               </Button>
             ) : (
               <Button
                 onClick={handleSubmit}
                 disabled={!canProceed()}
-                className="w-full h-12 bg-positive hover:bg-positive/90"
+                className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
               >
                 Record Payment
               </Button>

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Settings, ChevronRight } from "lucide-react";
+import { ArrowLeft, Settings, ChevronRight, Plus, HandCoins, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TimelineItem from "@/components/TimelineItem";
 import Avatar from "@/components/Avatar";
@@ -11,7 +11,6 @@ import MemberDetailSheet from "@/components/MemberDetailSheet";
 import MemberSettlementSheet from "@/components/MemberSettlementSheet";
 import GroupSettingsSheet from "@/components/GroupSettingsSheet";
 import { toast } from "sonner";
-import { Plus, HandCoins } from "lucide-react";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
@@ -140,7 +139,10 @@ const GroupDetail = () => {
 
   if (!group) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        {/* iPhone-style top accent border */}
+        <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
+        
         <div className="text-center">
           <div className="text-6xl mb-4">🔍</div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Group not found</h2>
@@ -228,39 +230,42 @@ const GroupDetail = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 pb-24">
-      {/* Header */}
-      <header className="sticky top-0 bg-white/80 backdrop-blur-sm z-10 border-b border-gray-100 shadow-sm">
-        <div className="px-4 py-4">
+    <div className="min-h-screen bg-white pb-24">
+      {/* iPhone-style top accent border */}
+      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
+      
+      {/* Header - iPhone Style Enhanced */}
+      <header className="sticky top-0 bg-white/95 backdrop-blur-xl z-50 border-b border-[#4a6850]/10 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
+        <div className="px-4 py-5">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate("/")}
-              className="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors"
+              className="w-11 h-11 rounded-2xl bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-700" />
+              <ArrowLeft className="w-5 h-5 text-[#4a6850] font-bold" />
             </button>
             
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{group.emoji}</span>
-                <h1 className="text-xl font-bold text-gray-900">{group.name}</h1>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{group.emoji}</span>
+                <h1 className="text-2xl font-black text-gray-900 tracking-tight truncate">{group.name}</h1>
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-[#4a6850]/80 font-bold mt-1">
                 {group.members.length} members {totalPending > 0 && `• Rs ${totalPending.toLocaleString()} pending`}
               </p>
             </div>
             
             <button 
               onClick={() => setShowGroupSettings(true)}
-              className="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors"
+              className="w-11 h-11 rounded-2xl bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
             >
-              <Settings className="w-5 h-5 text-gray-700" />
+              <Settings className="w-5 h-5 text-[#4a6850] font-bold" />
             </button>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1 px-4 pb-4">
+        {/* Tabs - iPhone Style Enhanced */}
+        <div className="flex gap-2 px-4 pb-4">
           {[
             { id: "ledger", label: "Ledger" },
             { id: "members", label: "Members" },
@@ -269,10 +274,10 @@ const GroupDetail = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex-1 py-3 px-4 rounded-2xl text-sm font-black transition-all duration-200 ${
                 activeTab === tab.id
-                  ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
-                  : "bg-white/70 text-gray-600 hover:bg-white border border-gray-100"
+                  ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] scale-105"
+                  : "bg-white/80 text-[#4a6850]/80 hover:bg-white border border-[#4a6850]/10 hover:scale-102"
               }`}
             >
               {tab.label}
@@ -284,34 +289,36 @@ const GroupDetail = () => {
       {/* Content */}
       <main className="px-4 py-4">
         {activeTab === "ledger" && (
-          <div className="space-y-3 animate-fade-in">
+          <div className="space-y-4 animate-fade-in">
             {transactions.length > 0 ? (
-              transactions.map((item, index) => (
-                <div
-                  key={item.id}
-                  className="animate-slide-up"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <TimelineItem
-                    type={item.type}
-                    title={item.title}
-                    amount={item.amount}
-                    date={item.date}
-                    paidBy={item.type === "expense" ? item.paidByName : undefined}
-                    participants={item.type === "expense" ? item.participants : undefined}
-                    from={item.type === "payment" ? item.fromName : undefined}
-                    to={item.type === "payment" ? item.toName : undefined}
-                    method={item.type === "payment" ? item.method : undefined}
-                  />
-                </div>
-              ))
+              <div className="bg-white rounded-3xl shadow-[0_20px_60px_rgba(74,104,80,0.08)] overflow-hidden border border-[#4a6850]/10">
+                {transactions.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="animate-slide-up border-b border-[#4a6850]/8 last:border-b-0"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <TimelineItem
+                      type={item.type}
+                      title={item.title}
+                      amount={item.amount}
+                      date={item.date}
+                      paidBy={item.type === "expense" ? item.paidByName : undefined}
+                      participants={item.type === "expense" ? item.participants : undefined}
+                      from={item.type === "payment" ? item.fromName : undefined}
+                      to={item.type === "payment" ? item.toName : undefined}
+                      method={item.type === "payment" ? item.method : undefined}
+                    />
+                  </div>
+                ))}
+              </div>
             ) : (
-              <div className="text-center py-12 bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 shadow-sm">
-                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-200">
-                  <Plus className="w-8 h-8 text-emerald-500" />
+              <div className="text-center py-12 bg-white rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
+                <div className="w-16 h-16 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-[#4a6850]/20">
+                  <Plus className="w-8 h-8 text-[#4a6850] font-bold" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No transactions yet</h3>
-                <p className="text-gray-500 text-sm">
+                <h3 className="text-lg font-black text-gray-900 mb-2 tracking-tight">No transactions yet</h3>
+                <p className="text-[#4a6850]/80 text-sm font-bold">
                   Add an expense to get started
                 </p>
               </div>
@@ -320,7 +327,7 @@ const GroupDetail = () => {
         )}
 
         {activeTab === "members" && (
-          <div className="space-y-3 animate-fade-in">
+          <div className="space-y-4 animate-fade-in">
             {group.members.map((member, index) => {
               const isYou = member.isCurrentUser;
               
@@ -341,27 +348,34 @@ const GroupDetail = () => {
               return (
                 <div
                   key={member.id}
-                  className={`w-full bg-white/70 backdrop-blur-sm rounded-2xl p-4 animate-slide-up border border-white/50 shadow-sm hover:bg-white/90 transition-colors`}
+                  className={`w-full bg-white rounded-3xl p-5 animate-slide-up border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all group`}
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div className="flex items-center gap-4">
-                    <Avatar name={member.name} size="lg" />
+                    <div className="relative">
+                      <Avatar name={member.name} size="lg" />
+                      {isYou && (
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-gray-900">{member.name}</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="font-black text-gray-900 tracking-tight text-lg">{member.name}</div>
+                      <div className="text-sm mt-1">
                         {isYou ? (
-                          "You"
+                          <span className="text-[#4a6850] font-black">You</span>
                         ) : isSettled ? (
-                          "✅ All settled"
+                          <span className="text-[#4a6850] font-black">✅ All settled</span>
                         ) : (
                           <div className="space-y-1">
                             {thisMemberOwesYou && (
-                              <div className="text-emerald-600">
+                              <div className="text-[#4a6850] font-black">
                                 Owes you Rs {memberSettlement.toReceive.toLocaleString()}
                               </div>
                             )}
                             {youOweThisMember && (
-                              <div className="text-red-500">
+                              <div className="text-red-500 font-black">
                                 You owe Rs {memberSettlement.toPay.toLocaleString()}
                               </div>
                             )}
@@ -375,7 +389,7 @@ const GroupDetail = () => {
                         <Button
                           onClick={handleSettlementClick}
                           size="sm"
-                          className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs hover:from-emerald-600 hover:to-teal-600"
+                          className="bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white text-xs hover:from-[#3d5643] hover:to-[#2f4336] font-black shadow-lg hover:shadow-xl transition-all"
                         >
                           Settle Up
                         </Button>
@@ -390,9 +404,9 @@ const GroupDetail = () => {
                           ...member,
                           balance: member.balance || 0
                         })}
-                        className="p-2 hover:bg-gray-100"
+                        className="p-3 hover:bg-[#4a6850]/10 rounded-2xl group-hover:scale-105 transition-all"
                       >
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                        <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850]" />
                       </Button>
                     )}
                   </div>
@@ -403,28 +417,47 @@ const GroupDetail = () => {
         )}
 
         {activeTab === "summary" && (
-          <div className="space-y-4 animate-fade-in">
-            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 shadow-lg">
-              <h3 className="font-semibold text-white/90 mb-4">Group Stats</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-2xl font-bold text-white">Rs {totalSpent.toLocaleString()}</div>
-                  <div className="text-sm text-white/70">Total Spent</div>
+          <div className="space-y-6 animate-fade-in">
+            {/* Total Spent Card - iPhone Style */}
+            <div className="bg-gradient-to-br from-[#4a6850] via-[#3d5643] to-[#4a6850] rounded-3xl p-7 shadow-[0_25px_70px_rgba(74,104,80,0.4)] text-white border-t-2 border-[#5a7860]/40">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-white/25 rounded-2xl flex items-center justify-center shadow-lg">
+                  <span className="text-2xl">💰</span>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-white">{expenseCount}</div>
-                  <div className="text-sm text-white/70">Expenses</div>
+                  <div className="text-sm text-white/90 font-black tracking-wide uppercase">Group Stats</div>
+                  <div className="text-xs text-white/80 font-bold">Total activity overview</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <div className="text-4xl font-black text-white mb-2 tracking-tighter tabular-nums drop-shadow-sm">
+                    Rs {totalSpent.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-white/90 font-bold">Total Spent</div>
+                </div>
+                <div>
+                  <div className="text-4xl font-black text-white mb-2 tracking-tighter tabular-nums drop-shadow-sm">
+                    {expenseCount}
+                  </div>
+                  <div className="text-sm text-white/90 font-bold">Expenses</div>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
-              <h3 className="font-semibold text-gray-900 mb-4">Top Contributor</h3>
-              <div className="flex items-center gap-3">
+            {/* Top Contributor Card - iPhone Style */}
+            <div className="bg-white rounded-3xl p-6 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-2xl flex items-center justify-center">
+                  <span className="text-lg">🏆</span>
+                </div>
+                <h3 className="font-black text-gray-900 text-lg tracking-tight">Top Contributor</h3>
+              </div>
+              <div className="flex items-center gap-4">
                 <Avatar name={topSpender.name} size="lg" />
-                <div>
-                  <div className="font-semibold text-gray-900">{topSpender.name}</div>
-                  <div className="text-sm text-emerald-600">
+                <div className="flex-1">
+                  <div className="font-black text-gray-900 text-xl mb-1 tracking-tight">{topSpender.name}</div>
+                  <div className="text-sm text-[#4a6850] font-bold">
                     {(topSpender.balance || 0) >= 0 
                       ? `Rs ${(topSpender.balance || 0).toLocaleString()} to receive` 
                       : `Rs ${Math.abs(topSpender.balance || 0).toLocaleString()} owes`}
@@ -433,19 +466,25 @@ const GroupDetail = () => {
               </div>
             </div>
 
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/50">
-              <h3 className="font-semibold text-gray-900 mb-4">Members</h3>
-              <div className="flex -space-x-2">
+            {/* Members Overview Card - iPhone Style */}
+            <div className="bg-white rounded-3xl p-6 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-2xl flex items-center justify-center">
+                  <Users className="w-5 h-5 text-[#4a6850] font-bold" />
+                </div>
+                <h3 className="font-black text-gray-900 text-lg tracking-tight">Members</h3>
+              </div>
+              <div className="flex -space-x-3 mb-4">
                 {group.members.slice(0, 5).map((member) => (
                   <Avatar key={member.id} name={member.name} size="md" />
                 ))}
                 {group.members.length > 5 && (
-                  <div className="w-10 h-10 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-sm font-medium text-gray-600">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 border-2 border-white flex items-center justify-center text-sm font-black text-[#4a6850] shadow-lg">
                     +{group.members.length - 5}
                   </div>
                 )}
               </div>
-              <div className="text-sm text-gray-500 mt-2">
+              <div className="text-sm text-[#4a6850]/80 font-bold">
                 {group.members.length} members in this group
               </div>
             </div>
@@ -454,13 +493,13 @@ const GroupDetail = () => {
       </main>
 
       {/* Floating Action Buttons */}
-      <div className="fixed bottom-6 left-4 right-4 flex gap-3">
+      <div className="fixed bottom-6 left-4 right-4 flex gap-3 z-40">
         <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 onClick={() => setShowRecordPayment(true)}
                 variant="outline"
-                className="flex-1 h-12 rounded-xl text-base font-semibold"
+                className="flex-1 h-12 rounded-xl text-base font-semibold bg-white border-[#4a6850]/20 text-[#4a6850] hover:bg-[#4a6850]/10 shadow-lg hover:shadow-xl transition-all"
               >
                 <HandCoins className="w-5 h-5 mr-2" />
                 Record Payment
@@ -475,7 +514,7 @@ const GroupDetail = () => {
             <TooltipTrigger asChild>
               <Button 
                 onClick={() => setShowAddExpense(true)}
-                className="flex-1 h-12 rounded-xl text-base font-semibold"
+                className="flex-1 h-12 rounded-xl text-base font-semibold bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white shadow-lg hover:shadow-xl transition-all"
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Add Expense
