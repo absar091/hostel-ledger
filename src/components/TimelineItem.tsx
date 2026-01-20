@@ -51,21 +51,21 @@ const TimelineItem = ({
     return (
       <button
         onClick={onClick}
-        className="w-full bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-left hover:bg-emerald-100/50 transition-colors"
+        className="w-full bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 border border-[#4a6850]/20 rounded-3xl p-5 text-left hover:bg-gradient-to-br hover:from-[#4a6850]/10 hover:to-[#3d5643]/10 hover:border-[#4a6850]/30 transition-all shadow-lg hover:shadow-xl"
       >
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-            <Plus className="w-5 h-5 text-emerald-600" />
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center shrink-0 shadow-lg">
+            <Plus className="w-6 h-6 text-white font-bold" />
           </div>
           
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-gray-900">{title}</div>
-            <div className="text-sm text-gray-500">Added to wallet</div>
+            <div className="font-black text-gray-900 tracking-tight text-lg">{title}</div>
+            <div className="text-sm text-[#4a6850]/80 font-bold">Added to wallet</div>
           </div>
           
           <div className="text-right shrink-0">
-            <div className="font-bold text-emerald-600">+Rs {amount.toLocaleString()}</div>
-            <div className="text-xs text-gray-500">{date}</div>
+            <div className="font-black text-[#4a6850] text-xl tracking-tight tabular-nums">+Rs {amount.toLocaleString()}</div>
+            <div className="text-xs text-[#4a6850]/60 font-bold">{date}</div>
           </div>
         </div>
       </button>
@@ -76,21 +76,21 @@ const TimelineItem = ({
     return (
       <button
         onClick={onClick}
-        className="w-full bg-red-50 border border-red-100 rounded-xl p-4 text-left hover:bg-red-100/50 transition-colors"
+        className="w-full bg-gradient-to-br from-red-50 to-orange-50 border border-red-200/50 rounded-3xl p-5 text-left hover:bg-gradient-to-br hover:from-red-100/50 hover:to-orange-100/50 hover:border-red-300/50 transition-all shadow-lg hover:shadow-xl"
       >
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-            <Wallet className="w-5 h-5 text-red-600" />
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shrink-0 shadow-lg">
+            <Wallet className="w-6 h-6 text-white font-bold" />
           </div>
           
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-gray-900">{title}</div>
-            <div className="text-sm text-gray-500">Deducted from wallet</div>
+            <div className="font-black text-gray-900 tracking-tight text-lg">{title}</div>
+            <div className="text-sm text-red-600/80 font-bold">Deducted from wallet</div>
           </div>
           
           <div className="text-right shrink-0">
-            <div className="font-bold text-red-600">-Rs {amount.toLocaleString()}</div>
-            <div className="text-xs text-gray-500">{date}</div>
+            <div className="font-black text-red-600 text-xl tracking-tight tabular-nums">-Rs {amount.toLocaleString()}</div>
+            <div className="text-xs text-red-500/60 font-bold">{date}</div>
           </div>
         </div>
       </button>
@@ -101,26 +101,26 @@ const TimelineItem = ({
     return (
       <button
         onClick={onClick}
-        className="w-full bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-left hover:bg-emerald-100/50 transition-colors"
+        className="w-full bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/50 rounded-3xl p-5 text-left hover:bg-gradient-to-br hover:from-emerald-100/50 hover:to-teal-100/50 hover:border-emerald-300/50 transition-all shadow-lg hover:shadow-xl"
       >
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-            <HandCoins className="w-5 h-5 text-emerald-600" />
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shrink-0 shadow-lg">
+            <HandCoins className="w-6 h-6 text-white font-bold" />
           </div>
           
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-gray-900">Payment Received</div>
-            <div className="text-sm text-gray-500">
+            <div className="font-black text-gray-900 tracking-tight text-lg">Payment Received</div>
+            <div className="text-sm text-emerald-600/80 font-bold">
               {from} → {to}
             </div>
             {method && (
-              <div className="text-xs text-gray-500 mt-1 capitalize">{method}</div>
+              <div className="text-xs text-emerald-500/60 mt-1 capitalize font-bold">{method}</div>
             )}
           </div>
           
           <div className="text-right shrink-0">
-            <div className="font-bold text-emerald-600">+Rs {amount.toLocaleString()}</div>
-            <div className="text-xs text-gray-500">{date}</div>
+            <div className="font-black text-emerald-600 text-xl tracking-tight tabular-nums">+Rs {amount.toLocaleString()}</div>
+            <div className="text-xs text-emerald-500/60 font-bold">{date}</div>
           </div>
         </div>
       </button>
@@ -130,33 +130,35 @@ const TimelineItem = ({
   return (
     <button
       onClick={onClick}
-      className="w-full bg-white border border-gray-100 rounded-xl p-4 shadow-sm text-left hover:shadow-md transition-shadow"
+      className="w-full bg-white border border-[#4a6850]/10 rounded-3xl p-5 shadow-lg text-left hover:shadow-xl hover:border-[#4a6850]/20 transition-all"
     >
-      <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-          <Icon className="w-5 h-5 text-gray-600" />
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shrink-0 shadow-lg">
+          <Icon className="w-6 h-6 text-gray-600 font-bold" />
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-gray-900">{title}</div>
-          <div className="text-sm text-gray-500">Paid by {paidBy}</div>
+          <div className="font-black text-gray-900 tracking-tight text-lg">{title}</div>
+          <div className="text-sm text-gray-600 font-bold">Paid by {paidBy}</div>
           
           {participants && participants.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1">
+            <div className="mt-3 flex flex-wrap gap-2">
               {participants.map((p) => {
                 const isPayer = p.name === paidBy;
                 return (
                   <span
                     key={p.name}
-                    className={`inline-flex items-center gap-1 text-xs rounded-full px-2 py-1 ${
-                      isPayer ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-700"
+                    className={`inline-flex items-center gap-1 text-xs rounded-2xl px-3 py-1.5 font-black ${
+                      isPayer 
+                        ? "bg-gradient-to-r from-[#4a6850]/20 to-[#3d5643]/20 text-[#4a6850] border border-[#4a6850]/30" 
+                        : "bg-gradient-to-r from-orange-100 to-red-100 text-orange-700 border border-orange-200"
                     }`}
                   >
-                    <span className="font-medium">{p.name}</span>
+                    <span className="font-black">{p.name}</span>
                     {isPayer ? (
-                      <span className="text-emerald-600">paid</span>
+                      <span className="text-[#4a6850]/80 font-bold">paid</span>
                     ) : (
-                      <span className="text-red-600">owes Rs {p.amount}</span>
+                      <span className="text-red-600 font-bold">owes Rs {p.amount}</span>
                     )}
                   </span>
                 );
@@ -166,8 +168,8 @@ const TimelineItem = ({
         </div>
         
         <div className="text-right shrink-0">
-          <div className="font-bold text-gray-900">Rs {amount.toLocaleString()}</div>
-          <div className="text-xs text-gray-500">{date}</div>
+          <div className="font-black text-gray-900 text-xl tracking-tight tabular-nums">Rs {amount.toLocaleString()}</div>
+          <div className="text-xs text-gray-500 font-bold">{date}</div>
         </div>
       </div>
     </button>

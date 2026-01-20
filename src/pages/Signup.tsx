@@ -251,20 +251,20 @@ const Signup = () => {
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
       
       {/* App Header - iPhone Style Enhanced with #4a6850 */}
-      <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
+      <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-4 pb-5 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
         <div className="flex items-center justify-center">
           {/* App Logo and Name - Enhanced */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl flex items-center justify-center shadow-lg">
               <img
                 src="/only-logo.png"
                 alt="Hostel Ledger"
-                className="w-6 h-6 object-contain filter brightness-0 invert"
+                className="w-7 h-7 object-contain filter brightness-0 invert"
               />
             </div>
             <div>
-              <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
-              <p className="text-xs text-[#4a6850]/80 font-bold">Split expenses with ease</p>
+              <h1 className="text-2xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
+              <p className="text-sm text-[#4a6850]/80 font-bold">Split expenses with ease</p>
             </div>
           </div>
         </div>
@@ -285,6 +285,12 @@ const Signup = () => {
       />
 
       <div className="w-full max-w-md pt-20">
+        {/* Page Description */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Create Account</h2>
+          <p className="text-[#4a6850]/80 font-bold text-lg">Sign up as new user to get started</p>
+        </div>
+
         {/* Basic Information View - iPhone Style */}
         {currentView === 'basic' && (
           <div className="space-y-8">

@@ -265,7 +265,7 @@ const VerifyEmail = () => {
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
       
       {/* App Header - iPhone Style Enhanced with #4a6850 */}
-      <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
+      <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-4 pb-5 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
         <div className="flex items-center justify-center">
           {/* App Logo and Name - Enhanced */}
           <div className="flex items-center gap-3">
@@ -301,9 +301,9 @@ const VerifyEmail = () => {
       <div className="w-full max-w-md pt-20">
         {/* Header - iPhone Style */}
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Check Your Email</h2>
+          <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Verify Your Email</h2>
           <p className="text-[#4a6850]/80 font-bold mb-2">
-            We've sent a 6-digit verification code to
+            Enter the 6-digit code sent to your email
           </p>
           <p className="text-[#4a6850] font-black">{email}</p>
         </div>

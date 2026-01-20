@@ -57,20 +57,20 @@ const Login = () => {
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
       
       {/* App Header - iPhone Style Enhanced with #4a6850 */}
-      <div className="bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
+      <div className="bg-white border-b border-[#4a6850]/10 pt-4 pb-5 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
         <div className="flex items-center justify-center">
           {/* App Logo and Name - Enhanced */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl flex items-center justify-center shadow-lg">
               <img
                 src="/only-logo.png"
                 alt="Hostel Ledger"
-                className="w-6 h-6 object-contain filter brightness-0 invert"
+                className="w-7 h-7 object-contain filter brightness-0 invert"
               />
             </div>
             <div>
-              <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
-              <p className="text-xs text-[#4a6850]/80 font-bold">Split expenses with ease</p>
+              <h1 className="text-2xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
+              <p className="text-sm text-[#4a6850]/80 font-bold">Split expenses with ease</p>
             </div>
           </div>
         </div>
@@ -92,6 +92,12 @@ const Login = () => {
 
       {/* Header */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
+        {/* Page Description */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Welcome Back</h2>
+          <p className="text-[#4a6850]/80 font-bold text-lg">Login as user to access your dashboard</p>
+        </div>
+
         {/* Form - iPhone Style */}
         <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6 animate-slide-up">
           <div>

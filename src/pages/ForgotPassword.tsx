@@ -215,6 +215,7 @@ const ForgotPassword = () => {
           </div>
         </div>
 
+        
         {/* Form - iPhone Style */}
         <div className="space-y-8">
           <form onSubmit={handleSubmit} className="space-y-8">

@@ -37,7 +37,7 @@
 
     --border: 220 15% 90%;
     --input: 220 15% 95%;
-    --ring: 162 88% 40%;
+    --ring: 142 35% 35%; /* #4a6850 converted to HSL */
 
     --radius: 1rem;
 
@@ -70,7 +70,7 @@
     --sidebar-accent: 210 20% 96%;
     --sidebar-accent-foreground: 220 27% 20%;
     --sidebar-border: 220 15% 90%;
-    --sidebar-ring: 162 88% 40%;
+    --sidebar-ring: 142 35% 35%; /* #4a6850 for sidebar */
   }
 
   /* Dark theme */
@@ -93,7 +93,7 @@
     --destructive-foreground: 0 0% 100%;
     --border: 220 27% 18%;
     --input: 220 27% 14%;
-    --ring: 162 88% 45%;
+    --ring: 142 35% 35%; /* #4a6850 for dark theme too */
     --positive: 162 88% 50%;
     --positive-soft: 162 40% 20%;
     --negative: 0 72% 55%;

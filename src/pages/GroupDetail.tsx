@@ -223,10 +223,20 @@ const GroupDetail = () => {
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0);
   const expenseCount = transactions.filter((t) => t.type === "expense").length;
-  const topSpender = group.members.reduce((prev, curr) => {
-    const prevBalance = prev.balance || 0;
-    const currBalance = curr.balance || 0;
-    return currBalance > prevBalance ? curr : prev;
+  
+  // Find the member who has paid the most in expenses (actual top contributor)
+  const memberExpenseContributions = group.members.map(member => {
+    const totalPaid = transactions
+      .filter(t => t.type === "expense" && t.paidBy === member.id)
+      .reduce((sum, t) => sum + t.amount, 0);
+    return {
+      ...member,
+      totalPaid
+    };
+  });
+  
+  const topSpender = memberExpenseContributions.reduce((prev, curr) => {
+    return curr.totalPaid > prev.totalPaid ? curr : prev;
   });
 
   return (
@@ -289,13 +299,13 @@ const GroupDetail = () => {
       {/* Content */}
       <main className="px-4 py-4">
         {activeTab === "ledger" && (
-          <div className="space-y-4 animate-fade-in">
+          <div className="space-y-3 animate-fade-in">
             {transactions.length > 0 ? (
-              <div className="bg-white rounded-3xl shadow-[0_20px_60px_rgba(74,104,80,0.08)] overflow-hidden border border-[#4a6850]/10">
+              <div className="space-y-3">
                 {transactions.map((item, index) => (
                   <div
                     key={item.id}
-                    className="animate-slide-up border-b border-[#4a6850]/8 last:border-b-0"
+                    className="animate-slide-up bg-white rounded-3xl shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 overflow-hidden"
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
                     <TimelineItem
@@ -458,9 +468,9 @@ const GroupDetail = () => {
                 <div className="flex-1">
                   <div className="font-black text-gray-900 text-xl mb-1 tracking-tight">{topSpender.name}</div>
                   <div className="text-sm text-[#4a6850] font-bold">
-                    {(topSpender.balance || 0) >= 0 
-                      ? `Rs ${(topSpender.balance || 0).toLocaleString()} to receive` 
-                      : `Rs ${Math.abs(topSpender.balance || 0).toLocaleString()} owes`}
+                    {topSpender.totalPaid > 0 
+                      ? `Paid Rs ${topSpender.totalPaid.toLocaleString()} in expenses` 
+                      : `No expenses paid yet`}
                   </div>
                 </div>
               </div>
@@ -492,16 +502,16 @@ const GroupDetail = () => {
         )}
       </main>
 
-      {/* Floating Action Buttons */}
-      <div className="fixed bottom-6 left-4 right-4 flex gap-3 z-40">
+      {/* Floating Action Buttons - Enhanced iPhone Style */}
+      <div className="fixed bottom-4 left-4 right-4 flex gap-4 z-40 pb-safe">
         <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 onClick={() => setShowRecordPayment(true)}
                 variant="outline"
-                className="flex-1 h-12 rounded-xl text-base font-semibold bg-white border-[#4a6850]/20 text-[#4a6850] hover:bg-[#4a6850]/10 shadow-lg hover:shadow-xl transition-all"
+                className="flex-1 h-12 rounded-2xl text-sm font-black bg-white border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 hover:border-[#4a6850]/50 shadow-[0_8px_32px_rgba(74,104,80,0.15)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.25)] transition-all"
               >
-                <HandCoins className="w-5 h-5 mr-2" />
+                <HandCoins className="w-4 h-4 mr-2 font-bold" />
                 Record Payment
               </Button>
             </TooltipTrigger>
@@ -514,9 +524,9 @@ const GroupDetail = () => {
             <TooltipTrigger asChild>
               <Button 
                 onClick={() => setShowAddExpense(true)}
-                className="flex-1 h-12 rounded-xl text-base font-semibold bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white shadow-lg hover:shadow-xl transition-all"
+                className="flex-1 h-12 rounded-2xl text-sm font-black bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all border-t-2 border-[#5a7860]/40"
               >
-                <Plus className="w-5 h-5 mr-2" />
+                <Plus className="w-4 h-4 mr-2 font-bold" />
                 Add Expense
               </Button>
             </TooltipTrigger>

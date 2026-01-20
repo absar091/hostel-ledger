@@ -115,7 +115,7 @@ const ResetPassword = () => {
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
       
       {/* App Header - iPhone Style Enhanced with #4a6850 */}
-      <div className="bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
+      <div className="bg-white border-b border-[#4a6850]/10 pt-4 pb-5 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
         <div className="flex items-center justify-center">
           {/* App Logo and Name - Enhanced */}
           <div className="flex items-center gap-3">

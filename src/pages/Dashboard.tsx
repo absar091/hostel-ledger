@@ -486,11 +486,11 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Profile Greeting Section - iPhone Style Enhanced with Fixed Emoji */}
-      <div className="px-4 pt-8 pb-10">
+      {/* Profile Greeting Section - iPhone Style Enhanced with Fixed Alignment */}
+      <div className="px-4 pt-12 pb-8">
         <div className="flex items-center gap-4">
           {/* Enhanced Profile Avatar with iPhone-style shadow */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <Avatar 
               name={user?.name || "User"} 
               photoURL={user?.photoURL} 
@@ -500,8 +500,8 @@ const Dashboard = () => {
               <div className="w-2 h-2 bg-white rounded-full"></div>
             </div>
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
               <span className="text-2xl leading-none">{greeting.emoji}</span>
               <div className="text-sm font-black text-[#4a6850]/80 tracking-wide uppercase">{greeting.text}</div>
             </div>
@@ -519,14 +519,11 @@ const Dashboard = () => {
           <h2 className="text-lg font-black text-gray-900 tracking-tight opacity-60 uppercase text-xs">Overview</h2>
         </div>
 
-        {/* PRIMARY CARD: Available Balance with Integrated Settlement Info */}
-        <div className="bg-gradient-to-br from-[#4a6850] via-[#3d5643] to-[#4a6850] rounded-3xl p-8 shadow-[0_30px_80px_rgba(74,104,80,0.5)] animate-[slideUp_0.5s_ease_forwards] text-white hover:shadow-[0_35px_90px_rgba(74,104,80,0.6)] transition-all duration-300 mb-10 relative border-t-4 border-[#5a7860]/50 border-l border-r border-b border-[#3d5643]/60">
-          {/* Subtle top highlight gradient */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-t-3xl"></div>
-          
-          <div className="flex justify-between items-start mb-6">
+        {/* PRIMARY CARD: Available Balance - Clean Design */}
+        <div className="bg-gradient-to-br from-[#4a6850] via-[#3d5643] to-[#4a6850] rounded-3xl p-5 shadow-lg animate-[slideUp_0.5s_ease_forwards] text-white hover:shadow-xl transition-all duration-300 mb-8 relative border-t-2 border-[#5a7860]/40 max-w-lg mx-auto">
+          <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-black tracking-widest uppercase text-white/95">Available Balance</span>
+              <span className="text-xs font-black tracking-widest uppercase text-white/95">Available Balance</span>
               <Tooltip 
                 content="This is the actual money in your wallet that you can spend right now. It doesn't include money others owe you."
                 position="bottom"
@@ -538,86 +535,71 @@ const Dashboard = () => {
             </div>
             <button 
               onClick={() => setShowAddMoney(true)}
-              className="bg-white/20 border-0 text-white w-12 h-12 rounded-2xl cursor-pointer hover:bg-white/30 active:scale-95 transition-all flex items-center justify-center shadow-lg hover:shadow-xl"
+              className="bg-white/40 border border-white/50 text-white w-11 h-11 rounded-2xl cursor-pointer hover:bg-white/50 hover:border-white/70 active:scale-95 transition-all flex items-center justify-center shadow-xl hover:shadow-2xl"
             >
-              <Plus className="w-6 h-6 font-bold" />
+              <Plus className="w-5 h-5 font-black" />
             </button>
           </div>
           
-          {/* HERO NUMBER - Main Balance */}
-          <div className="text-6xl font-black tracking-tighter leading-none mb-6 text-white tabular-nums drop-shadow-lg">
+          {/* Main Balance Number */}
+          <div className="text-4xl font-black tracking-tighter leading-none mb-3 text-white tabular-nums drop-shadow-sm">
             Rs {walletBalance.toLocaleString()}
           </div>
           
-          {/* Integrated Settlement Information */}
-          <div className="space-y-3">
-            {/* After Settlements - Subtle */}
-            <div className="flex items-center gap-3">
-              <div className="text-sm text-white/70 font-bold">
-                After settlements: <span className="tabular-nums font-black text-white/90">Rs {(walletBalance + settlementDelta).toLocaleString()}</span>
+          {/* Settlement Information */}
+          <div className="pt-3 border-t border-white/25">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="text-sm text-white/90 font-bold">
+                After settlements: <span className="tabular-nums font-black text-white">Rs {(walletBalance + settlementDelta).toLocaleString()}</span>
               </div>
               <Tooltip 
                 content="This shows what your wallet balance will be after all pending group settlements are completed."
                 position="top"
               >
-                <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center cursor-help hover:bg-white/30 transition-colors">
-                  <span className="text-[9px] font-black text-white/80">?</span>
+                <div className="w-4 h-4 rounded-full bg-white/25 flex items-center justify-center cursor-help hover:bg-white/35 transition-colors">
+                  <span className="text-[9px] font-black text-white">?</span>
                 </div>
               </Tooltip>
             </div>
             
-            {/* Settlement Delta - Integrated with Color & Icon */}
+            {/* Settlement Delta - Simple Text Only */}
             {settlementDelta !== 0 && (
-              <div className="flex items-center gap-3 pt-2 border-t border-white/15">
-                <div className="flex items-center gap-2">
-                  {settlementDelta > 0 ? (
-                    <>
-                      <TrendingUp className="w-4 h-4 text-emerald-300" />
-                      <span className="text-sm font-black text-emerald-300">
-                        +Rs {settlementDelta.toLocaleString()}
-                      </span>
-                      <span className="text-xs bg-emerald-500/30 text-emerald-200 px-2 py-1 rounded-full font-bold">
-                        Incoming
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <TrendingDown className="w-4 h-4 text-orange-300" />
-                      <span className="text-sm font-black text-orange-300">
-                        −Rs {Math.abs(settlementDelta).toLocaleString()}
-                      </span>
-                      <span className="text-xs bg-orange-500/30 text-orange-200 px-2 py-1 rounded-full font-bold">
-                        Outgoing
-                      </span>
-                    </>
-                  )}
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-white/80 font-bold">
+                  Settlement Delta: <span className={`tabular-nums font-black ${
+                    settlementDelta > 0 ? 'text-emerald-300' : 'text-orange-300'
+                  }`}>
+                    {settlementDelta > 0 ? '+' : '−'}Rs {Math.abs(settlementDelta).toLocaleString()} <span className="font-black text-lg">{settlementDelta > 0 ? '↑' : '↓'}</span>
+                  </span>
                 </div>
-                <button 
-                  onClick={() => navigate("/groups")}
-                  className="text-xs text-white/70 hover:text-white/90 font-bold underline transition-colors"
+                <Tooltip 
+                  content={`This shows the net change to your wallet after all group settlements. ${settlementDelta > 0 ? 'You will receive this amount.' : 'You will pay this amount.'}`}
+                  position="top"
                 >
-                  View groups
-                </button>
+                  <div className="w-4 h-4 rounded-full bg-white/25 flex items-center justify-center cursor-help hover:bg-white/35 transition-colors">
+                    <span className="text-[9px] font-black text-white">?</span>
+                  </div>
+                </Tooltip>
               </div>
             )}
           </div>
         </div>
 
-        {/* SECONDARY CARDS: Receive / Owe - Enhanced Color Differentiation */}
+        {/* SECONDARY CARDS: Receive / Owe - Original Colors */}
         <div className="grid grid-cols-2 gap-5 mb-10">
-          {/* To Receive - Bright Positive Blue-Green */}
+          {/* To Receive - Original Green Theme */}
           <button 
             onClick={() => navigate("/to-receive")}
             className={`border rounded-3xl p-5 shadow-[0_15px_40px_rgba(0,0,0,0.12)] active:scale-[0.98] transition-all duration-300 text-left group border-t-2 ${
               totalToReceive <= 0 
-                ? 'bg-gradient-to-br from-gray-300 via-gray-400 to-gray-300 border-gray-200/50 cursor-default text-gray-600' 
-                : 'bg-gradient-to-br from-cyan-500 via-blue-500 to-teal-500 border-cyan-300/50 hover:shadow-[0_20px_50px_rgba(6,182,212,0.25)] text-white'
+                ? 'bg-gradient-to-br from-gray-400 via-gray-500 to-gray-400 border-gray-300/30 cursor-default text-white/80' 
+                : 'bg-gradient-to-br from-green-700 via-green-800 to-green-700 border-green-600/30 hover:shadow-[0_20px_50px_rgba(21,128,61,0.25)] text-white'
             }`}
           >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <TrendingUp className={`w-4 h-4 ${totalToReceive <= 0 ? 'text-gray-500' : 'text-white/90'}`} />
-                <span className={`text-xs font-black tracking-wider uppercase ${totalToReceive <= 0 ? 'text-gray-500' : 'text-white/95'}`}>
+                <div className={`w-2 h-2 rounded-full ${totalToReceive <= 0 ? 'bg-white/60' : 'bg-white/90'}`}></div>
+                <span className={`text-xs font-black tracking-wider uppercase ${totalToReceive <= 0 ? 'text-white/70' : 'text-white/90'}`}>
                   TO RECEIVE
                 </span>
               </div>
@@ -625,30 +607,32 @@ const Dashboard = () => {
                 <ArrowDownLeft className="w-4 h-4 text-white/80 group-hover:text-white transition-colors" />
               )}
             </div>
-            <div className={`text-3xl font-black tabular-nums mb-2 ${totalToReceive <= 0 ? 'text-gray-600' : 'text-white'}`}>
+            <div className={`text-3xl font-black tabular-nums mb-2 ${totalToReceive <= 0 ? 'text-white/80' : 'text-white'}`}>
               Rs {totalToReceive.toLocaleString()}
             </div>
-            <div className={`text-xs font-bold ${totalToReceive <= 0 ? 'text-gray-500' : 'text-white/85'}`}>
+            <div className={`text-xs font-bold ${totalToReceive <= 0 ? 'text-white/60' : 'text-white/80'}`}>
               {totalToReceive <= 0 ? 'All settled up! 🎉' : 'View details'}
             </div>
           </button>
           
-          {/* You Owe - Warm Orange-Red Gradient */}
+          {/* You Owe - Complementary Theme */}
           <button 
             onClick={() => navigate("/to-pay")}
-            className="bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 border border-orange-300/50 border-t-2 rounded-3xl p-5 shadow-[0_15px_40px_rgba(249,115,22,0.2)] hover:shadow-[0_20px_50px_rgba(249,115,22,0.3)] active:scale-[0.98] transition-all duration-300 text-left group text-white"
+            className="bg-gradient-to-br from-[#6b5b4a] via-[#5a4a3d] to-[#6b5b4a] border border-[#7a6a5a]/30 border-t-2 rounded-3xl p-5 shadow-lg hover:shadow-xl active:scale-[0.98] transition-all duration-300 text-left group text-white"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <TrendingDown className="w-4 h-4 text-white/90" />
-                <span className="text-xs font-black tracking-wider uppercase text-white/95">YOU OWE</span>
+                <div className="w-2 h-2 rounded-full bg-white/90"></div>
+                <span className="text-xs font-black tracking-wider uppercase text-orange-300">
+                  YOU OWE
+                </span>
               </div>
               <ArrowUpRight className="w-4 h-4 text-white/80 group-hover:text-white transition-colors" />
             </div>
             <div className="text-3xl font-black text-white tabular-nums mb-2">
               Rs {totalToPay.toLocaleString()}
             </div>
-            <div className="text-xs font-bold text-white/85">View details</div>
+            <div className="text-xs font-bold text-white/80">View details</div>
           </button>
         </div>
 
