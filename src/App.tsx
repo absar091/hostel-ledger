@@ -8,28 +8,27 @@ import { FirebaseDataProvider } from "@/contexts/FirebaseDataContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import EmailVerificationGate from "@/components/EmailVerificationGate";
 import ScrollToTop from "@/components/ScrollToTop";
-import { lazy, Suspense } from "react";
 
-// Lazy load all page components for better performance
-const Index = lazy(() => import("./pages/Index"));
-const Groups = lazy(() => import("./pages/Groups"));
-const GroupDetail = lazy(() => import("./pages/GroupDetail"));
-const Login = lazy(() => import("./pages/Login"));
-const Signup = lazy(() => import("./pages/Signup"));
-const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
-const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Budget = lazy(() => import("./pages/Budget"));
-const Activity = lazy(() => import("./pages/Activity"));
-const DownloadApp = lazy(() => import("./pages/DownloadApp"));
-const InstallApp = lazy(() => import("./pages/InstallApp"));
-const About = lazy(() => import("./pages/About"));
-const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-const TermsOfService = lazy(() => import("./pages/TermsOfService"));
-const ToReceive = lazy(() => import("./pages/ToReceive"));
-const ToPay = lazy(() => import("./pages/ToPay"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+// Direct imports for better reliability in production
+import Index from "./pages/Index";
+import Groups from "./pages/Groups";
+import GroupDetail from "./pages/GroupDetail";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import VerifyEmail from "./pages/VerifyEmail";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import Profile from "./pages/Profile";
+import Budget from "./pages/Budget";
+import Activity from "./pages/Activity";
+import DownloadApp from "./pages/DownloadApp";
+import InstallApp from "./pages/InstallApp";
+import About from "./pages/About";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import ToReceive from "./pages/ToReceive";
+import ToPay from "./pages/ToPay";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,16 +38,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-// Lightweight loading component for lazy-loaded pages
-const PageLoader = () => (
-  <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50">
-    <div className="flex flex-col items-center">
-      <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-      <div className="text-sm text-gray-600">Loading...</div>
-    </div>
-  </div>
-);
 
 // Reusable Splash Screen Component
 const SplashScreen = () => {
@@ -211,8 +200,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppRoutes = () => (
-  <Suspense fallback={<PageLoader />}>
-    <Routes>
+  <Routes>
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
       <Route path="/verify-email" element={<VerifyEmail />} />
@@ -233,7 +221,6 @@ const AppRoutes = () => (
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
-  </Suspense>
 );
 
 const App = () => (

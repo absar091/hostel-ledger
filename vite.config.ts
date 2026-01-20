@@ -16,31 +16,16 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Optimize chunk splitting for better caching
+    // Optimize for direct imports - no complex chunk splitting
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // Group all node_modules into vendor chunks
-          if (id.includes('node_modules')) {
-            // React ecosystem
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'react-vendor';
-            }
-            // Firebase
-            if (id.includes('firebase')) {
-              return 'firebase';
-            }
-            // UI components (Radix, etc.)
-            if (id.includes('@radix-ui') || id.includes('cmdk') || id.includes('vaul')) {
-              return 'ui-vendor';
-            }
-            // Icons - group all Lucide icons together
-            if (id.includes('lucide-react')) {
-              return 'icons';
-            }
-            // Everything else from node_modules
-            return 'vendor';
-          }
+        manualChunks: {
+          // Keep React separate for better caching
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          // Keep Firebase separate as it's large
+          'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          // Keep UI components together
+          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-tooltip', '@radix-ui/react-select'],
         },
       },
     },
