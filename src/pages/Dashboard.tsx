@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowUpRight, ArrowDownLeft, Plus, User, CreditCard, Users } from "@/lib/icons";
+import { ArrowUpRight, ArrowDownLeft, Plus, User, CreditCard, Users, Wallet, Send, X } from "@/lib/icons";
 import BottomNav from "@/components/BottomNav";
 import Avatar from "@/components/Avatar";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
@@ -350,8 +350,8 @@ const Dashboard = () => {
         <div className="bg-white w-full max-w-md max-h-[90vh] overflow-hidden rounded-3xl shadow-[0_25px_70px_rgba(74,104,80,0.3)] border border-[#4a6850]/10 mx-auto">
           {/* Header with close button - iPhone Style */}
           <div className="flex items-center justify-between p-6 border-b border-[#4a6850]/10 bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 flex-shrink-0">
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-3xl flex items-center justify-center shadow-lg ${
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              <div className={`w-12 h-12 rounded-3xl flex items-center justify-center shadow-lg flex-shrink-0 ${
                 transaction.type === 'expense' ? 'bg-gradient-to-br from-red-500 to-orange-500 text-white' : 
                 transaction.type === 'payment' ? 'bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white' : 'bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white'
               }`}>
@@ -363,16 +363,16 @@ const Dashboard = () => {
                   <CreditCard className="w-6 h-6 font-bold" />
                 )}
               </div>
-              <div>
-                <h2 className="font-black text-gray-900 text-lg tracking-tight">Transaction Details</h2>
-                <p className="text-sm text-[#4a6850]/80 capitalize font-bold">{transaction.type}</p>
+              <div className="min-w-0 flex-1">
+                <h2 className="font-black text-gray-900 text-lg tracking-tight truncate">Transaction Details</h2>
+                <p className="text-sm text-[#4a6850]/80 capitalize font-bold truncate">{transaction.type}</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 rounded-2xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all shadow-lg hover:shadow-xl"
+              className="w-10 h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95 flex-shrink-0 ml-4"
             >
-              <span className="text-gray-600 text-xl font-bold">×</span>
+              <X className="w-5 h-5 text-white font-bold" strokeWidth={3} />
             </button>
           </div>
 
@@ -550,41 +550,36 @@ const Dashboard = () => {
           <p className="text-gray-500 font-medium">Welcome back,</p>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">{user?.name || "User"}</h2>
         </section>
-        {/* PRIMARY CARD: Mesh Gradient Style */}
-        <section className="rounded-3xl p-6 text-white shadow-2xl shadow-[#4a6850]/30 relative overflow-hidden" style={{ background: 'radial-gradient(at 0% 0%, #2D5A47 0%, #1a3a2e 100%)' }}>
-          {/* Animated Mesh Background */}
-          <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] opacity-10 pointer-events-none">
-            <div className="w-full h-full" style={{ background: 'radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 50%)' }}></div>
-          </div>
-          
+        {/* PRIMARY CARD: Exact copy from reference HTML */}
+        <section className="mesh-gradient rounded-3xl p-6 text-white shadow-2xl shadow-[#4a6850]/30 relative">
           <div className="relative z-10">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-white text-xs font-semibold uppercase tracking-wider">Available Balance</p>
-                <h3 className="text-4xl font-bold tracking-tight tabular-nums text-white leading-none mt-1">Rs {walletBalance.toLocaleString()}</h3>
+                <p className="text-white/70 text-xs font-semibold uppercase tracking-wider">Available Balance</p>
+                <h3 className="text-4xl font-bold mt-1 tracking-tight text-white">Rs {walletBalance.toLocaleString()}</h3>
               </div>
               <button 
                 onClick={() => setShowAddMoney(true)}
-                className="bg-white/10 backdrop-blur-md border border-white/10 p-3 rounded-2xl flex items-center justify-center hover:bg-white/20 transition-all active:scale-95"
+                className="glass p-3 rounded-2xl flex items-center justify-center"
               >
                 <Plus className="w-5 h-5 text-white" />
               </button>
             </div>
             
-            <div className="mt-8 bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex justify-between items-center">
+            <div className="mt-8 glass rounded-2xl p-4 flex justify-between items-center border border-white/20">
               <div>
-                <p className="text-white/60 text-[10px] uppercase font-bold tracking-wider">After settlements</p>
-                <p className="text-xl font-black tabular-nums text-white">Rs {afterSettlementsBalance.toLocaleString()}</p>
+                <p className="text-white/60 text-[10px] uppercase font-bold">After settlements</p>
+                <p className="text-lg font-semibold text-white">Rs {afterSettlementsBalance.toLocaleString()}</p>
               </div>
               <div className="text-right">
-                <p className="text-white/60 text-[10px] uppercase font-bold tracking-wider">Settlement Delta</p>
+                <p className="text-white/60 text-[10px] uppercase font-bold">Settlement Delta</p>
                 <div className={`flex items-center justify-end ${settlementDelta > 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
                   {dayToDay.direction !== 'same' && (
                     <span className="text-sm mr-1">
                       {dayToDay.direction === 'up' ? '▲' : '▼'}
                     </span>
                   )}
-                  <span className="font-black tabular-nums">{settlementDelta > 0 ? '+' : ''}Rs {Math.abs(settlementDelta).toLocaleString()}</span>
+                  <span className="font-bold">{settlementDelta > 0 ? '+' : ''}-Rs {Math.abs(settlementDelta).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -639,7 +634,7 @@ const Dashboard = () => {
               className="flex-shrink-0 flex flex-col items-center gap-2 group"
             >
               <div className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-gray-100 flex items-center justify-center text-[#4a6850] transition-all active:scale-95 group-hover:bg-[#4a6850] group-hover:text-white">
-                <Plus className="w-5 h-5" />
+                <CreditCard className="w-5 h-5" />
               </div>
               <span className="text-[11px] font-black text-gray-600">Split Bill</span>
             </button>
@@ -664,7 +659,7 @@ const Dashboard = () => {
                   ? 'text-gray-400' 
                   : 'text-[#4a6850] group-hover:bg-[#4a6850] group-hover:text-white'
               }`}>
-                <ArrowDownLeft className="w-5 h-5" />
+                <Send className="w-5 h-5" />
               </div>
               <span className="text-[11px] font-black text-gray-600">Received</span>
             </button>
@@ -674,7 +669,7 @@ const Dashboard = () => {
               className="flex-shrink-0 flex flex-col items-center gap-2 group"
             >
               <div className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-gray-100 flex items-center justify-center text-[#4a6850] transition-all active:scale-95 group-hover:bg-[#4a6850] group-hover:text-white">
-                <CreditCard className="w-5 h-5" />
+                <Wallet className="w-5 h-5" />
               </div>
               <span className="text-[11px] font-black text-gray-600">Top Up</span>
             </button>

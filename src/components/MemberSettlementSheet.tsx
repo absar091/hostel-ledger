@@ -99,7 +99,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="h-[60vh] rounded-t-3xl flex flex-col bg-white shadow-[0_25px_70px_rgba(74,104,80,0.3)] border-t-2 border-[#4a6850]/20 z-[100]">
+      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white shadow-[0_25px_70px_rgba(74,104,80,0.3)] border-t-2 border-[#4a6850]/20 z-[100]">
         <SheetHeader className="flex-shrink-0 mb-6 bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-3xl border-b border-[#4a6850]/10">
           <SheetTitle className="text-center flex items-center justify-center gap-3 font-black text-xl tracking-tight text-gray-900">
             <Avatar name={member.name} size="sm" />
@@ -148,10 +148,10 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                       <Button 
                         onClick={() => handleMarkReceived()}
                         disabled={isProcessing}
-                        className="w-full h-14 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all"
+                        className="w-full h-14 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all text-base"
                       >
-                        <CheckCircle className="w-5 h-5 mr-2" />
-                        Mark Full Amount Received Rs {memberSettlement.toReceive.toLocaleString()}
+                        <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" />
+                        <span className="truncate">Mark Full Amount Received Rs {memberSettlement.toReceive.toLocaleString()}</span>
                       </Button>
                       
                       <Button 
@@ -235,10 +235,10 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                       <Button 
                         onClick={() => handleMarkPaid()}
                         disabled={isProcessing}
-                        className="w-full h-14 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(239,68,68,0.3)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.4)] transition-all"
+                        className="w-full h-14 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(239,68,68,0.3)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.4)] transition-all text-base"
                       >
-                        <DollarSign className="w-5 h-5 mr-2" />
-                        Pay Full Amount Rs {memberSettlement.toPay.toLocaleString()}
+                        <DollarSign className="w-5 h-5 mr-2 flex-shrink-0" />
+                        <span className="truncate">Pay Full Amount Rs {memberSettlement.toPay.toLocaleString()}</span>
                       </Button>
                       
                       <Button 

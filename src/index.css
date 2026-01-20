@@ -5,6 +5,38 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mesh Gradient and Glass Effects from Reference HTML */
+@layer utilities {
+  .mesh-gradient {
+    background: radial-gradient(at 0% 0%, #2D5A47 0%, #1a3a2e 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .mesh-gradient::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 50%);
+    animation: rotate 20s linear infinite;
+  }
+  
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  .glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
 /* Hide scrollbar utility */
 @layer utilities {
   .hide-scrollbar::-webkit-scrollbar {

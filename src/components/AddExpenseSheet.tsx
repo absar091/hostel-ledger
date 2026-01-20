@@ -203,7 +203,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="bottom" className="max-h-[90vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
+      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
         <SheetHeader className="flex-shrink-0 mb-6 pt-2">
           {/* Handle Bar */}
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
@@ -247,10 +247,10 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
                   key={group.id}
                   onClick={() => setSelectedGroup(group.id)}
                   className={cn(
-                    "w-full flex items-center gap-4 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl",
+                    "w-full flex items-center gap-4 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl active:scale-95",
                     selectedGroup === group.id
-                      ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850] scale-105"
-                      : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5"
+                      ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
+                      : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
                   )}
                 >
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center text-2xl shadow-sm">
@@ -289,7 +289,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
                 placeholder="Enter amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-[#4a6850]/20 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
+                className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-2 border-[#4a6850]/30 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:ring-0 focus:shadow-xl"
                 autoFocus
               />
             </div>
@@ -310,10 +310,10 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
                   key={member.id}
                   onClick={() => setPaidBy(member.id)}
                   className={cn(
-                    "w-full flex items-center gap-4 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl",
+                    "w-full flex items-center gap-4 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl active:scale-95",
                     paidBy === member.id
-                      ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850] scale-105"
-                      : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5"
+                      ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
+                      : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
                   )}
                 >
                   <Avatar name={member.name} />
@@ -348,10 +348,10 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
                     key={member.id}
                     onClick={() => toggleParticipant(member.id)}
                     className={cn(
-                      "w-full flex items-center gap-4 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl",
+                      "w-full flex items-center gap-4 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl active:scale-95",
                       isSelected
-                        ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850] scale-105"
-                        : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5"
+                        ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
+                        : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
                     )}
                   >
                     <Avatar name={member.name} />

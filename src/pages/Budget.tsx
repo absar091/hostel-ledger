@@ -136,25 +136,25 @@ const Budget = () => {
           >
             <ArrowLeft className="w-5 h-5 text-gray-700" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">My Budget</h1>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">My Budget</h1>
         </div>
 
         {/* Budget Overview Card */}
-        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 shadow-lg text-white">
-          <div className="flex items-center gap-2 mb-1">
-            <PiggyBank className="w-5 h-5 text-white/80" />
-            <span className="text-sm text-white/80">Remaining Budget</span>
+        <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-7 shadow-[0_25px_70px_rgba(74,104,80,0.4)] text-white border-t-2 border-[#5a7860]/40">
+          <div className="flex items-center gap-2 mb-2">
+            <PiggyBank className="w-6 h-6 text-white/90 font-bold" />
+            <span className="text-sm text-white/90 font-black tracking-wide uppercase">Remaining Budget</span>
           </div>
-          <div className="text-4xl font-bold mb-4">
+          <div className="text-5xl font-black mb-4 tracking-tighter tabular-nums drop-shadow-sm">
             {remainingBudget >= 0 ? "" : "-"}Rs {Math.abs(remainingBudget).toLocaleString()}
           </div>
           
           <Button
             onClick={() => setShowAddFunds(true)}
             variant="secondary"
-            className="w-full bg-white/20 hover:bg-white/30 text-white border-white/30"
+            className="w-full h-12 bg-white/20 hover:bg-white/30 text-white border-white/30 font-black rounded-2xl"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4 mr-2 font-bold" />
             Add Funds
           </Button>
         </div>
@@ -162,51 +162,51 @@ const Budget = () => {
 
       {/* Stats Grid */}
       <main className="px-4 space-y-6">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                <Wallet className="w-4 h-4 text-emerald-600" />
+              <div className="w-8 h-8 rounded-full bg-[#4a6850]/20 flex items-center justify-center">
+                <Wallet className="w-4 h-4 text-[#4a6850] font-bold" />
               </div>
-              <span className="text-sm text-gray-500">Total Added</span>
+              <span className="text-xs text-[#4a6850]/70 font-black uppercase tracking-wide">Total Added</span>
             </div>
-            <div className="text-xl font-bold text-gray-900">
+            <div className="text-2xl font-black text-gray-900 tracking-tight tabular-nums">
               Rs {totalFunds.toLocaleString()}
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(239,68,68,0.08)] border border-red-500/10">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-                <TrendingDown className="w-4 h-4 text-red-500" />
+                <TrendingDown className="w-4 h-4 text-red-500 font-bold" />
               </div>
-              <span className="text-sm text-gray-500">Total Spent</span>
+              <span className="text-xs text-red-500/70 font-black uppercase tracking-wide">Total Spent</span>
             </div>
-            <div className="text-xl font-bold text-gray-900">
+            <div className="text-2xl font-black text-red-600 tracking-tight tabular-nums">
               Rs {totalSpent.toLocaleString()}
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-emerald-500" />
+              <div className="w-8 h-8 rounded-full bg-[#4a6850]/20 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-[#4a6850] font-bold" />
               </div>
-              <span className="text-sm text-gray-500">To Receive</span>
+              <span className="text-xs text-[#4a6850]/70 font-black uppercase tracking-wide">To Receive</span>
             </div>
-            <div className="text-xl font-bold text-emerald-600">
+            <div className="text-2xl font-black text-[#4a6850] tracking-tight tabular-nums">
               Rs {toReceive.toLocaleString()}
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(239,68,68,0.08)] border border-red-500/10">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-                <TrendingDown className="w-4 h-4 text-red-500" />
+                <TrendingDown className="w-4 h-4 text-red-500 font-bold" />
               </div>
-              <span className="text-sm text-gray-500">You Owe</span>
+              <span className="text-xs text-red-500/70 font-black uppercase tracking-wide">You Owe</span>
             </div>
-            <div className="text-xl font-bold text-red-500">
+            <div className="text-2xl font-black text-red-600 tracking-tight tabular-nums">
               Rs {toOwe.toLocaleString()}
             </div>
           </div>
@@ -214,34 +214,36 @@ const Budget = () => {
 
         {/* Funds History */}
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Funds Added</h2>
+          <h2 className="text-sm font-black text-[#4a6850]/80 uppercase tracking-widest mb-4">Funds Added</h2>
           
           {budgetEntries.length > 0 ? (
             <div className="space-y-3">
               {budgetEntries.map((entry) => (
                 <div
                   key={entry.id}
-                  className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between"
+                  className="bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 flex items-center justify-between"
                 >
                   <div>
-                    <div className="font-medium text-gray-900">{entry.note}</div>
-                    <div className="text-sm text-gray-500">{entry.date}</div>
+                    <div className="font-black text-gray-900 tracking-tight">{entry.note}</div>
+                    <div className="text-sm text-[#4a6850]/80 font-bold">{entry.date}</div>
                   </div>
-                  <div className="text-lg font-bold text-emerald-600">
+                  <div className="text-2xl font-black text-[#4a6850] tabular-nums tracking-tight">
                     +Rs {entry.amount.toLocaleString()}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
-              <PiggyBank className="w-12 h-12 mx-auto text-gray-400 mb-3" />
-              <h3 className="font-semibold text-gray-900 mb-1">No funds added yet</h3>
-              <p className="text-sm text-gray-500 mb-4">
+            <div className="text-center py-12 bg-white rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
+              <div className="w-16 h-16 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                <PiggyBank className="w-8 h-8 text-[#4a6850] font-bold" />
+              </div>
+              <h3 className="font-black text-gray-900 mb-2 tracking-tight">No funds added yet</h3>
+              <p className="text-sm text-[#4a6850]/80 mb-4 font-bold">
                 Add your monthly allowance to track spending
               </p>
-              <Button onClick={() => setShowAddFunds(true)} variant="outline" className="border-emerald-200 text-emerald-600 hover:bg-emerald-50">
-                <Plus className="w-4 h-4 mr-2" />
+              <Button onClick={() => setShowAddFunds(true)} variant="outline" className="border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/5 font-black rounded-2xl">
+                <Plus className="w-4 h-4 mr-2 font-bold" />
                 Add Funds
               </Button>
             </div>
