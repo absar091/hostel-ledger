@@ -509,53 +509,49 @@ const Dashboard = () => {
       {/* iPhone-style top accent border - Enhanced */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
       
-      {/* App Header - iPhone Style Enhanced with #4a6850 */}
-      <div className="bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
+      {/* App Header - Logo Left, Profile Right */}
+      <div className="bg-gradient-to-r from-white via-[#4a6850]/5 to-white border-b border-[#4a6850]/10 pt-3 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
         <div className="flex items-center justify-between">
-          {/* App Logo and Name - Enhanced */}
+          {/* Left - App Logo and Name */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg border-t-2 border-[#5a7860]/40">
               <img
                 src="/only-logo.png"
                 alt="Hostel Ledger"
                 className="w-6 h-6 object-contain filter brightness-0 invert"
               />
             </div>
-            <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
+            <h1 className="text-xl font-black bg-gradient-to-r from-[#4a6850] to-[#3d5643] bg-clip-text text-transparent tracking-tight">
+              Hostel Ledger
+            </h1>
           </div>
           
-          {/* Header Actions - Enhanced */}
+          {/* Right - Actions and Profile */}
           <div className="flex items-center gap-3">
             <ShareButton variant="icon" />
             {isInstalled ? <NotificationIcon /> : <PWAInstallButton />}
+            <button 
+              onClick={() => navigate("/profile")}
+              className="relative flex-shrink-0"
+            >
+              <div className="w-10 h-10 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg border-t-2 border-[#5a7860]/40 hover:scale-105 transition-transform">
+                <span className="text-lg font-black text-white">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                </span>
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+              </div>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Profile Greeting Section - iPhone Style Enhanced with Fixed Alignment */}
-      <div className="px-4 pt-12 pb-8">
-        <div className="flex items-center gap-4">
-          {/* Enhanced Profile Avatar with iPhone-style shadow */}
-          <div className="relative flex-shrink-0">
-            <Avatar 
-              name={user?.name || "User"} 
-              photoURL={user?.photoURL} 
-              size="lg" 
-            />
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-              <div className="w-2 h-2 bg-white rounded-full"></div>
-            </div>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl leading-none">{greeting.emoji}</span>
-              <div className="text-sm font-black text-[#4a6850]/80 tracking-wide uppercase">{greeting.text}</div>
-            </div>
-            <h2 className="text-3xl font-black text-gray-900 leading-tight tracking-tight">
-              {user?.name ? `${user.name.split(' ')[0]}!` : "Welcome!"}
-            </h2>
-          </div>
-        </div>
+      {/* Greeting - Centered on All Devices */}
+      <div className="px-4 pt-8 pb-6">
+        <h2 className="text-2xl font-semibold bg-gradient-to-r from-[#4a6850] to-[#3d5643] bg-clip-text text-transparent tracking-wide text-center" style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif', letterSpacing: '0.02em' }}>
+          {greeting.text}, {user?.name || "User"}
+        </h2>
       </div>
 
       {/* Dashboard Cards - Production-Grade Fintech UI */}
@@ -565,39 +561,89 @@ const Dashboard = () => {
           <h2 className="text-lg font-black text-gray-900 tracking-tight opacity-60 uppercase text-xs">Overview</h2>
         </div>
 
-        {/* PRIMARY CARD: Available Balance - Full iPhone Color Background */}
-        <div className="bg-white rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.12)] transition-all duration-300 mb-8 relative border-2 border-gray-200/80 max-w-lg mx-auto overflow-hidden">
+        {/* PRIMARY CARD: Available Balance - Full Width Responsive */}
+        <div className="bg-white rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.12)] transition-all duration-300 mb-8 relative border-2 border-gray-200/80 w-full mx-auto overflow-hidden">
           
           {/* iPhone colored section - Full Available Balance Area */}
           <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-black tracking-[0.2em] uppercase text-white/90">Available Balance</span>
-                <Tooltip 
-                  content="This is the actual money in your wallet that you can spend right now. It doesn't include money others owe you."
-                  position="bottom"
+            {/* Mobile Layout */}
+            <div className="md:hidden">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-black tracking-[0.2em] uppercase text-white/90">Available Balance</span>
+                  <Tooltip 
+                    content="This is the actual money in your wallet that you can spend right now. It doesn't include money others owe you."
+                    position="bottom"
+                  >
+                    <div className="w-4 h-4 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center cursor-help hover:bg-white/30 transition-colors shadow-sm">
+                      <span className="text-[10px] font-black text-white">?</span>
+                    </div>
+                  </Tooltip>
+                </div>
+                <button 
+                  onClick={() => setShowAddMoney(true)}
+                  className="bg-white/20 hover:bg-white/30 text-white w-11 h-11 rounded-2xl cursor-pointer active:scale-95 transition-all flex items-center justify-center shadow-lg hover:shadow-xl border border-white/30"
                 >
-                  <div className="w-4 h-4 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center cursor-help hover:bg-white/30 transition-colors shadow-sm">
-                    <span className="text-[10px] font-black text-white">?</span>
-                  </div>
-                </Tooltip>
+                  <Plus className="w-5 h-5 font-black" />
+                </button>
               </div>
-              <button 
-                onClick={() => setShowAddMoney(true)}
-                className="bg-white/20 hover:bg-white/30 text-white w-11 h-11 rounded-2xl cursor-pointer active:scale-95 transition-all flex items-center justify-center shadow-lg hover:shadow-xl border border-white/30"
-              >
-                <Plus className="w-5 h-5 font-black" />
-              </button>
+              
+              <div className="text-4xl font-black tracking-[-0.02em] leading-none mb-3 text-white tabular-nums">
+                Rs {walletBalance.toLocaleString()}
+              </div>
+              
+              <div className="text-sm font-black text-white/90 tracking-tight">
+                After settlements: <span className="tabular-nums font-black text-white">Rs {afterSettlementsBalance.toLocaleString()}</span>
+              </div>
             </div>
-            
-            {/* Main Balance Number */}
-            <div className="text-4xl font-black tracking-[-0.02em] leading-none mb-3 text-white tabular-nums">
-              Rs {walletBalance.toLocaleString()}
-            </div>
-            
-            {/* After settlements value - Clean without percentage */}
-            <div className="text-sm font-black text-white/90 tracking-tight">
-              After settlements: <span className="tabular-nums font-black text-white">Rs {afterSettlementsBalance.toLocaleString()}</span>
+
+            {/* Desktop Layout - Grid with Additional Metrics */}
+            <div className="hidden md:grid md:grid-cols-3 md:gap-8 md:items-center">
+              {/* Main Balance */}
+              <div className="md:col-span-2">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-xs font-black tracking-[0.2em] uppercase text-white/90">Available Balance</span>
+                  <Tooltip 
+                    content="This is the actual money in your wallet that you can spend right now. It doesn't include money others owe you."
+                    position="bottom"
+                  >
+                    <div className="w-4 h-4 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center cursor-help hover:bg-white/30 transition-colors shadow-sm">
+                      <span className="text-[10px] font-black text-white">?</span>
+                    </div>
+                  </Tooltip>
+                </div>
+                
+                <div className="text-5xl font-black tracking-[-0.02em] leading-none mb-4 text-white tabular-nums">
+                  Rs {walletBalance.toLocaleString()}
+                </div>
+                
+                <div className="text-base font-black text-white/90 tracking-tight">
+                  After settlements: <span className="tabular-nums font-black text-white text-lg">Rs {afterSettlementsBalance.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* Quick Stats on Desktop */}
+              <div className="space-y-4">
+                <button 
+                  onClick={() => setShowAddMoney(true)}
+                  className="w-full bg-white/20 hover:bg-white/30 text-white px-6 py-4 rounded-2xl cursor-pointer active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl border border-white/30"
+                >
+                  <Plus className="w-5 h-5 font-black" />
+                  <span className="font-black text-sm">Add Money</span>
+                </button>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                    <div className="text-xs font-black text-white/80 uppercase tracking-wide mb-2">Total Groups</div>
+                    <div className="text-2xl font-black text-white tabular-nums">{groups.length}</div>
+                  </div>
+                  
+                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                    <div className="text-xs font-black text-white/80 uppercase tracking-wide mb-2">Transactions</div>
+                    <div className="text-2xl font-black text-white tabular-nums">{allTransactions.length}</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           
