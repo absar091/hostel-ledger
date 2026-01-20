@@ -147,7 +147,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 shadow-[0_-20px_60px_rgba(74,104,80,0.1)] z-[100]">
+      <SheetContent side="bottom" className="max-h-[90vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 shadow-[0_-20px_60px_rgba(74,104,80,0.1)] z-[100]">
         <SheetHeader className="flex-shrink-0 mb-6 pt-2">
           {/* Handle Bar */}
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
@@ -342,7 +342,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   Amount received from {selectedMemberName}
                 </label>
                 <div className="text-center mb-6">
-                  <div className="text-7xl font-black text-gray-900 mb-4 tracking-tighter tabular-nums">
+                  <div className="text-4xl font-black text-gray-900 mb-4 tracking-tighter tabular-nums">
                     Rs {amount || "0"}
                   </div>
                   <Input
@@ -350,7 +350,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     placeholder="Enter amount"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="text-center text-3xl h-16 max-w-sm mx-auto rounded-3xl border-[#4a6850]/20 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
+                    className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-[#4a6850]/20 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
                     autoFocus
                   />
                 </div>
@@ -427,7 +427,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   <div className="flex items-center gap-4">
                     <Avatar name={selectedMemberName || ""} />
                     <div className="flex-1">
-                      <div className="font-black text-3xl tracking-tight text-white">
+                      <div className="font-black text-xl tracking-tight text-white">
                         +Rs {amount}
                       </div>
                       <div className="text-sm text-white/90 font-bold">

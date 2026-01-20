@@ -98,7 +98,7 @@ const PaymentConfirmationSheet = ({
             <Avatar name={member.name} size="lg" />
             <h3 className="text-2xl font-black mt-4 text-gray-900 tracking-tight">{member.name}</h3>
             <p className="text-[#4a6850]/80 font-bold">You owe them</p>
-            <div className="text-5xl font-black text-red-600 mt-3 tracking-tighter tabular-nums">
+            <div className="text-3xl font-black text-red-600 mt-3 tracking-tighter tabular-nums">
               Rs {amountToPay.toLocaleString()}
             </div>
           </div>

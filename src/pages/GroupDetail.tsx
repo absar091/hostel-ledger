@@ -53,6 +53,11 @@ const GroupDetail = () => {
   const transactions = id ? getTransactionsByGroup(id) : [];
   const settlements = id ? getSettlements(id) : {};
 
+  // Calculate total amount to receive in this group
+  const groupTotalToReceive = Object.values(settlements).reduce((total, settlement) => {
+    return total + (settlement.toReceive || 0);
+  }, 0);
+
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
     if (!group || !selectedMember) return [];
@@ -508,15 +513,25 @@ const GroupDetail = () => {
             <TooltipTrigger asChild>
               <Button 
                 onClick={() => setShowRecordPayment(true)}
+                disabled={groupTotalToReceive <= 0}
                 variant="outline"
-                className="flex-1 h-12 rounded-2xl text-sm font-black bg-white border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 hover:border-[#4a6850]/50 shadow-[0_8px_32px_rgba(74,104,80,0.15)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.25)] transition-all"
+                className={`flex-1 h-12 rounded-2xl text-sm font-black transition-all ${
+                  groupTotalToReceive <= 0 
+                    ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70' 
+                    : 'bg-white border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 hover:border-[#4a6850]/50 shadow-[0_8px_32px_rgba(74,104,80,0.15)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.25)]'
+                }`}
               >
                 <HandCoins className="w-4 h-4 mr-2 font-bold" />
                 Record Payment
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800">
-              <p>Record money received from a member to settle their debt</p>
+              <p>
+                {groupTotalToReceive <= 0 
+                  ? 'No pending payments in this group. Nobody owes you money here.' 
+                  : 'Record money received from a member to settle their debt'
+                }
+              </p>
             </TooltipContent>
           </Tooltip>
           

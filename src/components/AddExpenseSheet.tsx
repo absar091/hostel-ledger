@@ -203,7 +203,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
+      <SheetContent side="bottom" className="max-h-[90vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
         <SheetHeader className="flex-shrink-0 mb-6 pt-2">
           {/* Handle Bar */}
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
@@ -281,7 +281,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
                   <span className="text-sm font-black text-[#4a6850]">{selectedGroupData.name}</span>
                 </div>
               )}
-              <div className="text-7xl font-black text-gray-900 mb-8 tracking-tighter tabular-nums">
+              <div className="text-4xl font-black text-gray-900 mb-8 tracking-tighter tabular-nums">
                 Rs {amount || "0"}
               </div>
               <Input
@@ -289,7 +289,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
                 placeholder="Enter amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="text-center text-3xl h-16 max-w-sm mx-auto rounded-3xl border-[#4a6850]/20 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
+                className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-[#4a6850]/20 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
                 autoFocus
               />
             </div>
@@ -376,7 +376,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
               {participants.length > 0 && paidBy && (
                 <div className="bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl p-6 mt-6 border border-[#4a6850]/20 shadow-lg">
                   <div className="text-sm text-[#4a6850]/80 mb-3 font-black uppercase tracking-wide">Split Summary</div>
-                  <div className="text-2xl font-black text-gray-900 tracking-tight">
+                  <div className="text-xl font-black text-gray-900 tracking-tight">
                     Rs {splitDetails.perPerson} per person
                   </div>
                   {splitDetails.toReceive > 0 && (
@@ -425,7 +425,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
               {/* Final Summary - iPhone Style */}
               <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-6 mt-8 shadow-[0_25px_70px_rgba(74,104,80,0.3)] text-white">
                 <div className="text-sm text-white/90 mb-3 font-black uppercase tracking-wide">Final Summary</div>
-                <div className="font-black text-3xl tracking-tight mb-2">Rs {amount}</div>
+                <div className="font-black text-xl tracking-tight mb-2">Rs {amount}</div>
                 <div className="text-sm text-white/90 font-bold">
                   Paid by {paidByName} • Split {participants.length} ways
                 </div>
