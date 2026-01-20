@@ -5,6 +5,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbar utility */
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
 @layer base {
   :root {
     /* Light Theme - Clean white/gray design matching screenshot */

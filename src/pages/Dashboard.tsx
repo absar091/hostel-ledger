@@ -385,7 +385,10 @@ const Dashboard = () => {
                 <div className="text-5xl font-black text-gray-900 mb-2 tracking-tighter tabular-nums">
                   Rs {transaction.amount.toLocaleString()}
                 </div>
-                <div className="text-sm text-[#4a6850]/80 font-bold">{transaction.date}</div>
+                <div className="text-sm text-[#4a6850]/80 font-bold">
+                  {transaction.date}
+                  {transaction.timestamp && ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -505,416 +508,249 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white pb-20 safe-area-pt relative">
-      {/* iPhone-style top accent border - Enhanced */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
-      
-      {/* App Header - Logo Left, Profile Right */}
-      <div className="bg-gradient-to-r from-white via-[#4a6850]/5 to-white border-b border-[#4a6850]/10 pt-3 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
-        <div className="flex items-center justify-between">
-          {/* Left - App Logo and Name */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg border-t-2 border-[#5a7860]/40">
-              <img
-                src="/only-logo.png"
-                alt="Hostel Ledger"
-                className="w-6 h-6 object-contain filter brightness-0 invert"
-              />
-            </div>
-            <h1 className="text-xl font-black bg-gradient-to-r from-[#4a6850] to-[#3d5643] bg-clip-text text-transparent tracking-tight">
-              Hostel Ledger
-            </h1>
+    <div className="min-h-screen bg-[#F8F9FA] pb-24 safe-area-pt relative">
+      {/* Header - Minimalist Style */}
+      <header className="sticky top-0 z-30 bg-[#F8F9FA]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#4a6850] rounded-xl flex items-center justify-center text-white shadow-lg shadow-[#4a6850]/20">
+            <img
+              src="/only-logo.png"
+              alt="Hostel Ledger"
+              className="w-5 h-5 object-contain filter brightness-0 invert"
+            />
           </div>
-          
-          {/* Right - Actions and Profile */}
-          <div className="flex items-center gap-3">
-            <ShareButton variant="icon" />
-            {isInstalled ? <NotificationIcon /> : <PWAInstallButton />}
-            <button 
-              onClick={() => navigate("/profile")}
-              className="relative flex-shrink-0"
-            >
-              <div className="w-10 h-10 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg border-t-2 border-[#5a7860]/40 hover:scale-105 transition-transform">
-                <span className="text-lg font-black text-white">
-                  {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-                </span>
-              </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-                <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-              </div>
-            </button>
+          <div>
+            <h1 className="text-xs font-bold uppercase tracking-widest text-gray-500">Hostel Ledger</h1>
           </div>
         </div>
-      </div>
-
-      {/* Greeting Section with Profile Icon - Professional Layout */}
-      <div className="px-4 pt-16 pb-2">
-        <div className="flex items-center justify-center gap-4">
-          {/* Profile Icon FIRST */}
+        <div className="flex items-center gap-3">
+          {isInstalled ? (
+            <button className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600">
+              <NotificationIcon />
+            </button>
+          ) : (
+            <PWAInstallButton />
+          )}
           <button 
             onClick={() => navigate("/profile")}
-            className="relative flex-shrink-0"
+            className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden"
           >
-            <div className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg border-t-2 border-[#5a7860]/40 hover:scale-105 transition-transform">
-              <span className="text-xl font-black text-white">
+            <div className="w-full h-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center">
+              <span className="text-lg font-black text-white">
                 {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
               </span>
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-            </div>
           </button>
-          
-          {/* Greeting Text - After Profile Icon */}
-          <h2 className="text-2xl font-semibold bg-gradient-to-r from-[#4a6850] to-[#3d5643] bg-clip-text text-transparent tracking-wide" style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif', letterSpacing: '0.02em' }}>
-            {greeting.text}, {user?.name || "User"}
-          </h2>
         </div>
-      </div>
+      </header>
 
-      {/* Dashboard Cards - Production-Grade Fintech UI */}
-      <div className="mobile-padding pt-2">
-        {/* Section Label */}
-        <div className="mb-4">
-          <h2 className="text-lg font-black text-gray-900 tracking-tight opacity-60 uppercase text-xs">Overview</h2>
-        </div>
-
-        {/* PRIMARY CARD: Available Balance - Full Width Responsive - Full Color Fill */}
-        <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl shadow-[0_25px_80px_rgba(74,104,80,0.4)] transition-all duration-300 mb-8 relative border-t-2 border-[#5a7860]/40 w-full mx-auto overflow-hidden">
+      <main className="px-6 space-y-8">
+        {/* Greeting Section */}
+        <section className="mt-4">
+          <p className="text-gray-500 font-medium">Welcome back,</p>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900">{user?.name || "User"}</h2>
+        </section>
+        {/* PRIMARY CARD: Mesh Gradient Style */}
+        <section className="rounded-3xl p-6 text-white shadow-2xl shadow-[#4a6850]/30 relative overflow-hidden" style={{ background: 'radial-gradient(at 0% 0%, #2D5A47 0%, #1a3a2e 100%)' }}>
+          {/* Animated Mesh Background */}
+          <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] opacity-10 pointer-events-none">
+            <div className="w-full h-full" style={{ background: 'radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 50%)' }}></div>
+          </div>
           
-          {/* Full card with #4a6850 color */}
-          <div className="p-6">
-            {/* Mobile Layout */}
-            <div className="md:hidden">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-black tracking-[0.2em] uppercase text-white/90">Available Balance</span>
-                  <Tooltip 
-                    content="This is the actual money in your wallet that you can spend right now. It doesn't include money others owe you."
-                    position="bottom"
-                  >
-                    <div className="w-4 h-4 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center cursor-help hover:bg-white/30 transition-colors shadow-sm">
-                      <span className="text-[10px] font-black text-white">?</span>
-                    </div>
-                  </Tooltip>
-                </div>
-                <button 
-                  onClick={() => setShowAddMoney(true)}
-                  className="bg-white/20 hover:bg-white/30 text-white w-11 h-11 rounded-2xl cursor-pointer active:scale-95 transition-all flex items-center justify-center shadow-lg hover:shadow-xl border border-white/30"
-                >
-                  <Plus className="w-5 h-5 font-black" />
-                </button>
+          <div className="relative z-10">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-white text-xs font-semibold uppercase tracking-wider">Available Balance</p>
+                <h3 className="text-4xl font-bold tracking-tight tabular-nums text-white leading-none mt-1">Rs {walletBalance.toLocaleString()}</h3>
               </div>
-              
-              <div className="text-4xl font-black tracking-[-0.02em] leading-none mb-3 text-white tabular-nums">
-                Rs {walletBalance.toLocaleString()}
-              </div>
-              
-              <div className="text-sm font-black text-white/90 tracking-tight mb-4">
-                After settlements: <span className="tabular-nums font-black text-white">Rs {afterSettlementsBalance.toLocaleString()}</span>
-              </div>
-              
-              {/* Settlement Delta with day-to-day change - Mobile */}
-              {settlementDelta !== 0 && (
-                <div className="pt-4 border-t border-white/20">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-white/90 font-black flex items-center gap-2 tracking-tight">
-                      <span>Settlement Delta:</span>
-                      <span className={`tabular-nums font-black text-base ${
-                        settlementDelta > 0 ? 'text-white' : 'text-white'
-                      }`}>
-                        {settlementDelta > 0 ? '+' : ''}Rs {settlementDelta.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center" style={{gap: '2px'}}>
-                      {dayToDay.direction !== 'same' && (
-                        <span className={`text-xs font-black text-white/90`} style={{marginRight: '2px'}}>
-                          <span className="text-[10px]">{dayToDay.direction === 'up' ? '▲' : '▼'}</span>
-                        </span>
-                      )}
-                      <Tooltip 
-                        content={`This shows the net change to your wallet after all group settlements. ${settlementDelta > 0 ? 'You will receive this amount.' : 'You will pay this amount.'} The arrow shows if this increased or decreased from yesterday.`}
-                        position="top"
-                      >
-                        <div className="w-4 h-4 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center cursor-help hover:bg-white/30 transition-colors shadow-sm">
-                          <span className="text-[9px] font-black text-white">?</span>
-                        </div>
-                      </Tooltip>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <button 
+                onClick={() => setShowAddMoney(true)}
+                className="bg-white/10 backdrop-blur-md border border-white/10 p-3 rounded-2xl flex items-center justify-center hover:bg-white/20 transition-all active:scale-95"
+              >
+                <Plus className="w-5 h-5 text-white" />
+              </button>
             </div>
-
-            {/* Desktop Layout - Grid with Additional Metrics */}
-            <div className="hidden md:grid md:grid-cols-3 md:gap-8 md:items-center">
-              {/* Main Balance */}
-              <div className="md:col-span-2">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-xs font-black tracking-[0.2em] uppercase text-white/90">Available Balance</span>
-                  <Tooltip 
-                    content="This is the actual money in your wallet that you can spend right now. It doesn't include money others owe you."
-                    position="bottom"
-                  >
-                    <div className="w-4 h-4 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center cursor-help hover:bg-white/30 transition-colors shadow-sm">
-                      <span className="text-[10px] font-black text-white">?</span>
-                    </div>
-                  </Tooltip>
-                </div>
-                
-                <div className="text-5xl font-black tracking-[-0.02em] leading-none mb-4 text-white tabular-nums">
-                  Rs {walletBalance.toLocaleString()}
-                </div>
-                
-                <div className="text-base font-black text-white/90 tracking-tight mb-4">
-                  After settlements: <span className="tabular-nums font-black text-white text-lg">Rs {afterSettlementsBalance.toLocaleString()}</span>
-                </div>
-                
-                {/* Settlement Delta with day-to-day change - Desktop */}
-                {settlementDelta !== 0 && (
-                  <div className="pt-4 border-t border-white/20">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-white/90 font-black flex items-center gap-2 tracking-tight">
-                        <span>Settlement Delta:</span>
-                        <span className={`tabular-nums font-black text-base text-white`}>
-                          {settlementDelta > 0 ? '+' : ''}Rs {settlementDelta.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex items-center" style={{gap: '2px'}}>
-                        {dayToDay.direction !== 'same' && (
-                          <span className={`text-xs font-black text-white/90`} style={{marginRight: '2px'}}>
-                            <span className="text-[10px]">{dayToDay.direction === 'up' ? '▲' : '▼'}</span>
-                          </span>
-                        )}
-                        <Tooltip 
-                          content={`This shows the net change to your wallet after all group settlements. ${settlementDelta > 0 ? 'You will receive this amount.' : 'You will pay this amount.'} The arrow shows if this increased or decreased from yesterday.`}
-                          position="top"
-                        >
-                          <div className="w-4 h-4 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center cursor-help hover:bg-white/30 transition-colors shadow-sm">
-                            <span className="text-[9px] font-black text-white">?</span>
-                          </div>
-                        </Tooltip>
-                      </div>
-                    </div>
-                  </div>
-                )}
+            
+            <div className="mt-8 bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex justify-between items-center">
+              <div>
+                <p className="text-white/60 text-[10px] uppercase font-bold tracking-wider">After settlements</p>
+                <p className="text-xl font-black tabular-nums text-white">Rs {afterSettlementsBalance.toLocaleString()}</p>
               </div>
-
-              {/* Quick Stats on Desktop */}
-              <div className="space-y-4">
-                <button 
-                  onClick={() => setShowAddMoney(true)}
-                  className="w-full bg-white/20 hover:bg-white/30 text-white px-6 py-4 rounded-2xl cursor-pointer active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl border border-white/30"
-                >
-                  <Plus className="w-5 h-5 font-black" />
-                  <span className="font-black text-sm">Add Money</span>
-                </button>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-                    <div className="text-xs font-black text-white/80 uppercase tracking-wide mb-2">Total Groups</div>
-                    <div className="text-2xl font-black text-white tabular-nums">{groups.length}</div>
-                  </div>
-                  
-                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-                    <div className="text-xs font-black text-white/80 uppercase tracking-wide mb-2">Transactions</div>
-                    <div className="text-2xl font-black text-white tabular-nums">{allTransactions.length}</div>
-                  </div>
+              <div className="text-right">
+                <p className="text-white/60 text-[10px] uppercase font-bold tracking-wider">Settlement Delta</p>
+                <div className={`flex items-center justify-end ${settlementDelta > 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                  {dayToDay.direction !== 'same' && (
+                    <span className="text-sm mr-1">
+                      {dayToDay.direction === 'up' ? '▲' : '▼'}
+                    </span>
+                  )}
+                  <span className="font-black tabular-nums">{settlementDelta > 0 ? '+' : ''}Rs {Math.abs(settlementDelta).toLocaleString()}</span>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* SECONDARY CARDS: Receive / Owe - Clean White Design */}
-        <div className="grid grid-cols-2 gap-5 mb-10">
-          {/* To Receive - White Background with Green Text */}
+        {/* SECONDARY CARDS: Minimalist Style */}
+        <section className="grid grid-cols-2 gap-4">
+          {/* To Receive Card */}
           <button 
             onClick={() => navigate("/to-receive")}
-            className="bg-white border border-gray-100 rounded-3xl p-5 shadow-[0_15px_40px_rgba(0,0,0,0.08)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.12)] active:scale-[0.98] transition-all duration-300 text-left group"
+            className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                <span className="text-xs font-black tracking-[0.1em] uppercase text-gray-600">
-                  TO RECEIVE
-                </span>
-              </div>
-              {totalToReceive > 0 && (
-                <ArrowDownLeft className="w-4 h-4 text-gray-400 group-hover:text-green-500 transition-colors" />
+            <div className="w-8 h-8 rounded-lg bg-[#4a6850]/20 text-[#4a6850] flex items-center justify-center mb-3">
+              <ArrowDownLeft className="w-[18px] h-[18px]" />
+            </div>
+            <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider">To Receive</p>
+            <p className="text-2xl font-black text-gray-800 mt-0.5 tabular-nums tracking-tight">Rs {totalToReceive.toLocaleString()}</p>
+            <p className="text-[10px] text-gray-400 mt-1 flex items-center font-medium">
+              {totalToReceive <= 0 ? (
+                <>All clear <span className="ml-1">✨</span></>
+              ) : (
+                'Tap to view'
               )}
-            </div>
-            <div className="text-3xl font-black tabular-nums mb-2 text-green-600 tracking-[-0.02em]">
-              Rs {totalToReceive.toLocaleString()}
-            </div>
-            <div className="text-xs font-black text-gray-500 tracking-tight">
-              {totalToReceive <= 0 ? 'All settled up! 🎉' : 'View details'}
-            </div>
+            </p>
           </button>
           
-          {/* You Owe - White Background with Red/Orange Text */}
+          {/* You Owe Card */}
           <button 
             onClick={() => navigate("/to-pay")}
-            className="bg-white border border-gray-100 rounded-3xl p-5 shadow-[0_15px_40px_rgba(0,0,0,0.08)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.12)] active:scale-[0.98] transition-all duration-300 text-left group"
+            className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                <span className="text-xs font-black tracking-[0.1em] uppercase text-gray-600">
-                  YOU OWE
-                </span>
+            <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center mb-3">
+              <ArrowUpRight className="w-[18px] h-[18px]" />
+            </div>
+            <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider">You Owe</p>
+            <p className="text-2xl font-black text-rose-600 mt-0.5 tabular-nums tracking-tight">Rs {totalToPay.toLocaleString()}</p>
+            <button className="text-[10px] font-bold text-rose-500 mt-1 underline decoration-rose-200 underline-offset-2">
+              Tap to settle
+            </button>
+          </button>
+        </section>
+
+        {/* Quick Actions - Minimalist Horizontal Scroll */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-gray-500">Quick Actions</h3>
+          </div>
+          <div className="flex gap-4 overflow-x-auto hide-scrollbar -mx-6 px-6">
+            <button
+              onClick={handleAddExpense}
+              className="flex-shrink-0 flex flex-col items-center gap-2 group"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-gray-100 flex items-center justify-center text-[#4a6850] transition-all active:scale-95 group-hover:bg-[#4a6850] group-hover:text-white">
+                <Plus className="w-5 h-5" />
               </div>
-              <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-red-500 transition-colors" />
-            </div>
-            <div className="text-3xl font-black tabular-nums mb-2 text-red-600 tracking-[-0.02em]">
-              Rs {totalToPay.toLocaleString()}
-            </div>
-            <div className="text-xs font-black text-gray-500 tracking-tight">View details</div>
-          </button>
-        </div>
+              <span className="text-[11px] font-black text-gray-600">Split Bill</span>
+            </button>
+            
+            <button
+              onClick={handleNewGroup}
+              className="flex-shrink-0 flex flex-col items-center gap-2 group"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-gray-100 flex items-center justify-center text-[#4a6850] transition-all active:scale-95 group-hover:bg-[#4a6850] group-hover:text-white">
+                <Users className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-black text-gray-600">New Group</span>
+            </button>
+            
+            <button
+              onClick={handleReceivedMoney}
+              disabled={totalToReceive <= 0}
+              className={`flex-shrink-0 flex flex-col items-center gap-2 group ${totalToReceive <= 0 ? 'opacity-50' : ''}`}
+            >
+              <div className={`w-14 h-14 rounded-2xl bg-white shadow-sm border border-gray-100 flex items-center justify-center transition-all active:scale-95 ${
+                totalToReceive <= 0 
+                  ? 'text-gray-400' 
+                  : 'text-[#4a6850] group-hover:bg-[#4a6850] group-hover:text-white'
+              }`}>
+                <ArrowDownLeft className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-black text-gray-600">Received</span>
+            </button>
+            
+            <button
+              onClick={() => setShowAddMoney(true)}
+              className="flex-shrink-0 flex flex-col items-center gap-2 group"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-gray-100 flex items-center justify-center text-[#4a6850] transition-all active:scale-95 group-hover:bg-[#4a6850] group-hover:text-white">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-black text-gray-600">Top Up</span>
+            </button>
+          </div>
+        </section>
 
-        {/* Section Label for Actions */}
-        <div className="mb-6">
-          <h2 className="text-lg font-black text-gray-900 tracking-tight opacity-60 uppercase text-xs">Quick Actions</h2>
-        </div>
-
-        {/* ACTION BUTTONS: Reduced Visual Weight - Flat, Utility Style */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <button
-            onClick={handleAddExpense}
-            className="bg-gradient-to-br from-[#4a6850]/80 to-[#3d5643]/80 rounded-2xl p-4 hover:from-[#4a6850] hover:to-[#3d5643] hover:shadow-[0_8px_25px_rgba(74,104,80,0.2)] active:scale-[0.98] transition-all duration-200 text-center group shadow-[0_4px_15px_rgba(74,104,80,0.15)]"
-          >
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-3 mx-auto group-hover:bg-white/30 group-hover:scale-105 transition-all duration-200">
-              <Plus className="w-4 h-4 text-white font-bold" />
-            </div>
-            <div className="text-white font-black text-sm mb-1 leading-tight">Add Expense</div>
-            <div className="text-xs text-white/80 font-bold leading-relaxed">Split a bill</div>
-          </button>
-          
-          <button
-            onClick={handleReceivedMoney}
-            disabled={totalToReceive <= 0}
-            className={`rounded-2xl p-4 active:scale-[0.98] transition-all duration-200 text-center group shadow-[0_4px_15px_rgba(0,0,0,0.1)] ${
-              totalToReceive <= 0 
-                ? 'bg-gradient-to-br from-gray-300/80 to-gray-400/80 cursor-not-allowed opacity-70' 
-                : 'bg-gradient-to-br from-emerald-500/80 to-teal-500/80 hover:from-emerald-500 hover:to-teal-500 hover:shadow-[0_8px_25px_rgba(16,185,129,0.2)]'
-            }`}
-          >
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 mx-auto transition-all duration-200 ${
-              totalToReceive <= 0
-                ? 'bg-white/20'
-                : 'bg-white/20 group-hover:bg-white/30 group-hover:scale-105'
-            }`}>
-              <ArrowDownLeft className={`w-4 h-4 font-bold ${totalToReceive <= 0 ? 'text-white/70' : 'text-white'}`} />
-            </div>
-            <div className={`font-black text-sm mb-1 leading-tight ${totalToReceive <= 0 ? 'text-white/70' : 'text-white'}`}>
-              Received
-            </div>
-            <div className={`text-xs font-bold leading-relaxed ${totalToReceive <= 0 ? 'text-white/60' : 'text-white/80'}`}>
-              {totalToReceive <= 0 ? 'No pending' : 'Record payment'}
-            </div>
-          </button>
-          
-          <button
-            onClick={handleNewGroup}
-            className="bg-gradient-to-br from-blue-500/80 to-indigo-500/80 rounded-2xl p-4 hover:from-blue-500 hover:to-indigo-500 hover:shadow-[0_8px_25px_rgba(59,130,246,0.2)] active:scale-[0.98] transition-all duration-200 text-center group shadow-[0_4px_15px_rgba(59,130,246,0.15)]"
-          >
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-3 mx-auto group-hover:bg-white/30 group-hover:scale-105 transition-all duration-200">
-              <Users className="w-4 h-4 text-white font-bold" />
-            </div>
-            <div className="text-white font-black text-sm mb-1 leading-tight">New Group</div>
-            <div className="text-xs text-white/80 font-bold leading-relaxed">Start sharing</div>
-          </button>
-        </div>
-
-        {/* Recent Transactions - iPhone Style Enhanced with #4a6850 Theme */}
-        <div className="mt-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-black text-gray-900 leading-tight tracking-tight">Recent Activity</h2>
-            {allTransactions.length > 5 && (
-              <button className="text-[#4a6850] text-sm font-black hover:text-[#3d5643] hover:bg-[#4a6850]/10 px-4 py-2 rounded-2xl transition-all duration-200 border border-[#4a6850]/20 shadow-sm hover:shadow-md">
+        {/* Recent Activity - Minimalist Cards */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-gray-500">Recent Activity</h3>
+            {allTransactions.length > 3 && (
+              <button 
+                onClick={() => navigate("/activity")}
+                className="text-xs font-black text-[#4a6850]"
+              >
                 View All
               </button>
             )}
           </div>
           
           {allTransactions.length > 0 ? (
-            <div className="bg-white rounded-3xl shadow-[0_20px_60px_rgba(74,104,80,0.12)] overflow-hidden border border-[#4a6850]/10">
-              {allTransactions.slice(0, 8).map((transaction, index) => (
+            <div className="space-y-3">
+              {allTransactions.slice(0, 3).map((transaction) => (
                 <button
                   key={transaction.id}
                   onClick={() => setSelectedTransaction(transaction)}
-                  className="w-full p-5 flex items-center gap-4 hover:bg-[#4a6850]/5 active:bg-[#4a6850]/10 transition-all duration-200 border-b border-[#4a6850]/8 last:border-b-0 group"
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  className="w-full flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-gray-100 transition-transform active:scale-[0.98]"
                 >
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform duration-200 shadow-lg ${
-                    transaction.type === 'expense' ? 'bg-gradient-to-br from-orange-500 to-red-500 text-white' : 
-                    transaction.type === 'payment' ? 'bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white' : 'bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white'
-                  }`}>
-                    {transaction.type === 'expense' ? (
-                      <ArrowUpRight className="w-5 h-5 font-bold" />
-                    ) : transaction.type === 'payment' ? (
-                      <ArrowDownLeft className="w-5 h-5 font-bold" />
-                    ) : (
-                      <CreditCard className="w-5 h-5 font-bold" />
-                    )}
-                  </div>
-                  
-                  <div className="flex-1 text-left">
-                    <div className="font-black text-gray-900 mb-1 leading-tight tracking-tight">{transaction.title}</div>
-                    <div className="text-sm text-gray-600 leading-relaxed">
-                      {(() => {
-                        const transactionGroup = groups.find(g => g.id === transaction.groupId);
-                        return (
-                          <>
-                            {transactionGroup && <span className="font-black text-[#4a6850]">{transactionGroup.name}</span>}
-                            {transactionGroup && <span className="text-gray-400 font-bold"> • </span>}
-                            <span className="text-gray-600 font-bold">{transaction.date}</span>
-                            {transaction.type === "expense" && transaction.paidByName && (
-                              <span className="text-gray-500 font-medium"> • Paid by {transaction.paidByName}</span>
-                            )}
-                            {transaction.type === "payment" && transaction.fromName && transaction.toName && (
-                              <span className="text-gray-500 font-medium"> • {transaction.fromName} to {transaction.toName}</span>
-                            )}
-                          </>
-                        );
-                      })()}
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500">
+                      {transaction.type === 'expense' ? (
+                        <ArrowUpRight className="w-5 h-5" />
+                      ) : transaction.type === 'payment' ? (
+                        <ArrowDownLeft className="w-5 h-5" />
+                      ) : (
+                        <CreditCard className="w-5 h-5" />
+                      )}
+                    </div>
+                    <div className="text-left">
+                      <p className="font-black text-gray-800 text-sm tracking-tight">{transaction.title}</p>
+                      <p className="text-[11px] text-gray-400 font-medium">
+                        {transaction.date}
+                        {transaction.timestamp && ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
+                      </p>
                     </div>
                   </div>
-                  
                   <div className="text-right">
-                    <div className={`font-black tabular-nums leading-tight text-lg tracking-tight ${
-                      transaction.type === 'expense' ? 'text-orange-600' : 
-                      transaction.type === 'payment' ? 'text-[#4a6850]' : 'text-[#4a6850]'
+                    <p className={`font-black text-sm tracking-tight ${
+                      transaction.type === 'expense' ? 'text-rose-500' : 'text-[#4a6850]'
                     }`}>
                       {transaction.type === 'expense' ? '-' : '+'}Rs {transaction.amount.toLocaleString()}
-                    </div>
+                    </p>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                      {transaction.type === 'expense' ? 'You Owe' : 'Paid'}
+                    </p>
                   </div>
                 </button>
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-3xl p-12 text-center shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-gray-100">
-              <div className="w-16 h-16 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
+            <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
+              <div className="w-16 h-16 bg-gradient-to-br from-[#4a6850]/20 to-[#5a7860]/20 rounded-3xl flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">💸</span>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2 leading-tight">Ready to get started?</h3>
-              <p className="text-gray-500 mb-6 text-sm leading-relaxed">Your financial journey begins here! 🚀</p>
-              <div className="flex flex-col gap-3 max-w-xs mx-auto">
-                <button
-                  onClick={groups.length === 0 ? handleNewGroup : handleAddExpense}
-                  className="py-3 px-6 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-2xl hover:from-emerald-600 hover:to-teal-600 hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl"
-                >
-                  {groups.length === 0 ? "🎉 Create Your First Group" : "Add Your First Expense"}
-                </button>
-                <div className="text-xs text-gray-400 leading-relaxed">
-                  {groups.length === 0 ? "Start by adding friends or roommates" : "Split your first bill with the group"}
-                </div>
-              </div>
+              <h3 className="text-lg font-black text-gray-900 mb-2 tracking-tight">Ready to get started?</h3>
+              <p className="text-gray-500 mb-6 text-sm">Your financial journey begins here! 🚀</p>
+              <button
+                onClick={groups.length === 0 ? handleNewGroup : handleAddExpense}
+                className="py-3 px-6 bg-gradient-to-r from-[#4a6850] to-[#5a7860] text-white font-black rounded-2xl hover:from-[#3d5643] hover:to-[#4a6850] hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                {groups.length === 0 ? "🎉 Create Your First Group" : "Add Your First Expense"}
+              </button>
             </div>
           )}
-        </div>
-      </div>
+        </section>
+      </main>
 
       {/* Transaction Detail Modal */}
       {selectedTransaction && (

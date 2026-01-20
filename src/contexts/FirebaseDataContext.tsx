@@ -668,6 +668,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           day: "numeric",
           year: "numeric"
         }),
+        timestamp: Date.now(), // Store numeric timestamp for time display
         paidBy: data.paidBy,
         paidByName: payer.name,
         participants: splits.map((split) => ({
@@ -869,6 +870,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           day: "numeric",
           year: "numeric"
         }),
+        timestamp: Date.now(), // Store numeric timestamp for time display
         paidBy: data.fromMember,
         paidByName: fromPerson.name,
         from: data.fromMember,
@@ -1129,6 +1131,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           day: "numeric",
           year: "numeric"
         }),
+        timestamp: Date.now(), // Store numeric timestamp for time display
         paidBy: user.uid,
         paidByName: user.name,
         note: sanitizedNote,
