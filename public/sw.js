@@ -1,28 +1,22 @@
-// Service Worker for Hostel Ledger PWA
-const CACHE_NAME = 'hostel-ledger-v2';
+// Service Worker for Hostel Ledger PWA - Network First Strategy
+const CACHE_NAME = 'hostel-ledger-v3'; // Increment version to force update
 const STATIC_CACHE_URLS = [
-  '/',
-  '/login',
-  '/signup',
-  '/groups',
-  '/profile',
-  '/activity',
   '/only-logo.png',
   '/manifest.json'
 ];
 
-// Install event - cache static assets
+// Install event - cache only essential assets
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Installing...');
+  console.log('Service Worker: Installing v3...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Service Worker: Caching static assets');
+        console.log('Service Worker: Caching essential assets');
         return cache.addAll(STATIC_CACHE_URLS);
       })
       .then(() => {
-        console.log('Service Worker: Installation complete');
-        return self.skipWaiting();
+        console.log('Service Worker: Installation complete, skipping waiting');
+        return self.skipWaiting(); // Force immediate activation
       })
       .catch((error) => {
         console.error('Service Worker: Installation failed', error);
@@ -30,9 +24,9 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up ALL old caches and take control immediately
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Activating...');
+  console.log('Service Worker: Activating v3...');
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
@@ -46,13 +40,13 @@ self.addEventListener('activate', (event) => {
         );
       })
       .then(() => {
-        console.log('Service Worker: Activation complete');
-        return self.clients.claim();
+        console.log('Service Worker: Taking control of all clients');
+        return self.clients.claim(); // Take control immediately
       })
   );
 });
 
-// Fetch event - improved caching strategy
+// Fetch event - NETWORK FIRST strategy to always get fresh content
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') {
@@ -72,76 +66,53 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle JavaScript modules with proper MIME type checking
-  if (event.request.url.includes('.js') || event.request.url.includes('.mjs')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // Check if response is valid and has correct MIME type
-          if (response && response.status === 200 && 
-              (response.headers.get('content-type')?.includes('javascript') ||
-               response.headers.get('content-type')?.includes('application/javascript'))) {
-            
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-          }
-          return response;
-        })
-        .catch(() => {
-          // Fallback to cache for JS files
-          return caches.match(event.request);
-        })
-    );
-    return;
-  }
-
-  // Handle other requests
+  // NETWORK FIRST: Always try network, fallback to cache only if offline
   event.respondWith(
-    caches.match(event.request)
-      .then((cachedResponse) => {
-        // Return cached version if available
-        if (cachedResponse) {
-          console.log('Service Worker: Serving from cache', event.request.url);
-          return cachedResponse;
+    fetch(event.request)
+      .then((response) => {
+        // Check if response is valid
+        if (response && response.status === 200) {
+          // Clone and cache the response for offline use
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
         }
-
-        // Otherwise fetch from network
-        console.log('Service Worker: Fetching from network', event.request.url);
-        return fetch(event.request)
-          .then((response) => {
-            // Don't cache if not a valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
+        return response;
+      })
+      .catch(() => {
+        // Only use cache if network fails (offline)
+        console.log('Service Worker: Network failed, using cache for', event.request.url);
+        return caches.match(event.request)
+          .then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
             }
-
-            // Clone the response
-            const responseToCache = response.clone();
-
-            // Cache the response for future use (except for HTML documents in production)
-            if (!event.request.url.includes('.html') || event.request.destination !== 'document') {
-              caches.open(CACHE_NAME)
-                .then((cache) => {
-                  cache.put(event.request, responseToCache);
-                });
-            }
-
-            return response;
-          })
-          .catch((error) => {
-            console.error('Service Worker: Fetch failed', error);
-            
-            // Return offline page for navigation requests
+            // If no cache and offline, return offline page
             if (event.request.destination === 'document') {
               return caches.match('/');
             }
-            
-            throw error;
+            throw new Error('No cache available');
           });
       })
   );
+});
+
+// Message event - allow manual cache clearing
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => caches.delete(cacheName))
+        );
+      })
+    );
+  }
 });
 
 // Background sync for offline actions
@@ -201,7 +172,6 @@ self.addEventListener('notificationclick', (event) => {
 // Helper function to sync expenses when back online
 async function syncExpenses() {
   try {
-    // This would sync any pending offline actions
     console.log('Service Worker: Syncing expenses...');
     // Implementation would depend on your offline storage strategy
   } catch (error) {
