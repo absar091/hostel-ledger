@@ -417,6 +417,45 @@ const Profile = () => {
             </div>
             <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850] transition-colors" />
           </a>
+
+          <button
+            onClick={async () => {
+              if (confirm('Clear app cache? This will refresh the app with the latest version.')) {
+                try {
+                  // Clear all caches
+                  if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                  }
+                  
+                  // Unregister service workers
+                  if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(registrations.map(reg => reg.unregister()));
+                  }
+                  
+                  toast.success("Cache cleared! Reloading app...");
+                  setTimeout(() => window.location.reload(), 1000);
+                } catch (error) {
+                  toast.error("Failed to clear cache");
+                  console.error('Cache clear error:', error);
+                }
+              }
+            }}
+            className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
+            style={{ animationDelay: "0.35s" }}
+          >
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-yellow-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <svg className="w-6 h-6 text-amber-600 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-black text-gray-900 tracking-tight">Clear Cache</p>
+              <p className="text-sm text-[#4a6850]/80 font-bold">Fix loading issues and get latest version</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850] transition-colors" />
+          </button>
         </div>
 
         {/* Logout - iPhone Style Enhanced */}

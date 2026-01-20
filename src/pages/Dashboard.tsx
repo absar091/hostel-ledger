@@ -547,11 +547,29 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Greeting - Centered on All Devices */}
-      <div className="px-4 pt-8 pb-6">
-        <h2 className="text-2xl font-semibold bg-gradient-to-r from-[#4a6850] to-[#3d5643] bg-clip-text text-transparent tracking-wide text-center" style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif', letterSpacing: '0.02em' }}>
-          {greeting.text}, {user?.name || "User"}
-        </h2>
+      {/* Greeting Section with Profile Icon - Professional Layout */}
+      <div className="px-4 pt-16 pb-2">
+        <div className="flex items-center justify-center gap-4">
+          {/* Profile Icon FIRST */}
+          <button 
+            onClick={() => navigate("/profile")}
+            className="relative flex-shrink-0"
+          >
+            <div className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg border-t-2 border-[#5a7860]/40 hover:scale-105 transition-transform">
+              <span className="text-xl font-black text-white">
+                {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+              </span>
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+            </div>
+          </button>
+          
+          {/* Greeting Text - After Profile Icon */}
+          <h2 className="text-2xl font-semibold bg-gradient-to-r from-[#4a6850] to-[#3d5643] bg-clip-text text-transparent tracking-wide" style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif', letterSpacing: '0.02em' }}>
+            {greeting.text}, {user?.name || "User"}
+          </h2>
+        </div>
       </div>
 
       {/* Dashboard Cards - Production-Grade Fintech UI */}
@@ -561,11 +579,11 @@ const Dashboard = () => {
           <h2 className="text-lg font-black text-gray-900 tracking-tight opacity-60 uppercase text-xs">Overview</h2>
         </div>
 
-        {/* PRIMARY CARD: Available Balance - Full Width Responsive */}
-        <div className="bg-white rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.12)] transition-all duration-300 mb-8 relative border-2 border-gray-200/80 w-full mx-auto overflow-hidden">
+        {/* PRIMARY CARD: Available Balance - Full Width Responsive - Full Color Fill */}
+        <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl shadow-[0_25px_80px_rgba(74,104,80,0.4)] transition-all duration-300 mb-8 relative border-t-2 border-[#5a7860]/40 w-full mx-auto overflow-hidden">
           
-          {/* iPhone colored section - Full Available Balance Area */}
-          <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] p-6">
+          {/* Full card with #4a6850 color */}
+          <div className="p-6">
             {/* Mobile Layout */}
             <div className="md:hidden">
               <div className="flex justify-between items-start mb-4">
@@ -592,9 +610,40 @@ const Dashboard = () => {
                 Rs {walletBalance.toLocaleString()}
               </div>
               
-              <div className="text-sm font-black text-white/90 tracking-tight">
+              <div className="text-sm font-black text-white/90 tracking-tight mb-4">
                 After settlements: <span className="tabular-nums font-black text-white">Rs {afterSettlementsBalance.toLocaleString()}</span>
               </div>
+              
+              {/* Settlement Delta with day-to-day change - Mobile */}
+              {settlementDelta !== 0 && (
+                <div className="pt-4 border-t border-white/20">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-white/90 font-black flex items-center gap-2 tracking-tight">
+                      <span>Settlement Delta:</span>
+                      <span className={`tabular-nums font-black text-base ${
+                        settlementDelta > 0 ? 'text-white' : 'text-white'
+                      }`}>
+                        {settlementDelta > 0 ? '+' : ''}Rs {settlementDelta.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center" style={{gap: '2px'}}>
+                      {dayToDay.direction !== 'same' && (
+                        <span className={`text-xs font-black text-white/90`} style={{marginRight: '2px'}}>
+                          <span className="text-[10px]">{dayToDay.direction === 'up' ? '▲' : '▼'}</span>
+                        </span>
+                      )}
+                      <Tooltip 
+                        content={`This shows the net change to your wallet after all group settlements. ${settlementDelta > 0 ? 'You will receive this amount.' : 'You will pay this amount.'} The arrow shows if this increased or decreased from yesterday.`}
+                        position="top"
+                      >
+                        <div className="w-4 h-4 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center cursor-help hover:bg-white/30 transition-colors shadow-sm">
+                          <span className="text-[9px] font-black text-white">?</span>
+                        </div>
+                      </Tooltip>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Desktop Layout - Grid with Additional Metrics */}
@@ -617,9 +666,38 @@ const Dashboard = () => {
                   Rs {walletBalance.toLocaleString()}
                 </div>
                 
-                <div className="text-base font-black text-white/90 tracking-tight">
+                <div className="text-base font-black text-white/90 tracking-tight mb-4">
                   After settlements: <span className="tabular-nums font-black text-white text-lg">Rs {afterSettlementsBalance.toLocaleString()}</span>
                 </div>
+                
+                {/* Settlement Delta with day-to-day change - Desktop */}
+                {settlementDelta !== 0 && (
+                  <div className="pt-4 border-t border-white/20">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-white/90 font-black flex items-center gap-2 tracking-tight">
+                        <span>Settlement Delta:</span>
+                        <span className={`tabular-nums font-black text-base text-white`}>
+                          {settlementDelta > 0 ? '+' : ''}Rs {settlementDelta.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center" style={{gap: '2px'}}>
+                        {dayToDay.direction !== 'same' && (
+                          <span className={`text-xs font-black text-white/90`} style={{marginRight: '2px'}}>
+                            <span className="text-[10px]">{dayToDay.direction === 'up' ? '▲' : '▼'}</span>
+                          </span>
+                        )}
+                        <Tooltip 
+                          content={`This shows the net change to your wallet after all group settlements. ${settlementDelta > 0 ? 'You will receive this amount.' : 'You will pay this amount.'} The arrow shows if this increased or decreased from yesterday.`}
+                          position="top"
+                        >
+                          <div className="w-4 h-4 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center cursor-help hover:bg-white/30 transition-colors shadow-sm">
+                            <span className="text-[9px] font-black text-white">?</span>
+                          </div>
+                        </Tooltip>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Quick Stats on Desktop */}
@@ -645,43 +723,6 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-          </div>
-          
-          {/* White section for Settlement Information */}
-          <div className="bg-white p-6">
-            {/* Thin black separator line for professional look */}
-            <div className="w-full h-px bg-gray-800/20 mb-3 -mt-3"></div>
-            
-            {/* Settlement Delta with day-to-day change - Single Horizontal Line */}
-            {settlementDelta !== 0 && (
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600 font-black flex items-center gap-2 tracking-tight">
-                  <span>Settlement Delta:</span>
-                  <span className={`tabular-nums font-black text-base ${
-                    settlementDelta > 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {settlementDelta > 0 ? '+' : ''}Rs {settlementDelta.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex items-center" style={{gap: '2px'}}>
-                  {dayToDay.direction !== 'same' && (
-                    <span className={`text-xs font-black ${
-                      dayToDay.direction === 'up' ? 'text-green-600' : 'text-red-600'
-                    }`} style={{marginRight: '2px'}}>
-                      <span className="text-[10px]">{dayToDay.direction === 'up' ? '▲' : '▼'}</span>
-                    </span>
-                  )}
-                  <Tooltip 
-                    content={`This shows the net change to your wallet after all group settlements. ${settlementDelta > 0 ? 'You will receive this amount.' : 'You will pay this amount.'} The arrow shows if this increased or decreased from yesterday.`}
-                    position="top"
-                  >
-                    <div className="w-4 h-4 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center cursor-help hover:bg-white/90 transition-colors shadow-sm">
-                      <span className="text-[9px] font-black text-gray-600">?</span>
-                    </div>
-                  </Tooltip>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
