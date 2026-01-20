@@ -421,8 +421,8 @@ const Dashboard = () => {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="font-black text-gray-900 text-lg tracking-tight truncate">Transaction Details</h2>
-                <p className="text-sm text-[#4a6850]/80 capitalize font-bold truncate">{transaction.type}</p>
+                <h2 className="font-bold text-gray-900 text-lg tracking-tight truncate">Transaction Details</h2>
+                <p className="text-sm text-[#4a6850]/80 capitalize font-medium truncate">{transaction.type}</p>
               </div>
             </div>
             <button
@@ -438,11 +438,11 @@ const Dashboard = () => {
             <div className="p-6">
               {/* Transaction header - iPhone Style */}
               <div className="text-center mb-8">
-                <h3 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">{transaction.title}</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3 tracking-tight">{transaction.title}</h3>
                 <div className="text-5xl font-black text-gray-900 mb-2 tracking-tighter tabular-nums">
                   Rs {transaction.amount.toLocaleString()}
                 </div>
-                <div className="text-sm text-[#4a6850]/80 font-bold">
+                <div className="text-sm text-[#4a6850]/80 font-medium">
                   {transaction.date}
                   {transaction.timestamp && ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
                 </div>
@@ -454,9 +454,9 @@ const Dashboard = () => {
                   <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
                     <Users className="w-6 h-6 text-[#4a6850] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-[#4a6850]/80 font-black uppercase tracking-wide">Group</div>
-                      <div className="font-black text-gray-900 truncate text-lg tracking-tight">{transactionGroup.name}</div>
-                      <div className="text-sm text-[#4a6850]/80 font-bold">{transactionGroup.members.length} members</div>
+                      <div className="text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Group</div>
+                      <div className="font-bold text-gray-900 truncate text-base tracking-tight">{transactionGroup.name}</div>
+                      <div className="text-sm text-[#4a6850]/80 font-medium">{transactionGroup.members.length} members</div>
                     </div>
                   </div>
                 )}
@@ -466,8 +466,8 @@ const Dashboard = () => {
                   <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
                     <User className="w-6 h-6 text-[#4a6850] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-[#4a6850]/80 font-black uppercase tracking-wide">Paid by</div>
-                      <div className="font-black text-gray-900 truncate text-lg tracking-tight">{transaction.paidByName}</div>
+                      <div className="text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Paid by</div>
+                      <div className="font-bold text-gray-900 truncate text-base tracking-tight">{transaction.paidByName}</div>
                     </div>
                   </div>
                 )}
@@ -477,10 +477,10 @@ const Dashboard = () => {
                   <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
                     <ArrowUpRight className="w-6 h-6 text-[#4a6850] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-[#4a6850]/80 font-black uppercase tracking-wide">Payment</div>
-                      <div className="font-black text-gray-900 truncate text-lg tracking-tight">{transaction.fromName} → {transaction.toName}</div>
+                      <div className="text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Payment</div>
+                      <div className="font-bold text-gray-900 truncate text-base tracking-tight">{transaction.fromName} → {transaction.toName}</div>
                       {transaction.method && (
-                        <div className="text-sm text-[#4a6850]/80 capitalize font-bold">via {transaction.method}</div>
+                        <div className="text-sm text-[#4a6850]/80 capitalize font-medium">via {transaction.method}</div>
                       )}
                     </div>
                   </div>
@@ -489,12 +489,12 @@ const Dashboard = () => {
                 {/* Participants (for expenses) - iPhone Style */}
                 {transaction.participants && transaction.participants.length > 0 && (
                   <div className="p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                    <div className="text-sm text-[#4a6850]/80 mb-4 font-black uppercase tracking-wide">Participants ({transaction.participants.length})</div>
+                    <div className="text-xs text-[#4a6850]/70 mb-4 font-semibold uppercase tracking-wide">Participants ({transaction.participants.length})</div>
                     <div className="space-y-3 max-h-32 overflow-y-auto">
                       {transaction.participants.map((participant: any, index: number) => (
                         <div key={index} className="flex justify-between items-center">
-                          <span className="font-black text-gray-900 truncate flex-1 mr-3 tracking-tight">{participant.name}</span>
-                          <span className="text-sm text-[#4a6850] flex-shrink-0 font-black tabular-nums">Rs {participant.amount.toLocaleString()}</span>
+                          <span className="font-semibold text-gray-900 truncate flex-1 mr-3">{participant.name}</span>
+                          <span className="text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">Rs {participant.amount.toLocaleString()}</span>
                         </div>
                       ))}
                     </div>
@@ -508,8 +508,8 @@ const Dashboard = () => {
                       <div className="w-2 h-2 rounded-full bg-[#4a6850]"></div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-[#4a6850]/80 font-black uppercase tracking-wide">Place</div>
-                      <div className="font-black text-gray-900 truncate text-lg tracking-tight">{transaction.place}</div>
+                      <div className="text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Place</div>
+                      <div className="font-bold text-gray-900 truncate text-base tracking-tight">{transaction.place}</div>
                     </div>
                   </div>
                 )}
@@ -517,8 +517,8 @@ const Dashboard = () => {
                 {/* Note - iPhone Style */}
                 {transaction.note && (
                   <div className="p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                    <div className="text-sm text-[#4a6850]/80 mb-3 font-black uppercase tracking-wide">Note</div>
-                    <div className="font-bold text-gray-900 break-words leading-relaxed">{transaction.note}</div>
+                    <div className="text-xs text-[#4a6850]/70 mb-3 font-semibold uppercase tracking-wide">Note</div>
+                    <div className="font-medium text-gray-900 break-words leading-relaxed">{transaction.note}</div>
                   </div>
                 )}
 
@@ -529,8 +529,8 @@ const Dashboard = () => {
                       <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl border border-gray-200 shadow-lg">
                         <CreditCard className="w-6 h-6 text-gray-500 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm text-gray-500 font-black uppercase tracking-wide">Wallet Balance Before</div>
-                          <div className="font-black text-gray-900 text-lg tracking-tight tabular-nums">Rs {transaction.walletBalanceBefore.toLocaleString()}</div>
+                          <div className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Wallet Balance Before</div>
+                          <div className="font-bold text-gray-900 text-base tracking-tight tabular-nums">Rs {transaction.walletBalanceBefore.toLocaleString()}</div>
                         </div>
                       </div>
                     )}
@@ -539,8 +539,8 @@ const Dashboard = () => {
                       <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
                         <CreditCard className="w-6 h-6 text-[#4a6850] flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm text-[#4a6850]/80 font-black uppercase tracking-wide">Wallet Balance After</div>
-                          <div className="font-black text-gray-900 text-lg tracking-tight tabular-nums">Rs {transaction.walletBalanceAfter.toLocaleString()}</div>
+                          <div className="text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Wallet Balance After</div>
+                          <div className="font-bold text-gray-900 text-base tracking-tight tabular-nums">Rs {transaction.walletBalanceAfter.toLocaleString()}</div>
                         </div>
                       </div>
                     )}
