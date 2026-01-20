@@ -143,6 +143,7 @@ export interface Transaction {
   walletBalanceBefore?: number;
   walletBalanceAfter?: number;
   createdAt: string;
+  timestamp?: number;
 }
 
 interface FirebaseDataContextType {

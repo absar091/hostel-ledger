@@ -29,7 +29,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-[#4a6850]/10 safe-area-pb z-50 shadow-[0_-10px_40px_rgba(74,104,80,0.1)]">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-[#4a6850]/10 safe-area-pb z-50 shadow-[0_-10px_40px_rgba(74,104,80,0.1)]">
       <div className="max-w-lg mx-auto flex items-center justify-around py-3">
           {tabs.map((tab) => {
             const Icon = tab.icon;

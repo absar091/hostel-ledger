@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, ChevronRight, Plus, TrendingUp, TrendingDown } from "lucide-react";
+import { Users, Plus, Search, Filter, Eye, TrendingUp, TrendingDown } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import Sidebar from "@/components/Sidebar";
+import DesktopHeader from "@/components/DesktopHeader";
+import AppContainer from "@/components/AppContainer";
 import CreateGroupSheet from "@/components/CreateGroupSheet";
+import MemberSettlementSheet from "@/components/MemberSettlementSheet";
 import PageGuide from "@/components/PageGuide";
-import Tooltip from "@/components/Tooltip";
 import { toast } from "sonner";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
@@ -19,8 +22,11 @@ const Groups = () => {
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("groups");
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [showGroupsGuide, setShowGroupsGuide] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSettlement, setShowSettlement] = useState(false);
+  const [selectedSettlement, setSelectedSettlement] = useState<{ groupId: string; memberId: string; memberName: string } | null>(null);
 
-  // Pre-calculate all group settlements to avoid hooks inside map
+  // Pre-calculate all group settlements
   const groupSettlementsMap = useMemo(() => {
     const settlementsMap: Record<string, any> = {};
     groups.forEach((group) => {
@@ -29,7 +35,6 @@ const Groups = () => {
     return settlementsMap;
   }, [groups, getSettlements]);
 
-  // Check if we should show page guide
   useEffect(() => {
     if (shouldShowPageGuide('groups')) {
       setShowGroupsGuide(true);
@@ -42,17 +47,11 @@ const Groups = () => {
   };
 
   const handleTabChange = (tab: typeof activeTab) => {
-    if (tab === "home") {
-      navigate("/");
-    } else if (tab === "profile") {
-      navigate("/profile");
-    } else if (tab === "activity") {
-      navigate("/activity");
-    } else if (tab === "add") {
-      setShowCreateGroup(true);
-    } else {
-      setActiveTab(tab);
-    }
+    if (tab === "home") navigate("/");
+    else if (tab === "profile") navigate("/profile");
+    else if (tab === "activity") navigate("/activity");
+    else if (tab === "add") setShowCreateGroup(true);
+    else setActiveTab(tab);
   };
 
   const handleGroupClick = (groupId: string) => {
@@ -62,7 +61,7 @@ const Groups = () => {
   const handleGroupSubmit = async (data: {
     name: string;
     emoji: string;
-    members: { name: string; phone?: string; paymentDetails?: { jazzCash?: string; easypaisa?: string; bankName?: string; accountNumber?: string; raastId?: string } }[];
+    members: { name: string; phone?: string; paymentDetails?: any }[];
   }) => {
     const result = await createGroup({
       name: data.name,
@@ -81,73 +80,73 @@ const Groups = () => {
     }
   };
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 17) return "Good afternoon";
-    return "Good evening";
+  // Get gradient colors for group cards
+  const getGroupGradient = (index: number) => {
+    const gradients = [
+      "from-[#4a6850] to-[#3d5643]",
+      "from-orange-400 to-red-500",
+      "from-blue-400 to-indigo-600",
+      "from-teal-400 to-emerald-600",
+      "from-purple-400 to-pink-500",
+      "from-yellow-400 to-orange-500",
+    ];
+    return gradients[index % gradients.length];
   };
 
   return (
-    <div className="min-h-screen bg-white pb-24">
-      {/* iPhone-style top accent border */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
+    <>
+      <Sidebar />
       
-      {/* App Header - iPhone Style Enhanced with #4a6850 */}
-      <div className="bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
-        <div className="flex items-center justify-between">
-          {/* App Logo and Name - Enhanced */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
-              <img
-                src="/only-logo.png"
-                alt="Hostel Ledger"
-                className="w-6 h-6 object-contain filter brightness-0 invert"
-              />
-            </div>
-            <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
-          </div>
-          
-          {/* Header Actions - Enhanced */}
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl flex items-center justify-center shadow-lg">
-              <Users className="w-7 h-7 text-white font-bold" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Header - iPhone Style Enhanced */}
-      <div className="px-6 pt-8 pb-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <div className="text-sm text-[#4a6850]/80 mb-1 font-black tracking-wide">{getGreeting()}</div>
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">Your Groups</h1>
-          </div>
-          <div className="flex items-center gap-3">
+      <AppContainer className="bg-[#F8F9FA]">
+        <DesktopHeader />
+        
+        {/* Header Section */}
+        <header className="p-4 lg:p-8 pb-4">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 lg:mb-6 gap-4">
+            <h2 className="text-2xl lg:text-4xl font-black text-gray-900 tracking-tight">Your Groups</h2>
             <button
               onClick={() => setShowCreateGroup(true)}
-              className="w-12 h-12 bg-gradient-to-r from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg hover:from-[#3d5643] hover:to-[#2f4336] hover:scale-105 active:scale-95 transition-all"
+              className="bg-[#4a6850] hover:bg-[#3d5643] text-white px-4 lg:px-6 py-2 lg:py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-[#4a6850]/25 text-sm lg:text-base w-full lg:w-auto justify-center"
             >
-              <Plus className="w-6 h-6 text-white font-bold" />
+              <Plus className="w-4 lg:w-5 h-4 lg:h-5" />
+              <span>Create New Group</span>
             </button>
-            <Tooltip 
-              content="Create a new group to track shared expenses with friends, family, or colleagues."
-              position="left"
-            />
           </div>
-        </div>
-      </div>
 
-      {/* Groups List */}
-      <div className="px-6">
-        {groups.length > 0 ? (
-          <div className="space-y-3">
-            {groups.map((group) => {
-              // Use pre-calculated settlements
+          {/* Search and Filters */}
+          <div className="flex flex-col lg:flex-row lg:flex-wrap items-stretch lg:items-center gap-3 lg:gap-4">
+            <div className="flex-1 lg:min-w-[300px]">
+              <div className="relative group">
+                <Search className="absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 w-4 lg:w-5 h-4 lg:h-5 text-slate-400 group-focus-within:text-[#4a6850] transition-colors" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-white border-none rounded-xl py-2 lg:py-3 pl-10 lg:pl-12 pr-3 lg:pr-4 focus:ring-2 focus:ring-[#4a6850] shadow-sm text-sm placeholder:text-slate-400"
+                  placeholder="Search groups, members, or expenses..."
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2 lg:pb-0 hide-scrollbar">
+              <button className="bg-white px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold text-slate-600 border border-slate-100 flex items-center gap-2 hover:bg-slate-50 transition-all whitespace-nowrap flex-shrink-0">
+                <Filter className="w-3 lg:w-4 h-3 lg:h-4" />
+                Recent
+              </button>
+              <button className="bg-white px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold text-slate-600 border border-slate-100 hover:bg-slate-50 transition-all whitespace-nowrap flex-shrink-0">
+                Unsettled
+              </button>
+              <button className="bg-white px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold text-slate-600 border border-slate-100 hover:bg-slate-50 transition-all whitespace-nowrap flex-shrink-0">
+                Favorites
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Group Grid */}
+        <div className="flex-1 overflow-y-auto p-4 lg:p-8 pt-4 pb-24 lg:pb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+            {groups.map((group, index) => {
               const groupSettlements = groupSettlementsMap[group.id] || {};
-              
-              // Calculate totals
               let toReceive = 0;
               let toPay = 0;
               
@@ -158,121 +157,189 @@ const Groups = () => {
               
               const hasReceivable = toReceive > 0;
               const hasPayable = toPay > 0;
+              const isSettled = toReceive === 0 && toPay === 0;
+              
+              // Find the member to settle with (the one with the highest amount)
+              const memberToSettle = Object.entries(groupSettlements).reduce((max, [memberId, settlement]: [string, any]) => {
+                const totalAmount = (settlement.toReceive || 0) + (settlement.toPay || 0);
+                const maxAmount = (max.settlement?.toReceive || 0) + (max.settlement?.toPay || 0);
+                return totalAmount > maxAmount ? { memberId, settlement } : max;
+              }, { memberId: '', settlement: null as any });
+              
+              const memberName = group.members.find(m => m.id === memberToSettle.memberId)?.name || '';
+              
+              const handleSettleClick = (e: React.MouseEvent) => {
+                e.stopPropagation();
+                if (!isSettled && memberToSettle.memberId) {
+                  setSelectedSettlement({
+                    groupId: group.id,
+                    memberId: memberToSettle.memberId,
+                    memberName: memberName
+                  });
+                  setShowSettlement(true);
+                }
+              };
               
               return (
-                <button
+                <div
                   key={group.id}
                   onClick={() => handleGroupClick(group.id)}
-                  className="w-full bg-white rounded-3xl p-6 shadow-[0_20px_60px_rgba(74,104,80,0.12)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.18)] hover:border-[#4a6850]/20 active:scale-[0.99] transition-all duration-300 text-left group"
+                  className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-slate-100 cursor-pointer"
                 >
-                  <div className="flex items-start gap-4">
-                    {/* Group Icon - iPhone Style with #4a6850 */}
-                    <div className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform duration-200">
-                      <Users className="w-5 h-5 text-white font-bold" />
+                  {/* Header with gradient */}
+                  <div className={`h-24 lg:h-32 w-full bg-gradient-to-br ${getGroupGradient(index)} relative`}>
+                    <div className="absolute top-3 lg:top-4 right-3 lg:right-4 bg-white/20 backdrop-blur-md px-2 lg:px-3 py-1 rounded-full text-[9px] lg:text-[10px] font-bold text-white uppercase tracking-wider">
+                      {isSettled ? "Settled" : "Active"}
                     </div>
-                    
-                    {/* Group Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1 min-w-0 mr-3">
-                          <h3 className="text-lg font-black text-gray-900 truncate leading-tight mb-1 tracking-tight">{group.name}</h3>
-                          <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-[#4a6850]/60 rounded-full"></div>
-                            <span className="text-sm text-[#4a6850]/80 font-black">{group.members.length} members</span>
-                          </div>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-[#4a6850]/60 flex-shrink-0 group-hover:text-[#4a6850] transition-colors" />
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-4 lg:p-5">
+                    <div className="flex justify-between items-start mb-3 lg:mb-4">
+                      <div className="flex-1 min-w-0 mr-2">
+                        <h3 className="text-base lg:text-lg font-bold text-gray-900 truncate">{group.name}</h3>
+                        <p className="text-slate-500 text-xs font-medium">
+                          {group.members.length} members
+                        </p>
                       </div>
-                      
-                      {/* Balance Info - Enhanced iPhone Style */}
-                      <div className="bg-[#4a6850]/5 rounded-2xl p-4 border border-[#4a6850]/10">
-                        {!hasReceivable && !hasPayable ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="w-2 h-2 bg-[#4a6850] rounded-full"></div>
-                            <span className="text-sm text-[#4a6850] font-black">All settled up! 🎉</span>
+                      <div className="flex -space-x-2 flex-shrink-0">
+                        {group.members.slice(0, 3).map((member, idx) => (
+                          <div
+                            key={member.id}
+                            className="w-7 lg:w-8 h-7 lg:h-8 rounded-full border-2 border-white bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center text-white text-xs font-bold"
+                          >
+                            {member.name.charAt(0).toUpperCase()}
                           </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {hasReceivable && (
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 bg-[#4a6850] rounded-full"></div>
-                                  <span className="text-xs text-[#4a6850]/80 font-black">You'll receive</span>
-                                </div>
-                                <span className="text-sm font-black text-[#4a6850] tabular-nums">
-                                  Rs {toReceive.toLocaleString()}
-                                </span>
-                              </div>
-                            )}
-                            {hasPayable && (
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                                  <span className="text-xs text-orange-600 font-black">You owe</span>
-                                </div>
-                                <span className="text-sm font-black text-orange-600 tabular-nums">
-                                  Rs {toPay.toLocaleString()}
-                                </span>
-                              </div>
-                            )}
+                        ))}
+                        {group.members.length > 3 && (
+                          <div className="w-7 lg:w-8 h-7 lg:h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                            +{group.members.length - 3}
                           </div>
                         )}
                       </div>
-                      
-                      {/* Action hint - Enhanced */}
-                      <div className="mt-3 text-center">
-                        <span className="text-xs text-[#4a6850]/60 bg-[#4a6850]/10 px-3 py-1 rounded-full font-black">Tap to view details</span>
-                      </div>
+                    </div>
+
+                    {/* Status */}
+                    <div className="mb-3 lg:mb-4">
+                      <p className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
+                      {isSettled ? (
+                        <p className="text-slate-400 font-bold text-sm lg:text-lg">No pending dues</p>
+                      ) : (
+                        <div className="space-y-1">
+                          {hasReceivable && (
+                            <p className="text-emerald-600 font-bold text-sm lg:text-lg">You will receive Rs {toReceive.toLocaleString()}</p>
+                          )}
+                          {hasPayable && (
+                            <p className="text-rose-500 font-bold text-sm lg:text-lg">You owe Rs {toPay.toLocaleString()}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions - Always visible on mobile, hover on desktop */}
+                    <div className="flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300">
+                      <button
+                        onClick={handleSettleClick}
+                        className={`flex-1 text-white text-xs font-bold py-2 rounded-lg transition-colors ${
+                          isSettled
+                            ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                            : "bg-[#4a6850] hover:bg-[#3d5643]"
+                        }`}
+                        disabled={isSettled}
+                      >
+                        {isSettled ? "Settled" : "Settle Up"}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleGroupClick(group.id);
+                        }}
+                        className="px-3 bg-slate-100 text-slate-600 py-2 rounded-lg hover:bg-slate-200 transition-colors"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-                </button>
+                </div>
               );
             })}
-          </div>
-        ) : (
-          <div className="bg-white rounded-3xl p-12 text-center shadow-[0_20px_60px_rgba(74,104,80,0.12)] border border-[#4a6850]/10">
-            <div className="w-20 h-20 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <Users className="w-10 h-10 text-white font-bold" />
-            </div>
-            <h3 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">No groups yet</h3>
-            <p className="text-[#4a6850]/80 mb-8 max-w-sm mx-auto leading-relaxed font-bold">
-              Create your first group to start tracking shared expenses with friends, roommates, or colleagues.
-            </p>
-            <button
+
+            {/* Create New Group Card */}
+            <div
               onClick={() => setShowCreateGroup(true)}
-              className="bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white px-8 py-4 rounded-2xl font-black hover:from-[#3d5643] hover:to-[#2f4336] hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-3 shadow-lg hover:shadow-xl"
+              className="border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-6 lg:p-8 group hover:border-[#4a6850] transition-colors cursor-pointer bg-white/50 min-h-[200px]"
             >
-              <Plus className="w-5 h-5 font-bold" />
-              Create Your First Group
-            </button>
+              <div className="w-10 lg:w-12 h-10 lg:h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-[#4a6850]/10 group-hover:text-[#4a6850] transition-all mb-3">
+                <Plus className="w-5 lg:w-6 h-5 lg:h-6" />
+              </div>
+              <p className="text-xs lg:text-sm font-bold text-slate-500 group-hover:text-[#4a6850] transition-colors text-center">
+                Create New Group
+              </p>
+            </div>
           </div>
+
+          {/* Empty State */}
+          {groups.length === 0 && (
+            <div className="text-center py-8 lg:py-12 bg-white rounded-3xl border border-slate-100 shadow-sm">
+              <div className="w-16 lg:w-20 h-16 lg:h-20 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-4 lg:mb-6 shadow-lg">
+                <Users className="w-8 lg:w-10 h-8 lg:h-10 text-[#4a6850] font-bold" />
+              </div>
+              <h3 className="text-xl lg:text-2xl font-black text-gray-900 mb-2 lg:mb-3 tracking-tight px-4">No groups yet</h3>
+              <p className="text-slate-500 mb-6 lg:mb-8 max-w-sm mx-auto leading-relaxed text-sm lg:text-base px-4">
+                Create your first group to start tracking shared expenses with friends, roommates, or colleagues.
+              </p>
+              <button
+                onClick={() => setShowCreateGroup(true)}
+                className="bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white px-6 lg:px-8 py-3 lg:py-4 rounded-2xl font-black hover:from-[#3d5643] hover:to-[#2f4336] hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-2 lg:gap-3 shadow-lg hover:shadow-xl text-sm lg:text-base"
+              >
+                <Plus className="w-4 lg:w-5 h-4 lg:h-5 font-bold" />
+                Create Your First Group
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Navigation */}
+        <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+
+        {/* Groups Page Guide */}
+        <PageGuide
+          title="Groups & Expenses"
+          description="Manage your expense groups here. Create groups with friends, roommates, or colleagues to split bills easily."
+          tips={[
+            "Tap the + button to create your first group",
+            "Add members with their phone numbers for easy identification",
+            "Each group shows your balance - green means you'll receive money, red means you owe"
+          ]}
+          emoji="👥"
+          show={showGroupsGuide}
+          onClose={handleGroupsGuideClose}
+        />
+
+        {/* Create Group Sheet */}
+        <CreateGroupSheet
+          open={showCreateGroup}
+          onClose={() => setShowCreateGroup(false)}
+          onSubmit={handleGroupSubmit}
+        />
+
+        {/* Member Settlement Sheet */}
+        {selectedSettlement && (
+          <MemberSettlementSheet
+            open={showSettlement}
+            onClose={() => {
+              setShowSettlement(false);
+              setSelectedSettlement(null);
+            }}
+            member={{
+              id: selectedSettlement.memberId,
+              name: selectedSettlement.memberName,
+            }}
+            groupId={selectedSettlement.groupId}
+          />
         )}
-      </div>
-
-      {/* Bottom Navigation */}
-      <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
-
-      {/* Groups Page Guide */}
-      <PageGuide
-        title="Groups & Expenses"
-        description="Manage your expense groups here. Create groups with friends, roommates, or colleagues to split bills easily."
-        tips={[
-          "Tap the + button to create your first group",
-          "Add members with their phone numbers for easy identification",
-          "Each group shows your balance - green means you'll receive money, red means you owe"
-        ]}
-        emoji="👥"
-        show={showGroupsGuide}
-        onClose={handleGroupsGuideClose}
-      />
-
-      {/* Create Group Sheet */}
-      <CreateGroupSheet
-        open={showCreateGroup}
-        onClose={() => setShowCreateGroup(false)}
-        onSubmit={handleGroupSubmit}
-      />
-    </div>
+      </AppContainer>
+    </>
   );
 };
 

@@ -10,23 +10,6 @@
   .mesh-gradient {
     background: radial-gradient(at 0% 0%, #2D5A47 0%, #1a3a2e 100%);
     position: relative;
-    overflow: hidden;
-  }
-  
-  .mesh-gradient::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 50%);
-    animation: rotate 20s linear infinite;
-  }
-  
-  @keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
   }
   
   .glass {
@@ -319,6 +302,36 @@
     box-shadow: var(--shadow-glass);
   }
 
+  /* Micro-interactions for premium feel */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: scale(1.02);
+  }
+
+  .hover-lift:active {
+    transform: scale(0.98);
+  }
+
+  .card-hover {
+    transition: all 0.2s ease;
+  }
+
+  .card-hover:hover {
+    transform: scale(1.02);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  }
+
+  .button-press {
+    transition: transform 0.1s ease;
+  }
+
+  .button-press:active {
+    transform: scale(0.98);
+  }
+
   /* Mobile-specific utilities */
   .mobile-padding {
     @apply px-4 sm:px-6 lg:px-8;
@@ -529,4 +542,39 @@
   .desktop-only {
     @apply block;
   }
+}
+
+/* Button ripple effect for mobile */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.button-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.button-ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%);
+  transform-origin: 50% 50%;
+}
+
+.button-ripple:active::after {
+  animation: ripple 0.6s ease-out;
 }

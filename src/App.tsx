@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { FirebaseAuthProvider, useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { FirebaseDataProvider } from "@/contexts/FirebaseDataContext";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import EmailVerificationGate from "@/components/EmailVerificationGate";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -157,11 +158,13 @@ const App = () => (
             }}
           >
             <ScrollToTop />
-            <FirebaseAuthProvider>
+            <SidebarProvider>
+              <FirebaseAuthProvider>
               <FirebaseDataProvider>
                 <AppRoutes />
               </FirebaseDataProvider>
             </FirebaseAuthProvider>
+            </SidebarProvider>
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>

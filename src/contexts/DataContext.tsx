@@ -39,6 +39,7 @@ export interface Transaction {
   walletBalanceBefore?: number; // Track wallet balance before transaction
   walletBalanceAfter?: number; // Track wallet balance after transaction
   createdAt: string;
+  timestamp?: number;
 }
 
 interface DataContextType {

@@ -9,6 +9,9 @@ import {
   Activity as ActivityIcon
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import Sidebar from "@/components/Sidebar";
+import DesktopHeader from "@/components/DesktopHeader";
+import AppContainer from "@/components/AppContainer";
 import PageGuide from "@/components/PageGuide";
 import { Input } from "@/components/ui/input";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
@@ -146,9 +149,16 @@ const Activity = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white pb-24">
-      {/* iPhone-style top accent border */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
+    <>
+      {/* Desktop Sidebar */}
+      <Sidebar />
+      
+      <AppContainer className="bg-white pb-24">
+        {/* Desktop Header */}
+        <DesktopHeader />
+        
+        {/* iPhone-style top accent border - Mobile only */}
+        <div className="lg:hidden fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
       
       {/* App Header - iPhone Style Enhanced with #4a6850 */}
       <div className="bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
@@ -389,7 +399,8 @@ const Activity = () => {
 
       {/* Bottom Navigation */}
       <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
-    </div>
+    </AppContainer>
+    </>
   );
 };
 
