@@ -544,6 +544,9 @@ const Dashboard = () => {
               </button>
             </div>
             
+            {/* Small horizontal divider after label */}
+            <div className="w-20 h-px bg-gray-300 mb-4"></div>
+            
             {/* Main Balance Number */}
             <div className="text-4xl font-black tracking-tighter leading-none mb-3 text-gray-900 tabular-nums">
               Rs {walletBalance.toLocaleString()}
@@ -569,7 +572,7 @@ const Dashboard = () => {
               {settlementDelta !== 0 && (
                 <>
                   {/* Small horizontal divider */}
-                  <div className="w-16 h-px bg-white/40 my-3"></div>
+                  <div className="w-16 h-px bg-gray-300 my-3"></div>
                   
                   <div className="flex items-center gap-3">
                     <div className="text-sm text-gray-600 font-bold">
