@@ -186,22 +186,22 @@ const Activity = () => {
         {/* Statistics Cards - iPhone Style Enhanced */}
         <div className="grid grid-cols-2 gap-4 mb-8">
           <div className="bg-white rounded-3xl p-5 border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
-            <div className="text-sm text-[#4a6850]/70 mb-2 font-black uppercase tracking-wide">Total Transactions</div>
+            <div className="text-xs text-[#4a6850]/70 mb-2 font-black uppercase tracking-widest">Total Transactions</div>
             <div className="text-3xl font-black text-gray-900 tracking-tight">{stats.totalTransactions}</div>
           </div>
           
           <div className="bg-white rounded-3xl p-5 border border-red-500/10 shadow-[0_20px_60px_rgba(239,68,68,0.08)]">
-            <div className="text-sm text-red-500/70 mb-2 font-black uppercase tracking-wide">Total Spent</div>
+            <div className="text-xs text-red-500/70 mb-2 font-black uppercase tracking-widest">Total Spent</div>
             <div className="text-3xl font-black text-red-600 tracking-tight tabular-nums">Rs {stats.totalSpent.toLocaleString()}</div>
           </div>
           
           <div className="bg-white rounded-3xl p-5 border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
-            <div className="text-sm text-[#4a6850]/70 mb-2 font-black uppercase tracking-wide">Total Received</div>
+            <div className="text-xs text-[#4a6850]/70 mb-2 font-black uppercase tracking-widest">Total Received</div>
             <div className="text-3xl font-black text-[#4a6850] tracking-tight tabular-nums">Rs {stats.totalReceived.toLocaleString()}</div>
           </div>
           
           <div className="bg-white rounded-3xl p-5 border border-blue-500/10 shadow-[0_20px_60px_rgba(59,130,246,0.08)]">
-            <div className="text-sm text-blue-500/70 mb-2 font-black uppercase tracking-wide">Money Added</div>
+            <div className="text-xs text-blue-500/70 mb-2 font-black uppercase tracking-widest">Money Added</div>
             <div className="text-3xl font-black text-blue-600 tracking-tight tabular-nums">Rs {stats.totalAdded.toLocaleString()}</div>
           </div>
         </div>
