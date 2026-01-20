@@ -39,126 +39,29 @@ const queryClient = new QueryClient({
   },
 });
 
-// Reusable Splash Screen Component
+// iPhone-style Loading Screen Component
 const SplashScreen = () => {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50">
+    <div className="min-h-screen w-full flex items-center justify-center bg-white">
+      {/* iPhone-style top accent border */}
+      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
+      
       <div className="flex flex-col items-center">
-        
-        {/* LOGO - SVG for crisp display */}
-        <img
-          src="/only-logo.png"
-          alt="Hostel Ledger"
-          style={{ 
-            width: 120, 
-            height: 120,
-            filter: "drop-shadow(0 4px 12px rgba(16, 185, 129, 0.15))",
-            animation: "logoFadeIn 0.8s ease-out, logoFloat 3s ease-in-out infinite"
-          }}
-        />
-        
-        {/* TITLE - More refined and subtle */}
-        <div
-          style={{
-            marginTop: 24,
-            fontSize: 28,
-            fontWeight: 700,
-            letterSpacing: "-0.5px",
-            color: "#047857",
-            textAlign: "center",
-          }}
-        >
-          Hostel Ledger
+        {/* App Logo with iPhone-style design */}
+        <div className="w-20 h-20 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl flex items-center justify-center shadow-[0_25px_70px_rgba(74,104,80,0.3)] mb-8 border-t-2 border-[#5a7860]/40">
+          <img
+            src="/only-logo.png"
+            alt="Hostel Ledger"
+            className="w-12 h-12 object-contain filter brightness-0 invert"
+          />
         </div>
         
-        {/* LOADER - More subtle and refined */}
-        <div
-          style={{
-            marginTop: 32,
-            width: 32,
-            height: 32,
-            position: "relative",
-          }}
-        >
-          {[...Array(8)].map((_, i) => (
-            <span
-              key={i}
-              style={{
-                position: "absolute",
-                width: 3,
-                height: 3,
-                borderRadius: "50%",
-                backgroundColor: "#10b981",
-                top: "50%",
-                left: "50%",
-                transform: `rotate(${i * 45}deg) translateY(-12px)`,
-                animation: "fade 1.2s linear infinite",
-                animationDelay: `${i * 0.15}s`,
-              }}
-            />
-          ))}
-        </div>
+        {/* App Name */}
+        <h1 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">Hostel Ledger</h1>
+        <p className="text-[#4a6850]/80 font-bold mb-8">Split expenses with ease</p>
         
-        {/* INSPIRATIONAL QUOTE - Elegant and motivational */}
-        <div
-          style={{
-            marginTop: 48,
-            maxWidth: 320,
-            textAlign: "center",
-            padding: "0 20px",
-          }}
-        >
-          <p
-            style={{
-              fontSize: 16,
-              fontStyle: "italic",
-              color: "#6b7280",
-              lineHeight: 1.6,
-              fontWeight: 500,
-              animation: "quoteSlideUp 1s ease-out 0.5s both",
-            }}
-          >
-            "Every penny saved is a penny earned. Track smart, spend wise! 💡"
-          </p>
-        </div>
-        
-        <style>{`
-          @keyframes fade {
-            0% { opacity: 1; }
-            100% { opacity: 0.2; }
-          }
-          
-          @keyframes logoFadeIn {
-            0% { 
-              opacity: 0;
-              transform: scale(0.9) translateY(10px);
-            }
-            100% { 
-              opacity: 1;
-              transform: scale(1) translateY(0);
-            }
-          }
-          
-          @keyframes logoFloat {
-            0%, 100% { 
-              transform: translateY(0px);
-            }
-            50% { 
-              transform: translateY(-8px);
-            }
-          }
-          
-          @keyframes quoteSlideUp {
-            0% { 
-              opacity: 0;
-              transform: translateY(20px);
-            }
-            100% { 
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-        `}</style>
+        {/* Loading Animation */}
+        <div className="w-8 h-8 border-2 border-[#4a6850]/20 border-t-[#4a6850] rounded-full animate-spin"></div>
       </div>
     </div>
   );
