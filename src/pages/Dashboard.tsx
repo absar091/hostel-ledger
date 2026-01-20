@@ -544,54 +544,40 @@ const Dashboard = () => {
               </button>
             </div>
             
-            {/* Small horizontal divider after label */}
-            <div className="w-20 h-px bg-gray-300 mb-4"></div>
-            
             {/* Main Balance Number */}
-            <div className="text-4xl font-black tracking-tighter leading-none mb-3 text-gray-900 tabular-nums">
+            <div className="text-4xl font-black tracking-tighter leading-none mb-2 text-gray-900 tabular-nums">
               Rs {walletBalance.toLocaleString()}
             </div>
             
+            {/* After settlements value right below main balance */}
+            <div className="text-sm text-gray-600 font-bold mb-4">
+              After settlements: <span className="tabular-nums font-black text-gray-900">Rs {(walletBalance + settlementDelta).toLocaleString()}</span>
+            </div>
+            
+            {/* Thin black separator line for professional look */}
+            <div className="w-full h-px bg-gray-800/20 mb-3"></div>
+            
             {/* Settlement Information */}
-            <div className="pt-3 border-t border-white/60">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="text-sm text-gray-700 font-bold">
-                  After settlements: <span className="tabular-nums font-black text-gray-900">Rs {(walletBalance + settlementDelta).toLocaleString()}</span>
-                </div>
-                <Tooltip 
-                  content="This shows what your wallet balance will be after all pending group settlements are completed."
-                  position="top"
-                >
-                  <div className="w-4 h-4 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center cursor-help hover:bg-white/90 transition-colors shadow-sm">
-                    <span className="text-[9px] font-black text-gray-600">?</span>
-                  </div>
-                </Tooltip>
-              </div>
-              
+            <div>
               {/* Settlement Delta - Simple Text Only */}
               {settlementDelta !== 0 && (
-                <>
-                  {/* Small horizontal divider */}
-                  <div className="w-16 h-px bg-gray-300 my-3"></div>
-                  
-                  <div className="flex items-center gap-3">
-                    <div className="text-sm text-gray-600 font-bold">
-                      Settlement Delta: <span className={`tabular-nums font-black ${
-                        settlementDelta > 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {settlementDelta > 0 ? '+' : '−'}Rs {Math.abs(settlementDelta).toLocaleString()} <span className="font-black text-lg">{settlementDelta > 0 ? '↑' : '↓'}</span>
-                      </span>
-                    </div>
-                    <Tooltip 
-                      content={`This shows the net change to your wallet after all group settlements. ${settlementDelta > 0 ? 'You will receive this amount.' : 'You will pay this amount.'}`}
-                      position="top"
-                    >
-                      <div className="w-4 h-4 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center cursor-help hover:bg-white/90 transition-colors shadow-sm">
-                        <span className="text-[9px] font-black text-gray-600">?</span>
-                      </div>
-                    </Tooltip>
+                <div className="flex items-center gap-3">
+                  <div className="text-sm text-gray-600 font-bold">
+                    Settlement Delta: <span className={`tabular-nums font-black ${
+                      settlementDelta > 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {settlementDelta > 0 ? '+' : '−'}Rs {Math.abs(settlementDelta).toLocaleString()} <span className="font-black text-lg">{settlementDelta > 0 ? '↑' : '↓'}</span>
+                    </span>
                   </div>
-                </>
+                  <Tooltip 
+                    content={`This shows the net change to your wallet after all group settlements. ${settlementDelta > 0 ? 'You will receive this amount.' : 'You will pay this amount.'}`}
+                    position="top"
+                  >
+                    <div className="w-4 h-4 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center cursor-help hover:bg-white/90 transition-colors shadow-sm">
+                      <span className="text-[9px] font-black text-gray-600">?</span>
+                    </div>
+                  </Tooltip>
+                </div>
               )}
             </div>
           </div>
