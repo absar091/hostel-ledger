@@ -347,7 +347,7 @@
     <string name="manage_space_not_supported_toast">This app\'s data is stored in %1$s.</string>
     <string name="no_provider_toast">Please install Chrome Stable 72 or later.</string>
     <string name="orientation" translatable="false">portrait</string>
-    <string name="providerAuthority" translatable="false">online.aarx.hostelledger.app.twa.fileprovider</string>
+    <string name="providerAuthority" translatable="false">online.aarx.hostelledger.twa.fileprovider</string>
     <string name="search_menu_title">Search</string>
     <string name="shortcut_name_0" translatable="false">Add Expense</string>
     <string name="shortcut_name_1" translatable="false">View Groups</string>

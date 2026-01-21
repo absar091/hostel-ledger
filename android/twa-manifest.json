@@ -1,5 +1,5 @@
 {
-  "packageId": "online.aarx.hostelledger.app.twa",
+  "packageId": "online.aarx.hostelledger.twa",
   "host": "app.hostelledger.aarx.online",
   "name": "Hostel Ledger",
   "launcherName": "Ledger",
@@ -20,8 +20,8 @@
     "path": "C:\\Projects\\hostel-ledger\\android\\android.keystore",
     "alias": "android"
   },
-  "appVersionName": "1",
-  "appVersionCode": 1,
+  "appVersionName": "2",
+  "appVersionCode": 2,
   "shortcuts": [
     {
       "name": "Add Expense",
@@ -56,5 +56,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "1"
+  "appVersion": "2"
 }

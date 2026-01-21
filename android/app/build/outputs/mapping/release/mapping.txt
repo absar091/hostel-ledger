@@ -3,8 +3,8 @@
 # min_api: 21
 # common_typos_disable
 # {"id":"com.android.tools.r8.mapping","version":"2.2"}
-# pg_map_id: 11c3430
-# pg_map_hash: SHA-256 11c343005fe58e311ddcf51ed514def212fa7bed02c1cc02a06ee3fb73fde003
+# pg_map_id: c186ee8
+# pg_map_hash: SHA-256 c186ee833541a4b760a3b4a65b7220acb7744837091db1d926d4afac712974e3
 android.support.customtabs.ICustomTabsCallback -> a.a:
 # {"id":"sourceFile","fileName":"ICustomTabsCallback.java"}
     java.lang.String DESCRIPTOR -> a
@@ -25031,15 +25031,15 @@ kotlinx.coroutines.JobKt__JobKt -> W.c:
       # {"id":"com.android.tools.r8.residualsignature","signature":"(LP/a;Ljava/util/concurrent/CancellationException;)V"}
     6:9:void cancel$default(kotlin.coroutines.CoroutineContext,java.util.concurrent.CancellationException,int,java.lang.Object):563:563 -> b
       # {"id":"com.android.tools.r8.residualsignature","signature":"(LP/a;Ljava/util/concurrent/CancellationException;ILjava/lang/Object;)V"}
-online.aarx.hostelledger.app.twa.Application -> online.aarx.hostelledger.app.twa.Application:
+online.aarx.hostelledger.twa.Application -> online.aarx.hostelledger.twa.Application:
 # {"id":"sourceFile","fileName":"Application.java"}
     1:4:void <init>():20:20 -> <init>
     1:4:void onCreate():26:26 -> onCreate
-online.aarx.hostelledger.app.twa.DelegationService -> online.aarx.hostelledger.app.twa.DelegationService:
+online.aarx.hostelledger.twa.DelegationService -> online.aarx.hostelledger.twa.DelegationService:
 # {"id":"sourceFile","fileName":"DelegationService.java"}
     1:4:void <init>():5:5 -> <init>
     1:4:void onCreate():9:9 -> onCreate
-online.aarx.hostelledger.app.twa.LauncherActivity -> online.aarx.hostelledger.app.twa.LauncherActivity:
+online.aarx.hostelledger.twa.LauncherActivity -> online.aarx.hostelledger.twa.LauncherActivity:
 # {"id":"sourceFile","fileName":"LauncherActivity.java"}
     1:4:void <init>():25:25 -> <init>
     1:5:android.net.Uri getLaunchingUrl():48:48 -> i

@@ -4,7 +4,7 @@
     "type": "BUNDLE",
     "kind": "RegularFile"
   },
-  "applicationId": "online.aarx.hostelledger.app.twa",
+  "applicationId": "online.aarx.hostelledger.twa",
   "variantName": "release",
   "elements": [
     {

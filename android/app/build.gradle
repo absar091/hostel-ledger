@@ -21,7 +21,7 @@ plugins {
 }
 
 def twaManifest = [
-    applicationId: 'online.aarx.hostelledger.app.twa',
+    applicationId: 'online.aarx.hostelledger.twa',
     hostName: 'app.hostelledger.aarx.online', // The domain being opened in the TWA.
     launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
     name: 'Hostel Ledger', // The application name.
@@ -52,13 +52,13 @@ def twaManifest = [
 
 android {
     compileSdkVersion 36
-    namespace "online.aarx.hostelledger.app.twa"
+    namespace "online.aarx.hostelledger.twa"
     defaultConfig {
-        applicationId "online.aarx.hostelledger.app.twa"
+        applicationId "online.aarx.hostelledger.twa"
         minSdkVersion 21
         targetSdkVersion 35
-        versionCode 1
-        versionName "1"
+        versionCode 2
+        versionName "2"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name

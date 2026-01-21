@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package online.aarx.hostelledger.app.twa;
+package online.aarx.hostelledger.twa;
 
 import android.content.pm.ActivityInfo;
 import android.net.Uri;

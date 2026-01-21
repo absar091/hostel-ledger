@@ -40,7 +40,7 @@
     <!-- Value from default config. -->
     <string name="orientation" translatable="false">portrait</string>
     <!-- Value from default config. -->
-    <string name="providerAuthority" translatable="false">online.aarx.hostelledger.app.twa.fileprovider</string>
+    <string name="providerAuthority" translatable="false">online.aarx.hostelledger.twa.fileprovider</string>
     <!-- Value from default config. -->
     <string name="shortcut_name_0" translatable="false">Add Expense</string>
     <!-- Value from default config. -->

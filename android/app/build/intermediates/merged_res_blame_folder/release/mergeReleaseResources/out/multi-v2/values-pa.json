@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "online.aarx.hostelledger.app.twa.app-mergeReleaseResources-2:/values-pa/values-pa.xml",
+            "outputFile": "online.aarx.hostelledger.twa.app-mergeReleaseResources-2:/values-pa/values-pa.xml",
             "map": [
                 {
                     "source": "C:\\Users\\Lenovo\\.gradle\\caches\\8.11.1\\transforms\\be57bd43967b699c12a0f6b8bd2f21c6\\transformed\\browser-1.9.0-alpha04\\res\\values-pa\\values-pa.xml",

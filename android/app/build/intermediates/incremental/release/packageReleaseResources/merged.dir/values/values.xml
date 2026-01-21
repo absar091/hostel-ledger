@@ -29,7 +29,7 @@
     <string name="launchUrl" translatable="false">https://app.hostelledger.aarx.online/</string>
     <string name="launcherName" translatable="false">Ledger</string>
     <string name="orientation" translatable="false">portrait</string>
-    <string name="providerAuthority" translatable="false">online.aarx.hostelledger.app.twa.fileprovider</string>
+    <string name="providerAuthority" translatable="false">online.aarx.hostelledger.twa.fileprovider</string>
     <string name="shortcut_name_0" translatable="false">Add Expense</string>
     <string name="shortcut_name_1" translatable="false">View Groups</string>
     <string name="shortcut_short_name_0" translatable="false">Add Expense</string>
