@@ -122,8 +122,28 @@ export const usePushNotifications = () => {
 
       setState((prev) => ({ ...prev, isSubscribed: true }));
       
-      // In production, send subscription to your backend
-      // await sendSubscriptionToBackend(subscription);
+      // Send subscription to backend
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.uid) {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/push-subscribe`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.uid,
+              subscription: subscription.toJSON()
+            })
+          });
+
+          if (response.ok) {
+            logger.info("Subscription sent to backend successfully");
+          } else {
+            logger.warn("Failed to send subscription to backend");
+          }
+        }
+      } catch (error: any) {
+        logger.error("Failed to send subscription to backend", { error: error.message });
+      }
 
       return true;
     } catch (error: any) {

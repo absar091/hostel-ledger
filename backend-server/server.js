@@ -714,3 +714,279 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
+
+// ============================================
+// PUSH NOTIFICATION ENDPOINTS
+// ============================================
+
+// Store push subscriptions (in production, use Firebase Realtime Database)
+const pushSubscriptions = new Map();
+
+// Subscribe to push notifications
+app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
+  try {
+    const { userId, subscription } = req.body;
+
+    if (!userId || !subscription) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: userId, subscription'
+      });
+    }
+
+    // Validate subscription object
+    if (!subscription.endpoint || !subscription.keys) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid subscription object'
+      });
+    }
+
+    console.log('🔔 Storing push subscription for user:', userId);
+    
+    // Store subscription in memory (in production, save to Firebase)
+    pushSubscriptions.set(userId, subscription);
+    
+    // TODO: Save to Firebase Realtime Database
+    // const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
+    // await subscriptionsRef.set(subscription);
+
+    console.log('✅ Push subscription stored successfully');
+    console.log('📊 Total subscriptions:', pushSubscriptions.size);
+
+    res.json({
+      success: true,
+      message: 'Push subscription stored successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Push subscribe error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to store push subscription: ' + error.message
+    });
+  }
+});
+
+// Send push notification to a specific user
+app.post('/api/push-notify', generalLimiter, async (req, res) => {
+  try {
+    const { userId, title, body, icon, badge, tag, data } = req.body;
+
+    if (!userId || !title || !body) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: userId, title, body'
+      });
+    }
+
+    console.log('🔔 Sending push notification to user:', userId);
+
+    // Get subscription from memory (in production, get from Firebase)
+    const subscription = pushSubscriptions.get(userId);
+    
+    // TODO: Get from Firebase Realtime Database
+    // const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
+    // const snapshot = await subscriptionsRef.once('value');
+    // const subscription = snapshot.val();
+
+    if (!subscription) {
+      console.warn('⚠️ No push subscription found for user:', userId);
+      return res.status(404).json({
+        success: false,
+        error: 'No push subscription found for this user'
+      });
+    }
+
+    // Prepare notification payload
+    const payload = JSON.stringify({
+      title: title,
+      body: body,
+      icon: icon || '/only-logo.png',
+      badge: badge || '/only-logo.png',
+      tag: tag || 'default',
+      data: data || {}
+    });
+
+    console.log('📤 Sending notification:', { title, body, userId });
+
+    // Send push notification
+    const result = await webpush.sendNotification(subscription, payload);
+    
+    console.log('✅ Push notification sent successfully');
+    console.log('📊 Response status:', result.statusCode);
+
+    res.json({
+      success: true,
+      message: 'Push notification sent successfully',
+      statusCode: result.statusCode
+    });
+
+  } catch (error) {
+    console.error('❌ Push notify error:', error);
+    
+    // Handle expired subscriptions
+    if (error.statusCode === 410) {
+      console.warn('⚠️ Subscription expired, removing from storage');
+      const { userId } = req.body;
+      if (userId) {
+        pushSubscriptions.delete(userId);
+        // TODO: Remove from Firebase
+        // await admin.database().ref(`pushSubscriptions/${userId}`).remove();
+      }
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send push notification: ' + error.message,
+      statusCode: error.statusCode
+    });
+  }
+});
+
+// Send push notification to multiple users
+app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
+  try {
+    const { userIds, title, body, icon, badge, tag, data } = req.body;
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'userIds must be a non-empty array'
+      });
+    }
+
+    if (!title || !body) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: title, body'
+      });
+    }
+
+    console.log('🔔 Sending push notifications to', userIds.length, 'users');
+
+    const payload = JSON.stringify({
+      title: title,
+      body: body,
+      icon: icon || '/only-logo.png',
+      badge: badge || '/only-logo.png',
+      tag: tag || 'default',
+      data: data || {}
+    });
+
+    const results = {
+      success: 0,
+      failed: 0,
+      errors: []
+    };
+
+    // Send to all users
+    for (const userId of userIds) {
+      try {
+        const subscription = pushSubscriptions.get(userId);
+        
+        if (!subscription) {
+          console.warn('⚠️ No subscription for user:', userId);
+          results.failed++;
+          results.errors.push({ userId, error: 'No subscription found' });
+          continue;
+        }
+
+        await webpush.sendNotification(subscription, payload);
+        results.success++;
+        console.log('✅ Notification sent to:', userId);
+
+      } catch (error) {
+        console.error('❌ Failed to send to user:', userId, error.message);
+        results.failed++;
+        results.errors.push({ userId, error: error.message });
+
+        // Remove expired subscriptions
+        if (error.statusCode === 410) {
+          pushSubscriptions.delete(userId);
+        }
+      }
+    }
+
+    console.log('📊 Notification results:', results);
+
+    res.json({
+      success: true,
+      message: `Sent ${results.success} notifications, ${results.failed} failed`,
+      results: results
+    });
+
+  } catch (error) {
+    console.error('❌ Push notify multiple error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send push notifications: ' + error.message
+    });
+  }
+});
+
+// Get subscription status for a user
+app.get('/api/push-subscription/:userId', generalLimiter, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId is required'
+      });
+    }
+
+    const subscription = pushSubscriptions.get(userId);
+    
+    res.json({
+      success: true,
+      hasSubscription: !!subscription,
+      endpoint: subscription ? subscription.endpoint : null
+    });
+
+  } catch (error) {
+    console.error('❌ Get subscription error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get subscription status: ' + error.message
+    });
+  }
+});
+
+// Unsubscribe from push notifications
+app.delete('/api/push-unsubscribe/:userId', generalLimiter, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId is required'
+      });
+    }
+
+    console.log('🔕 Removing push subscription for user:', userId);
+
+    const existed = pushSubscriptions.has(userId);
+    pushSubscriptions.delete(userId);
+
+    // TODO: Remove from Firebase
+    // await admin.database().ref(`pushSubscriptions/${userId}`).remove();
+
+    console.log('✅ Push subscription removed');
+
+    res.json({
+      success: true,
+      message: existed ? 'Subscription removed' : 'No subscription found'
+    });
+
+  } catch (error) {
+    console.error('❌ Push unsubscribe error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to remove subscription: ' + error.message
+    });
+  }
+});
