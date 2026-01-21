@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { toast } from "sonner";
+import Logo from "./Logo";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -45,11 +46,7 @@ const Sidebar = () => {
         {isOpen ? (
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#1B4332] rounded-xl flex items-center justify-center flex-shrink-0">
-              <img
-                src="/only-logo.png"
-                alt="Hostel Ledger"
-                className="w-5 h-5 object-contain filter brightness-0 invert"
-              />
+              <Logo size={20} className="text-white" />
             </div>
             <div className="min-w-0">
               <h1 className="text-lg font-black text-gray-900 tracking-tight truncate">Hostel Ledger</h1>
@@ -58,11 +55,7 @@ const Sidebar = () => {
           </div>
         ) : (
           <div className="w-10 h-10 bg-[#1B4332] rounded-xl flex items-center justify-center mx-auto">
-            <img
-              src="/only-logo.png"
-              alt="Hostel Ledger"
-              className="w-5 h-5 object-contain filter brightness-0 invert"
-            />
+            <Logo size={20} className="text-white" />
           </div>
         )}
       </div>

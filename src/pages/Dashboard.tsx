@@ -6,6 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
 import AppContainer from "@/components/AppContainer";
 import Avatar from "@/components/Avatar";
+import Logo from "@/components/Logo";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
 import RecordPaymentSheet from "@/components/RecordPaymentSheet";
 import CreateGroupSheet from "@/components/CreateGroupSheet";
@@ -595,11 +596,7 @@ const Dashboard = () => {
         <header className="lg:hidden sticky top-0 z-30 bg-[#F8F9FA]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-[#4a6850] rounded-xl flex items-center justify-center text-white shadow-lg shadow-[#4a6850]/20">
-            <img
-              src="/only-logo.png"
-              alt="Hostel Ledger"
-              className="w-5 h-5 object-contain filter brightness-0 invert"
-            />
+            <Logo size={20} className="text-white" />
           </div>
           <div>
             <h1 className="text-xs font-bold uppercase tracking-widest text-gray-500">Hostel Ledger</h1>

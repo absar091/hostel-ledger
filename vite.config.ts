@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["only-logo.png", "aarx-logo.webp"],
+      includeAssets: ["only-logo.png", "aarx-logo.webp", "hostel-ledger-logo.webp"],
       manifest: {
         name: "Hostel Ledger",
         short_name: "Ledger",
@@ -41,6 +41,7 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         navigateFallback: "/index.html",
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -67,6 +68,17 @@ export default defineConfig(({ mode }) => ({
               },
               cacheableResponse: {
                 statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "images-cache",
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
               }
             }
           }
