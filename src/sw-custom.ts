@@ -20,14 +20,14 @@ precacheAndRoute(self.__WB_MANIFEST);
 const bgSyncPlugin = new BackgroundSyncPlugin('expense-queue', {
   maxRetentionTime: 24 * 60, // Retry for up to 24 hours (in minutes)
   onSync: async ({ queue }) => {
-    let entry;
+    let entry: any;
     while ((entry = await queue.shiftRequest())) {
       try {
         await fetch(entry.request);
         console.log('Background sync: Request successful', entry.request.url);
         
         // Show notification on successful sync
-        self.registration.showNotification('Expense Synced', {
+        await self.registration.showNotification('Expense Synced', {
           body: 'Your offline expense has been synced successfully!',
           icon: '/only-logo.png',
           badge: '/only-logo.png',
@@ -94,8 +94,7 @@ self.addEventListener('push', (event: PushEvent) => {
     badge: '/only-logo.png',
     tag: data.tag || 'default',
     data: data.data || {},
-    requireInteraction: false,
-    actions: data.actions || []
+    requireInteraction: false
   };
 
   event.waitUntil(
@@ -154,17 +153,8 @@ async function checkForNewExpenses() {
 }
 
 // Install event - show notification
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   console.log('Service Worker installed');
-  event.waitUntil(
-    self.registration.showNotification('Hostel Ledger Installed', {
-      body: 'App is ready to work offline!',
-      icon: '/only-logo.png',
-      badge: '/only-logo.png',
-      tag: 'install',
-      requireInteraction: false
-    })
-  );
 });
 
 // Activate event
@@ -176,9 +166,20 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SYNC_EXPENSES') {
     event.waitUntil(
-      bgSyncPlugin.replayRequests().then(() => {
-        event.ports[0].postMessage({ success: true });
-      })
+      (async () => {
+        try {
+          // Trigger background sync
+          await self.registration.sync.register('expense-queue');
+          if (event.ports[0]) {
+            event.ports[0].postMessage({ success: true });
+          }
+        } catch (error) {
+          console.error('Manual sync failed:', error);
+          if (event.ports[0]) {
+            event.ports[0].postMessage({ success: false, error });
+          }
+        }
+      })()
     );
   }
 });
