@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
+const webpush = require('web-push');
 require('dotenv').config();
 
 // Initialize Firebase Admin SDK using environment variables
@@ -32,6 +33,19 @@ try {
 } catch (error) {
   console.error('❌ Firebase Admin SDK initialization failed:', error.message);
   console.warn('⚠️ Email existence check will not work without Firebase Admin SDK');
+}
+
+// Configure Web Push with VAPID keys
+try {
+  webpush.setVapidDetails(
+    'mailto:hostelledger@aarx.online',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+  console.log('✅ Web Push configured with VAPID keys');
+} catch (error) {
+  console.error('❌ Web Push configuration failed:', error.message);
+  console.warn('⚠️ Push notifications will not work without VAPID keys');
 }
 
 const app = express();
