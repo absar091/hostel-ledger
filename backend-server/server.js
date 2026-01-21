@@ -697,25 +697,6 @@ app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
   }
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    error: 'Endpoint not found'
-  });
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Hostel Ledger Email API server running on port ${PORT}`);
-  console.log(`📧 SMTP configured for: ${process.env.SMTP_USER}`);
-  console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-});
-
-module.exports = app;
-
-
 // ============================================
 // PUSH NOTIFICATION ENDPOINTS
 // ============================================
@@ -990,3 +971,21 @@ app.delete('/api/push-unsubscribe/:userId', generalLimiter, async (req, res) => 
     });
   }
 });
+
+// 404 handler - MUST BE LAST
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Endpoint not found'
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Hostel Ledger Email API server running on port ${PORT}`);
+  console.log(`📧 SMTP configured for: ${process.env.SMTP_USER}`);
+  console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+});
+
+module.exports = app;

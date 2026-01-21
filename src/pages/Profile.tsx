@@ -364,7 +364,7 @@ const Profile = () => {
           <h3 className="text-sm font-black text-[#4a6850]/80 uppercase tracking-widest px-2">Preferences</h3>
           
           <button
-            onClick={() => toast.info("Notification settings coming soon!")}
+            onClick={() => navigate("/notifications")}
             className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
             style={{ animationDelay: "0.15s" }}
           >
@@ -379,7 +379,7 @@ const Profile = () => {
           </button>
 
           <button
-            onClick={() => toast.info("Security settings coming soon!")}
+            onClick={() => navigate("/security")}
             className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
             style={{ animationDelay: "0.2s" }}
           >
