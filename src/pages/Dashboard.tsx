@@ -63,6 +63,11 @@ const Dashboard = () => {
   // Onboarding and guide states
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showDashboardGuide, setShowDashboardGuide] = useState(false);
+  
+  // Tooltip states for mobile
+  const [showBalanceTooltip, setShowBalanceTooltip] = useState(false);
+  const [showSettlementsTooltip, setShowSettlementsTooltip] = useState(false);
+  const [showDeltaTooltip, setShowDeltaTooltip] = useState(false);
 
   // Check if we should show onboarding or guides
   useEffect(() => {
@@ -687,25 +692,58 @@ const Dashboard = () => {
           <div className="relative z-10">
             <div className="flex justify-between items-start">
               <div>
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <button className="text-white/70 text-[10px] lg:text-xs font-black uppercase tracking-wider cursor-help inline-flex items-center gap-1.5 hover:text-white/90 transition-colors active:text-white">
-                      Available Balance
-                      <span className="w-4 h-4 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[10px] hover:bg-white/25 active:bg-white/30 hover:scale-110 active:scale-95 transition-all">?</span>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center flex-shrink-0 shadow-lg">
-                        <span className="text-xl">💰</span>
-                      </div>
-                      <div>
-                        <h4 className="font-black text-sm mb-1.5 text-gray-900">Available Balance</h4>
-                        <p className="text-xs leading-relaxed text-gray-600 font-medium">Your current wallet balance that you can spend right now. This doesn't include pending settlements.</p>
+                {/* Mobile: Click to toggle, Desktop: Hover */}
+                <div className="lg:hidden">
+                  <button 
+                    onClick={() => setShowBalanceTooltip(!showBalanceTooltip)}
+                    className="text-white/70 text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5 active:text-white transition-colors"
+                  >
+                    Available Balance
+                    <span className="w-4 h-4 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[10px] active:bg-white/30 active:scale-95 transition-all">?</span>
+                  </button>
+                  {showBalanceTooltip && (
+                    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowBalanceTooltip(false)}>
+                      <div className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center flex-shrink-0 shadow-lg">
+                            <span className="text-xl">💰</span>
+                          </div>
+                          <div>
+                            <h4 className="font-black text-sm mb-1.5 text-gray-900">Available Balance</h4>
+                            <p className="text-xs leading-relaxed text-gray-600 font-medium">Your current wallet balance that you can spend right now. This doesn't include pending settlements.</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setShowBalanceTooltip(false)}
+                          className="mt-4 w-full py-2 bg-[#4a6850] text-white rounded-xl font-bold text-sm"
+                        >
+                          Got it
+                        </button>
                       </div>
                     </div>
-                  </TooltipContent>
-                </Tooltip>
+                  )}
+                </div>
+                <div className="hidden lg:block">
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <button className="text-white/70 text-xs font-black uppercase tracking-wider cursor-help inline-flex items-center gap-1.5 hover:text-white/90 transition-colors">
+                        Available Balance
+                        <span className="w-4 h-4 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[10px] hover:bg-white/25 hover:scale-110 transition-all">?</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center flex-shrink-0 shadow-lg">
+                          <span className="text-xl">💰</span>
+                        </div>
+                        <div>
+                          <h4 className="font-black text-sm mb-1.5 text-gray-900">Available Balance</h4>
+                          <p className="text-xs leading-relaxed text-gray-600 font-medium">Your current wallet balance that you can spend right now. This doesn't include pending settlements.</p>
+                        </div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <h3 className="text-3xl lg:text-4xl font-black mt-1 tracking-tighter text-white tabular-nums">Rs {walletBalance.toLocaleString()}</h3>
                 {/* Last transaction time - smaller on mobile */}
                 <p className="text-white/40 text-[10px] lg:text-xs mt-1.5 lg:mt-2 font-semibold">{lastTransactionTime}</p>
@@ -726,47 +764,113 @@ const Dashboard = () => {
               boxShadow: 'inset 0 0 0 2px rgba(255, 255, 255, 0.2)'
             }}>
               <div className="flex-1 min-w-0">
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <button className="text-white/60 text-[9px] lg:text-[10px] uppercase font-black mb-1 cursor-help inline-flex items-center gap-1 hover:text-white/80 active:text-white transition-colors">
-                      After settlements
-                      <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] hover:bg-white/25 active:bg-white/30 hover:scale-110 active:scale-95 transition-all">?</span>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                        <span className="text-xl">📊</span>
-                      </div>
-                      <div>
-                        <h4 className="font-black text-sm mb-1.5 text-gray-900">After Settlements</h4>
-                        <p className="text-xs leading-relaxed text-gray-600 font-medium">Your balance after all pending payments are settled. This is what you'll have once everyone pays what they owe.</p>
+                {/* Mobile: Click to toggle, Desktop: Hover */}
+                <div className="lg:hidden">
+                  <button 
+                    onClick={() => setShowSettlementsTooltip(!showSettlementsTooltip)}
+                    className="text-white/60 text-[9px] uppercase font-black mb-1 inline-flex items-center gap-1 active:text-white transition-colors"
+                  >
+                    After settlements
+                    <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] active:bg-white/30 active:scale-95 transition-all">?</span>
+                  </button>
+                  {showSettlementsTooltip && (
+                    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowSettlementsTooltip(false)}>
+                      <div className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                            <span className="text-xl">📊</span>
+                          </div>
+                          <div>
+                            <h4 className="font-black text-sm mb-1.5 text-gray-900">After Settlements</h4>
+                            <p className="text-xs leading-relaxed text-gray-600 font-medium">Your balance after all pending payments are settled. This is what you'll have once everyone pays what they owe.</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setShowSettlementsTooltip(false)}
+                          className="mt-4 w-full py-2 bg-[#4a6850] text-white rounded-xl font-bold text-sm"
+                        >
+                          Got it
+                        </button>
                       </div>
                     </div>
-                  </TooltipContent>
-                </Tooltip>
+                  )}
+                </div>
+                <div className="hidden lg:block">
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <button className="text-white/60 text-[10px] uppercase font-black mb-1 cursor-help inline-flex items-center gap-1 hover:text-white/80 transition-colors">
+                        After settlements
+                        <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] hover:bg-white/25 hover:scale-110 transition-all">?</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                          <span className="text-xl">📊</span>
+                        </div>
+                        <div>
+                          <h4 className="font-black text-sm mb-1.5 text-gray-900">After Settlements</h4>
+                          <p className="text-xs leading-relaxed text-gray-600 font-medium">Your balance after all pending payments are settled. This is what you'll have once everyone pays what they owe.</p>
+                        </div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <p className="text-base lg:text-lg font-black text-white tabular-nums truncate tracking-tight">Rs {afterSettlementsBalance.toLocaleString()}</p>
               </div>
               <div className="text-right flex-shrink-0 min-w-0">
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <button className="text-white/60 text-[9px] lg:text-[10px] uppercase font-black mb-1 truncate cursor-help inline-flex items-center gap-1 hover:text-white/80 active:text-white transition-colors">
-                      Settlement Delta
-                      <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] hover:bg-white/25 active:bg-white/30 hover:scale-110 active:scale-95 transition-all">?</span>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                        <span className="text-xl">📈</span>
-                      </div>
-                      <div>
-                        <h4 className="font-black text-sm mb-1.5 text-gray-900">Settlement Delta</h4>
-                        <p className="text-xs leading-relaxed text-gray-600 font-medium">The net amount you'll gain (+) or lose (-) after all settlements. Green means you'll receive money, red means you owe money.</p>
+                {/* Mobile: Click to toggle, Desktop: Hover */}
+                <div className="lg:hidden">
+                  <button 
+                    onClick={() => setShowDeltaTooltip(!showDeltaTooltip)}
+                    className="text-white/60 text-[9px] uppercase font-black mb-1 truncate inline-flex items-center gap-1 active:text-white transition-colors"
+                  >
+                    Settlement Delta
+                    <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] active:bg-white/30 active:scale-95 transition-all">?</span>
+                  </button>
+                  {showDeltaTooltip && (
+                    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowDeltaTooltip(false)}>
+                      <div className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                            <span className="text-xl">📈</span>
+                          </div>
+                          <div>
+                            <h4 className="font-black text-sm mb-1.5 text-gray-900">Settlement Delta</h4>
+                            <p className="text-xs leading-relaxed text-gray-600 font-medium">The net amount you'll gain (+) or lose (-) after all settlements. Green means you'll receive money, red means you owe money.</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setShowDeltaTooltip(false)}
+                          className="mt-4 w-full py-2 bg-[#4a6850] text-white rounded-xl font-bold text-sm"
+                        >
+                          Got it
+                        </button>
                       </div>
                     </div>
-                  </TooltipContent>
-                </Tooltip>
+                  )}
+                </div>
+                <div className="hidden lg:block">
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <button className="text-white/60 text-[10px] uppercase font-black mb-1 truncate cursor-help inline-flex items-center gap-1 hover:text-white/80 transition-colors">
+                        Settlement Delta
+                        <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] hover:bg-white/25 hover:scale-110 transition-all">?</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                          <span className="text-xl">📈</span>
+                        </div>
+                        <div>
+                          <h4 className="font-black text-sm mb-1.5 text-gray-900">Settlement Delta</h4>
+                          <p className="text-xs leading-relaxed text-gray-600 font-medium">The net amount you'll gain (+) or lose (-) after all settlements. Green means you'll receive money, red means you owe money.</p>
+                        </div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <div className={`flex items-center justify-end ${settlementDelta > 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
                   {dayToDay.direction !== 'same' && (
                     <span className="text-xs lg:text-sm mr-1 flex-shrink-0">
