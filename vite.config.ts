@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => ({
       filename: "sw-custom.ts",
       includeAssets: ["only-logo.png", "aarx-logo.webp", "hostel-ledger-logo.webp"],
       manifest: {
+        id: "/",
         name: "Hostel Ledger",
         short_name: "Ledger",
         description: "Smart expense splitting for groups, roommates, and friends",
@@ -31,6 +32,7 @@ export default defineConfig(({ mode }) => ({
         theme_color: "#4a6850",
         lang: "en",
         categories: ["finance", "productivity", "utilities"],
+        prefer_related_applications: false,
         icons: [
           { 
             src: "/only-logo.png", 
@@ -63,14 +65,14 @@ export default defineConfig(({ mode }) => ({
             short_name: "Add Expense",
             description: "Quickly add a new expense",
             url: "/?action=add-expense",
-            icons: [{ src: "/only-logo.png", sizes: "96x96" }]
+            icons: [{ src: "/only-logo.png", sizes: "707x701" }]
           },
           {
             name: "View Groups",
             short_name: "Groups",
             description: "View your expense groups",
             url: "/groups",
-            icons: [{ src: "/only-logo.png", sizes: "96x96" }]
+            icons: [{ src: "/only-logo.png", sizes: "707x701" }]
           }
         ]
       },
