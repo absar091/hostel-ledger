@@ -3,9 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "online.aarx.hostelledger.twa",
+      "package_name": "online.aarx.hostelledger.app.twa",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_YOUR_SHA256_FROM_SIGNING_KEY_INFO_TXT"
+        "E9:66:3F:65:F0:0A:B6:D7:F4:2D:55:2C:1A:AD:D1:47:50:DE:E2:74:6C:15:2A:7F:8D:EC:83:6C:85:7E:EB:CE"
       ]
     }
   }

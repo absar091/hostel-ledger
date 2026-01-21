@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => ({
         name: "Hostel Ledger",
         short_name: "Ledger",
         description: "Smart expense splitting for groups, roommates, and friends",
-        start_url: "/",
+        start_url: "/?twa=true",
         scope: "/",
         display: "standalone",
         orientation: "portrait-primary",

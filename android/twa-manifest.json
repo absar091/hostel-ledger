@@ -1,0 +1,60 @@
+{
+  "packageId": "online.aarx.hostelledger.app.twa",
+  "host": "app.hostelledger.aarx.online",
+  "name": "Hostel Ledger",
+  "launcherName": "Ledger",
+  "display": "standalone",
+  "themeColor": "#4A6850",
+  "themeColorDark": "#000000",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#F8F9FA",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://app.hostelledger.aarx.online/only-logo.png",
+  "maskableIconUrl": "https://app.hostelledger.aarx.online/only-logo.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "C:\\Projects\\hostel-ledger\\android\\android.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "1",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Add Expense",
+      "shortName": "Add Expense",
+      "url": "https://app.hostelledger.aarx.online/?action=add-expense",
+      "chosenIconUrl": "https://app.hostelledger.aarx.online/only-logo.png"
+    },
+    {
+      "name": "View Groups",
+      "shortName": "Groups",
+      "url": "https://app.hostelledger.aarx.online/groups",
+      "chosenIconUrl": "https://app.hostelledger.aarx.online/only-logo.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://app.hostelledger.aarx.online/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://app.hostelledger.aarx.online/",
+  "minSdkVersion": 21,
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "1"
+}

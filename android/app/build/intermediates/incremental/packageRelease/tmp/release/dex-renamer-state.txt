@@ -1,0 +1,4 @@
+#Wed Jan 21 18:14:44 PKT 2026
+base.0=C\:\\Projects\\hostel-ledger\\android\\app\\build\\intermediates\\dex\\release\\minifyReleaseWithR8\\classes.dex
+renamed.0=classes.dex
+path.0=classes.dex
