@@ -21,9 +21,13 @@ export default defineConfig(({ mode }) => ({
         short_name: "Ledger",
         description: "Smart expense splitting for groups, roommates, and friends",
         start_url: "/",
+        scope: "/",
         display: "standalone",
+        orientation: "portrait-primary",
         background_color: "#F8F9FA",
         theme_color: "#4a6850",
+        lang: "en",
+        categories: ["finance", "productivity", "utilities"],
         icons: [
           { 
             src: "only-logo.png", 
@@ -36,6 +40,22 @@ export default defineConfig(({ mode }) => ({
             sizes: "512x512", 
             type: "image/png",
             purpose: "any maskable"
+          }
+        ],
+        shortcuts: [
+          {
+            name: "Add Expense",
+            short_name: "Add Expense",
+            description: "Quickly add a new expense",
+            url: "/?action=add-expense",
+            icons: [{ src: "only-logo.png", sizes: "96x96" }]
+          },
+          {
+            name: "View Groups",
+            short_name: "Groups",
+            description: "View your expense groups",
+            url: "/groups",
+            icons: [{ src: "only-logo.png", sizes: "96x96" }]
           }
         ]
       },
