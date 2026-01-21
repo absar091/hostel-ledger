@@ -104,8 +104,12 @@ export default defineConfig(({ mode }) => ({
           }
         ]
       },
+      // Enable advanced PWA features
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}']
+      },
       devOptions: {
-        enabled: false // Disable in dev for faster reloads
+        enabled: false
       }
     })
   ].filter(Boolean),
