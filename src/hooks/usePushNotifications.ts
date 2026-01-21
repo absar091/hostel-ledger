@@ -103,13 +103,17 @@ export const usePushNotifications = () => {
       }
 
       // Subscribe to push notifications
-      // Note: In production, you would use your VAPID public key here
+      const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      
+      if (!vapidPublicKey) {
+        logger.error("VAPID public key not configured");
+        toast.error("Push notifications not configured");
+        return false;
+      }
+
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          // This is a placeholder - replace with your actual VAPID public key
-          "BEl62iUYgUivxIkv69yViEuiBIa-Ib37J8xQmrEcxaY3QFkVIYFCPJmuQqcEH4KGfh2V01yCKTnT7ksEoXLfDgo"
-        ) as BufferSource,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
       });
 
       logger.info("Push notification subscription created", { 
