@@ -24,6 +24,7 @@ import { useFirebaseData, type Transaction } from "@/contexts/FirebaseDataContex
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useOffline } from "@/hooks/useOffline";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const Dashboard = () => {
   const navigate = useNavigate();
