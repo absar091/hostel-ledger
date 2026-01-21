@@ -33,16 +33,28 @@ export default defineConfig(({ mode }) => ({
         categories: ["finance", "productivity", "utilities"],
         icons: [
           { 
-            src: "only-logo.png", 
+            src: "/only-logo.png", 
             sizes: "192x192", 
             type: "image/png",
-            purpose: "any maskable"
+            purpose: "any"
           },
           { 
-            src: "only-logo.png", 
+            src: "/only-logo.png", 
             sizes: "512x512", 
             type: "image/png",
-            purpose: "any maskable"
+            purpose: "any"
+          },
+          { 
+            src: "/only-logo.png", 
+            sizes: "192x192", 
+            type: "image/png",
+            purpose: "maskable"
+          },
+          { 
+            src: "/only-logo.png", 
+            sizes: "512x512", 
+            type: "image/png",
+            purpose: "maskable"
           }
         ],
         shortcuts: [
@@ -51,14 +63,14 @@ export default defineConfig(({ mode }) => ({
             short_name: "Add Expense",
             description: "Quickly add a new expense",
             url: "/?action=add-expense",
-            icons: [{ src: "only-logo.png", sizes: "96x96" }]
+            icons: [{ src: "/only-logo.png", sizes: "96x96" }]
           },
           {
             name: "View Groups",
             short_name: "Groups",
             description: "View your expense groups",
             url: "/groups",
-            icons: [{ src: "only-logo.png", sizes: "96x96" }]
+            icons: [{ src: "/only-logo.png", sizes: "96x96" }]
           }
         ]
       },
