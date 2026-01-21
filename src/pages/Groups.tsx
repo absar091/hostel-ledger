@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Plus, Search, Filter, Eye, TrendingUp, TrendingDown } from "lucide-react";
+import { Users, Plus, Search, Filter, Eye, TrendingUp, TrendingDown, Star } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
@@ -25,6 +25,12 @@ const Groups = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSettlement, setShowSettlement] = useState(false);
   const [selectedSettlement, setSelectedSettlement] = useState<{ groupId: string; memberId: string; memberName: string } | null>(null);
+  const [activeFilter, setActiveFilter] = useState<"all" | "unsettled" | "favorites">("all");
+  const [favoriteGroups, setFavoriteGroups] = useState<string[]>(() => {
+    // Load favorites from localStorage
+    const saved = localStorage.getItem(`favoriteGroups_${user?.uid}`);
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Pre-calculate all group settlements
   const groupSettlementsMap = useMemo(() => {
@@ -80,6 +86,59 @@ const Groups = () => {
     }
   };
 
+  // Toggle favorite
+  const toggleFavorite = (groupId: string) => {
+    setFavoriteGroups(prev => {
+      const newFavorites = prev.includes(groupId)
+        ? prev.filter(id => id !== groupId)
+        : [...prev, groupId];
+      
+      // Save to localStorage
+      localStorage.setItem(`favoriteGroups_${user?.uid}`, JSON.stringify(newFavorites));
+      
+      return newFavorites;
+    });
+  };
+
+  // Filter and search groups
+  const filteredGroups = useMemo(() => {
+    let filtered = groups;
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(group => {
+        // Search in group name
+        if (group.name.toLowerCase().includes(query)) return true;
+        
+        // Search in member names
+        if (group.members.some(m => m.name.toLowerCase().includes(query))) return true;
+        
+        return false;
+      });
+    }
+
+    // Apply category filter
+    if (activeFilter === "unsettled") {
+      filtered = filtered.filter(group => {
+        const groupSettlements = groupSettlementsMap[group.id] || {};
+        let toReceive = 0;
+        let toPay = 0;
+        
+        Object.values(groupSettlements).forEach((settlement: any) => {
+          toReceive += settlement.toReceive || 0;
+          toPay += settlement.toPay || 0;
+        });
+        
+        return toReceive > 0 || toPay > 0;
+      });
+    } else if (activeFilter === "favorites") {
+      filtered = filtered.filter(group => favoriteGroups.includes(group.id));
+    }
+
+    return filtered;
+  }, [groups, searchQuery, activeFilter, groupSettlementsMap, favoriteGroups]);
+
   // Get gradient colors for group cards
   const getGroupGradient = (index: number) => {
     const gradients = [
@@ -128,14 +187,35 @@ const Groups = () => {
               </div>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-2 lg:pb-0 hide-scrollbar">
-              <button className="bg-white px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold text-slate-600 border border-slate-100 flex items-center gap-2 hover:bg-slate-50 transition-all whitespace-nowrap flex-shrink-0">
+              <button 
+                onClick={() => setActiveFilter("all")}
+                className={`px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold border flex items-center gap-2 transition-all whitespace-nowrap flex-shrink-0 ${
+                  activeFilter === "all"
+                    ? "bg-[#4a6850] text-white border-[#4a6850] shadow-lg"
+                    : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
+                }`}
+              >
                 <Filter className="w-3 lg:w-4 h-3 lg:h-4" />
-                Recent
+                All
               </button>
-              <button className="bg-white px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold text-slate-600 border border-slate-100 hover:bg-slate-50 transition-all whitespace-nowrap flex-shrink-0">
+              <button 
+                onClick={() => setActiveFilter("unsettled")}
+                className={`px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold border transition-all whitespace-nowrap flex-shrink-0 ${
+                  activeFilter === "unsettled"
+                    ? "bg-[#4a6850] text-white border-[#4a6850] shadow-lg"
+                    : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
+                }`}
+              >
                 Unsettled
               </button>
-              <button className="bg-white px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold text-slate-600 border border-slate-100 hover:bg-slate-50 transition-all whitespace-nowrap flex-shrink-0">
+              <button 
+                onClick={() => setActiveFilter("favorites")}
+                className={`px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold border transition-all whitespace-nowrap flex-shrink-0 ${
+                  activeFilter === "favorites"
+                    ? "bg-[#4a6850] text-white border-[#4a6850] shadow-lg"
+                    : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
+                }`}
+              >
                 Favorites
               </button>
             </div>
@@ -145,7 +225,7 @@ const Groups = () => {
         {/* Group Grid */}
         <div className="flex-1 overflow-y-auto p-4 lg:p-8 pt-4 pb-24 lg:pb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-            {groups.map((group, index) => {
+            {filteredGroups.map((group, index) => {
               const groupSettlements = groupSettlementsMap[group.id] || {};
               let toReceive = 0;
               let toPay = 0;
@@ -188,8 +268,25 @@ const Groups = () => {
                 >
                   {/* Header with gradient */}
                   <div className={`h-24 lg:h-32 w-full bg-gradient-to-br ${getGroupGradient(index)} relative`}>
-                    <div className="absolute top-3 lg:top-4 right-3 lg:right-4 bg-white/20 backdrop-blur-md px-2 lg:px-3 py-1 rounded-full text-[9px] lg:text-[10px] font-bold text-white uppercase tracking-wider">
-                      {isSettled ? "Settled" : "Active"}
+                    <div className="absolute top-3 lg:top-4 right-3 lg:right-4 flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(group.id);
+                        }}
+                        className="bg-white/20 backdrop-blur-md p-2 rounded-full hover:bg-white/30 transition-all active:scale-95"
+                      >
+                        <Star 
+                          className={`w-4 h-4 ${
+                            favoriteGroups.includes(group.id)
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-white"
+                          }`}
+                        />
+                      </button>
+                      <div className="bg-white/20 backdrop-blur-md px-2 lg:px-3 py-1 rounded-full text-[9px] lg:text-[10px] font-bold text-white uppercase tracking-wider">
+                        {isSettled ? "Settled" : "Active"}
+                      </div>
                     </div>
                   </div>
 
@@ -279,6 +376,34 @@ const Groups = () => {
           </div>
 
           {/* Empty State */}
+          {filteredGroups.length === 0 && groups.length > 0 && (
+            <div className="text-center py-8 lg:py-12 bg-white rounded-3xl border border-slate-100 shadow-sm">
+              <div className="w-16 lg:w-20 h-16 lg:h-20 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-4 lg:mb-6 shadow-lg">
+                <Search className="w-8 lg:w-10 h-8 lg:h-10 text-[#4a6850] font-bold" />
+              </div>
+              <h3 className="text-xl lg:text-2xl font-black text-gray-900 mb-2 lg:mb-3 tracking-tight px-4">No groups found</h3>
+              <p className="text-slate-500 mb-6 lg:mb-8 max-w-sm mx-auto leading-relaxed text-sm lg:text-base px-4">
+                {searchQuery 
+                  ? `No groups match "${searchQuery}". Try a different search term.`
+                  : activeFilter === "favorites"
+                  ? "You haven't marked any groups as favorites yet."
+                  : "All groups are settled up!"}
+              </p>
+              {(searchQuery || activeFilter !== "all") && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setActiveFilter("all");
+                  }}
+                  className="bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white px-6 lg:px-8 py-3 lg:py-4 rounded-2xl font-black hover:from-[#3d5643] hover:to-[#2f4336] hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-2 lg:gap-3 shadow-lg hover:shadow-xl text-sm lg:text-base"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Empty State - No groups at all */}
           {groups.length === 0 && (
             <div className="text-center py-8 lg:py-12 bg-white rounded-3xl border border-slate-100 shadow-sm">
               <div className="w-16 lg:w-20 h-16 lg:h-20 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-4 lg:mb-6 shadow-lg">

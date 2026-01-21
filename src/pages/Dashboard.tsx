@@ -17,7 +17,7 @@ import OnboardingTour from "@/components/OnboardingTour";
 import PageGuide from "@/components/PageGuide";
 import ShareButton from "@/components/ShareButton";
 import { toast } from "sonner";
-import Tooltip from "@/components/Tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData, type Transaction } from "@/contexts/FirebaseDataContext";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
@@ -610,16 +610,34 @@ const Dashboard = () => {
 
         <main className="px-6 lg:px-8 space-y-8 lg:max-w-7xl lg:mx-auto">
         {/* Greeting Section */}
-        <section className="mt-8 lg:mt-12">
+        <section className="mt-12 lg:mt-16">
           <p className="text-gray-500 font-semibold text-sm">Welcome back,</p>
           <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-gray-900">{user?.name || "User"}</h2>
         </section>
         {/* PRIMARY CARD: Enhanced with last transaction time */}
-        <section className="mesh-gradient rounded-3xl p-5 lg:p-6 text-white shadow-2xl shadow-[#4a6850]/30 relative mt-6 lg:mt-8">
+        <section className="mesh-gradient rounded-3xl p-5 lg:p-6 text-white shadow-2xl shadow-[#4a6850]/30 relative mt-8 lg:mt-12">
           <div className="relative z-10">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-white/70 text-[10px] lg:text-xs font-black uppercase tracking-wider">Available Balance</p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p className="text-white/70 text-[10px] lg:text-xs font-black uppercase tracking-wider cursor-help inline-flex items-center gap-1.5 hover:text-white/90 transition-colors">
+                      Available Balance
+                      <span className="w-4 h-4 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[10px] hover:bg-white/25 hover:scale-110 transition-all">?</span>
+                    </p>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center flex-shrink-0 shadow-lg">
+                        <span className="text-xl">💰</span>
+                      </div>
+                      <div>
+                        <h4 className="font-black text-sm mb-1.5 text-gray-900">Available Balance</h4>
+                        <p className="text-xs leading-relaxed text-gray-600 font-medium">Your current wallet balance that you can spend right now. This doesn't include pending settlements.</p>
+                      </div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
                 <h3 className="text-3xl lg:text-4xl font-black mt-1 tracking-tighter text-white tabular-nums">Rs {walletBalance.toLocaleString()}</h3>
                 {/* Last transaction time - smaller on mobile */}
                 <p className="text-white/40 text-[10px] lg:text-xs mt-1.5 lg:mt-2 font-semibold">{lastTransactionTime}</p>
@@ -640,11 +658,47 @@ const Dashboard = () => {
               boxShadow: 'inset 0 0 0 2px rgba(255, 255, 255, 0.2)'
             }}>
               <div className="flex-1 min-w-0">
-                <p className="text-white/60 text-[9px] lg:text-[10px] uppercase font-black mb-1">After settlements</p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p className="text-white/60 text-[9px] lg:text-[10px] uppercase font-black mb-1 cursor-help inline-flex items-center gap-1 hover:text-white/80 transition-colors">
+                      After settlements
+                      <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] hover:bg-white/25 hover:scale-110 transition-all">?</span>
+                    </p>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                        <span className="text-xl">📊</span>
+                      </div>
+                      <div>
+                        <h4 className="font-black text-sm mb-1.5 text-gray-900">After Settlements</h4>
+                        <p className="text-xs leading-relaxed text-gray-600 font-medium">Your balance after all pending payments are settled. This is what you'll have once everyone pays what they owe.</p>
+                      </div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
                 <p className="text-base lg:text-lg font-black text-white tabular-nums truncate tracking-tight">Rs {afterSettlementsBalance.toLocaleString()}</p>
               </div>
               <div className="text-right flex-shrink-0 min-w-0">
-                <p className="text-white/60 text-[9px] lg:text-[10px] uppercase font-black mb-1 truncate">Settlement Delta</p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p className="text-white/60 text-[9px] lg:text-[10px] uppercase font-black mb-1 truncate cursor-help inline-flex items-center gap-1 hover:text-white/80 transition-colors">
+                      Settlement Delta
+                      <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] hover:bg-white/25 hover:scale-110 transition-all">?</span>
+                    </p>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                        <span className="text-xl">📈</span>
+                      </div>
+                      <div>
+                        <h4 className="font-black text-sm mb-1.5 text-gray-900">Settlement Delta</h4>
+                        <p className="text-xs leading-relaxed text-gray-600 font-medium">The net amount you'll gain (+) or lose (-) after all settlements. Green means you'll receive money, red means you owe money.</p>
+                      </div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
                 <div className={`flex items-center justify-end ${settlementDelta > 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
                   {dayToDay.direction !== 'same' && (
                     <span className="text-xs lg:text-sm mr-1 flex-shrink-0">
@@ -662,77 +716,149 @@ const Dashboard = () => {
         {/* Mobile Version - Left-aligned with icon and arrow */}
         <section className="lg:hidden grid grid-cols-2 gap-4 mb-8">
           {/* To Receive Card - Mobile */}
-          <button 
-            onClick={() => navigate("/to-receive")}
-            className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-all text-left"
-          >
-            <div className="flex items-start mb-3">
-              <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
-                <ArrowDownLeft className="w-4 h-4 text-emerald-500" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button 
+                onClick={() => navigate("/to-receive")}
+                className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-all text-left relative group"
+              >
+                <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 dark:bg-emerald-900/30 flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity shadow-sm">
+                  <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-black">?</span>
+                </div>
+                <div className="flex items-start mb-3">
+                  <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                    <ArrowDownLeft className="w-4 h-4 text-emerald-500" />
+                  </div>
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">To Receive</p>
+                <h4 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tighter mb-1">Rs {totalToReceive.toLocaleString()}</h4>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-black flex items-center gap-1">
+                  Tap to view <span className="text-base">›</span>
+                </p>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <span className="text-xl">💵</span>
+                </div>
+                <div>
+                  <h4 className="font-black text-sm mb-1.5 text-gray-900">To Receive</h4>
+                  <p className="text-xs leading-relaxed text-gray-600 font-medium">Total amount others owe you from shared expenses. Tap to see who owes you and record payments.</p>
+                </div>
               </div>
-            </div>
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">To Receive</p>
-            <h4 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tighter mb-1">Rs {totalToReceive.toLocaleString()}</h4>
-            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-black flex items-center gap-1">
-              Tap to view <span className="text-base">›</span>
-            </p>
-          </button>
+            </TooltipContent>
+          </Tooltip>
           
           {/* You Owe Card - Mobile */}
-          <button 
-            onClick={() => navigate("/to-pay")}
-            className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-all text-left"
-          >
-            <div className="flex items-start mb-3">
-              <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center">
-                <ArrowUpRight className="w-4 h-4 text-rose-500" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button 
+                onClick={() => navigate("/to-pay")}
+                className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-all text-left relative group"
+              >
+                <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-gradient-to-br from-rose-100 to-orange-100 dark:bg-rose-900/30 flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity shadow-sm">
+                  <span className="text-[10px] text-rose-700 dark:text-rose-400 font-black">?</span>
+                </div>
+                <div className="flex items-start mb-3">
+                  <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center">
+                    <ArrowUpRight className="w-4 h-4 text-rose-500" />
+                  </div>
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">You Owe</p>
+                <h4 className="text-2xl font-black text-rose-500 tabular-nums tracking-tighter mb-1">Rs {totalToPay.toLocaleString()}</h4>
+                <p className="text-xs text-rose-500 font-black flex items-center gap-1">
+                  Tap to settle <span className="text-base">›</span>
+                </p>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <span className="text-xl">💳</span>
+                </div>
+                <div>
+                  <h4 className="font-black text-sm mb-1.5 text-gray-900">You Owe</h4>
+                  <p className="text-xs leading-relaxed text-gray-600 font-medium">Total amount you owe to others from shared expenses. Tap to see who you need to pay and settle your debts.</p>
+                </div>
               </div>
-            </div>
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">You Owe</p>
-            <h4 className="text-2xl font-black text-rose-500 tabular-nums tracking-tighter mb-1">Rs {totalToPay.toLocaleString()}</h4>
-            <p className="text-xs text-rose-500 font-black flex items-center gap-1">
-              Tap to settle <span className="text-base">›</span>
-            </p>
-          </button>
+            </TooltipContent>
+          </Tooltip>
         </section>
 
         {/* Desktop Version - Enhanced Cards */}
         <section className="hidden lg:grid grid-cols-2 gap-6 mb-12">
           {/* To Receive Card - Desktop */}
-          <button 
-            onClick={() => navigate("/to-receive")}
-            className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-2 border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-emerald-300 hover:scale-[1.02] active:scale-[0.98] transition-all text-left group"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                <span className="text-xs font-black uppercase tracking-widest text-slate-500">To Receive</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button 
+                onClick={() => navigate("/to-receive")}
+                className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-2 border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-emerald-300 hover:scale-[1.02] active:scale-[0.98] transition-all text-left group relative"
+              >
+                <div className="absolute top-4 right-4 w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">?</span>
+                </div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-500">To Receive</span>
+                  </div>
+                  <ArrowDownLeft className="w-6 h-6 text-emerald-500 group-hover:scale-110 transition-transform" />
+                </div>
+                <h4 className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tighter">Rs {totalToReceive.toLocaleString()}</h4>
+                <p className="text-sm text-slate-400 mt-1 font-semibold">
+                  {totalToReceive <= 0 ? 'All settled up! 🎉' : 'Click to view details'}
+                </p>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <span className="text-xl">💵</span>
+                </div>
+                <div>
+                  <h4 className="font-black text-sm mb-1.5 text-gray-900">To Receive</h4>
+                  <p className="text-xs leading-relaxed text-gray-600 font-medium">Total amount others owe you from shared expenses. Click to see who owes you and record payments.</p>
+                </div>
               </div>
-              <ArrowDownLeft className="w-6 h-6 text-emerald-500 group-hover:scale-110 transition-transform" />
-            </div>
-            <h4 className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tighter">Rs {totalToReceive.toLocaleString()}</h4>
-            <p className="text-sm text-slate-400 mt-1 font-semibold">
-              {totalToReceive <= 0 ? 'All settled up! 🎉' : 'Click to view details'}
-            </p>
-          </button>
+            </TooltipContent>
+          </Tooltip>
           
           {/* You Owe Card - Desktop */}
-          <button 
-            onClick={() => navigate("/to-pay")}
-            className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-2 border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-rose-300 hover:scale-[1.02] active:scale-[0.98] transition-all text-left group"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-rose-500"></div>
-                <span className="text-xs font-black uppercase tracking-widest text-slate-500">You Owe</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button 
+                onClick={() => navigate("/to-pay")}
+                className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-2 border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-rose-300 hover:scale-[1.02] active:scale-[0.98] transition-all text-left group relative"
+              >
+                <div className="absolute top-4 right-4 w-5 h-5 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-xs text-rose-600 dark:text-rose-400 font-bold">?</span>
+                </div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-500">You Owe</span>
+                  </div>
+                  <ArrowUpRight className="w-6 h-6 text-rose-500 group-hover:scale-110 transition-transform" />
+                </div>
+                <h4 className="text-3xl font-black text-rose-500 tabular-nums tracking-tighter">Rs {totalToPay.toLocaleString()}</h4>
+                <p className="text-sm font-black text-primary dark:text-emerald-400 mt-1 inline-flex items-center gap-1">
+                  View details <span className="text-xs">→</span>
+                </p>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <span className="text-xl">💳</span>
+                </div>
+                <div>
+                  <h4 className="font-black text-sm mb-1.5 text-gray-900">You Owe</h4>
+                  <p className="text-xs leading-relaxed text-gray-600 font-medium">Total amount you owe to others from shared expenses. Click to see who you need to pay and settle your debts.</p>
+                </div>
               </div>
-              <ArrowUpRight className="w-6 h-6 text-rose-500 group-hover:scale-110 transition-transform" />
-            </div>
-            <h4 className="text-3xl font-black text-rose-500 tabular-nums tracking-tighter">Rs {totalToPay.toLocaleString()}</h4>
-            <p className="text-sm font-black text-primary dark:text-emerald-400 mt-1 inline-flex items-center gap-1">
-              View details <span className="text-xs">→</span>
-            </p>
-          </button>
+            </TooltipContent>
+          </Tooltip>
         </section>
 
         {/* Quick Actions */}
