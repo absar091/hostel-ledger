@@ -673,14 +673,15 @@ const Dashboard = () => {
         </div>
         </header>
 
-        <main className="px-6 lg:px-8 space-y-8 lg:max-w-7xl lg:mx-auto">
-        {/* Greeting Section */}
-        <section className="mt-12 lg:mt-16">
+        <main className="px-6 lg:px-8 space-y-8 lg:max-w-7xl lg:mx-auto pb-24">
+        {/* Greeting Section - Moved down with more spacing */}
+        <section className="mt-8 lg:mt-12 mb-8 lg:mb-10">
           <p className="text-gray-500 font-semibold text-sm">Welcome back,</p>
           <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-gray-900">{user?.name || "User"}</h2>
         </section>
-        {/* PRIMARY CARD: Enhanced with last transaction time */}
-        <section className="mesh-gradient rounded-3xl p-5 lg:p-6 text-white shadow-2xl shadow-[#4a6850]/30 relative mt-8 lg:mt-12">
+        
+        {/* PRIMARY CARD: Enhanced with last transaction time - Starts from middle of screen */}
+        <section className="mesh-gradient rounded-3xl p-5 lg:p-6 text-white shadow-2xl shadow-[#4a6850]/30 relative">
           <div className="relative z-10">
             <div className="flex justify-between items-start">
               <div>
