@@ -2,10 +2,13 @@ import { useState, useMemo, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, ChevronRight, AlertCircle } from "lucide-react";
+import { Check, ChevronRight, AlertCircle, WifiOff } from "lucide-react";
 import Avatar from "./Avatar";
 import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
+import { saveOfflineExpense } from "@/lib/offlineDB";
+import { useOffline } from "@/hooks/useOffline";
+import { toast } from "sonner";
 // import { validateExpenseData, sanitizeString, sanitizeAmount } from "@/lib/validation";
 
 interface Member {
@@ -43,6 +46,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
   const [note, setNote] = useState("");
   const [place, setPlace] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const { offline, updatePendingCount } = useOffline();
 
   // Get members from selected group
   const members = useMemo(() => {
@@ -131,7 +135,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
     onClose();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Comprehensive validation before submission
     const expenseData = {
       groupId: selectedGroup,
@@ -168,8 +172,36 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
       return;
     }
 
-    // Clear errors and submit
+    // Clear errors
     setValidationErrors([]);
+
+    // OFFLINE MODE: Save to IndexedDB
+    if (offline) {
+      try {
+        await saveOfflineExpense({
+          groupId: selectedGroup,
+          amount: Math.max(0, Math.min(parseFloat(amount), 1000000)),
+          paidBy,
+          participants,
+          note: note.trim().substring(0, 200),
+          place: place.trim().substring(0, 100),
+        });
+        
+        await updatePendingCount();
+        toast.success("Saved offline — will sync when online", {
+          description: "Your expense is saved locally and will sync automatically",
+          icon: "📴",
+        });
+        handleClose();
+      } catch (error: any) {
+        toast.error("Failed to save offline", {
+          description: error.message || "Please try again",
+        });
+      }
+      return;
+    }
+
+    // ONLINE MODE: Submit normally
     onSubmit({
       groupId: selectedGroup,
       amount: Math.max(0, Math.min(parseFloat(amount), 1000000)),
@@ -207,6 +239,14 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
         <SheetHeader className="flex-shrink-0 mb-6 pt-2">
           {/* Handle Bar */}
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
+          
+          {/* Offline Indicator */}
+          {offline && (
+            <div className="mx-auto mb-4 inline-flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-full px-4 py-2">
+              <WifiOff className="w-4 h-4 text-orange-600" />
+              <span className="text-xs font-bold text-orange-700">Offline Mode - Will sync later</span>
+            </div>
+          )}
           
           <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">
             {step === 1 && "Select Group"}

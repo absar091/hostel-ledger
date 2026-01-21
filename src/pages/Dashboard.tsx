@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowUpRight, ArrowDownLeft, Plus, User, CreditCard, Users, Wallet, Send, X } from "@/lib/icons";
+import { ArrowUpRight, ArrowDownLeft, Plus, User, CreditCard, Users, Wallet, Send, X, WifiOff, RefreshCw } from "@/lib/icons";
 import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
@@ -22,12 +22,14 @@ import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData, type Transaction } from "@/contexts/FirebaseDataContext";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { useOffline } from "@/hooks/useOffline";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, getWalletBalance, getTotalToReceive, getTotalToPay, getSettlementDelta } = useFirebaseAuth();
   const { groups, createGroup, addExpense, recordPayment, addMoneyToWallet, payMyDebt, getAllTransactions } = useFirebaseData();
   const { isInstalled } = usePWAInstall();
+  const { offline, pendingCount, isSyncing, syncNow } = useOffline();
   const { 
     shouldShowOnboarding, 
     shouldShowPageGuide, 
@@ -256,6 +258,13 @@ const Dashboard = () => {
   };
   
   const handleReceivedMoney = () => {
+    if (offline) {
+      toast.error("Internet required for recording payments", {
+        description: "This feature needs an active connection",
+        icon: "📴",
+      });
+      return;
+    }
     if (groups.length === 0) {
       toast.error("Create a group first to record payments");
       setShowCreateGroup(true);
@@ -266,7 +275,16 @@ const Dashboard = () => {
     }
   };
   
-  const handleNewGroup = () => setShowCreateGroup(true);
+  const handleNewGroup = () => {
+    if (offline) {
+      toast.error("Internet required for creating groups", {
+        description: "This feature needs an active connection",
+        icon: "📴",
+      });
+      return;
+    }
+    setShowCreateGroup(true);
+  };
 
   const handleExpenseSubmit = async (data: {
     groupId: string;
@@ -588,6 +606,28 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {/* Offline/Sync Indicator */}
+          {offline ? (
+            <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 rounded-full px-3 py-1.5">
+              <WifiOff className="w-3.5 h-3.5 text-orange-600" />
+              <span className="text-xs font-bold text-orange-700">Offline</span>
+              {pendingCount > 0 && (
+                <span className="ml-1 bg-orange-600 text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center">
+                  {pendingCount}
+                </span>
+              )}
+            </div>
+          ) : pendingCount > 0 ? (
+            <button 
+              onClick={syncNow}
+              disabled={isSyncing}
+              className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1.5 hover:bg-blue-100 active:scale-95 transition-all disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-blue-600 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span className="text-xs font-bold text-blue-700">Sync {pendingCount}</span>
+            </button>
+          ) : null}
+          
           {isInstalled ? (
             <button className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600">
               <NotificationIcon />

@@ -16,13 +16,13 @@
             }
             .card {
                 margin: 0 8px !important;
-                border-radius: 12px !important;
+                border-radius: 24px !important;
             }
             .logo {
                 width: 140px !important;
             }
             .title {
-                font-size: 20px !important;
+                font-size: 22px !important;
                 padding: 20px 24px 0 !important;
             }
             .text {
@@ -33,18 +33,20 @@
                 padding: 16px 24px !important;
             }
             .details-box {
-                padding: 14px !important;
+                padding: 16px !important;
                 font-size: 13px !important;
+                border-radius: 20px !important;
             }
             .cta {
                 padding: 24px 24px !important;
             }
             .button {
-                padding: 12px 28px !important;
-                font-size: 14px !important;
+                padding: 14px 32px !important;
+                font-size: 15px !important;
                 display: inline-block !important;
                 width: auto !important;
-                min-width: 140px !important;
+                min-width: 160px !important;
+                border-radius: 24px !important;
             }
             .info {
                 padding: 16px 24px 0 !important;
@@ -61,88 +63,109 @@
         }
     </style>
 </head>
-<body style="margin:0;padding:0;background:#eafaf3;font-family:Arial, Helvetica, sans-serif;">
+<body style="margin:0;padding:0;background:#F8F9FA;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
     <table width="100%" cellpadding="0" cellspacing="0" class="container">
         <tr>
             <td align="center" class="content" style="padding:40px 16px;">
                 <!-- Card -->
-                <table width="600" cellpadding="0" cellspacing="0" class="card" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;box-shadow:0 8px 30px rgba(16,185,129,0.12);overflow:hidden;">
+                <table width="600" cellpadding="0" cellspacing="0" class="card" style="max-width:600px;width:100%;background:#ffffff;border-radius:32px;box-shadow:0 25px 70px rgba(74,104,80,0.15);overflow:hidden;border:1px solid rgba(74,104,80,0.1);border-top:4px solid transparent;border-image:linear-gradient(90deg,#2f4336,#4a6850,#2f4336) 1;border-image-slice:1 0 0 0;">
                     <!-- Logo -->
                     <tr>
-                        <td align="center" style="padding:32px 24px 16px;">
+                        <td align="center" style="padding:40px 32px 20px;">
                             <img src="https://hostel-ledger.vercel.app/only-logo.png" alt="Hostel Ledger" class="logo" width="170" style="max-width:100%;height:auto;"/>
                         </td>
                     </tr>
                     <!-- Divider -->
                     <tr>
-                        <td style="padding:0 32px;">
-                            <div style="height:1px;background:#e5f4ee;"></div>
+                        <td style="padding:0 40px;">
+                            <div style="height:1px;background:rgba(74,104,80,0.1);"></div>
                         </td>
                     </tr>
                     <!-- Title -->
                     <tr>
-                        <td class="title" style="padding:24px 32px 0;font-size:22px;font-weight:600;color:#064e3b;">
-                            Transaction alert
+                        <td class="title" style="padding:28px 40px 0;font-size:26px;font-weight:700;color:#1f2937;letter-spacing:-0.02em;">
+                            Transaction Alert
                         </td>
                     </tr>
                     <!-- Intro -->
                     <tr>
-                        <td class="text" style="padding:14px 32px 0;font-size:15px;color:#065f46;line-height:1.7;">
+                        <td class="text" style="padding:16px 40px 0;font-size:15px;color:#4b5563;line-height:1.7;">
                             Hello {{USER_NAME}},<br><br>
-                            A new transaction has been recorded on your <strong>Hostel Ledger</strong> account.
+                            A new transaction has been recorded on your <strong style="color:#1f2937;">Hostel Ledger</strong> account.
                         </td>
                     </tr>
                     <!-- Transaction Details -->
                     <tr>
-                        <td class="details" style="padding:20px 32px;">
-                            <div class="details-box" style="background:#ecfdf5;border:1px solid #d1fae5;border-radius:12px;padding:16px;font-size:14px;color:#065f46;line-height:1.7;">
-                                <strong>Type:</strong> {{TRANSACTION_TYPE}}<br>
-                                <strong>Amount:</strong> {{AMOUNT}}<br>
-                                <strong>Group:</strong> {{GROUP_NAME}}<br>
-                                <strong>Date:</strong> {{DATE}}<br>
-                                <strong>Description:</strong> {{DESCRIPTION}}
+                        <td class="details" style="padding:24px 40px;">
+                            <div class="details-box" style="background:linear-gradient(135deg,rgba(74,104,80,0.05),rgba(74,104,80,0.08));border:1px solid rgba(74,104,80,0.15);border-radius:24px;padding:20px;font-size:14px;color:#4b5563;line-height:1.8;">
+                                <div style="margin-bottom:12px;">
+                                    <strong style="color:#1f2937;font-weight:600;">Type:</strong> 
+                                    <span style="color:#4a6850;font-weight:600;">{{TRANSACTION_TYPE}}</span>
+                                </div>
+                                <div style="margin-bottom:12px;">
+                                    <strong style="color:#1f2937;font-weight:600;">Amount:</strong> 
+                                    <span style="color:#4a6850;font-weight:700;font-size:16px;">{{AMOUNT}}</span>
+                                </div>
+                                <div style="margin-bottom:12px;">
+                                    <strong style="color:#1f2937;font-weight:600;">Group:</strong> 
+                                    <span style="color:#4b5563;">{{GROUP_NAME}}</span>
+                                </div>
+                                <div style="margin-bottom:12px;">
+                                    <strong style="color:#1f2937;font-weight:600;">Date:</strong> 
+                                    <span style="color:#4b5563;">{{DATE}}</span>
+                                </div>
+                                <div>
+                                    <strong style="color:#1f2937;font-weight:600;">Description:</strong> 
+                                    <span style="color:#4b5563;">{{DESCRIPTION}}</span>
+                                </div>
                             </div>
                         </td>
                     </tr>
                     <!-- Balance Info -->
                     <tr>
-                        <td class="text" style="padding:0 32px;font-size:14px;color:#047857;line-height:1.6;">
+                        <td class="text" style="padding:0 40px;font-size:14px;color:#4b5563;line-height:1.7;">
                             This transaction has been successfully added and reflected in your balances. You can review full details anytime in the app.
                         </td>
                     </tr>
                     <!-- CTA -->
                     <tr>
-                        <td align="center" class="cta" style="padding:28px 32px;">
-                            <a href="https://hostel-ledger.vercel.app" class="button" style="background:#34d399;color:#064e3b;padding:14px 34px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block;text-align:center;min-width:120px;">
+                        <td align="center" class="cta" style="padding:32px 40px;">
+                            <a href="https://hostel-ledger.vercel.app" class="button" style="background:linear-gradient(135deg,#4a6850,#3d5643);color:#ffffff;padding:16px 40px;border-radius:28px;text-decoration:none;font-weight:700;display:inline-block;text-align:center;min-width:180px;box-shadow:0 8px 24px rgba(74,104,80,0.25);letter-spacing:-0.01em;">
                                 View Transaction
                             </a>
                         </td>
                     </tr>
                     <!-- Info Note -->
                     <tr>
-                        <td class="info" style="padding:18px 32px 0;font-size:13px;color:#059669;line-height:1.6;">
-                            If you don't recognize this transaction, please review it in the app or contact your group members for clarification.
+                        <td style="padding:0 40px;">
+                            <div style="background:rgba(74,104,80,0.05);border-left:3px solid #4a6850;border-radius:12px;padding:16px 20px;">
+                                <p style="margin:0;font-size:13px;color:#4b5563;line-height:1.6;">
+                                    <strong style="color:#1f2937;font-weight:600;">💡 Tip:</strong> If you don't recognize this transaction, please review it in the app or contact your group members for clarification.
+                                </p>
+                            </div>
                         </td>
                     </tr>
                     <!-- Legal -->
                     <tr>
-                        <td class="legal" style="padding:20px 32px 0;font-size:12px;color:#047857;line-height:1.6;">
+                        <td class="legal" style="padding:24px 40px 0;font-size:12px;color:#6b7280;line-height:1.6;text-align:center;">
                             By using Hostel Ledger, you agree to our 
-                            <a href="https://hostel-ledger.vercel.app/terms" style="color:#10b981;text-decoration:none;font-weight:600;">Terms & Conditions</a> 
+                            <a href="https://hostel-ledger.vercel.app/terms" style="color:#4a6850;text-decoration:none;font-weight:600;">Terms & Conditions</a> 
                             and 
-                            <a href="https://hostel-ledger.vercel.app/privacy" style="color:#10b981;text-decoration:none;font-weight:600;">Privacy Policy</a>.
+                            <a href="https://hostel-ledger.vercel.app/privacy" style="color:#4a6850;text-decoration:none;font-weight:600;">Privacy Policy</a>.
                         </td>
                     </tr>
                     <!-- Footer -->
                     <tr>
-                        <td class="footer" style="padding:28px 32px 32px;border-top:1px solid #e5f4ee;font-size:12px;color:#6b7280;text-align:center;">
-                            <div style="margin-bottom:12px;">
+                        <td class="footer" style="padding:32px 40px 40px;border-top:1px solid rgba(74,104,80,0.1);font-size:12px;color:#6b7280;text-align:center;">
+                            <div style="margin-bottom:16px;">
                                 <a href="https://aarx.online" target="_blank" style="display:inline-block;">
-                                    <img src="https://hostel-ledger.vercel.app/aarx-logo.webp" alt="AARX Labs" style="height:32px;width:auto;display:inline-block;"/>
+                                    <img src="https://hostel-ledger.vercel.app/aarx-logo.webp" alt="AARX Labs" style="height:32px;width:auto;display:inline-block;opacity:0.7;"/>
                                 </a>
                             </div>
-                            © 2026 Hostel Ledger. All rights reserved.<br>
-                            <span style="font-size:11px;color:#9ca3af;">This is an automated transaction notification</span>
+                            <div style="color:#9ca3af;font-size:11px;line-height:1.6;">
+                                © 2026 Hostel Ledger. All rights reserved.<br>
+                                <span style="font-size:10px;">This is an automated transaction notification</span>
+                            </div>
                         </td>
                     </tr>
                 </table>

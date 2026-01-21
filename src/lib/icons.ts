@@ -35,5 +35,7 @@ export {
   X,
   Loader2,
   Eye,
-  EyeOff
+  EyeOff,
+  WifiOff,
+  RefreshCw
 } from "lucide-react";
