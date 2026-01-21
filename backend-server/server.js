@@ -155,7 +155,9 @@ app.get('/health', (req, res) => {
     message: 'Hostel Ledger Email API is running',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    version: '2.0.0-push-notifications', // Updated version to verify deployment
+    pushEndpointsActive: true
   });
 });
 
@@ -699,6 +701,7 @@ app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
 
 // ============================================
 // PUSH NOTIFICATION ENDPOINTS
+// Last updated: 2026-01-21 - Force rebuild v2
 // ============================================
 
 // Store push subscriptions (in production, use Firebase Realtime Database)
