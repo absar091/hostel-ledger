@@ -109,7 +109,7 @@ export const usePushNotifications = () => {
         applicationServerKey: urlBase64ToUint8Array(
           // This is a placeholder - replace with your actual VAPID public key
           "BEl62iUYgUivxIkv69yViEuiBIa-Ib37J8xQmrEcxaY3QFkVIYFCPJmuQqcEH4KGfh2V01yCKTnT7ksEoXLfDgo"
-        ),
+        ) as BufferSource,
       });
 
       logger.info("Push notification subscription created", { 
