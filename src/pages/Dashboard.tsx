@@ -33,6 +33,13 @@ const Dashboard = () => {
   const { isInstalled } = usePWAInstall();
   const { offline, pendingCount, isSyncing, syncNow } = useOffline();
   const { 
+    isSupported: notificationsSupported, 
+    permission: notificationPermission,
+    requestPermission,
+    subscribe: subscribeToPush,
+    registerPeriodicSync
+  } = usePushNotifications();
+  const { 
     shouldShowOnboarding, 
     shouldShowPageGuide, 
     markOnboardingComplete, 
@@ -65,6 +72,26 @@ const Dashboard = () => {
       setShowDashboardGuide(true);
     }
   }, [shouldShowOnboarding, shouldShowPageGuide]);
+
+  // Request notification permissions when app is installed
+  useEffect(() => {
+    const setupNotifications = async () => {
+      if (isInstalled && notificationsSupported && notificationPermission === 'default') {
+        // Wait a bit before asking for permissions (better UX)
+        setTimeout(async () => {
+          const granted = await requestPermission();
+          if (granted) {
+            // Subscribe to push notifications
+            await subscribeToPush();
+            // Register periodic sync
+            await registerPeriodicSync();
+          }
+        }, 2000);
+      }
+    };
+
+    setupNotifications();
+  }, [isInstalled, notificationsSupported, notificationPermission, requestPermission, subscribeToPush, registerPeriodicSync]);
 
   // Onboarding steps
   const onboardingSteps = [
