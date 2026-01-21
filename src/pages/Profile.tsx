@@ -209,39 +209,39 @@ const Profile = () => {
       </div>
 
       {/* Header - iPhone Style Enhanced */}
-      <header className="px-4 pt-8 pb-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Profile</h1>
-          <div className="flex items-center gap-3">
+      <header className="px-4 pt-6 lg:pt-8 pb-4 lg:pb-6">
+        <div className="flex items-center justify-between mb-4 lg:mb-6">
+          <h1 className="text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">Profile</h1>
+          <div className="flex items-center gap-2 lg:gap-3">
             <ShareButton variant="icon" />
             <PWAInstallButton />
           </div>
         </div>
 
         {/* Profile Card - iPhone Style with #4a6850 */}
-        <div className="bg-white rounded-3xl p-7 shadow-[0_25px_70px_rgba(74,104,80,0.15)] animate-fade-in border border-[#4a6850]/10">
-          <div className="flex items-start gap-5 mb-5">
+        <div className="bg-white rounded-3xl p-5 lg:p-7 shadow-[0_25px_70px_rgba(74,104,80,0.15)] animate-fade-in border border-[#4a6850]/10">
+          <div className="flex items-start gap-4 lg:gap-5 mb-4 lg:mb-5">
             {/* Avatar - Enhanced iPhone Style */}
             <button
               onClick={handlePhotoClick}
               disabled={isUploadingPhoto}
-              className="relative group cursor-pointer"
+              className="relative group cursor-pointer flex-shrink-0"
             >
               <div className="relative">
                 <Avatar name={user?.name || "User"} photoURL={user?.photoURL} size="xl" />
                 
                 {/* Status Indicator */}
-                <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-full flex items-center justify-center shadow-lg border-3 border-white">
-                  <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
+                <div className="absolute -bottom-1 -right-1 w-6 lg:w-7 h-6 lg:h-7 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-full flex items-center justify-center shadow-lg border-2 lg:border-3 border-white">
+                  <div className="w-2 lg:w-2.5 h-2 lg:h-2.5 bg-white rounded-full"></div>
                 </div>
               </div>
               
               {/* Camera Icon Overlay - Enhanced */}
               <div className="absolute inset-0 bg-[#4a6850]/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
                 {isUploadingPhoto ? (
-                  <Loader2 className="w-7 h-7 text-white animate-spin" />
+                  <Loader2 className="w-6 lg:w-7 h-6 lg:h-7 text-white animate-spin" />
                 ) : (
-                  <Camera className="w-7 h-7 text-white font-bold" />
+                  <Camera className="w-6 lg:w-7 h-6 lg:h-7 text-white font-bold" />
                 )}
               </div>
             </button>
@@ -255,37 +255,37 @@ const Profile = () => {
               className="hidden"
             />
 
-            <div className="flex-1">
-              <h2 className="text-2xl font-black text-gray-900 tracking-tight mb-1">{user?.name}</h2>
-              <p className="text-[#4a6850]/80 text-sm flex items-center gap-2 mt-1 font-bold">
-                <Mail className="w-4 h-4" />
-                {user?.email}
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl lg:text-2xl font-black text-gray-900 tracking-tight mb-0.5 lg:mb-1 truncate">{user?.name}</h2>
+              <p className="text-[#4a6850]/80 text-xs lg:text-sm flex items-center gap-2 mt-1 font-bold truncate">
+                <Mail className="w-3.5 lg:w-4 h-3.5 lg:h-4 flex-shrink-0" />
+                <span className="truncate">{user?.email}</span>
               </p>
               {user?.phone && (
-                <p className="text-[#4a6850]/80 text-sm flex items-center gap-2 mt-1 font-bold">
-                  <Phone className="w-4 h-4" />
+                <p className="text-[#4a6850]/80 text-xs lg:text-sm flex items-center gap-2 mt-1 font-bold">
+                  <Phone className="w-3.5 lg:w-4 h-3.5 lg:h-4 flex-shrink-0" />
                   {user.phone}
                 </p>
               )}
-              <p className="text-[#4a6850]/60 text-xs flex items-center gap-2 mt-3 font-black">
-                <Calendar className="w-4 h-4" />
+              <p className="text-[#4a6850]/60 text-[10px] lg:text-xs flex items-center gap-2 mt-2 lg:mt-3 font-black">
+                <Calendar className="w-3.5 lg:w-4 h-3.5 lg:h-4 flex-shrink-0" />
                 Member since {memberSince}
               </p>
             </div>
           </div>
           
           {/* Quick Stats - Enhanced iPhone Style */}
-          <div className="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-[#4a6850]/10">
-            <div className="bg-[#4a6850]/5 rounded-2xl p-4 border border-[#4a6850]/10">
-              <p className="text-[#4a6850]/70 text-xs font-black uppercase tracking-wide">Email Status</p>
-              <p className="font-black text-sm flex items-center gap-2 mt-2 text-[#4a6850]">
-                <Check className="w-4 h-4" />
+          <div className="grid grid-cols-2 gap-3 lg:gap-4 mt-4 lg:mt-5 pt-4 lg:pt-5 border-t border-[#4a6850]/10">
+            <div className="bg-[#4a6850]/5 rounded-2xl p-3 lg:p-4 border border-[#4a6850]/10">
+              <p className="text-[#4a6850]/70 text-[10px] lg:text-xs font-black uppercase tracking-wide">Email Status</p>
+              <p className="font-black text-xs lg:text-sm flex items-center gap-2 mt-1.5 lg:mt-2 text-[#4a6850]">
+                <Check className="w-3.5 lg:w-4 h-3.5 lg:h-4" />
                 Verified
               </p>
             </div>
-            <div className="bg-[#4a6850]/5 rounded-2xl p-4 border border-[#4a6850]/10">
-              <p className="text-[#4a6850]/70 text-xs font-black uppercase tracking-wide">Payment Methods</p>
-              <p className="font-black text-sm mt-2 text-gray-900">
+            <div className="bg-[#4a6850]/5 rounded-2xl p-3 lg:p-4 border border-[#4a6850]/10">
+              <p className="text-[#4a6850]/70 text-[10px] lg:text-xs font-black uppercase tracking-wide">Payment Methods</p>
+              <p className="font-black text-xs lg:text-sm mt-1.5 lg:mt-2 text-gray-900">
                 {hasPaymentDetails ? Object.keys(user?.paymentDetails || {}).length : 0} Added
               </p>
             </div>

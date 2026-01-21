@@ -263,9 +263,9 @@ const GroupDetail = () => {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">{group.emoji}</span>
-                <h1 className="text-2xl font-black text-gray-900 tracking-tight truncate">{group.name}</h1>
+                <h1 className="text-xl font-black text-gray-900 tracking-tight truncate">{group.name}</h1>
               </div>
-              <p className="text-sm text-[#4a6850]/80 font-bold mt-1">
+              <p className="text-xs text-[#4a6850]/80 font-bold mt-1">
                 {group.members.length} members {totalPending > 0 && `• Rs ${totalPending.toLocaleString()} pending`}
               </p>
             </div>
@@ -329,11 +329,11 @@ const GroupDetail = () => {
               </div>
             ) : (
               <div className="text-center py-12 bg-white rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
-                <div className="w-16 h-16 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-[#4a6850]/20">
-                  <Plus className="w-8 h-8 text-[#4a6850] font-bold" />
+                <div className="w-14 h-14 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-3 border border-[#4a6850]/20">
+                  <Plus className="w-7 h-7 text-[#4a6850] font-bold" />
                 </div>
-                <h3 className="text-lg font-black text-gray-900 mb-2 tracking-tight">No transactions yet</h3>
-                <p className="text-[#4a6850]/80 text-sm font-bold">
+                <h3 className="text-base font-black text-gray-900 mb-1.5 tracking-tight">No transactions yet</h3>
+                <p className="text-[#4a6850]/80 text-xs font-bold">
                   Add an expense to get started
                 </p>
               </div>
@@ -376,14 +376,14 @@ const GroupDetail = () => {
                       )}
                     </div>
                     <div className="flex-1">
-                      <div className="font-black text-gray-900 tracking-tight text-lg">{member.name}</div>
-                      <div className="text-sm mt-1">
+                      <div className="font-black text-gray-900 tracking-tight text-base">{member.name}</div>
+                      <div className="text-xs mt-1">
                         {isYou ? (
                           <span className="text-[#4a6850] font-black">You</span>
                         ) : isSettled ? (
                           <span className="text-[#4a6850] font-black">✅ All settled</span>
                         ) : (
-                          <div className="space-y-1">
+                          <div className="space-y-0.5">
                             {thisMemberOwesYou && (
                               <div className="text-[#4a6850] font-black">
                                 Owes you Rs {memberSettlement.toReceive.toLocaleString()}
@@ -434,45 +434,45 @@ const GroupDetail = () => {
         {activeTab === "summary" && (
           <div className="space-y-6 animate-fade-in">
             {/* Total Spent Card - iPhone Style */}
-            <div className="bg-gradient-to-br from-[#4a6850] via-[#3d5643] to-[#4a6850] rounded-3xl p-7 shadow-[0_25px_70px_rgba(74,104,80,0.4)] text-white border-t-2 border-[#5a7860]/40">
+            <div className="bg-gradient-to-br from-[#4a6850] via-[#3d5643] to-[#4a6850] rounded-3xl p-6 shadow-[0_25px_70px_rgba(74,104,80,0.4)] text-white border-t-2 border-[#5a7860]/40">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-white/25 rounded-2xl flex items-center justify-center shadow-lg">
-                  <span className="text-2xl">💰</span>
+                <div className="w-10 h-10 bg-white/25 rounded-2xl flex items-center justify-center shadow-lg">
+                  <span className="text-xl">💰</span>
                 </div>
                 <div>
-                  <div className="text-sm text-white/90 font-black tracking-wide uppercase">Group Stats</div>
-                  <div className="text-xs text-white/80 font-bold">Total activity overview</div>
+                  <div className="text-xs text-white/90 font-black tracking-wide uppercase">Group Stats</div>
+                  <div className="text-[10px] text-white/80 font-bold">Total activity overview</div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-4xl font-black text-white mb-2 tracking-tighter tabular-nums drop-shadow-sm">
+                  <div className="text-3xl font-black text-white mb-1.5 tracking-tighter tabular-nums drop-shadow-sm">
                     Rs {totalSpent.toLocaleString()}
                   </div>
-                  <div className="text-sm text-white/90 font-bold">Total Spent</div>
+                  <div className="text-xs text-white/90 font-bold">Total Spent</div>
                 </div>
                 <div>
-                  <div className="text-4xl font-black text-white mb-2 tracking-tighter tabular-nums drop-shadow-sm">
+                  <div className="text-3xl font-black text-white mb-1.5 tracking-tighter tabular-nums drop-shadow-sm">
                     {expenseCount}
                   </div>
-                  <div className="text-sm text-white/90 font-bold">Expenses</div>
+                  <div className="text-xs text-white/90 font-bold">Expenses</div>
                 </div>
               </div>
             </div>
             
             {/* Top Contributor Card - iPhone Style */}
-            <div className="bg-white rounded-3xl p-6 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
+            <div className="bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-2xl flex items-center justify-center">
-                  <span className="text-lg">🏆</span>
+                <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-2xl flex items-center justify-center">
+                  <span className="text-base">🏆</span>
                 </div>
-                <h3 className="font-black text-gray-900 text-lg tracking-tight">Top Contributor</h3>
+                <h3 className="font-black text-gray-900 text-base tracking-tight">Top Contributor</h3>
               </div>
               <div className="flex items-center gap-4">
                 <Avatar name={topSpender.name} size="lg" />
-                <div className="flex-1">
-                  <div className="font-black text-gray-900 text-xl mb-1 tracking-tight">{topSpender.name}</div>
-                  <div className="text-sm text-[#4a6850] font-bold">
+                <div className="flex-1 min-w-0">
+                  <div className="font-black text-gray-900 text-base mb-1 tracking-tight truncate">{topSpender.name}</div>
+                  <div className="text-xs text-[#4a6850] font-bold">
                     {topSpender.totalPaid > 0 
                       ? `Paid Rs ${topSpender.totalPaid.toLocaleString()} in expenses` 
                       : `No expenses paid yet`}
@@ -482,24 +482,24 @@ const GroupDetail = () => {
             </div>
 
             {/* Members Overview Card - iPhone Style */}
-            <div className="bg-white rounded-3xl p-6 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
+            <div className="bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-2xl flex items-center justify-center">
-                  <Users className="w-5 h-5 text-[#4a6850] font-bold" />
+                <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-2xl flex items-center justify-center">
+                  <Users className="w-4 h-4 text-[#4a6850] font-bold" />
                 </div>
-                <h3 className="font-black text-gray-900 text-lg tracking-tight">Members</h3>
+                <h3 className="font-black text-gray-900 text-base tracking-tight">Members</h3>
               </div>
-              <div className="flex -space-x-3 mb-4">
+              <div className="flex -space-x-3 mb-3">
                 {group.members.slice(0, 5).map((member) => (
                   <Avatar key={member.id} name={member.name} size="md" />
                 ))}
                 {group.members.length > 5 && (
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 border-2 border-white flex items-center justify-center text-sm font-black text-[#4a6850] shadow-lg">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 border-2 border-white flex items-center justify-center text-xs font-black text-[#4a6850] shadow-lg">
                     +{group.members.length - 5}
                   </div>
                 )}
               </div>
-              <div className="text-sm text-[#4a6850]/80 font-bold">
+              <div className="text-xs text-[#4a6850]/80 font-bold">
                 {group.members.length} members in this group
               </div>
             </div>

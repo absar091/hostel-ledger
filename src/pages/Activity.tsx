@@ -186,33 +186,33 @@ const Activity = () => {
 
       {/* Header - iPhone Style Enhanced */}
       <div className="px-6 pt-8 pb-6">
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-4 mb-6 lg:mb-8">
           <div>
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">Activity Center</h1>
-            <p className="text-sm text-[#4a6850]/80 font-bold">Track all your transactions</p>
+            <h1 className="text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">Activity Center</h1>
+            <p className="text-xs lg:text-sm text-[#4a6850]/80 font-bold">Track all your transactions</p>
           </div>
         </div>
 
         {/* Statistics Cards - iPhone Style Enhanced */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <div className="bg-white rounded-3xl p-5 border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
-            <div className="text-xs text-[#4a6850]/70 mb-2 font-black uppercase tracking-widest">Total Transactions</div>
-            <div className="text-3xl font-black text-gray-900 tracking-tight">{stats.totalTransactions}</div>
+        <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-6 lg:mb-8">
+          <div className="bg-white rounded-3xl p-4 lg:p-5 border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
+            <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-1.5 lg:mb-2 font-black uppercase tracking-widest">Total Transactions</div>
+            <div className="text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">{stats.totalTransactions}</div>
           </div>
           
-          <div className="bg-white rounded-3xl p-5 border border-red-500/10 shadow-[0_20px_60px_rgba(239,68,68,0.08)]">
-            <div className="text-xs text-red-500/70 mb-2 font-black uppercase tracking-widest">Total Spent</div>
-            <div className="text-3xl font-black text-red-600 tracking-tight tabular-nums">Rs {stats.totalSpent.toLocaleString()}</div>
+          <div className="bg-white rounded-3xl p-4 lg:p-5 border border-red-500/10 shadow-[0_20px_60px_rgba(239,68,68,0.08)]">
+            <div className="text-[10px] lg:text-xs text-red-500/70 mb-1.5 lg:mb-2 font-black uppercase tracking-widest">Total Spent</div>
+            <div className="text-2xl lg:text-3xl font-black text-red-600 tracking-tight tabular-nums">Rs {stats.totalSpent.toLocaleString()}</div>
           </div>
           
-          <div className="bg-white rounded-3xl p-5 border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
-            <div className="text-xs text-[#4a6850]/70 mb-2 font-black uppercase tracking-widest">Total Received</div>
-            <div className="text-3xl font-black text-[#4a6850] tracking-tight tabular-nums">Rs {stats.totalReceived.toLocaleString()}</div>
+          <div className="bg-white rounded-3xl p-4 lg:p-5 border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
+            <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-1.5 lg:mb-2 font-black uppercase tracking-widest">Total Received</div>
+            <div className="text-2xl lg:text-3xl font-black text-[#4a6850] tracking-tight tabular-nums">Rs {stats.totalReceived.toLocaleString()}</div>
           </div>
           
-          <div className="bg-white rounded-3xl p-5 border border-blue-500/10 shadow-[0_20px_60px_rgba(59,130,246,0.08)]">
-            <div className="text-xs text-blue-500/70 mb-2 font-black uppercase tracking-widest">Money Added</div>
-            <div className="text-3xl font-black text-blue-600 tracking-tight tabular-nums">Rs {stats.totalAdded.toLocaleString()}</div>
+          <div className="bg-white rounded-3xl p-4 lg:p-5 border border-blue-500/10 shadow-[0_20px_60px_rgba(59,130,246,0.08)]">
+            <div className="text-[10px] lg:text-xs text-blue-500/70 mb-1.5 lg:mb-2 font-black uppercase tracking-widest">Money Added</div>
+            <div className="text-2xl lg:text-3xl font-black text-blue-600 tracking-tight tabular-nums">Rs {stats.totalAdded.toLocaleString()}</div>
           </div>
         </div>
 
@@ -332,13 +332,13 @@ const Activity = () => {
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-lg group-hover:scale-105 transition-transform ${getTransactionColor(transaction.type)}`}>
+                    <div className={`w-11 lg:w-12 h-11 lg:h-12 rounded-2xl flex items-center justify-center border shadow-lg group-hover:scale-105 transition-transform ${getTransactionColor(transaction.type)}`}>
                       {getTransactionIcon(transaction.type)}
                     </div>
                     
-                    <div className="flex-1">
-                      <div className="font-black text-gray-900 text-lg tracking-tight mb-1">{transaction.title}</div>
-                      <div className="text-sm text-[#4a6850]/80 font-bold">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-black text-gray-900 text-base lg:text-lg tracking-tight mb-0.5 lg:mb-1 truncate">{transaction.title}</div>
+                      <div className="text-xs lg:text-sm text-[#4a6850]/80 font-bold truncate">
                         {transactionGroup && (
                           <span className="text-[#4a6850] font-black">{transactionGroup.name} • </span>
                         )}
@@ -348,19 +348,19 @@ const Activity = () => {
                         )}
                       </div>
                       {transaction.note && (
-                        <div className="text-xs text-gray-500 mt-1 font-medium">{transaction.note}</div>
+                        <div className="text-[10px] lg:text-xs text-gray-500 mt-0.5 lg:mt-1 font-medium truncate">{transaction.note}</div>
                       )}
                     </div>
                     
-                    <div className="text-right">
-                      <div className={`font-black text-xl tabular-nums tracking-tight ${
+                    <div className="text-right flex-shrink-0">
+                      <div className={`font-black text-base lg:text-xl tabular-nums tracking-tight ${
                         transaction.type === "expense" ? "text-red-600" : 
                         transaction.type === "payment" ? "text-[#4a6850]" : "text-blue-600"
                       }`}>
                         {transaction.type === "expense" ? "-" : "+"}Rs {transaction.amount.toLocaleString()}
                       </div>
                       {transaction.method && (
-                        <div className="text-xs text-gray-500 mt-1 font-bold capitalize">{transaction.method}</div>
+                        <div className="text-[10px] lg:text-xs text-gray-500 mt-0.5 lg:mt-1 font-bold capitalize">{transaction.method}</div>
                       )}
                     </div>
                   </div>
@@ -370,11 +370,11 @@ const Activity = () => {
           </div>
         ) : (
           <div className="text-center py-16 bg-white rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
-            <div className="w-20 h-20 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-6">
-              <ActivityIcon className="w-10 h-10 text-[#4a6850] font-bold" />
+            <div className="w-16 lg:w-20 h-16 lg:h-20 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-4 lg:mb-6">
+              <ActivityIcon className="w-8 lg:w-10 h-8 lg:h-10 text-[#4a6850] font-bold" />
             </div>
-            <h3 className="text-xl font-black text-gray-900 mb-3 tracking-tight">No transactions found</h3>
-            <p className="text-[#4a6850]/80 font-bold max-w-sm mx-auto">
+            <h3 className="text-lg lg:text-xl font-black text-gray-900 mb-2 lg:mb-3 tracking-tight">No transactions found</h3>
+            <p className="text-[#4a6850]/80 font-bold max-w-sm mx-auto text-sm lg:text-base px-4">
               {searchQuery || filterType !== "all" || filterDate !== "all"
                 ? "Try adjusting your filters or search terms"
                 : "Start by adding an expense or recording a payment"}

@@ -406,81 +406,81 @@ const Dashboard = () => {
       <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
         <div className="bg-white w-full max-w-md max-h-[90vh] overflow-hidden rounded-3xl shadow-[0_25px_70px_rgba(74,104,80,0.3)] border border-[#4a6850]/10 mx-auto">
           {/* Header with close button - iPhone Style */}
-          <div className="flex items-center justify-between p-6 border-b border-[#4a6850]/10 bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 flex-shrink-0">
-            <div className="flex items-center gap-4 flex-1 min-w-0">
-              <div className={`w-12 h-12 rounded-3xl flex items-center justify-center shadow-lg flex-shrink-0 ${
+          <div className="flex items-center justify-between p-4 lg:p-6 border-b border-[#4a6850]/10 bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 flex-shrink-0">
+            <div className="flex items-center gap-3 lg:gap-4 flex-1 min-w-0">
+              <div className={`w-10 lg:w-12 h-10 lg:h-12 rounded-2xl lg:rounded-3xl flex items-center justify-center shadow-lg flex-shrink-0 ${
                 transaction.type === 'expense' ? 'bg-gradient-to-br from-red-500 to-orange-500 text-white' : 
                 transaction.type === 'payment' ? 'bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white' : 'bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white'
               }`}>
                 {transaction.type === 'expense' ? (
-                  <ArrowUpRight className="w-6 h-6 font-bold" />
+                  <ArrowUpRight className="w-5 lg:w-6 h-5 lg:h-6 font-bold" />
                 ) : transaction.type === 'payment' ? (
-                  <ArrowDownLeft className="w-6 h-6 font-bold" />
+                  <ArrowDownLeft className="w-5 lg:w-6 h-5 lg:h-6 font-bold" />
                 ) : (
-                  <CreditCard className="w-6 h-6 font-bold" />
+                  <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 font-bold" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="font-bold text-gray-900 text-lg tracking-tight truncate">Transaction Details</h2>
-                <p className="text-sm text-[#4a6850]/80 capitalize font-medium truncate">{transaction.type}</p>
+                <h2 className="font-bold text-gray-900 text-base lg:text-lg tracking-tight truncate">Transaction Details</h2>
+                <p className="text-xs lg:text-sm text-[#4a6850]/80 capitalize font-medium truncate">{transaction.type}</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95 flex-shrink-0 ml-4"
+              className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95 flex-shrink-0 ml-3 lg:ml-4"
             >
-              <X className="w-5 h-5 text-white font-bold" strokeWidth={3} />
+              <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
             </button>
           </div>
 
           {/* Scrollable content - iPhone Style */}
           <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 180px)' }}>
-            <div className="p-6">
+            <div className="p-4 lg:p-6">
               {/* Transaction header - iPhone Style */}
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-3 tracking-tight">{transaction.title}</h3>
-                <div className="text-5xl font-black text-gray-900 mb-2 tracking-tighter tabular-nums">
+              <div className="text-center mb-6 lg:mb-8">
+                <h3 className="text-lg lg:text-2xl font-bold text-gray-900 mb-2 lg:mb-3 tracking-tight truncate px-2">{transaction.title}</h3>
+                <div className="text-3xl lg:text-5xl font-black text-gray-900 mb-1.5 lg:mb-2 tracking-tighter tabular-nums">
                   Rs {transaction.amount.toLocaleString()}
                 </div>
-                <div className="text-sm text-[#4a6850]/80 font-medium">
+                <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">
                   {transaction.date}
                   {transaction.timestamp && ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3 lg:space-y-4">
                 {/* Group Information - iPhone Style */}
                 {transactionGroup && (
-                  <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                    <Users className="w-6 h-6 text-[#4a6850] flex-shrink-0" />
+                  <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                    <Users className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Group</div>
-                      <div className="font-bold text-gray-900 truncate text-base tracking-tight">{transactionGroup.name}</div>
-                      <div className="text-sm text-[#4a6850]/80 font-medium">{transactionGroup.members.length} members</div>
+                      <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Group</div>
+                      <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transactionGroup.name}</div>
+                      <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">{transactionGroup.members.length} members</div>
                     </div>
                   </div>
                 )}
 
                 {/* Paid By (for expenses) - iPhone Style */}
                 {transaction.paidByName && (
-                  <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                    <User className="w-6 h-6 text-[#4a6850] flex-shrink-0" />
+                  <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                    <User className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Paid by</div>
-                      <div className="font-bold text-gray-900 truncate text-base tracking-tight">{transaction.paidByName}</div>
+                      <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Paid by</div>
+                      <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transaction.paidByName}</div>
                     </div>
                   </div>
                 )}
 
                 {/* Payment Details (for payments) - iPhone Style */}
                 {transaction.fromName && transaction.toName && (
-                  <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                    <ArrowUpRight className="w-6 h-6 text-[#4a6850] flex-shrink-0" />
+                  <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                    <ArrowUpRight className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Payment</div>
-                      <div className="font-bold text-gray-900 truncate text-base tracking-tight">{transaction.fromName} → {transaction.toName}</div>
+                      <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Payment</div>
+                      <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transaction.fromName} → {transaction.toName}</div>
                       {transaction.method && (
-                        <div className="text-sm text-[#4a6850]/80 capitalize font-medium">via {transaction.method}</div>
+                        <div className="text-xs lg:text-sm text-[#4a6850]/80 capitalize font-medium">via {transaction.method}</div>
                       )}
                     </div>
                   </div>
@@ -488,13 +488,13 @@ const Dashboard = () => {
 
                 {/* Participants (for expenses) - iPhone Style */}
                 {transaction.participants && transaction.participants.length > 0 && (
-                  <div className="p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                    <div className="text-xs text-[#4a6850]/70 mb-4 font-semibold uppercase tracking-wide">Participants ({transaction.participants.length})</div>
-                    <div className="space-y-3 max-h-32 overflow-y-auto">
+                  <div className="p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                    <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-3 lg:mb-4 font-semibold uppercase tracking-wide">Participants ({transaction.participants.length})</div>
+                    <div className="space-y-2 lg:space-y-3 max-h-32 overflow-y-auto">
                       {transaction.participants.map((participant: any, index: number) => (
-                        <div key={index} className="flex justify-between items-center">
-                          <span className="font-semibold text-gray-900 truncate flex-1 mr-3">{participant.name}</span>
-                          <span className="text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">Rs {participant.amount.toLocaleString()}</span>
+                        <div key={index} className="flex justify-between items-center gap-2">
+                          <span className="font-semibold text-gray-900 truncate flex-1 text-sm lg:text-base">{participant.name}</span>
+                          <span className="text-xs lg:text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">Rs {participant.amount.toLocaleString()}</span>
                         </div>
                       ))}
                     </div>
@@ -503,44 +503,44 @@ const Dashboard = () => {
 
                 {/* Place (for expenses) - iPhone Style */}
                 {transaction.place && (
-                  <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                    <div className="w-6 h-6 rounded-full bg-[#4a6850]/20 flex-shrink-0 flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-[#4a6850]"></div>
+                  <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                    <div className="w-5 lg:w-6 h-5 lg:h-6 rounded-full bg-[#4a6850]/20 flex-shrink-0 flex items-center justify-center">
+                      <div className="w-1.5 lg:w-2 h-1.5 lg:h-2 rounded-full bg-[#4a6850]"></div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Place</div>
-                      <div className="font-bold text-gray-900 truncate text-base tracking-tight">{transaction.place}</div>
+                      <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Place</div>
+                      <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transaction.place}</div>
                     </div>
                   </div>
                 )}
 
                 {/* Note - iPhone Style */}
                 {transaction.note && (
-                  <div className="p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                    <div className="text-xs text-[#4a6850]/70 mb-3 font-semibold uppercase tracking-wide">Note</div>
-                    <div className="font-medium text-gray-900 break-words leading-relaxed">{transaction.note}</div>
+                  <div className="p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                    <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-2 lg:mb-3 font-semibold uppercase tracking-wide">Note</div>
+                    <div className="font-medium text-gray-900 break-words leading-relaxed text-sm lg:text-base">{transaction.note}</div>
                   </div>
                 )}
 
                 {/* Wallet Balance Changes (for wallet transactions) - iPhone Style */}
                 {(transaction.walletBalanceBefore !== undefined || transaction.walletBalanceAfter !== undefined) && (
-                  <div className="space-y-4">
+                  <div className="space-y-3 lg:space-y-4">
                     {transaction.walletBalanceBefore !== undefined && (
-                      <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl border border-gray-200 shadow-lg">
-                        <CreditCard className="w-6 h-6 text-gray-500 flex-shrink-0" />
+                      <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl lg:rounded-3xl border border-gray-200 shadow-lg">
+                        <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 text-gray-500 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Wallet Balance Before</div>
-                          <div className="font-bold text-gray-900 text-base tracking-tight tabular-nums">Rs {transaction.walletBalanceBefore.toLocaleString()}</div>
+                          <div className="text-[10px] lg:text-xs text-gray-500 font-semibold uppercase tracking-wide">Wallet Balance Before</div>
+                          <div className="font-bold text-gray-900 text-sm lg:text-base tracking-tight tabular-nums">Rs {transaction.walletBalanceBefore.toLocaleString()}</div>
                         </div>
                       </div>
                     )}
                     
                     {transaction.walletBalanceAfter !== undefined && (
-                      <div className="flex items-center gap-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                        <CreditCard className="w-6 h-6 text-[#4a6850] flex-shrink-0" />
+                      <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                        <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Wallet Balance After</div>
-                          <div className="font-bold text-gray-900 text-base tracking-tight tabular-nums">Rs {transaction.walletBalanceAfter.toLocaleString()}</div>
+                          <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Wallet Balance After</div>
+                          <div className="font-bold text-gray-900 text-sm lg:text-base tracking-tight tabular-nums">Rs {transaction.walletBalanceAfter.toLocaleString()}</div>
                         </div>
                       </div>
                     )}
