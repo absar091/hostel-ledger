@@ -770,6 +770,51 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               console.warn('⚠️ Transaction notification email failed:', emailResult.errors);
             }
             
+            // Send push notifications to all group members except the payer
+            try {
+              console.log('🔔 Sending push notifications for expense...');
+              
+              const notificationPromises = group.members
+                .filter(member => member.userId && member.userId !== data.paidBy) // Don't notify the payer
+                .map(async (member) => {
+                  try {
+                    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/push-notify`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        userId: member.userId,
+                        title: `New Expense in ${group.name}`,
+                        body: `${payer.name} paid Rs ${sanitizedAmount.toLocaleString()} for "${sanitizedNote || 'Expense'}"`,
+                        icon: '/only-logo.png',
+                        badge: '/only-logo.png',
+                        tag: `expense-${transactionId}`,
+                        data: {
+                          type: 'expense',
+                          transactionId,
+                          groupId: data.groupId,
+                          amount: sanitizedAmount
+                        }
+                      })
+                    });
+                    
+                    if (response.ok) {
+                      console.log(`✅ Push notification sent to ${member.name}`);
+                    } else {
+                      console.warn(`⚠️ Push notification failed for ${member.name}`);
+                    }
+                  } catch (error) {
+                    console.error(`❌ Failed to send push notification to ${member.name}:`, error);
+                  }
+                });
+              
+              await Promise.allSettled(notificationPromises);
+              console.log('✅ Push notifications sent to all members');
+              
+            } catch (pushError: any) {
+              console.error('❌ Failed to send push notifications:', pushError);
+              // Push notification failure doesn't affect transaction success
+            }
+            
           } catch (emailError: any) {
             console.error('❌ Failed to send transaction notification emails:', emailError);
             // Email failure doesn't affect transaction success
