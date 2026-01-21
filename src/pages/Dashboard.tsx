@@ -687,12 +687,12 @@ const Dashboard = () => {
           <div className="relative z-10">
             <div className="flex justify-between items-start">
               <div>
-                <Tooltip>
+                <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <p className="text-white/70 text-[10px] lg:text-xs font-black uppercase tracking-wider cursor-help inline-flex items-center gap-1.5 hover:text-white/90 transition-colors">
+                    <button className="text-white/70 text-[10px] lg:text-xs font-black uppercase tracking-wider cursor-help inline-flex items-center gap-1.5 hover:text-white/90 transition-colors active:text-white">
                       Available Balance
-                      <span className="w-4 h-4 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[10px] hover:bg-white/25 hover:scale-110 transition-all">?</span>
-                    </p>
+                      <span className="w-4 h-4 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[10px] hover:bg-white/25 active:bg-white/30 hover:scale-110 active:scale-95 transition-all">?</span>
+                    </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
                     <div className="flex items-start gap-3">
@@ -726,12 +726,12 @@ const Dashboard = () => {
               boxShadow: 'inset 0 0 0 2px rgba(255, 255, 255, 0.2)'
             }}>
               <div className="flex-1 min-w-0">
-                <Tooltip>
+                <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <p className="text-white/60 text-[9px] lg:text-[10px] uppercase font-black mb-1 cursor-help inline-flex items-center gap-1 hover:text-white/80 transition-colors">
+                    <button className="text-white/60 text-[9px] lg:text-[10px] uppercase font-black mb-1 cursor-help inline-flex items-center gap-1 hover:text-white/80 active:text-white transition-colors">
                       After settlements
-                      <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] hover:bg-white/25 hover:scale-110 transition-all">?</span>
-                    </p>
+                      <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] hover:bg-white/25 active:bg-white/30 hover:scale-110 active:scale-95 transition-all">?</span>
+                    </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
                     <div className="flex items-start gap-3">
@@ -748,12 +748,12 @@ const Dashboard = () => {
                 <p className="text-base lg:text-lg font-black text-white tabular-nums truncate tracking-tight">Rs {afterSettlementsBalance.toLocaleString()}</p>
               </div>
               <div className="text-right flex-shrink-0 min-w-0">
-                <Tooltip>
+                <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <p className="text-white/60 text-[9px] lg:text-[10px] uppercase font-black mb-1 truncate cursor-help inline-flex items-center gap-1 hover:text-white/80 transition-colors">
+                    <button className="text-white/60 text-[9px] lg:text-[10px] uppercase font-black mb-1 truncate cursor-help inline-flex items-center gap-1 hover:text-white/80 active:text-white transition-colors">
                       Settlement Delta
-                      <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] hover:bg-white/25 hover:scale-110 transition-all">?</span>
-                    </p>
+                      <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] hover:bg-white/25 active:bg-white/30 hover:scale-110 active:scale-95 transition-all">?</span>
+                    </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
                     <div className="flex items-start gap-3">
