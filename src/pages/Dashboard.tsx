@@ -620,12 +620,14 @@ const Dashboard = () => {
         {/* Desktop Header */}
         <DesktopHeader />
         
-        {/* Mobile Header - Minimalist Style */}
+        {/* Mobile Header - Minimalist Style with Real Logo */}
         <header className="lg:hidden sticky top-0 z-30 bg-[#F8F9FA]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#4a6850] rounded-xl flex items-center justify-center text-white shadow-lg shadow-[#4a6850]/20">
-            <Logo size={20} className="text-white" />
-          </div>
+          <img 
+            src="/only-logo.png" 
+            alt="Hostel Ledger" 
+            className="w-10 h-10 rounded-xl shadow-lg"
+          />
           <div>
             <h1 className="text-xs font-bold uppercase tracking-widest text-gray-500">Hostel Ledger</h1>
           </div>
@@ -674,13 +676,13 @@ const Dashboard = () => {
         </header>
 
         <main className="px-6 lg:px-8 space-y-8 lg:max-w-7xl lg:mx-auto pb-24">
-        {/* Greeting Section - Moved down with more spacing */}
-        <section className="mt-8 lg:mt-12 mb-8 lg:mb-10">
+        {/* Greeting Section - Moved further down with more spacing */}
+        <section className="mt-16 lg:mt-20 mb-10 lg:mb-12">
           <p className="text-gray-500 font-semibold text-sm">Welcome back,</p>
           <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-gray-900">{user?.name || "User"}</h2>
         </section>
         
-        {/* PRIMARY CARD: Enhanced with last transaction time - Starts from middle of screen */}
+        {/* PRIMARY CARD: Enhanced with last transaction time - Moved further down */}
         <section className="mesh-gradient rounded-3xl p-5 lg:p-6 text-white shadow-2xl shadow-[#4a6850]/30 relative">
           <div className="relative z-10">
             <div className="flex justify-between items-start">
@@ -778,103 +780,94 @@ const Dashboard = () => {
           </div>
         </section>
 
-        {/* SECONDARY CARDS: To Receive and You Owe */}
-        {/* Mobile Version - Left-aligned with icon and arrow */}
+        {/* SECONDARY CARDS: To Receive and You Owe - Android Style */}
+        {/* Mobile Version - Android Material Design Style */}
         <section className="lg:hidden grid grid-cols-2 gap-4 mb-8">
-          {/* To Receive Card - Mobile */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button 
-                onClick={() => navigate("/to-receive")}
-                className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-all text-left relative group"
-              >
-                <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 dark:bg-emerald-900/30 flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity shadow-sm">
-                  <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-black">?</span>
-                </div>
-                <div className="flex items-start mb-3">
-                  <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
-                    <ArrowDownLeft className="w-4 h-4 text-emerald-500" />
-                  </div>
-                </div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">To Receive</p>
-                <h4 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tighter mb-1">Rs {totalToReceive.toLocaleString()}</h4>
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-black flex items-center gap-1">
-                  Tap to view <span className="text-base">›</span>
-                </p>
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                  <span className="text-xl">💵</span>
-                </div>
-                <div>
-                  <h4 className="font-black text-sm mb-1.5 text-gray-900">To Receive</h4>
-                  <p className="text-xs leading-relaxed text-gray-600 font-medium">Total amount others owe you from shared expenses. Tap to see who owes you and record payments.</p>
+          {/* To Receive Card - Android Style with Your Theme */}
+          <button 
+            onClick={() => navigate("/to-receive")}
+            className="bg-gradient-to-br from-[#e8f5e9] to-[#f1f8f4] p-5 rounded-3xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all text-left relative overflow-hidden group"
+          >
+            {/* Decorative circle */}
+            <div className="absolute -right-6 -top-6 w-24 h-24 bg-[#4a6850]/5 rounded-full"></div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#4a6850]/10 flex items-center justify-center">
+                  <ArrowDownLeft className="w-5 h-5 text-[#4a6850]" strokeWidth={2.5} />
                 </div>
               </div>
-            </TooltipContent>
-          </Tooltip>
+              
+              <p className="text-[11px] font-bold text-[#4a6850]/70 mb-1.5 tracking-wide">TO RECEIVE</p>
+              <h4 className="text-2xl font-black text-[#4a6850] tabular-nums tracking-tight mb-2">
+                Rs {totalToReceive.toLocaleString()}
+              </h4>
+              
+              <div className="flex items-center gap-1 text-[#4a6850] font-bold text-xs">
+                <span>View details</span>
+                <span className="text-base group-hover:translate-x-0.5 transition-transform">→</span>
+              </div>
+            </div>
+          </button>
           
-          {/* You Owe Card - Mobile */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button 
-                onClick={() => navigate("/to-pay")}
-                className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-all text-left relative group"
-              >
-                <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-gradient-to-br from-rose-100 to-orange-100 dark:bg-rose-900/30 flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity shadow-sm">
-                  <span className="text-[10px] text-rose-700 dark:text-rose-400 font-black">?</span>
-                </div>
-                <div className="flex items-start mb-3">
-                  <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center">
-                    <ArrowUpRight className="w-4 h-4 text-rose-500" />
-                  </div>
-                </div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">You Owe</p>
-                <h4 className="text-2xl font-black text-rose-500 tabular-nums tracking-tighter mb-1">Rs {totalToPay.toLocaleString()}</h4>
-                <p className="text-xs text-rose-500 font-black flex items-center gap-1">
-                  Tap to settle <span className="text-base">›</span>
-                </p>
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                  <span className="text-xl">💳</span>
-                </div>
-                <div>
-                  <h4 className="font-black text-sm mb-1.5 text-gray-900">You Owe</h4>
-                  <p className="text-xs leading-relaxed text-gray-600 font-medium">Total amount you owe to others from shared expenses. Tap to see who you need to pay and settle your debts.</p>
+          {/* You Owe Card - Android Style with Your Theme */}
+          <button 
+            onClick={() => navigate("/to-pay")}
+            className="bg-gradient-to-br from-[#fef3f2] to-[#fef8f7] p-5 rounded-3xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all text-left relative overflow-hidden group"
+          >
+            {/* Decorative circle */}
+            <div className="absolute -right-6 -top-6 w-24 h-24 bg-rose-500/5 rounded-full"></div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-500/10 flex items-center justify-center">
+                  <ArrowUpRight className="w-5 h-5 text-rose-500" strokeWidth={2.5} />
                 </div>
               </div>
-            </TooltipContent>
-          </Tooltip>
+              
+              <p className="text-[11px] font-bold text-rose-500/70 mb-1.5 tracking-wide">YOU OWE</p>
+              <h4 className="text-2xl font-black text-rose-500 tabular-nums tracking-tight mb-2">
+                Rs {totalToPay.toLocaleString()}
+              </h4>
+              
+              <div className="flex items-center gap-1 text-rose-500 font-bold text-xs">
+                <span>Settle now</span>
+                <span className="text-base group-hover:translate-x-0.5 transition-transform">→</span>
+              </div>
+            </div>
+          </button>
         </section>
 
-        {/* Desktop Version - Enhanced Cards */}
+        {/* Desktop Version - Android Material Design Style */}
         <section className="hidden lg:grid grid-cols-2 gap-6 mb-12">
-          {/* To Receive Card - Desktop */}
+          {/* To Receive Card - Desktop Android Style */}
           <Tooltip>
             <TooltipTrigger asChild>
               <button 
                 onClick={() => navigate("/to-receive")}
-                className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-2 border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-emerald-300 hover:scale-[1.02] active:scale-[0.98] transition-all text-left group relative"
+                className="bg-gradient-to-br from-[#e8f5e9] to-[#f1f8f4] p-8 rounded-3xl shadow-lg hover:shadow-xl active:scale-[0.98] transition-all text-left relative overflow-hidden group"
               >
-                <div className="absolute top-4 right-4 w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">?</span>
-                </div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                    <span className="text-xs font-black uppercase tracking-widest text-slate-500">To Receive</span>
+                {/* Decorative circles */}
+                <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#4a6850]/5 rounded-full"></div>
+                <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-[#4a6850]/5 rounded-full"></div>
+                
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="w-14 h-14 rounded-2xl bg-[#4a6850]/10 flex items-center justify-center">
+                      <ArrowDownLeft className="w-7 h-7 text-[#4a6850]" strokeWidth={2.5} />
+                    </div>
                   </div>
-                  <ArrowDownLeft className="w-6 h-6 text-emerald-500 group-hover:scale-110 transition-transform" />
+                  
+                  <p className="text-xs font-bold text-[#4a6850]/70 mb-2 tracking-wide">TO RECEIVE</p>
+                  <h4 className="text-4xl font-black text-[#4a6850] tabular-nums tracking-tight mb-4">
+                    Rs {totalToReceive.toLocaleString()}
+                  </h4>
+                  
+                  <div className="flex items-center gap-1.5 text-[#4a6850] font-bold text-sm">
+                    <span>{totalToReceive <= 0 ? 'All settled up! 🎉' : 'View details'}</span>
+                    {totalToReceive > 0 && <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>}
+                  </div>
                 </div>
-                <h4 className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tighter">Rs {totalToReceive.toLocaleString()}</h4>
-                <p className="text-sm text-slate-400 mt-1 font-semibold">
-                  {totalToReceive <= 0 ? 'All settled up! 🎉' : 'Click to view details'}
-                </p>
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
@@ -890,27 +883,34 @@ const Dashboard = () => {
             </TooltipContent>
           </Tooltip>
           
-          {/* You Owe Card - Desktop */}
+          {/* You Owe Card - Desktop Android Style */}
           <Tooltip>
             <TooltipTrigger asChild>
               <button 
                 onClick={() => navigate("/to-pay")}
-                className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-2 border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-rose-300 hover:scale-[1.02] active:scale-[0.98] transition-all text-left group relative"
+                className="bg-gradient-to-br from-[#fef3f2] to-[#fef8f7] p-8 rounded-3xl shadow-lg hover:shadow-xl active:scale-[0.98] transition-all text-left relative overflow-hidden group"
               >
-                <div className="absolute top-4 right-4 w-5 h-5 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-xs text-rose-600 dark:text-rose-400 font-bold">?</span>
-                </div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-rose-500"></div>
-                    <span className="text-xs font-black uppercase tracking-widest text-slate-500">You Owe</span>
+                {/* Decorative circles */}
+                <div className="absolute -right-8 -top-8 w-32 h-32 bg-rose-500/5 rounded-full"></div>
+                <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-500/5 rounded-full"></div>
+                
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="w-14 h-14 rounded-2xl bg-rose-500/10 flex items-center justify-center">
+                      <ArrowUpRight className="w-7 h-7 text-rose-500" strokeWidth={2.5} />
+                    </div>
                   </div>
-                  <ArrowUpRight className="w-6 h-6 text-rose-500 group-hover:scale-110 transition-transform" />
+                  
+                  <p className="text-xs font-bold text-rose-500/70 mb-2 tracking-wide">YOU OWE</p>
+                  <h4 className="text-4xl font-black text-rose-500 tabular-nums tracking-tight mb-4">
+                    Rs {totalToPay.toLocaleString()}
+                  </h4>
+                  
+                  <div className="flex items-center gap-1.5 text-rose-500 font-bold text-sm">
+                    <span>Settle now</span>
+                    <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>
+                  </div>
                 </div>
-                <h4 className="text-3xl font-black text-rose-500 tabular-nums tracking-tighter">Rs {totalToPay.toLocaleString()}</h4>
-                <p className="text-sm font-black text-primary dark:text-emerald-400 mt-1 inline-flex items-center gap-1">
-                  View details <span className="text-xs">→</span>
-                </p>
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl">
