@@ -134,8 +134,15 @@ export const useOneSignalPush = () => {
       const currentUser = auth.currentUser;
       
       if (currentUser?.uid) {
+        console.log('🔑 Setting OneSignal External ID:', currentUser.uid);
         await OneSignal.login(currentUser.uid);
         console.log('✅ OneSignal user ID set:', currentUser.uid);
+        
+        // Verify it was set
+        const externalId = await OneSignal.User.getExternalId();
+        console.log('🔍 Verified External ID:', externalId);
+      } else {
+        console.warn('⚠️ No Firebase user found, cannot set External ID');
       }
 
       setState((prev) => ({ ...prev, isSubscribed: true }));
