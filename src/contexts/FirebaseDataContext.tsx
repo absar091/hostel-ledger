@@ -311,9 +311,32 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                 const updatedMembers = group.members.filter(m => m.id !== member.id);
                 const groupRef = ref(database, `groups/${group.id}/members`);
                 await set(groupRef, updatedMembers);
-                // Send email notification about deletion? - Requirement says "send user the email that his member will be deleted"
-                // That usually means BEFORE deletion or at creation. The request said "send user the email tshs his msmsber will be deleetd afater one week".
-                // So the email is sent AT CREATION.
+
+                // Send email notification about deletion
+                if (user.email) {
+                  try {
+                    await fetch('/api/send-email', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        to: user.email,
+                        subject: `Temporary Member Removed: ${member.name}`,
+                        html: `
+                          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                            <h2 style="color: #4a6850;">Temporary Member Removed</h2>
+                            <p>The temporary member <b>${member.name}</b> in group <b>${group.name}</b> has reached their time limit.</p>
+                            <p>Since all debts were settled, they have been automatically removed from the group.</p>
+                            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                            <p style="color: #666; font-size: 12px;">This is an automated message from Hostel Ledger.</p>
+                          </div>
+                        `
+                      })
+                    });
+                    console.log(`Sent removal email for ${member.name}`);
+                  } catch (mailError) {
+                    console.error("Failed to send removal email", mailError);
+                  }
+                }
               }
             } catch (e) {
               console.error("Failed to auto-remove member", e);
