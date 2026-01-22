@@ -331,7 +331,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       });
       clearInterval(intervalId);
     };
-  }, [user, groups]); // Added groups dependency to check regularly
+  }, [user]); // Removed groups dependency to prevent infinite loop
 
   const createGroup = async (data: { 
     name: string; 

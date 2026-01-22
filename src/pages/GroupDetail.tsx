@@ -290,8 +290,8 @@ const GroupDetail = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
               className={`flex-1 py-3 px-4 rounded-2xl text-sm font-black transition-all duration-200 ${activeTab === tab.id
-                  ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] scale-105"
-                  : "bg-white/80 text-[#4a6850]/80 hover:bg-white border border-[#4a6850]/10 hover:scale-102"
+                ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] scale-105"
+                : "bg-white/80 text-[#4a6850]/80 hover:bg-white border border-[#4a6850]/10 hover:scale-102"
                 }`}
             >
               {tab.label}
@@ -515,8 +515,8 @@ const GroupDetail = () => {
               disabled={groupTotalToReceive <= 0}
               variant="outline"
               className={`flex-1 h-12 rounded-2xl text-sm font-black transition-all ${groupTotalToReceive <= 0
-                  ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70'
-                  : 'bg-white border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 hover:border-[#4a6850]/50 shadow-[0_8px_32px_rgba(74,104,80,0.15)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.25)]'
+                ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70'
+                : 'bg-white border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 hover:border-[#4a6850]/50 shadow-[0_8px_32px_rgba(74,104,80,0.15)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.25)]'
                 }`}
             >
               <HandCoins className="w-4 h-4 mr-2 font-bold" />
@@ -555,8 +555,13 @@ const GroupDetail = () => {
         onClose={() => setShowAddExpense(false)}
         groups={groupForSheet}
         onSubmit={handleExpenseSubmit}
-        onAddMember={(data) => {
-          addMemberToGroup(group.id, data);
+        onAddMember={async (data) => {
+          const result = await addMemberToGroup(group.id, data);
+          if (result.success) {
+            toast.success(`Added temporary member: ${data.name}`);
+          } else {
+            toast.error(result.error || "Failed to add member");
+          }
         }}
       />
 

@@ -271,299 +271,387 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
   const selectedGroupData = groups.find((g) => g.id === selectedGroup);
 
   return (
-    <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
-        <SheetHeader className="flex-shrink-0 mb-6 pt-2">
-          {/* Handle Bar */}
-          <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
+    <>
+      <Sheet open={open} onOpenChange={handleClose}>
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
+          <SheetHeader className="flex-shrink-0 mb-6 pt-2">
+            {/* Handle Bar */}
+            <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
 
-          {/* Offline Indicator */}
-          {offline && (
-            <div className="mx-auto mb-4 inline-flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-full px-4 py-2">
-              <WifiOff className="w-4 h-4 text-orange-600" />
-              <span className="text-xs font-bold text-orange-700">Offline Mode - Will sync later</span>
-            </div>
-          )}
-
-          <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">
-            {step === 1 && "Select Group"}
-            {step === 2 && "Enter Amount"}
-            {step === 3 && "Who Paid?"}
-            {step === 4 && "Split Between"}
-            {step === 5 && "Add Details"}
-          </SheetTitle>
-          <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
-            Add a new expense to split between group members
-          </SheetDescription>
-        </SheetHeader>
-
-        <div className="flex-1 overflow-y-auto pb-4">
-          {/* Validation Errors - iPhone Style */}
-          {validationErrors.length > 0 && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200/50 rounded-3xl shadow-sm">
-              <div className="flex items-center gap-3 mb-3">
-                <AlertCircle className="w-5 h-5 text-red-600" />
-                <span className="text-sm font-black text-red-800">Please fix the following errors:</span>
+            {/* Offline Indicator */}
+            {offline && (
+              <div className="mx-auto mb-4 inline-flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-full px-4 py-2">
+                <WifiOff className="w-4 h-4 text-orange-600" />
+                <span className="text-xs font-bold text-orange-700">Offline Mode - Will sync later</span>
               </div>
-              <ul className="text-sm text-red-700 space-y-2">
-                {validationErrors.map((error, index) => (
-                  <li key={index} className="font-bold">• {error}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+            )}
 
-          {/* Step 1: Select Group - iPhone Style */}
-          {step === 1 && (
-            <div className="space-y-4 animate-fade-in">
-              <p className="text-sm text-[#4a6850]/80 mb-6 text-center font-bold">
-                Which group is this expense for?
-              </p>
-              {groups.map((group) => (
-                <button
-                  key={group.id}
-                  onClick={() => setSelectedGroup(group.id)}
-                  className={cn(
-                    "w-full flex items-center gap-4 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl active:scale-95",
-                    selectedGroup === group.id
-                      ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
-                      : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
-                  )}
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center text-2xl shadow-sm">
-                    {group.emoji}
-                  </div>
-                  <div className="flex-1 text-left">
-                    <span className="font-black text-gray-900 tracking-tight">{group.name}</span>
-                    <p className="text-sm text-[#4a6850]/80 font-bold">
-                      {group.members.length} members
-                    </p>
-                  </div>
-                  {selectedGroup === group.id && (
-                    <div className="w-7 h-7 rounded-full bg-[#4a6850] flex items-center justify-center shadow-lg">
-                      <Check className="w-4 h-4 text-white font-bold" />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
+            <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">
+              {step === 1 && "Select Group"}
+              {step === 2 && "Enter Amount"}
+              {step === 3 && "Who Paid?"}
+              {step === 4 && "Split Between"}
+              {step === 5 && "Add Details"}
+            </SheetTitle>
+            <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
+              Add a new expense to split between group members
+            </SheetDescription>
+          </SheetHeader>
 
-          {/* Step 2: Enter Amount - iPhone Style */}
-          {step === 2 && (
-            <div className="text-center py-12 animate-fade-in">
-              {selectedGroupData && (
-                <div className="inline-flex items-center gap-3 bg-[#4a6850]/10 rounded-3xl px-5 py-3 mb-8 border border-[#4a6850]/20">
-                  <span className="text-2xl">{selectedGroupData.emoji}</span>
-                  <span className="text-sm font-black text-[#4a6850]">{selectedGroupData.name}</span>
+          <div className="flex-1 overflow-y-auto pb-4">
+            {/* Validation Errors - iPhone Style */}
+            {validationErrors.length > 0 && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200/50 rounded-3xl shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <AlertCircle className="w-5 h-5 text-red-600" />
+                  <span className="text-sm font-black text-red-800">Please fix the following errors:</span>
                 </div>
-              )}
-              <div className="text-4xl font-black text-gray-900 mb-8 tracking-tighter tabular-nums">
-                Rs {amount || "0"}
+                <ul className="text-sm text-red-700 space-y-2">
+                  {validationErrors.map((error, index) => (
+                    <li key={index} className="font-bold">• {error}</li>
+                  ))}
+                </ul>
               </div>
-              <Input
-                type="number"
-                placeholder="Enter amount"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-2 border-[#4a6850]/30 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:ring-0 focus:shadow-xl"
-                autoFocus
-              />
-            </div>
-          )}
+            )}
 
-          {/* Step 3: Who Paid - iPhone Style */}
-          {step === 3 && (
-            <div className="space-y-4 animate-fade-in">
-              <div className="flex items-center gap-3 justify-center mb-6">
-                <p className="text-sm text-[#4a6850]/80 font-bold text-center">Select who paid for this expense</p>
-                <Tooltip
-                  content="Choose the person who actually paid the money upfront. The app will calculate how much others owe them."
-                  position="bottom"
-                />
-              </div>
-              {members.map((member) => (
-                <button
-                  key={member.id}
-                  onClick={() => setPaidBy(member.id)}
-                  className={cn(
-                    "w-full flex items-center gap-4 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl active:scale-95",
-                    paidBy === member.id
-                      ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
-                      : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
-                  )}
-                >
-                  <Avatar name={member.name} />
-                  <span className="font-black flex-1 text-left text-gray-900 tracking-tight">{member.name}</span>
-                  {paidBy === member.id && (
-                    <div className="w-7 h-7 rounded-full bg-[#4a6850] flex items-center justify-center shadow-lg">
-                      <Check className="w-4 h-4 text-white font-bold" />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Step 4: Split Between - iPhone Style */}
-          {step === 4 && (
-            <div className="space-y-4 animate-fade-in">
-              <div className="flex items-center gap-3 justify-center mb-6">
-                <p className="text-sm text-[#4a6850]/80 font-bold text-center">
-                  Select everyone who shared this expense (including who paid)
+            {/* Step 1: Select Group - Compact Mobile Style */}
+            {step === 1 && (
+              <div className="space-y-3 animate-fade-in">
+                <p className="text-sm text-[#4a6850]/80 mb-4 text-center font-bold">
+                  Which group is this expense for?
                 </p>
-                <Tooltip
-                  content="Choose all people who should split this cost. The expense will be divided equally among selected members."
-                  position="bottom"
-                />
-              </div>
-              {members.map((member) => {
-                const isSelected = participants.includes(member.id);
-
-                return (
+                {groups.map((group) => (
                   <button
-                    key={member.id}
-                    onClick={() => toggleParticipant(member.id)}
+                    key={group.id}
+                    onClick={() => setSelectedGroup(group.id)}
                     className={cn(
-                      "w-full flex items-center gap-4 p-5 rounded-3xl transition-all shadow-lg hover:shadow-xl active:scale-95",
-                      isSelected
+                      "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
+                      selectedGroup === group.id
                         ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
                         : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
                     )}
                   >
-                    <Avatar name={member.name} />
-                    <div className="flex-1 text-left">
-                      <span className="font-black text-gray-900 tracking-tight">{member.name}</span>
-                      {isSelected && (
-                        <div className="text-sm text-[#4a6850] font-bold">
-                          Rs {splitDetails.perPerson} share
-                        </div>
-                      )}
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center text-xl shadow-sm flex-shrink-0">
+                      {group.emoji}
                     </div>
-                    {isSelected && (
-                      <div className="w-7 h-7 rounded-full bg-[#4a6850] flex items-center justify-center shadow-lg">
-                        <Check className="w-4 h-4 text-white font-bold" />
+                    <div className="flex-1 text-left min-w-0">
+                      <span className="font-black text-gray-900 tracking-tight block truncate">{group.name}</span>
+                      <p className="text-xs text-[#4a6850]/80 font-bold">
+                        {group.members.length} members
+                      </p>
+                    </div>
+                    {selectedGroup === group.id && (
+                      <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
+                        <Check className="w-3.5 h-3.5 text-white font-bold" />
                       </div>
                     )}
                   </button>
-                );
-              })}
+                ))}
+              </div>
+            )}
 
-              {/* Add Temp Member Button */}
-              <button
-                onClick={() => setShowTempMemberInput(true)}
-                className="w-full flex items-center justify-center gap-2 p-4 rounded-3xl border-2 border-dashed border-[#4a6850]/30 text-[#4a6850] font-bold hover:bg-[#4a6850]/5 transition-all mt-4"
-              >
-                <UserPlus className="w-5 h-5" />
-                Add Temporary Member
-              </button>
+            {/* Step 2: Enter Amount - iPhone Style */}
+            {step === 2 && (
+              <div className="text-center py-12 animate-fade-in">
+                {selectedGroupData && (
+                  <div className="inline-flex items-center gap-3 bg-[#4a6850]/10 rounded-3xl px-5 py-3 mb-8 border border-[#4a6850]/20">
+                    <span className="text-2xl">{selectedGroupData.emoji}</span>
+                    <span className="text-sm font-black text-[#4a6850]">{selectedGroupData.name}</span>
+                  </div>
+                )}
+                <div className="text-4xl font-black text-gray-900 mb-8 tracking-tighter tabular-nums">
+                  Rs {amount || "0"}
+                </div>
+                <Input
+                  type="number"
+                  placeholder="Enter amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-2 border-[#4a6850]/30 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:ring-0 focus:shadow-xl"
+                  autoFocus
+                />
+              </div>
+            )}
 
-              {/* Split Summary - iPhone Style */}
-              {participants.length > 0 && paidBy && (
-                <div className="bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl p-6 mt-6 border border-[#4a6850]/20 shadow-lg">
-                  <div className="text-sm text-[#4a6850]/80 mb-3 font-black uppercase tracking-wide">Split Summary</div>
-                  <div className="text-xl font-black text-gray-900 tracking-tight">
+            {/* Step 3: Who Paid - Compact Mobile Style */}
+            {step === 3 && (
+              <div className="space-y-3 animate-fade-in">
+                <div className="flex items-center gap-2 justify-center mb-4">
+                  <p className="text-sm text-[#4a6850]/80 font-bold text-center">Select who paid</p>
+                  <Tooltip
+                    content="Choose who paid the money upfront"
+                    position="bottom"
+                  />
+                </div>
+                {members.map((member) => (
+                  <button
+                    key={member.id}
+                    onClick={() => setPaidBy(member.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
+                      paidBy === member.id
+                        ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
+                        : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
+                    )}
+                  >
+                    <Avatar name={member.name} size="sm" />
+                    <span className="font-black flex-1 text-left text-gray-900 tracking-tight truncate">{member.name}</span>
+                    {paidBy === member.id && (
+                      <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
+                        <Check className="w-3.5 h-3.5 text-white font-bold" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Step 4: Split Between - Compact Mobile Style */}
+            {step === 4 && (
+              <div className="space-y-3 animate-fade-in">
+                <div className="flex items-center gap-2 justify-center mb-4">
+                  <p className="text-sm text-[#4a6850]/80 font-bold text-center">
+                    Select everyone who shared this expense
+                  </p>
+                  <Tooltip
+                    content="Choose all people who should split this cost"
+                    position="bottom"
+                  />
+                </div>
+                {members.map((member) => {
+                  const isSelected = participants.includes(member.id);
+
+                  return (
+                    <button
+                      key={member.id}
+                      onClick={() => toggleParticipant(member.id)}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
+                        isSelected
+                          ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
+                          : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
+                      )}
+                    >
+                      <Avatar name={member.name} size="sm" />
+                      <div className="flex-1 text-left min-w-0">
+                        <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
+                        {isSelected && (
+                          <div className="text-xs text-[#4a6850] font-bold">
+                            Rs {splitDetails.perPerson} share
+                          </div>
+                        )}
+                      </div>
+                      {isSelected && (
+                        <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
+                          <Check className="w-3.5 h-3.5 text-white font-bold" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+
+                {/* Add Temp Member Button */}
+                <button
+                  onClick={() => setShowTempMemberInput(true)}
+                  className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl border-2 border-dashed border-[#4a6850]/30 text-[#4a6850] font-bold hover:bg-[#4a6850]/5 transition-all mt-3"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span className="text-sm">Add Temporary Member</span>
+                </button>
+
+                {/* Split Summary - Compact - Only show when 2+ participants */}
+                {participants.length > 1 && paidBy && (
+                  <div className="bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl p-4 mt-4 border border-[#4a6850]/20 shadow-md">
+                    <div className="text-xs text-[#4a6850]/80 mb-2 font-black uppercase tracking-wide">Split Summary</div>
+                    <div className="text-lg font-black text-gray-900 tracking-tight">
+                      Rs {splitDetails.perPerson} per person
+                    </div>
+                    {splitDetails.toReceive > 0 && (
+                      <div className="text-[#4a6850] font-black mt-2 text-sm">
+                        You'll receive Rs {splitDetails.toReceive} from {splitDetails.othersCount} {splitDetails.othersCount === 1 ? 'person' : 'people'}
+                      </div>
+                    )}
+                    {splitDetails.toGive > 0 && (
+                      <div className="text-red-600 font-black mt-2 text-sm">
+                        You owe Rs {splitDetails.toGive} to {paidByName}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 5: Add Details - iPhone Style */}
+            {step === 5 && (
+              <div className="space-y-6 animate-fade-in">
+                <div>
+                  <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
+                    What was it for? (optional)
+                  </label>
+                  <Input
+                    placeholder="e.g., Dinner, Chai, Groceries"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
+                    maxLength={100}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
+                    Where? (optional)
+                  </label>
+                  <Input
+                    placeholder="e.g., Student Café"
+                    value={place}
+                    onChange={(e) => setPlace(e.target.value)}
+                    className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
+                    maxLength={100}
+                  />
+                </div>
+
+                {/* Final Summary - iPhone Style */}
+                <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-6 mt-8 shadow-[0_25px_70px_rgba(74,104,80,0.3)] text-white">
+                  <div className="text-sm text-white/90 mb-3 font-black uppercase tracking-wide">Final Summary</div>
+                  <div className="font-black text-xl tracking-tight mb-2">Rs {amount}</div>
+                  <div className="text-sm text-white/90 font-bold">
+                    Paid by {paidByName} • Split {participants.length} ways
+                  </div>
+                  <div className="text-sm text-white/90 font-bold">
                     Rs {splitDetails.perPerson} per person
                   </div>
                   {splitDetails.toReceive > 0 && (
-                    <div className="text-[#4a6850] font-black mt-3 text-lg">
-                      You will receive Rs {splitDetails.toReceive} from {splitDetails.othersCount} {splitDetails.othersCount === 1 ? 'person' : 'people'}
+                    <div className="text-emerald-200 font-black mt-3 text-lg">
+                      You will receive Rs {splitDetails.toReceive}
                     </div>
                   )}
                   {splitDetails.toGive > 0 && (
-                    <div className="text-red-600 font-black mt-3 text-lg">
-                      You owe Rs {splitDetails.toGive} to {paidByName}
+                    <div className="text-orange-200 font-black mt-3 text-lg">
+                      You owe Rs {splitDetails.toGive}
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* Step 5: Add Details - iPhone Style */}
-          {step === 5 && (
-            <div className="space-y-6 animate-fade-in">
-              <div>
-                <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
-                  What was it for? (optional)
-                </label>
-                <Input
-                  placeholder="e.g., Dinner, Chai, Groceries"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
-                  maxLength={100}
-                />
               </div>
-              <div>
-                <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
-                  Where? (optional)
-                </label>
-                <Input
-                  placeholder="e.g., Student Café"
-                  value={place}
-                  onChange={(e) => setPlace(e.target.value)}
-                  className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
-                  maxLength={100}
-                />
-              </div>
-
-              {/* Final Summary - iPhone Style */}
-              <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-6 mt-8 shadow-[0_25px_70px_rgba(74,104,80,0.3)] text-white">
-                <div className="text-sm text-white/90 mb-3 font-black uppercase tracking-wide">Final Summary</div>
-                <div className="font-black text-xl tracking-tight mb-2">Rs {amount}</div>
-                <div className="text-sm text-white/90 font-bold">
-                  Paid by {paidByName} • Split {participants.length} ways
-                </div>
-                <div className="text-sm text-white/90 font-bold">
-                  Rs {splitDetails.perPerson} per person
-                </div>
-                {splitDetails.toReceive > 0 && (
-                  <div className="text-emerald-200 font-black mt-3 text-lg">
-                    You will receive Rs {splitDetails.toReceive}
-                  </div>
-                )}
-                {splitDetails.toGive > 0 && (
-                  <div className="text-orange-200 font-black mt-3 text-lg">
-                    You owe Rs {splitDetails.toGive}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex-shrink-0 pt-6 border-t border-[#4a6850]/10 bg-white">
-          <div className="flex gap-4">
-            {step > 1 && (
-              <Button
-                variant="secondary"
-                onClick={() => setStep((s) => s - 1)}
-                className="flex-1 h-14 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black border-0 shadow-lg hover:shadow-xl transition-all"
-              >
-                Back
-              </Button>
-            )}
-            {step < 5 ? (
-              <Button
-                onClick={() => setStep((s) => s + 1)}
-                disabled={!canProceed()}
-                className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Continue <ChevronRight className="w-5 h-5 ml-2 font-bold" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleSubmit}
-                className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all"
-              >
-                Add Expense
-              </Button>
             )}
           </div>
-        </div>
-      </SheetContent>
-    </Sheet>
+
+          <div className="flex-shrink-0 pt-6 border-t border-[#4a6850]/10 bg-white">
+            <div className="flex gap-4">
+              {step > 1 && (
+                <Button
+                  variant="secondary"
+                  onClick={() => setStep((s) => s - 1)}
+                  className="flex-1 h-14 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black border-0 shadow-lg hover:shadow-xl transition-all"
+                >
+                  Back
+                </Button>
+              )}
+              {step < 5 ? (
+                <Button
+                  onClick={() => setStep((s) => s + 1)}
+                  disabled={!canProceed()}
+                  className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Continue <ChevronRight className="w-5 h-5 ml-2 font-bold" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all"
+                >
+                  Add Expense
+                </Button>
+              )}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Temp Member Dialog */}
+      <Dialog open={showTempMemberInput} onOpenChange={setShowTempMemberInput}>
+        <DialogContent className="rounded-3xl p-6 z-[110] bg-white border border-[#4a6850]/20 shadow-[0_25px_70px_rgba(74,104,80,0.2)]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-gray-900 tracking-tight">Add Temporary Member</DialogTitle>
+            <DialogDescription className="text-sm text-[#4a6850]/80 font-bold">
+              Add a member for one-off expenses. They will be automatically removed when settled or after a time limit.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="tempName" className="text-sm font-black text-[#4a6850]/80 uppercase tracking-wide">Name</Label>
+              <Input
+                id="tempName"
+                placeholder="e.g. John Doe (Friend)"
+                value={tempMemberName}
+                onChange={(e) => setTempMemberName(e.target.value)}
+                className="h-12 rounded-2xl border-[#4a6850]/30 font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:ring-[#4a6850]/20"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-sm font-black text-[#4a6850]/80 uppercase tracking-wide">Auto-delete condition:</Label>
+              <RadioGroup
+                value={tempMemberCondition}
+                onValueChange={(v) => setTempMemberCondition(v as any)}
+                className="grid gap-3"
+              >
+                <div className={cn(
+                  "flex items-start space-x-3 border-2 rounded-2xl p-4 cursor-pointer transition-all",
+                  tempMemberCondition === 'TIME_LIMIT'
+                    ? "border-[#4a6850] bg-[#4a6850]/5"
+                    : "border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
+                )}>
+                  <RadioGroupItem value="TIME_LIMIT" id="time" className="mt-0.5 border-[#4a6850] text-[#4a6850]" />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label htmlFor="time" className="font-black text-gray-900 flex items-center gap-2 cursor-pointer">
+                      <Clock className="w-4 h-4 text-orange-500" />
+                      After 1 Week
+                    </Label>
+                    <span className="text-xs text-[#4a6850]/70 font-bold leading-normal">
+                      Member will be removed automatically after 7 days. You'll get an email reminder.
+                    </span>
+                  </div>
+                </div>
+
+                <div className={cn(
+                  "flex items-start space-x-3 border-2 rounded-2xl p-4 cursor-pointer transition-all",
+                  tempMemberCondition === 'SETTLED'
+                    ? "border-[#4a6850] bg-[#4a6850]/5"
+                    : "border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
+                )}>
+                  <RadioGroupItem value="SETTLED" id="settled" className="mt-0.5 border-[#4a6850] text-[#4a6850]" />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label htmlFor="settled" className="font-black text-gray-900 flex items-center gap-2 cursor-pointer">
+                      <Ban className="w-4 h-4 text-[#4a6850]" />
+                      When Settled
+                    </Label>
+                    <span className="text-xs text-[#4a6850]/70 font-bold leading-normal">
+                      Member will be removed when their balance reaches zero.
+                    </span>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-6 flex gap-3 sm:gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowTempMemberInput(false)}
+              className="flex-1 h-12 rounded-2xl border-[#4a6850]/30 text-[#4a6850] font-black hover:bg-[#4a6850]/10"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddTempMember}
+              className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black shadow-lg"
+            >
+              Add Member
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

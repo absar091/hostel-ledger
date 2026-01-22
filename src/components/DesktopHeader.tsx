@@ -24,9 +24,7 @@ const DesktopHeader = () => {
       {/* Right Section */}
       <div className="flex items-center gap-4 ml-6">
         {/* Notifications */}
-        <button className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-all">
-          <NotificationIcon />
-        </button>
+        <NotificationIcon />
 
         {/* Profile */}
         <button
