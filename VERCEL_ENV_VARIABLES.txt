@@ -78,3 +78,13 @@ IMPORTANT NOTES:
 2. For FIREBASE_PRIVATE_KEY, make sure to include the entire private key including the BEGIN and END lines
 3. After adding all variables, redeploy your backend project in Vercel
 4. Test the email existence check endpoint after deployment
+
+
+VAPID_PUBLIC_KEY
+BA8kEbuN2j6CGzLSzy3P1RKLUp-h5WM_BBmqWla6xMLrP4H2dgye8uKNMfUYPbhQXCgaQGktBRxOToQuRTKtqAE
+
+VAPID_PRIVATE_KEY
+xtol4IkC4oeInHINLkszxO2sC14vPDyq7qUq8060Sf0
+
+FCM_SERVER_KEY
+BFYxr1Z89JYoJv4McumettI5WokdGozcDLJMRd-TZRZ_5gXB2w_2ZIksmV6bfnUIaI8SzAP5nx2bVT_dBWobdZQ
