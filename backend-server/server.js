@@ -823,13 +823,13 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
       });
     }
 
-    // Prepare FCM message - data must be strings only
+    // Prepare FCM message - use correct FCM notification structure
     const message = {
       token: fcmToken,
       notification: {
         title: title,
         body: body,
-        icon: icon || '/only-logo.png',
+        // image: icon || '/only-logo.png', // Optional: large image
       },
       data: data ? Object.fromEntries(
         Object.entries(data).map(([key, value]) => [key, String(value)])
@@ -943,7 +943,7 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
           notification: {
             title: title,
             body: body,
-            icon: icon || '/only-logo.png',
+            // image: icon || '/only-logo.png', // Optional: large image
           },
           data: data ? Object.fromEntries(
             Object.entries(data).map(([key, value]) => [key, String(value)])
