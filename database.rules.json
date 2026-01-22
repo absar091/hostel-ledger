@@ -37,8 +37,8 @@
     },
     "verificationCodes": {
       "$codeId": {
-        ".read": "auth == null",
-        ".write": "auth == null",
+        ".read": "auth != null || auth == null",
+        ".write": "auth != null || auth == null",
         ".validate": "newData.hasChildren(['email', 'code', 'createdAt']) && newData.child('code').isString() && newData.child('email').isString()"
       }
     },
@@ -47,6 +47,13 @@
         ".read": "$uid === auth.uid || auth == null",
         ".write": "$uid === auth.uid || auth == null",
         ".validate": "newData.hasChildren(['email', 'emailVerified'])"
+      }
+    },
+    "pushSubscriptions": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid && auth != null",
+        ".validate": "newData.hasChildren(['fcmToken', 'updatedAt']) && newData.child('fcmToken').isString()"
       }
     }
   }
