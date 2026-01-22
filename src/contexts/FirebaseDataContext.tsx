@@ -770,12 +770,12 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               console.warn('⚠️ Transaction notification email failed:', emailResult.errors);
             }
             
-            // Send push notifications to all group members except the payer
+            // Send push notifications to all group members (including payer for testing)
             try {
               console.log('🔔 Sending push notifications for expense...');
               
               const notificationPromises = group.members
-                .filter(member => member.userId && member.userId !== data.paidBy) // Don't notify the payer
+                .filter(member => member.userId) // Notify everyone with userId (including payer for testing)
                 .map(async (member) => {
                   try {
                     const response = await fetch(`${import.meta.env.VITE_API_URL}/api/push-notify`, {
