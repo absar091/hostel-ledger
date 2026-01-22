@@ -945,7 +945,9 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
             body: body,
             icon: icon || '/only-logo.png',
           },
-          data: data || {},
+          data: data ? Object.fromEntries(
+            Object.entries(data).map(([key, value]) => [key, String(value)])
+          ) : {},
           webpush: {
             notification: {
               icon: icon || '/only-logo.png',
