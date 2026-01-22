@@ -45,13 +45,19 @@ export const useOneSignalPush = () => {
             appId: appId,
             allowLocalhostAsSecureOrigin: true,
             serviceWorkerPath: 'OneSignalSDK.sw.js',
+            // Persist notification permission
+            persistNotification: true,
+            autoResubscribe: true,
           });
           oneSignalInitialized = true;
           console.log('✅ OneSignal initialized');
         }
 
+        // Check subscription status
         const permission = OneSignal.Notifications.permission;
         const isSubscribed = OneSignal.User.PushSubscription.optedIn;
+
+        console.log('📊 OneSignal status:', { permission, isSubscribed });
 
         setState({
           isSupported: true,
@@ -62,6 +68,7 @@ export const useOneSignalPush = () => {
 
         // Listen for subscription changes
         OneSignal.User.PushSubscription.addEventListener('change', (subscription) => {
+          console.log('🔄 Subscription changed:', subscription);
           setState(prev => ({
             ...prev,
             isSubscribed: subscription.current.optedIn,
@@ -149,9 +156,14 @@ export const useOneSignalPush = () => {
             const db = getDatabase();
             await set(ref(db, `oneSignalPlayers/${currentUser.uid}`), {
               playerId: playerId,
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date().toISOString(),
+              userAgent: navigator.userAgent,
             });
             console.log('✅ Player ID stored in Firebase');
+            
+            // Store in localStorage as backup
+            localStorage.setItem('oneSignalPlayerId', playerId);
+            localStorage.setItem('oneSignalUserId', currentUser.uid);
           } catch (error) {
             console.error('❌ Failed to store Player ID:', error);
           }
