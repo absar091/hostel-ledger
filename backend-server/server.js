@@ -788,18 +788,23 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
     }
 
     // Send notification via OneSignal REST API
+    // Using included_segments to send to all subscribed users since External ID might not be set
     const notificationData = {
       app_id: oneSignalAppId,
-      include_external_user_ids: [userId],
+      included_segments: ['Subscribed Users'], // Send to all subscribed users
       headings: { en: title },
       contents: { en: body },
       web_url: data?.url || undefined,
       chrome_web_icon: icon || '/only-logo.png',
       chrome_web_badge: badge || '/only-logo.png',
-      data: data || {}
+      data: {
+        ...data,
+        targetUserId: userId // Include in data for filtering on client side
+      }
     };
 
-    console.log('📤 Sending to OneSignal API...');
+    console.log('📤 Sending to OneSignal API (all subscribed users)...');
+    console.log('📝 Target user ID:', userId);
     
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
@@ -873,18 +878,23 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
     }
 
     // Send notification via OneSignal REST API to multiple users
+    // Using included_segments to send to all subscribed users since External ID might not be set
     const notificationData = {
       app_id: oneSignalAppId,
-      include_external_user_ids: userIds,
+      included_segments: ['Subscribed Users'], // Send to all subscribed users
       headings: { en: title },
       contents: { en: body },
       web_url: data?.url || undefined,
       chrome_web_icon: icon || '/only-logo.png',
       chrome_web_badge: badge || '/only-logo.png',
-      data: data || {}
+      data: {
+        ...data,
+        targetUserIds: userIds.join(',') // Include in data for filtering on client side
+      }
     };
 
-    console.log('📤 Sending to OneSignal API...');
+    console.log('📤 Sending to OneSignal API (all subscribed users)...');
+    console.log('📝 Target user IDs:', userIds);
     
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
