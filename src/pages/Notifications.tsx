@@ -7,7 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
 import AppContainer from "@/components/AppContainer";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useOneSignalPush } from "@/hooks/useOneSignalPush";
 import { toast } from "sonner";
 
 const Notifications = () => {
@@ -21,7 +21,7 @@ const Notifications = () => {
     subscribe,
     unsubscribe,
     showNotification,
-  } = usePushNotifications();
+  } = useOneSignalPush();
 
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("profile");
   const [isToggling, setIsToggling] = useState(false);
@@ -244,7 +244,7 @@ const Notifications = () => {
               <p>Supported: {isSupported ? "✓" : "✗"}</p>
               <p>Permission: {permission}</p>
               <p>Subscribed: {isSubscribed ? "✓" : "✗"}</p>
-              <p>VAPID Key: {import.meta.env.VITE_VAPID_PUBLIC_KEY ? "✓ Configured" : "✗ Missing"}</p>
+              <p>OneSignal App ID: {import.meta.env.VITE_ONESIGNAL_APP_ID ? "✓ Configured" : "✗ Missing"}</p>
             </div>
           )}
         </main>

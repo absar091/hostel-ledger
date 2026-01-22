@@ -147,7 +147,8 @@ app.get('/', (req, res) => {
   res.json({ 
     success: true, 
     message: 'Hostel Ledger Email API',
-    version: '3.0.0-push-active',
+    version: '4.0.0-onesignal',
+    pushProvider: 'OneSignal',
     endpoints: {
       health: '/health',
       sendEmail: '/api/send-email',
@@ -155,9 +156,8 @@ app.get('/', (req, res) => {
       sendPasswordReset: '/api/send-password-reset',
       sendWelcome: '/api/send-welcome',
       sendTransactionAlert: '/api/send-transaction-alert',
-      pushSubscribe: '/api/push-subscribe',
-      pushNotify: '/api/push-notify',
-      pushNotifyMultiple: '/api/push-notify-multiple',
+      pushNotify: '/api/push-notify (OneSignal)',
+      pushNotifyMultiple: '/api/push-notify-multiple (OneSignal)',
       pushTest: '/api/push-test'
     },
     timestamp: new Date().toISOString(),
@@ -174,9 +174,10 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
-    version: '3.0.0-push-active', // Updated version to verify new deployment
-    pushEndpointsActive: true,
-    deployedAt: '2026-01-22T12:00:00Z'
+    version: '4.0.0-onesignal', // Updated version for OneSignal
+    pushProvider: 'OneSignal',
+    oneSignalConfigured: !!(process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY),
+    deployedAt: '2026-01-22T13:00:00Z'
   });
 });
 
@@ -740,61 +741,27 @@ app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
 // Using Firebase Realtime Database for subscription storage
 // ============================================
 
-// Subscribe to push notifications
+// Subscribe to push notifications (OneSignal handles this automatically)
+// This endpoint is kept for backward compatibility but is no longer needed
 app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
   try {
-    const { userId, fcmToken, subscription } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required field: userId'
-      });
-    }
-
-    let tokenToStore = null;
+    console.log('ℹ️ Push subscribe endpoint called (OneSignal handles subscriptions automatically)');
     
-    if (fcmToken) {
-      // Direct FCM token from Firebase Messaging SDK
-      tokenToStore = fcmToken;
-      console.log('🔔 Storing FCM token for user:', userId);
-      console.log('📝 Token length:', fcmToken.length);
-      
-      await admin.database().ref(`pushSubscriptions/${userId}`).set({
-        fcmToken: fcmToken,
-        updatedAt: new Date().toISOString()
-      });
-    } else if (subscription && subscription.endpoint) {
-      // Legacy: subscription object (for backward compatibility)
-      console.log('🔔 Storing push subscription for user:', userId);
-      await admin.database().ref(`pushSubscriptions/${userId}`).set({
-        subscription: subscription,
-        updatedAt: new Date().toISOString()
-      });
-    } else {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing fcmToken or subscription'
-      });
-    }
-
-    console.log('✅ Push subscription stored successfully in Firebase');
-
     res.json({
       success: true,
-      message: 'Push subscription stored successfully'
+      message: 'OneSignal handles subscriptions automatically - no action needed'
     });
 
   } catch (error) {
     console.error('❌ Push subscribe error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to store push subscription: ' + error.message
+      error: 'Failed to process subscription: ' + error.message
     });
   }
 });
 
-// Send push notification to a specific user using Firebase Admin SDK
+// Send push notification to a specific user using OneSignal REST API
 app.post('/api/push-notify', generalLimiter, async (req, res) => {
   try {
     const { userId, title, body, icon, badge, tag, data } = req.body;
@@ -806,99 +773,73 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
       });
     }
 
-    console.log('🔔 Sending push notification to user:', userId);
+    console.log('🔔 Sending push notification to user via OneSignal:', userId);
 
-    // Get subscription from Firebase Realtime Database
-    const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
-    const snapshot = await subscriptionsRef.once('value');
-    const subscriptionData = snapshot.val();
-    
-    if (!subscriptionData) {
-      console.warn('⚠️ No push subscription found for user:', userId);
-      return res.status(404).json({
+    // Check if OneSignal is configured
+    const oneSignalAppId = process.env.ONESIGNAL_APP_ID;
+    const oneSignalApiKey = process.env.ONESIGNAL_REST_API_KEY;
+
+    if (!oneSignalAppId || !oneSignalApiKey) {
+      console.error('❌ OneSignal not configured');
+      return res.status(500).json({
         success: false,
-        error: 'No push subscription found for this user'
+        error: 'OneSignal not configured on server'
       });
     }
 
-    // Extract FCM token from subscription endpoint
-    let fcmToken = null;
-    
-    if (subscriptionData.fcmToken) {
-      // Direct FCM token
-      fcmToken = subscriptionData.fcmToken;
-    } else if (subscriptionData.subscription && subscriptionData.subscription.endpoint) {
-      // Extract token from FCM endpoint URL
-      const endpoint = subscriptionData.subscription.endpoint;
-      const match = endpoint.match(/\/fcm\/send\/(.+)$/);
-      if (match) {
-        fcmToken = match[1];
-      }
-    }
-
-    if (!fcmToken) {
-      console.error('❌ Could not extract FCM token from subscription');
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid subscription format - no FCM token found'
-      });
-    }
-
-    console.log('📝 Using FCM token (length):', fcmToken.length);
-
-    // Send using Firebase Admin SDK
-    const message = {
-      token: fcmToken,
-      notification: {
-        title: title,
-        body: body,
-      },
-      data: data ? Object.fromEntries(
-        Object.entries(data).map(([key, value]) => [key, String(value)])
-      ) : {},
-      webpush: {
-        notification: {
-          icon: icon || '/only-logo.png',
-          badge: badge || '/only-logo.png',
-          tag: tag || 'default',
-        }
-      }
+    // Send notification via OneSignal REST API
+    const notificationData = {
+      app_id: oneSignalAppId,
+      include_external_user_ids: [userId],
+      headings: { en: title },
+      contents: { en: body },
+      web_url: data?.url || undefined,
+      chrome_web_icon: icon || '/only-logo.png',
+      chrome_web_badge: badge || '/only-logo.png',
+      data: data || {}
     };
 
-    console.log('📤 Sending notification via Firebase Admin SDK');
-    const response = await admin.messaging().send(message);
+    console.log('📤 Sending to OneSignal API...');
     
-    console.log('✅ Push notification sent successfully');
-    console.log('📊 Response:', response);
+    const response = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${oneSignalApiKey}`
+      },
+      body: JSON.stringify(notificationData)
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      console.error('❌ OneSignal API error:', responseData);
+      return res.status(500).json({
+        success: false,
+        error: 'OneSignal API error: ' + (responseData.errors?.[0] || 'Unknown error')
+      });
+    }
+
+    console.log('✅ Push notification sent successfully via OneSignal');
+    console.log('📊 Recipients:', responseData.recipients);
 
     res.json({
       success: true,
       message: 'Push notification sent successfully',
-      messageId: response
+      recipients: responseData.recipients,
+      id: responseData.id
     });
 
   } catch (error) {
     console.error('❌ Push notify error:', error);
-    
-    // Handle invalid or expired tokens
-    if (error.code === 'messaging/invalid-registration-token' || 
-        error.code === 'messaging/registration-token-not-registered') {
-      console.warn('⚠️ Token expired or invalid, removing from Firebase');
-      const { userId } = req.body;
-      if (userId) {
-        await admin.database().ref(`pushSubscriptions/${userId}`).remove();
-      }
-    }
-
     res.status(500).json({
       success: false,
-      error: 'Failed to send push notification: ' + error.message,
-      code: error.code
+      error: 'Failed to send push notification: ' + error.message
     });
   }
 });
 
-// Send push notification to multiple users using Firebase Admin SDK
+// Send push notification to multiple users using OneSignal REST API
 app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
   try {
     const { userIds, title, body, icon, badge, tag, data } = req.body;
@@ -917,91 +858,61 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
       });
     }
 
-    console.log('🔔 Sending push notifications to', userIds.length, 'users');
+    console.log('🔔 Sending push notifications to', userIds.length, 'users via OneSignal');
 
-    const results = {
-      success: 0,
-      failed: 0,
-      errors: []
-    };
+    // Check if OneSignal is configured
+    const oneSignalAppId = process.env.ONESIGNAL_APP_ID;
+    const oneSignalApiKey = process.env.ONESIGNAL_REST_API_KEY;
 
-    // Send to all users
-    for (const userId of userIds) {
-      try {
-        // Get subscription from Firebase
-        const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
-        const snapshot = await subscriptionsRef.once('value');
-        const subscriptionData = snapshot.val();
-        
-        if (!subscriptionData) {
-          console.warn('⚠️ No subscription for user:', userId);
-          results.failed++;
-          results.errors.push({ userId, error: 'No subscription found' });
-          continue;
-        }
-
-        // Extract FCM token
-        let fcmToken = null;
-        
-        if (subscriptionData.fcmToken) {
-          fcmToken = subscriptionData.fcmToken;
-        } else if (subscriptionData.subscription && subscriptionData.subscription.endpoint) {
-          const endpoint = subscriptionData.subscription.endpoint;
-          const match = endpoint.match(/\/fcm\/send\/(.+)$/);
-          if (match) {
-            fcmToken = match[1];
-          }
-        }
-
-        if (!fcmToken) {
-          console.error('❌ Could not extract FCM token for user:', userId);
-          results.failed++;
-          results.errors.push({ userId, error: 'Invalid subscription format' });
-          continue;
-        }
-
-        // Send using Firebase Admin SDK
-        const message = {
-          token: fcmToken,
-          notification: {
-            title: title,
-            body: body,
-          },
-          data: data ? Object.fromEntries(
-            Object.entries(data).map(([key, value]) => [key, String(value)])
-          ) : {},
-          webpush: {
-            notification: {
-              icon: icon || '/only-logo.png',
-              badge: badge || '/only-logo.png',
-              tag: tag || 'default',
-            }
-          }
-        };
-
-        await admin.messaging().send(message);
-        results.success++;
-        console.log('✅ Notification sent to:', userId);
-
-      } catch (error) {
-        console.error('❌ Failed to send to user:', userId, error.message);
-        results.failed++;
-        results.errors.push({ userId, error: error.message });
-
-        // Remove expired tokens
-        if (error.code === 'messaging/invalid-registration-token' || 
-            error.code === 'messaging/registration-token-not-registered') {
-          await admin.database().ref(`pushSubscriptions/${userId}`).remove();
-        }
-      }
+    if (!oneSignalAppId || !oneSignalApiKey) {
+      console.error('❌ OneSignal not configured');
+      return res.status(500).json({
+        success: false,
+        error: 'OneSignal not configured on server'
+      });
     }
 
-    console.log('📊 Notification results:', results);
+    // Send notification via OneSignal REST API to multiple users
+    const notificationData = {
+      app_id: oneSignalAppId,
+      include_external_user_ids: userIds,
+      headings: { en: title },
+      contents: { en: body },
+      web_url: data?.url || undefined,
+      chrome_web_icon: icon || '/only-logo.png',
+      chrome_web_badge: badge || '/only-logo.png',
+      data: data || {}
+    };
+
+    console.log('📤 Sending to OneSignal API...');
+    
+    const response = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${oneSignalApiKey}`
+      },
+      body: JSON.stringify(notificationData)
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      console.error('❌ OneSignal API error:', responseData);
+      return res.status(500).json({
+        success: false,
+        error: 'OneSignal API error: ' + (responseData.errors?.[0] || 'Unknown error')
+      });
+    }
+
+    console.log('✅ Push notifications sent successfully via OneSignal');
+    console.log('📊 Recipients:', responseData.recipients);
 
     res.json({
       success: true,
-      message: `Sent ${results.success} notifications, ${results.failed} failed`,
-      results: results
+      message: `Sent notifications to ${responseData.recipients} users`,
+      recipients: responseData.recipients,
+      id: responseData.id
     });
 
   } catch (error) {
@@ -1013,26 +924,14 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
   }
 });
 
-// Get subscription status for a user
+// Get subscription status for a user (OneSignal handles this)
 app.get('/api/push-subscription/:userId', generalLimiter, async (req, res) => {
   try {
-    const { userId } = req.params;
-
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        error: 'userId is required'
-      });
-    }
-
-    const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
-    const snapshot = await subscriptionsRef.once('value');
-    const subscriptionData = snapshot.val();
+    console.log('ℹ️ Push subscription status endpoint called (OneSignal handles this)');
     
     res.json({
       success: true,
-      hasSubscription: !!subscriptionData,
-      hasFcmToken: !!(subscriptionData && subscriptionData.fcmToken)
+      message: 'OneSignal handles subscription status - check OneSignal dashboard'
     });
 
   } catch (error) {
@@ -1044,38 +943,21 @@ app.get('/api/push-subscription/:userId', generalLimiter, async (req, res) => {
   }
 });
 
-// Unsubscribe from push notifications
+// Unsubscribe from push notifications (OneSignal handles this)
 app.delete('/api/push-unsubscribe/:userId', generalLimiter, async (req, res) => {
   try {
-    const { userId } = req.params;
-
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        error: 'userId is required'
-      });
-    }
-
-    console.log('🔕 Removing push subscription for user:', userId);
-
-    const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
-    const snapshot = await subscriptionsRef.once('value');
-    const existed = snapshot.exists();
+    console.log('ℹ️ Push unsubscribe endpoint called (OneSignal handles this)');
     
-    await subscriptionsRef.remove();
-
-    console.log('✅ Push subscription removed from Firebase');
-
     res.json({
       success: true,
-      message: existed ? 'Subscription removed' : 'No subscription found'
+      message: 'OneSignal handles unsubscription automatically'
     });
 
   } catch (error) {
     console.error('❌ Push unsubscribe error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to remove subscription: ' + error.message
+      error: 'Failed to process unsubscription: ' + error.message
     });
   }
 });
