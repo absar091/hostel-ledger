@@ -743,7 +743,7 @@ app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
 // Subscribe to push notifications
 app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
   try {
-    const { userId, subscription, fcmToken } = req.body;
+    const { userId, fcmToken, subscription } = req.body;
 
     if (!userId) {
       return res.status(400).json({
@@ -752,26 +752,24 @@ app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
       });
     }
 
-    // Support both old subscription format and new FCM token format
-    let tokenToStore;
+    let tokenToStore = null;
     
     if (fcmToken) {
-      // New format: direct FCM token
+      // Direct FCM token from Firebase Messaging SDK
       tokenToStore = fcmToken;
       console.log('🔔 Storing FCM token for user:', userId);
       console.log('📝 Token length:', fcmToken.length);
+      
+      await admin.database().ref(`pushSubscriptions/${userId}`).set({
+        fcmToken: fcmToken,
+        updatedAt: new Date().toISOString()
+      });
     } else if (subscription && subscription.endpoint) {
-      // Old format: subscription object with endpoint
-      // For now, store the whole subscription object
+      // Legacy: subscription object (for backward compatibility)
       console.log('🔔 Storing push subscription for user:', userId);
       await admin.database().ref(`pushSubscriptions/${userId}`).set({
         subscription: subscription,
         updatedAt: new Date().toISOString()
-      });
-      
-      return res.json({
-        success: true,
-        message: 'Push subscription stored successfully'
       });
     } else {
       return res.status(400).json({
@@ -780,18 +778,11 @@ app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
       });
     }
 
-    // Store FCM token in Firebase Realtime Database
-    const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
-    await subscriptionsRef.set({
-      fcmToken: tokenToStore,
-      updatedAt: new Date().toISOString()
-    });
-
-    console.log('✅ FCM token stored successfully in Firebase');
+    console.log('✅ Push subscription stored successfully in Firebase');
 
     res.json({
       success: true,
-      message: 'FCM token stored successfully'
+      message: 'Push subscription stored successfully'
     });
 
   } catch (error) {
