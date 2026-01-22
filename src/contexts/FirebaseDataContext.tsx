@@ -799,9 +799,16 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                     
                     console.log('📤 Request body:', requestBody);
                     
-                    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/push-notify`, {
+                    // Add cache-busting timestamp to URL
+                    const apiUrl = `${import.meta.env.VITE_API_URL}/api/push-notify?t=${Date.now()}`;
+                    console.log('📤 API URL:', apiUrl);
+                    
+                    const response = await fetch(apiUrl, {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers: { 
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                      },
                       body: JSON.stringify(requestBody)
                     });
                     
