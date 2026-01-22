@@ -823,7 +823,7 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
       });
     }
 
-    // Prepare FCM message
+    // Prepare FCM message - data must be strings only
     const message = {
       token: fcmToken,
       notification: {
@@ -831,7 +831,9 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
         body: body,
         icon: icon || '/only-logo.png',
       },
-      data: data || {},
+      data: data ? Object.fromEntries(
+        Object.entries(data).map(([key, value]) => [key, String(value)])
+      ) : {},
       webpush: {
         notification: {
           icon: icon || '/only-logo.png',
