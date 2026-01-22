@@ -38,10 +38,12 @@ export const useOneSignalPush = () => {
         }
 
         if (!oneSignalInitialized) {
+          // Wait a bit for PWA service worker to register first
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
           await OneSignal.init({
             appId: appId,
             allowLocalhostAsSecureOrigin: true,
-            serviceWorkerParam: { scope: '/' },
             serviceWorkerPath: 'OneSignalSDK.sw.js',
           });
           oneSignalInitialized = true;
