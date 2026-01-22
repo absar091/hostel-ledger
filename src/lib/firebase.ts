@@ -54,22 +54,17 @@ const initMessaging = async () => {
     if (typeof window !== 'undefined') {
       const supported = await isMessagingSupported();
       if (supported) {
-        // Register Firebase Messaging service worker first
+        // Wait for service worker to be ready (PWA service worker)
         if ('serviceWorker' in navigator) {
           try {
-            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-              scope: '/firebase-cloud-messaging-push-scope',
-            });
-            console.log('✅ Firebase Messaging SW registered:', registration.scope);
-            
-            // Wait a bit for service worker to be ready
             await navigator.serviceWorker.ready;
+            console.log('✅ Service Worker ready');
             
-            // Now initialize messaging
+            // Now initialize messaging with the existing service worker
             messaging = getMessaging(app);
             console.log('✅ Firebase Messaging initialized');
           } catch (swError) {
-            console.error('❌ Failed to register Firebase Messaging SW:', swError);
+            console.error('❌ Service Worker error:', swError);
           }
         } else {
           console.warn('⚠️ Service Worker not supported');

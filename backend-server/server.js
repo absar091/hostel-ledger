@@ -742,30 +742,47 @@ app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
 // Subscribe to push notifications
 app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
   try {
-    const { userId, fcmToken } = req.body;
+    const { userId, subscription, fcmToken } = req.body;
 
-    if (!userId || !fcmToken) {
+    if (!userId) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: userId, fcmToken'
+        error: 'Missing required field: userId'
       });
     }
 
-    // Validate FCM token format (basic check)
-    if (typeof fcmToken !== 'string' || fcmToken.length < 50) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid FCM token format'
-      });
-    }
-
-    console.log('🔔 Storing FCM token for user:', userId);
-    console.log('📝 Token length:', fcmToken.length);
+    // Support both old subscription format and new FCM token format
+    let tokenToStore;
     
+    if (fcmToken) {
+      // New format: direct FCM token
+      tokenToStore = fcmToken;
+      console.log('🔔 Storing FCM token for user:', userId);
+      console.log('📝 Token length:', fcmToken.length);
+    } else if (subscription && subscription.endpoint) {
+      // Old format: subscription object with endpoint
+      // For now, store the whole subscription object
+      console.log('🔔 Storing push subscription for user:', userId);
+      await admin.database().ref(`pushSubscriptions/${userId}`).set({
+        subscription: subscription,
+        updatedAt: new Date().toISOString()
+      });
+      
+      return res.json({
+        success: true,
+        message: 'Push subscription stored successfully'
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing fcmToken or subscription'
+      });
+    }
+
     // Store FCM token in Firebase Realtime Database
     const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
     await subscriptionsRef.set({
-      fcmToken: fcmToken,
+      fcmToken: tokenToStore,
       updatedAt: new Date().toISOString()
     });
 
@@ -780,12 +797,12 @@ app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
     console.error('❌ Push subscribe error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to store FCM token: ' + error.message
+      error: 'Failed to store push subscription: ' + error.message
     });
   }
 });
 
-// Send push notification to a specific user using Firebase Admin SDK
+// Send push notification to a specific user
 app.post('/api/push-notify', generalLimiter, async (req, res) => {
   try {
     const { userId, title, body, icon, badge, tag, data } = req.body;
@@ -799,12 +816,12 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
 
     console.log('🔔 Sending push notification to user:', userId);
 
-    // Get FCM token from Firebase Realtime Database
+    // Get subscription from Firebase Realtime Database
     const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
     const snapshot = await subscriptionsRef.once('value');
     const subscriptionData = snapshot.val();
     
-    if (!subscriptionData || !subscriptionData.fcmToken) {
+    if (!subscriptionData) {
       console.warn('⚠️ No push subscription found for user:', userId);
       return res.status(404).json({
         success: false,
@@ -812,41 +829,59 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
       });
     }
 
-    const fcmToken = subscriptionData.fcmToken;
-    console.log('📝 Using FCM token (length):', fcmToken.length);
+    // Check if we have FCM token or subscription object
+    if (subscriptionData.fcmToken) {
+      // Use Firebase Admin SDK
+      const message = {
+        token: subscriptionData.fcmToken,
+        notification: {
+          title: title,
+          body: body,
+        },
+        data: data ? Object.fromEntries(
+          Object.entries(data).map(([key, value]) => [key, String(value)])
+        ) : {},
+        webpush: {
+          notification: {
+            icon: icon || '/only-logo.png',
+            badge: badge || '/only-logo.png',
+            tag: tag || 'default',
+          }
+        }
+      };
 
-    // Prepare FCM message with correct structure
-    const message = {
-      token: fcmToken,
-      notification: {
+      const response = await admin.messaging().send(message);
+      console.log('✅ Push notification sent via FCM');
+      
+      return res.json({
+        success: true,
+        message: 'Push notification sent successfully',
+        messageId: response
+      });
+    } else if (subscriptionData.subscription) {
+      // Use web-push library
+      const payload = JSON.stringify({
         title: title,
         body: body,
-      },
-      data: data ? Object.fromEntries(
-        Object.entries(data).map(([key, value]) => [key, String(value)])
-      ) : {},
-      webpush: {
-        notification: {
-          icon: icon || '/only-logo.png',
-          badge: badge || '/only-logo.png',
-          tag: tag || 'default',
-        }
-      }
-    };
+        icon: icon || '/only-logo.png',
+        badge: badge || '/only-logo.png',
+        tag: tag || 'default',
+        data: data || {}
+      });
 
-    console.log('📤 Sending notification:', { title, body, userId });
-
-    // Send using Firebase Admin SDK
-    const response = await admin.messaging().send(message);
-    
-    console.log('✅ Push notification sent successfully');
-    console.log('📊 Response:', response);
-
-    res.json({
-      success: true,
-      message: 'Push notification sent successfully',
-      messageId: response
-    });
+      await webpush.sendNotification(subscriptionData.subscription, payload);
+      console.log('✅ Push notification sent via web-push');
+      
+      return res.json({
+        success: true,
+        message: 'Push notification sent successfully'
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid subscription data'
+      });
+    }
 
   } catch (error) {
     console.error('❌ Push notify error:', error);
@@ -869,7 +904,7 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
   }
 });
 
-// Send push notification to multiple users using Firebase Admin SDK
+// Send push notification to multiple users
 app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
   try {
     const { userIds, title, body, icon, badge, tag, data } = req.body;
@@ -899,39 +934,56 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
     // Send to all users
     for (const userId of userIds) {
       try {
-        // Get FCM token from Firebase
+        // Get subscription from Firebase
         const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
         const snapshot = await subscriptionsRef.once('value');
         const subscriptionData = snapshot.val();
         
-        if (!subscriptionData || !subscriptionData.fcmToken) {
+        if (!subscriptionData) {
           console.warn('⚠️ No subscription for user:', userId);
           results.failed++;
           results.errors.push({ userId, error: 'No subscription found' });
           continue;
         }
 
-        const fcmToken = subscriptionData.fcmToken;
+        // Check if we have FCM token or subscription object
+        if (subscriptionData.fcmToken) {
+          // Use Firebase Admin SDK
+          const message = {
+            token: subscriptionData.fcmToken,
+            notification: {
+              title: title,
+              body: body,
+            },
+            data: data ? Object.fromEntries(
+              Object.entries(data).map(([key, value]) => [key, String(value)])
+            ) : {},
+            webpush: {
+              notification: {
+                icon: icon || '/only-logo.png',
+                badge: badge || '/only-logo.png',
+                tag: tag || 'default',
+              }
+            }
+          };
 
-        const message = {
-          token: fcmToken,
-          notification: {
+          await admin.messaging().send(message);
+        } else if (subscriptionData.subscription) {
+          // Use web-push library
+          const payload = JSON.stringify({
             title: title,
             body: body,
-          },
-          data: data ? Object.fromEntries(
-            Object.entries(data).map(([key, value]) => [key, String(value)])
-          ) : {},
-          webpush: {
-            notification: {
-              icon: icon || '/only-logo.png',
-              badge: badge || '/only-logo.png',
-              tag: tag || 'default',
-            }
-          }
-        };
+            icon: icon || '/only-logo.png',
+            badge: badge || '/only-logo.png',
+            tag: tag || 'default',
+            data: data || {}
+          });
 
-        await admin.messaging().send(message);
+          await webpush.sendNotification(subscriptionData.subscription, payload);
+        } else {
+          throw new Error('Invalid subscription data');
+        }
+
         results.success++;
         console.log('✅ Notification sent to:', userId);
 
