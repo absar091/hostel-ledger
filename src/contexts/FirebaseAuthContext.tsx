@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { 
+import {
   User,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -14,13 +14,13 @@ import { ref, set, get, update, push, onValue, off } from "firebase/database";
 import { auth, database } from "@/lib/firebase";
 import { logger } from "@/lib/logger";
 import { retryOperation } from "@/lib/transaction";
-import { 
-  sanitizeInput, 
-  isValidEmail, 
-  validatePassword, 
-  validateName, 
+import {
+  sanitizeInput,
+  isValidEmail,
+  validatePassword,
+  validateName,
   validatePhone,
-  validateAmount 
+  validateAmount
 } from "@/lib/security";
 
 export interface PaymentDetails {
@@ -50,12 +50,12 @@ interface FirebaseAuthContextType {
   firebaseUser: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (data: { 
-    email: string; 
-    password: string; 
+  signup: (data: {
+    email: string;
+    password: string;
     firstName?: string;
     lastName?: string;
-    name?: string; 
+    name?: string;
     phone?: string;
     university?: string;
     emailVerified?: boolean;
@@ -115,19 +115,19 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       logger.debug("Fetching user profile", { uid });
       const userRef = ref(database, `users/${uid}`);
       const verificationRef = ref(database, `emailVerification/${uid}`);
-      
+
       const [userSnapshot, verificationSnapshot] = await Promise.all([
         retryOperation(() => get(userRef)),
         retryOperation(() => get(verificationRef))
       ]);
-      
+
       if (userSnapshot.exists()) {
         const userData = userSnapshot.val();
         const verificationData = verificationSnapshot.exists() ? verificationSnapshot.val() : {};
-        
+
         logger.debug("User profile loaded from database", { uid });
         console.log('[fetchUserProfile] Raw userData from Firebase:', userData);
-        
+
         const userProfile: UserProfile = {
           uid,
           email: userData.email,
@@ -141,14 +141,14 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           createdAt: userData.createdAt,
           emailVerified: verificationData.emailVerified || false
         };
-        
+
         console.log('[fetchUserProfile] Constructed userProfile with photoURL:', userProfile.photoURL);
-        
+
         setUser(userProfile);
         logger.setUserId(uid);
       } else {
         logger.info("Creating new user profile", { uid });
-        
+
         const firebaseUser = auth.currentUser;
         if (firebaseUser) {
           const newUserProfile: UserProfile = {
@@ -163,7 +163,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
             createdAt: new Date().toISOString(),
             emailVerified: false
           };
-          
+
           await retryOperation(() => set(userRef, newUserProfile));
           setUser(newUserProfile);
           logger.setUserId(uid);
@@ -182,29 +182,29 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true);
-      
+
       // Input validation
       if (!isValidEmail(email)) {
         return { success: false, error: "Please enter a valid email address" };
       }
-      
+
       if (!password || password.length < 6) {
         return { success: false, error: "Password must be at least 6 characters" };
       }
-      
+
       // Sanitize inputs
       const sanitizedEmail = sanitizeInput(email.toLowerCase().trim());
-      
+
       logger.info("Login attempt", { email: sanitizedEmail });
-      
+
       const userCredential = await signInWithEmailAndPassword(auth, sanitizedEmail, password);
       logger.info("Login successful", { uid: userCredential.user.uid });
-      
+
       return { success: true };
     } catch (error: any) {
       logger.error("Login failed", { email: sanitizeInput(email), error: error.message });
       let errorMessage = "Login failed";
-      
+
       switch (error.code) {
         case 'auth/user-not-found':
           errorMessage = "No account found with this email";
@@ -224,43 +224,43 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         default:
           errorMessage = error.message || "Login failed";
       }
-      
+
       return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signup = async (data: { 
-    email: string; 
-    password: string; 
+  const signup = async (data: {
+    email: string;
+    password: string;
     firstName?: string;
     lastName?: string;
-    name?: string; 
+    name?: string;
     phone?: string;
     university?: string;
     emailVerified?: boolean;
   }): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true);
-      
+
       // Input validation
       if (!isValidEmail(data.email)) {
         return { success: false, error: "Please enter a valid email address" };
       }
-      
+
       const passwordValidation = validatePassword(data.password);
       if (!passwordValidation.isValid) {
         return { success: false, error: passwordValidation.errors[0] };
       }
-      
+
       // Validate and sanitize name
       const fullName = data.name || `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'User';
       const nameValidation = validateName(fullName);
       if (!nameValidation.isValid) {
         return { success: false, error: nameValidation.error };
       }
-      
+
       // Validate phone if provided
       if (data.phone) {
         const phoneValidation = validatePhone(data.phone);
@@ -268,12 +268,12 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           return { success: false, error: phoneValidation.error };
         }
       }
-      
+
       // Sanitize inputs
       const sanitizedEmail = sanitizeInput(data.email.toLowerCase().trim());
       const sanitizedName = nameValidation.sanitizedName!;
       const sanitizedPhone = data.phone ? validatePhone(data.phone).sanitizedPhone : null;
-      
+
       // Try Firebase Auth first
       try {
         console.log('🔍 Attempting Firebase Auth signup...');
@@ -281,11 +281,11 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         console.log('🔑 Password length:', data.password?.length);
         console.log('👤 Name:', sanitizedName);
         console.log('✅ Email Verified:', data.emailVerified);
-        
+
         // Create Firebase Auth user
         const userCredential = await createUserWithEmailAndPassword(auth, sanitizedEmail, data.password);
         const firebaseUser = userCredential.user;
-        
+
         console.log('✅ Firebase Auth user created:', firebaseUser.uid);
 
         // Update Firebase Auth profile
@@ -318,21 +318,21 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
         setUser(userProfile);
         return { success: true };
-        
+
       } catch (authError: any) {
         console.error("Firebase Auth signup failed:", authError);
-        
+
         // If Firebase Auth is disabled, show helpful error message
         if (authError.code === 'auth/admin-restricted-operation') {
-          return { 
-            success: false, 
-            error: "Account creation is currently disabled. Please contact support or enable Email/Password authentication in Firebase Console." 
+          return {
+            success: false,
+            error: "Account creation is currently disabled. Please contact support or enable Email/Password authentication in Firebase Console."
           };
         }
-        
+
         // Handle other auth errors
         let errorMessage = "Signup failed";
-        
+
         switch (authError.code) {
           case 'auth/email-already-in-use':
             errorMessage = "An account with this email already exists";
@@ -349,10 +349,10 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           default:
             errorMessage = authError.message || "Signup failed";
         }
-        
+
         return { success: false, error: errorMessage };
       }
-      
+
     } catch (error: any) {
       console.error("Signup error:", error);
       return { success: false, error: error.message || "Signup failed" };
@@ -375,22 +375,22 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Since we're using Firebase Auth, we need to use Firebase's password reset flow
       // But we're sending our own emails, so we need a different approach
-      
+
       // Option 1: Use Firebase's sendPasswordResetEmail (this will send Firebase's email)
       // Option 2: Create a custom solution that updates the user's password
-      
+
       // For now, let's use Firebase's built-in password reset
       // This will send a Firebase email, but it's the most secure approach
       await sendPasswordResetEmail(auth, email);
-      
-      return { 
-        success: true, 
-        error: "Please check your email for Firebase's password reset link. Our custom email system is for notifications only." 
+
+      return {
+        success: true,
+        error: "Please check your email for Firebase's password reset link. Our custom email system is for notifications only."
       };
     } catch (error: any) {
       console.error("Password reset error:", error);
       let errorMessage = "Failed to send password reset email";
-      
+
       switch (error.code) {
         case 'auth/user-not-found':
           errorMessage = "No account found with this email address";
@@ -404,7 +404,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         default:
           errorMessage = error.message || "Failed to send password reset email";
       }
-      
+
       return { success: false, error: errorMessage };
     }
   };
@@ -416,7 +416,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error("Send password reset email error:", error);
       let errorMessage = "Failed to send password reset email";
-      
+
       switch (error.code) {
         case 'auth/user-not-found':
           errorMessage = "No account found with this email address";
@@ -430,7 +430,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         default:
           errorMessage = error.message || "Failed to send password reset email";
       }
-      
+
       return { success: false, error: errorMessage };
     }
   };
@@ -442,7 +442,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error("Confirm password reset error:", error);
       let errorMessage = "Failed to reset password";
-      
+
       switch (error.code) {
         case 'auth/expired-action-code':
           errorMessage = "Reset code has expired. Please request a new password reset";
@@ -456,7 +456,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         default:
           errorMessage = error.message || "Failed to reset password";
       }
-      
+
       return { success: false, error: errorMessage };
     }
   };
@@ -464,7 +464,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const checkEmailExists = async (email: string): Promise<boolean> => {
     try {
       console.log('🔍 Checking if email exists:', email);
-      
+
       // Primary check: Use backend API with Firebase Admin SDK
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/check-email-exists`, {
@@ -474,7 +474,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           },
           body: JSON.stringify({ email })
         });
-        
+
         if (response.ok) {
           const result = await response.json();
           if (result.success) {
@@ -492,7 +492,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (backendError: any) {
         console.warn('⚠️ Backend email check error, falling back to Firebase Auth:', backendError.message);
       }
-      
+
       // Fallback check: Use Firebase Auth to check if email exists
       try {
         const methods = await fetchSignInMethodsForEmail(auth, email);
@@ -506,10 +506,10 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         // If auth check fails, we can't determine if email exists
         // Return false to allow signup attempt (Firebase will catch duplicates during signup)
       }
-      
+
       console.log('✅ Email is available:', email);
       return false;
-      
+
     } catch (error: any) {
       console.error("❌ Error checking email existence:", error);
       // In case of error, return false to allow signup (Firebase will catch duplicates during actual signup)
@@ -549,7 +549,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       console.log('[updateUserProfile] Input data:', data);
-      
+
       // Clean data to remove undefined values
       const cleanData = Object.fromEntries(
         Object.entries(data).filter(([_, value]) => value !== undefined)
@@ -566,16 +566,16 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       const userRef = ref(database, `users/${user.uid}`);
       await update(userRef, firebaseData);
-      
+
       console.log('[updateUserProfile] Firebase update successful');
-      
+
       // Update local state
       setUser(prev => {
         const newUser = prev ? { ...prev, ...cleanData } : null;
         console.log('[updateUserProfile] New local user state:', newUser);
         return newUser;
       });
-      
+
       return { success: true };
     } catch (error: any) {
       console.error("Update profile error:", error);
@@ -591,17 +591,17 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Import upload function
       const { uploadToCloudinary } = await import('@/lib/cloudinary');
-      
+
       // Upload to Cloudinary
       const result = await uploadToCloudinary(file);
-      
+
       if (!result.success || !result.url) {
         return { success: false, error: result.error || "Failed to upload image" };
       }
 
       // Update user profile with new photo URL
       const updateResult = await updateUserProfile({ photoURL: result.url });
-      
+
       if (!updateResult.success) {
         return { success: false, error: "Failed to save profile picture" };
       }
@@ -621,7 +621,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Remove photo URL from profile
       const result = await updateUserProfile({ photoURL: null });
-      
+
       if (!result.success) {
         return { success: false, error: "Failed to remove profile picture" };
       }
@@ -647,18 +647,18 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       // const sanitizedAmount = sanitizeAmount(amount);
       const sanitizedAmount = Math.max(0, Math.min(amount, 1000000));
       const newWalletBalance = user.walletBalance + sanitizedAmount;
-      
+
       const userRef = ref(database, `users/${user.uid}`);
-      await retryOperation(() => update(userRef, { 
+      await retryOperation(() => update(userRef, {
         walletBalance: newWalletBalance
       }));
-      
+
       // Update local state
-      setUser(prev => prev ? { 
-        ...prev, 
+      setUser(prev => prev ? {
+        ...prev,
         walletBalance: newWalletBalance
       } : null);
-      
+
       logger.logTransaction("wallet_add", sanitizedAmount, true);
       return { success: true };
     } catch (error: any) {
@@ -680,10 +680,10 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       const newBalance = user.walletBalance - amount;
       const userRef = ref(database, `users/${user.uid}/walletBalance`);
       await set(userRef, newBalance);
-      
+
       // Update local state
       setUser(prev => prev ? { ...prev, walletBalance: newBalance } : null);
-      
+
       return { success: true };
     } catch (error: any) {
       console.error("Deduct money error:", error);
@@ -699,14 +699,14 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
   const getSettlements = (groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
     if (!user?.settlements) return {};
-    
+
     if (groupId) {
       // Return settlements for specific group
       return user.settlements[groupId] || {};
     } else {
       // Return aggregated settlements across all groups
       const aggregated: { [personId: string]: { toReceive: number; toPay: number } } = {};
-      
+
       Object.values(user.settlements).forEach(groupSettlements => {
         Object.entries(groupSettlements).forEach(([personId, settlement]) => {
           if (!aggregated[personId]) {
@@ -716,7 +716,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           aggregated[personId].toPay += settlement.toPay;
         });
       });
-      
+
       return aggregated;
     }
   };
@@ -724,7 +724,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const getTotalToReceive = (groupId?: string): number => {
     const settlements = getSettlements(groupId);
     if (!settlements || Object.keys(settlements).length === 0) return 0;
-    
+
     return Object.values(settlements).reduce((sum, settlement) => {
       const amount = settlement?.toReceive || 0;
       return sum + (isNaN(amount) ? 0 : amount);
@@ -734,7 +734,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const getTotalToPay = (groupId?: string): number => {
     const settlements = getSettlements(groupId);
     if (!settlements || Object.keys(settlements).length === 0) return 0;
-    
+
     return Object.values(settlements).reduce((sum, settlement) => {
       const amount = settlement?.toPay || 0;
       return sum + (isNaN(amount) ? 0 : amount);
@@ -744,7 +744,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const getSettlementDelta = (groupId?: string): number => {
     const toReceive = getTotalToReceive(groupId);
     const toPay = getTotalToPay(groupId);
-    
+
     if (isNaN(toReceive) || isNaN(toPay)) return 0;
     return toReceive - toPay;
   };
@@ -757,25 +757,29 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const userRef = ref(database, `users/${user.uid}/settlements/${groupId}/${personId}`);
       const settlement = { toReceive: Math.max(0, toReceive), toPay: Math.max(0, toPay) };
-      
+
       await set(userRef, settlement);
-      
+
       // Update local state
       setUser(prev => {
         if (!prev) return null;
-        
+
         const newSettlements = { ...prev.settlements };
+        // Valid immutable update: copy the group level object too
         if (!newSettlements[groupId]) {
           newSettlements[groupId] = {};
+        } else {
+          newSettlements[groupId] = { ...newSettlements[groupId] };
         }
+
         newSettlements[groupId][personId] = settlement;
-        
-        return { 
-          ...prev, 
+
+        return {
+          ...prev,
           settlements: newSettlements
         };
       });
-      
+
       return { success: true };
     } catch (error: any) {
       console.error("Update settlement error:", error);
@@ -790,9 +794,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
     const groupSettlements = user.settlements[groupId] || {};
     const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
-    
+
     const result = await updateSettlement(groupId, personId, currentSettlement.toReceive + amount, currentSettlement.toPay);
-    
+
     return result;
   };
 
@@ -813,7 +817,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
     const groupSettlements = user.settlements[groupId] || {};
     const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
-    
+
     // Allow partial payments - don't require exact amount
     if (currentSettlement.toReceive <= 0) {
       return { success: false, error: "No pending receivables from this person in this group" };
@@ -831,7 +835,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       // Step 2: Reduce receivable amount
       await updateSettlement(groupId, personId, currentSettlement.toReceive - actualAmount, currentSettlement.toPay);
-      
+
       // Step 3: Create transaction record
       const transactionsRef = ref(database, 'transactions');
       const newTransactionRef = push(transactionsRef);
@@ -843,8 +847,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         type: "payment" as const,
         title: "Payment Received",
         amount: actualAmount,
-        date: new Date().toLocaleDateString("en-US", { 
-          month: "short", 
+        date: new Date().toLocaleDateString("en-US", {
+          month: "short",
           day: "numeric",
           year: "numeric"
         }),
@@ -866,7 +870,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       // Add to user's transactions
       const userTransactionRef = ref(database, `userTransactions/${user.uid}/${transactionId}`);
       await set(userTransactionRef, true);
-      
+
       return { success: true };
     } catch (error: any) {
       console.error("Mark payment received error:", error);
@@ -881,7 +885,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
     const groupSettlements = user.settlements[groupId] || {};
     const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
-    
+
     // Allow partial payments - don't require exact amount
     if (currentSettlement.toPay <= 0) {
       return { success: false, error: "No pending debts to this person in this group" };
@@ -899,7 +903,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       // Step 2: Reduce payable amount
       await updateSettlement(groupId, personId, currentSettlement.toReceive, currentSettlement.toPay - actualAmount);
-      
+
       // Step 3: Create transaction record
       const transactionsRef = ref(database, 'transactions');
       const newTransactionRef = push(transactionsRef);
@@ -911,8 +915,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         type: "payment" as const,
         title: "Debt Payment",
         amount: actualAmount,
-        date: new Date().toLocaleDateString("en-US", { 
-          month: "short", 
+        date: new Date().toLocaleDateString("en-US", {
+          month: "short",
           day: "numeric",
           year: "numeric"
         }),
@@ -934,7 +938,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       // Add to user's transactions
       const userTransactionRef = ref(database, `userTransactions/${user.uid}/${transactionId}`);
       await set(userTransactionRef, true);
-      
+
       return { success: true };
     } catch (error: any) {
       console.error("Mark debt paid error:", error);

@@ -94,12 +94,12 @@ const validatePaymentData = (data: {
 
   return { isValid: errors.length === 0, errors };
 };
-import { 
-  calculateExpenseSplit, 
-  calculateExpenseSettlements, 
+import {
+  calculateExpenseSplit,
+  calculateExpenseSettlements,
   validateSettlementConsistency,
   calculateWalletBalanceAfter,
-  validatePaymentAmount 
+  validatePaymentAmount
 } from "@/lib/expenseLogic";
 import { logger } from "@/lib/logger";
 import { sendTransactionNotifications, TransactionData, UserData } from "@/lib/transactionNotifications";
@@ -114,8 +114,8 @@ export interface GroupMember {
   balance?: number; // Calculated balance - optional since computed dynamically
   isTemporary?: boolean;
   tempId?: string;
-  deletionCondition?: 'SETTLED' | 'TIME_LIMIT';
-  expiresAt?: number;
+  deletionCondition?: 'SETTLED' | 'TIME_LIMIT' | null;
+  expiresAt?: number | null;
   deletionNotified?: boolean;
 }
 
@@ -175,10 +175,10 @@ interface FirebaseDataContextType {
 const FirebaseDataContext = createContext<FirebaseDataContextType | undefined>(undefined);
 
 export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
-  const { 
-    user, 
-    addMoneyToWallet: addToAuthWallet, 
-    deductMoneyFromWallet, 
+  const {
+    user,
+    addMoneyToWallet: addToAuthWallet,
+    deductMoneyFromWallet,
     addToReceivable,
     addToPayable,
     markPaymentReceived,
@@ -218,7 +218,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                 const groupSnapshot = await get(groupRef);
                 return groupSnapshot.exists() ? { id: groupId, ...groupSnapshot.val() } : null;
               });
-              
+
               const groupsData = await Promise.all(groupPromises);
               setGroups(groupsData.filter(Boolean) as Group[]);
             } else {
@@ -247,7 +247,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                 const transactionSnapshot = await get(transactionRef);
                 return transactionSnapshot.exists() ? { id: transactionId, ...transactionSnapshot.val() } : null;
               });
-              
+
               const transactionsData = await Promise.all(transactionPromises);
               const sortedTransactions = transactionsData
                 .filter(Boolean)
@@ -281,14 +281,14 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     // Check for expired temporary members periodically
     const checkExpiredMembers = async () => {
       if (!user || groups.length === 0) return;
-      
+
       const now = Date.now();
-      
+
       for (const group of groups) {
-        const expiredMembers = group.members.filter(m => 
-          m.isTemporary && 
-          m.deletionCondition === 'TIME_LIMIT' && 
-          m.expiresAt && 
+        const expiredMembers = group.members.filter(m =>
+          m.isTemporary &&
+          m.deletionCondition === 'TIME_LIMIT' &&
+          m.expiresAt &&
           m.expiresAt < now
         );
 
@@ -296,25 +296,25 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           for (const member of expiredMembers) {
             console.log(`Removing expired temporary member: ${member.name} from group ${group.name}`);
             try {
-               // Only remove if no pending settlements (safety check) - reusing remove logic would be best but for now calling the function
-               // Since we are inside the context, we can call the function directly if it was defined outside or use the logic here.
-               // However, `removeMemberFromGroup` is defined below. We might need to move it up or duplicate logic safely.
-               // For simplicity in this step, we will call the API function if available, but since it's defined inside, 
-               // we'll rely on the user manually dealing with it or implementing a robust backend/cron solution later.
-               // Actually, let's just implement the removal logic right here for the interval check.
-               
-               const settlements = getSettlements(group.id);
-               const memberSettlement = settlements[member.id];
-               const hasDebt = memberSettlement && (memberSettlement.toReceive > 0 || memberSettlement.toPay > 0);
-               
-               if (!hasDebt) {
-                 const updatedMembers = group.members.filter(m => m.id !== member.id);
-                 const groupRef = ref(database, `groups/${group.id}/members`);
-                 await set(groupRef, updatedMembers);
-                 // Send email notification about deletion? - Requirement says "send user the email that his member will be deleted"
-                 // That usually means BEFORE deletion or at creation. The request said "send user the email tshs his msmsber will be deleetd afater one week".
-                 // So the email is sent AT CREATION.
-               }
+              // Only remove if no pending settlements (safety check) - reusing remove logic would be best but for now calling the function
+              // Since we are inside the context, we can call the function directly if it was defined outside or use the logic here.
+              // However, `removeMemberFromGroup` is defined below. We might need to move it up or duplicate logic safely.
+              // For simplicity in this step, we will call the API function if available, but since it's defined inside, 
+              // we'll rely on the user manually dealing with it or implementing a robust backend/cron solution later.
+              // Actually, let's just implement the removal logic right here for the interval check.
+
+              const settlements = getSettlements(group.id);
+              const memberSettlement = settlements[member.id];
+              const hasDebt = memberSettlement && (memberSettlement.toReceive > 0 || memberSettlement.toPay > 0);
+
+              if (!hasDebt) {
+                const updatedMembers = group.members.filter(m => m.id !== member.id);
+                const groupRef = ref(database, `groups/${group.id}/members`);
+                await set(groupRef, updatedMembers);
+                // Send email notification about deletion? - Requirement says "send user the email that his member will be deleted"
+                // That usually means BEFORE deletion or at creation. The request said "send user the email tshs his msmsber will be deleetd afater one week".
+                // So the email is sent AT CREATION.
+              }
             } catch (e) {
               console.error("Failed to auto-remove member", e);
             }
@@ -322,7 +322,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     };
-    
+
     const intervalId = setInterval(checkExpiredMembers, 60000); // Check every minute
 
     return () => {
@@ -333,10 +333,10 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [user]); // Removed groups dependency to prevent infinite loop
 
-  const createGroup = async (data: { 
-    name: string; 
-    emoji: string; 
-    members: { name: string; paymentDetails?: PaymentDetails; phone?: string }[] 
+  const createGroup = async (data: {
+    name: string;
+    emoji: string;
+    members: { name: string; paymentDetails?: PaymentDetails; phone?: string }[]
   }): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
@@ -424,7 +424,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addMemberToGroup = async (groupId: string, member: { name: string; paymentDetails?: PaymentDetails; phone?: string; isTemporary?: boolean; deletionCondition?: 'SETTLED' | 'TIME_LIMIT' }): Promise<{ success: boolean; error?: string }> => {
+  const addMemberToGroup = async (groupId: string, member: { id?: string; name: string; paymentDetails?: PaymentDetails; phone?: string; isTemporary?: boolean; deletionCondition?: 'SETTLED' | 'TIME_LIMIT' | null }): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
     try {
@@ -447,25 +447,26 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const newMember: GroupMember = {
-        id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        id: member.id || `member_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         name: sanitizeString(member.name),
         paymentDetails: member.paymentDetails || {},
         phone: member.phone ? sanitizeString(member.phone) : null,
-        isTemporary: member.isTemporary || false,
-        deletionCondition: member.deletionCondition,
-        expiresAt: member.deletionCondition === 'TIME_LIMIT' ? Date.now() + (7 * 24 * 60 * 60 * 1000) : undefined, // 1 week default
+        // Ensure isTemporary is true if deletionCondition is set
+        isTemporary: member.isTemporary || !!member.deletionCondition || false,
+        deletionCondition: member.deletionCondition || null,
+        expiresAt: member.deletionCondition === 'TIME_LIMIT' ? Date.now() + (7 * 24 * 60 * 60 * 1000) : null, // 1 week default
       };
 
       if (member.isTemporary && member.deletionCondition === 'TIME_LIMIT' && user.email) {
         // Send email notification about auto-deletion
-         try {
-           const response = await fetch('/api/send-email', {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({
-               to: user.email,
-               subject: `Temporary Member Alert: ${newMember.name}`,
-               html: `
+        try {
+          const response = await fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: user.email,
+              subject: `Temporary Member Alert: ${newMember.name}`,
+              html: `
                  <div style="font-family: sans-serif; padding: 20px;">
                    <h2>Temporary Member Added</h2>
                    <p>You added <b>${newMember.name}</b> as a temporary member to group <b>${group.name}</b>.</p>
@@ -473,20 +474,20 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                    <p>Please ensure all debts are settled before this date.</p>
                  </div>
                `
-             })
-           });
-           
-           if (!response.ok) console.warn("Failed to send temp member notification");
-         } catch (e) {
-           console.error("Error sending email", e);
-         }
+            })
+          });
+
+          if (!response.ok) console.warn("Failed to send temp member notification");
+        } catch (e) {
+          console.error("Error sending email", e);
+        }
       }
 
       const updatedMembers = [...group.members, newMember];
       const groupRef = ref(database, `groups/${groupId}/members`);
-      
+
       await retryOperation(() => set(groupRef, updatedMembers));
-      
+
       return { success: true };
     } catch (error: any) {
       console.error("Add member error:", error);
@@ -514,7 +515,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       // Check if member has pending settlements in any group
       const settlements = getSettlements();
       let hasPendingSettlements = false;
-      
+
       // Check all groups for this member
       Object.values(settlements).forEach((groupSettlements: any) => {
         const memberSettlement = groupSettlements[memberId];
@@ -522,16 +523,16 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           hasPendingSettlements = true;
         }
       });
-      
+
       if (hasPendingSettlements) {
         return { success: false, error: "Cannot remove member with pending settlements. Please settle all debts first." };
       }
 
       const updatedMembers = group.members.filter(m => m.id !== memberId);
       const groupRef = ref(database, `groups/${groupId}/members`);
-      
+
       await retryOperation(() => set(groupRef, updatedMembers));
-      
+
       return { success: true };
     } catch (error: any) {
       console.error("Remove member error:", error);
@@ -560,7 +561,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
       const groupRef = ref(database, `groups/${groupId}/members`);
       await retryOperation(() => set(groupRef, updatedMembers));
-      
+
       return { success: true };
     } catch (error: any) {
       console.error("Update member payment details error:", error);
@@ -568,13 +569,13 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addExpense = async (data: { 
-    groupId: string; 
-    amount: number; 
-    paidBy: string; 
-    participants: string[]; 
-    note: string; 
-    place: string 
+  const addExpense = async (data: {
+    groupId: string;
+    amount: number;
+    paidBy: string;
+    participants: string[];
+    note: string;
+    place: string
   }): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
@@ -607,13 +608,13 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
       // CORRECTED: Use proper expense splitting logic
       const splits = calculateExpenseSplit(
-        sanitizedAmount, 
+        sanitizedAmount,
         participantMembers.map(m => ({ id: m.id, name: m.name })),
         data.paidBy
       );
 
-      logger.info("Expense split calculated", { 
-        amount: sanitizedAmount, 
+      logger.info("Expense split calculated", {
+        amount: sanitizedAmount,
         participants: participantMembers.length,
         splits: splits.map(s => ({ id: s.participantId, amount: s.amount }))
       });
@@ -653,10 +654,10 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             transaction.addOperation({
               execute: async () => {
                 const result = await addToReceivable(update.groupId, update.personId, update.toReceiveChange);
-                logger.info("Added receivable", { 
-                  personId: update.personId, 
+                logger.info("Added receivable", {
+                  personId: update.personId,
                   amount: update.toReceiveChange,
-                  groupId: update.groupId 
+                  groupId: update.groupId
                 });
                 return result;
               },
@@ -667,19 +668,19 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                   const currentSettlement = settlements[update.personId] || { toReceive: 0, toPay: 0 };
                   await updateSettlement(
                     update.groupId,
-                    update.personId, 
-                    Math.max(0, currentSettlement.toReceive - update.toReceiveChange), 
+                    update.personId,
+                    Math.max(0, currentSettlement.toReceive - update.toReceiveChange),
                     currentSettlement.toPay
                   );
-                  logger.info("Rolled back receivable", { 
-                    personId: update.personId, 
-                    amount: update.toReceiveChange 
+                  logger.info("Rolled back receivable", {
+                    personId: update.personId,
+                    amount: update.toReceiveChange
                   });
                 } catch (error) {
-                  logger.error("Failed to rollback receivable", { 
-                    personId: update.personId, 
+                  logger.error("Failed to rollback receivable", {
+                    personId: update.personId,
                     amount: update.toReceiveChange,
-                    error 
+                    error
                   });
                 }
               },
@@ -694,10 +695,10 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             transaction.addOperation({
               execute: async () => {
                 const result = await addToPayable(update.groupId, update.personId, update.toPayChange);
-                logger.info("Added payable", { 
-                  personId: update.personId, 
+                logger.info("Added payable", {
+                  personId: update.personId,
                   amount: update.toPayChange,
-                  groupId: update.groupId 
+                  groupId: update.groupId
                 });
                 return result;
               },
@@ -708,19 +709,19 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                   const currentSettlement = settlements[update.personId] || { toReceive: 0, toPay: 0 };
                   await updateSettlement(
                     update.groupId,
-                    update.personId, 
+                    update.personId,
                     currentSettlement.toReceive,
                     Math.max(0, currentSettlement.toPay - update.toPayChange)
                   );
-                  logger.info("Rolled back payable", { 
-                    personId: update.personId, 
-                    amount: update.toPayChange 
+                  logger.info("Rolled back payable", {
+                    personId: update.personId,
+                    amount: update.toPayChange
                   });
                 } catch (error) {
-                  logger.error("Failed to rollback payable", { 
-                    personId: update.personId, 
+                  logger.error("Failed to rollback payable", {
+                    personId: update.personId,
                     amount: update.toPayChange,
-                    error 
+                    error
                   });
                 }
               },
@@ -731,7 +732,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // CORRECTED: Calculate proper wallet balance after transaction
-      const walletBalanceAfter = isCurrentUserPayer 
+      const walletBalanceAfter = isCurrentUserPayer
         ? calculateWalletBalanceAfter(user.walletBalance, 'deduct', sanitizedAmount)
         : user.walletBalance;
 
@@ -746,8 +747,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         type: "expense",
         title: sanitizedNote || "Expense",
         amount: sanitizedAmount,
-        date: new Date().toLocaleDateString("en-US", { 
-          month: "short", 
+        date: new Date().toLocaleDateString("en-US", {
+          month: "short",
           day: "numeric",
           year: "numeric"
         }),
@@ -768,10 +769,10 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       transaction.addOperation({
         execute: async () => {
           await retryOperation(() => set(newTransactionRef, newTransaction));
-          logger.info("Created expense transaction", { 
-            transactionId, 
+          logger.info("Created expense transaction", {
+            transactionId,
             amount: sanitizedAmount,
-            participants: splits.length 
+            participants: splits.length
           });
           return newTransaction;
         },
@@ -792,9 +793,9 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             }
           });
           await Promise.all(memberPromises);
-          logger.info("Added transaction to member lists", { 
-            transactionId, 
-            memberCount: group.members.length 
+          logger.info("Added transaction to member lists", {
+            transactionId,
+            memberCount: group.members.length
           });
           return true;
         },
@@ -812,16 +813,16 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       });
 
       const result = await transaction.execute();
-      
+
       if (result.success) {
         logger.logTransaction("expense_created", sanitizedAmount, true);
-        
+
         // Send transaction notification emails (async, non-blocking)
         // Use setTimeout instead of setImmediate for better async behavior
         setTimeout(async () => {
           try {
             console.log('📧 Sending transaction notification emails for expense...');
-            
+
             // Prepare transaction data for email
             const transactionData: TransactionData = {
               id: transactionId,
@@ -837,84 +838,84 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               description: sanitizedNote || "Expense",
               method: 'cash'
             };
-            
+
             // Send notification email to current user regardless of whether they're payer or participant
             const currentUserData: UserData = {
               uid: user.uid,
               email: user.email,
               name: user.name
             };
-            
+
             const emailResult = await sendTransactionNotifications(transactionData, [currentUserData]);
             if (emailResult.success) {
               console.log('✅ Transaction notification email sent successfully');
             } else {
               console.warn('⚠️ Transaction notification email failed:', emailResult.errors);
             }
-            
+
             // Send push notifications to all group members (including payer for testing)
             try {
               console.log('🔔 Sending push notifications for expense...');
               console.log('📊 Group members:', group.members.map(m => ({ name: m.name, userId: m.userId })));
-              
+
               const membersWithUserId = group.members.filter(member => member.userId);
               console.log('📊 Members with userId:', membersWithUserId.map(m => ({ name: m.name, userId: m.userId })));
-              
+
               const notificationPromises = membersWithUserId.map(async (member) => {
-                  try {
-                    console.log(`📤 Sending push notification to ${member.name} (${member.userId})...`);
-                    
-                    const requestBody = {
-                      userId: member.userId,
-                      title: `New Expense in ${group.name}`,
-                      body: `${payer.name} paid Rs ${sanitizedAmount.toLocaleString()} for "${sanitizedNote || 'Expense'}"`,
-                      icon: '/only-logo.png',
-                      badge: '/only-logo.png',
-                      tag: `expense-${transactionId}`,
-                      data: {
-                        type: 'expense',
-                        transactionId,
-                        groupId: data.groupId,
-                        amount: sanitizedAmount
-                      }
-                    };
-                    
-                    console.log('📤 Request body:', requestBody);
-                    
-                    // Add cache-busting timestamp to URL
-                    const apiUrl = `${import.meta.env.VITE_API_URL}/api/push-notify?t=${Date.now()}`;
-                    console.log('📤 API URL:', apiUrl);
-                    
-                    const response = await fetch(apiUrl, {
-                      method: 'POST',
-                      headers: { 
-                        'Content-Type': 'application/json',
-                        'Cache-Control': 'no-cache'
-                      },
-                      body: JSON.stringify(requestBody)
-                    });
-                    
-                    const responseData = await response.json();
-                    console.log(`📥 Response for ${member.name}:`, responseData);
-                    
-                    if (response.ok) {
-                      console.log(`✅ Push notification sent to ${member.name}`);
-                    } else {
-                      console.warn(`⚠️ Push notification failed for ${member.name}:`, responseData);
+                try {
+                  console.log(`📤 Sending push notification to ${member.name} (${member.userId})...`);
+
+                  const requestBody = {
+                    userId: member.userId,
+                    title: `New Expense in ${group.name}`,
+                    body: `${payer.name} paid Rs ${sanitizedAmount.toLocaleString()} for "${sanitizedNote || 'Expense'}"`,
+                    icon: '/only-logo.png',
+                    badge: '/only-logo.png',
+                    tag: `expense-${transactionId}`,
+                    data: {
+                      type: 'expense',
+                      transactionId,
+                      groupId: data.groupId,
+                      amount: sanitizedAmount
                     }
-                  } catch (error) {
-                    console.error(`❌ Failed to send push notification to ${member.name}:`, error);
+                  };
+
+                  console.log('📤 Request body:', requestBody);
+
+                  // Add cache-busting timestamp to URL
+                  const apiUrl = `${import.meta.env.VITE_API_URL}/api/push-notify?t=${Date.now()}`;
+                  console.log('📤 API URL:', apiUrl);
+
+                  const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Cache-Control': 'no-cache'
+                    },
+                    body: JSON.stringify(requestBody)
+                  });
+
+                  const responseData = await response.json();
+                  console.log(`📥 Response for ${member.name}:`, responseData);
+
+                  if (response.ok) {
+                    console.log(`✅ Push notification sent to ${member.name}`);
+                  } else {
+                    console.warn(`⚠️ Push notification failed for ${member.name}:`, responseData);
                   }
-                });
-              
+                } catch (error) {
+                  console.error(`❌ Failed to send push notification to ${member.name}:`, error);
+                }
+              });
+
               await Promise.allSettled(notificationPromises);
               console.log('✅ Push notifications sent to all members');
-              
+
             } catch (pushError: any) {
               console.error('❌ Failed to send push notifications:', pushError);
               // Push notification failure doesn't affect transaction success
             }
-            
+
           } catch (emailError: any) {
             console.error('❌ Failed to send transaction notification emails:', emailError);
             // Email failure doesn't affect transaction success
@@ -923,25 +924,25 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       } else {
         logger.logTransaction("expense_failed", sanitizedAmount, false);
       }
-      
+
       return { success: result.success, error: result.error };
     } catch (error: any) {
-      logger.error("Add expense error", { 
-        groupId: data.groupId, 
-        amount: data.amount, 
-        error: error.message 
+      logger.error("Add expense error", {
+        groupId: data.groupId,
+        amount: data.amount,
+        error: error.message
       });
       return { success: false, error: error.message || "Failed to add expense" };
     }
   };
 
-  const recordPayment = async (data: { 
-    groupId: string; 
-    fromMember: string; 
-    toMember: string; 
-    amount: number; 
-    method: "cash" | "online"; 
-    note?: string 
+  const recordPayment = async (data: {
+    groupId: string;
+    fromMember: string;
+    toMember: string;
+    amount: number;
+    method: "cash" | "online";
+    note?: string
   }): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
@@ -969,7 +970,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
       // CORRECTED: Validate payment amount against actual debt with group context
       const settlements = getSettlements(data.groupId);
-      
+
       let actualDebt = 0;
       if (data.fromMember === user.uid) {
         // Current user is paying - check how much they owe to toPerson in this group
@@ -983,10 +984,10 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
       const paymentValidation = validatePaymentAmount(sanitizedAmount, actualDebt, true); // Allow overpayment
       if (!paymentValidation.isValid) {
-        logger.warn("Invalid payment amount", { 
-          requestedAmount: sanitizedAmount, 
-          actualDebt, 
-          error: paymentValidation.error 
+        logger.warn("Invalid payment amount", {
+          requestedAmount: sanitizedAmount,
+          actualDebt,
+          error: paymentValidation.error
         });
         // Allow the payment but log the warning - user might know something we don't
       }
@@ -1001,8 +1002,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       // If current user is paying, balance decreases
       const isReceiving = data.toMember === user.uid;
       const walletBalanceBefore = user.walletBalance || 0;
-      const walletBalanceAfter = isReceiving 
-        ? walletBalanceBefore + sanitizedAmount 
+      const walletBalanceAfter = isReceiving
+        ? walletBalanceBefore + sanitizedAmount
         : walletBalanceBefore - sanitizedAmount;
 
       const newTransaction: Transaction = {
@@ -1011,8 +1012,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         type: "payment",
         title: "Payment",
         amount: sanitizedAmount,
-        date: new Date().toLocaleDateString("en-US", { 
-          month: "short", 
+        date: new Date().toLocaleDateString("en-US", {
+          month: "short",
           day: "numeric",
           year: "numeric"
         }),
@@ -1033,11 +1034,11 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       transaction.addOperation({
         execute: async () => {
           await retryOperation(() => set(newTransactionRef, newTransaction));
-          logger.info("Created payment transaction", { 
-            transactionId, 
+          logger.info("Created payment transaction", {
+            transactionId,
             from: data.fromMember,
             to: data.toMember,
-            amount: sanitizedAmount 
+            amount: sanitizedAmount
           });
           return newTransaction;
         },
@@ -1058,10 +1059,10 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               await retryOperation(() => set(userTransactionRef, true));
             });
           await Promise.all(memberPromises);
-          logger.info("Added payment to member transaction lists", { 
+          logger.info("Added payment to member transaction lists", {
             transactionId,
             fromMember: data.fromMember,
-            toMember: data.toMember 
+            toMember: data.toMember
           });
           return true;
         },
@@ -1079,7 +1080,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       });
 
       const result = await transaction.execute();
-      
+
       if (result.success) {
         // CRITICAL FIX: Update settlements and wallet after transaction is created
         if (data.toMember === user.uid) {
@@ -1092,14 +1093,14 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               const settlements = getSettlements(data.groupId);
               const currentSettlement = settlements[data.fromMember] || { toReceive: 0, toPay: 0 };
               await updateSettlement(
-                data.groupId, 
-                data.fromMember, 
-                Math.max(0, currentSettlement.toReceive - sanitizedAmount), 
+                data.groupId,
+                data.fromMember,
+                Math.max(0, currentSettlement.toReceive - sanitizedAmount),
                 currentSettlement.toPay
               );
-              logger.info("Updated wallet and settlements for payment received", { 
+              logger.info("Updated wallet and settlements for payment received", {
                 amount: sanitizedAmount,
-                fromMember: data.fromMember 
+                fromMember: data.fromMember
               });
             } else {
               logger.error("Failed to add money to wallet", { error: walletResult.error });
@@ -1117,14 +1118,14 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               const settlements = getSettlements(data.groupId);
               const currentSettlement = settlements[data.toMember] || { toReceive: 0, toPay: 0 };
               await updateSettlement(
-                data.groupId, 
-                data.toMember, 
+                data.groupId,
+                data.toMember,
                 currentSettlement.toReceive,
                 Math.max(0, currentSettlement.toPay - sanitizedAmount)
               );
-              logger.info("Updated wallet and settlements for payment made", { 
+              logger.info("Updated wallet and settlements for payment made", {
                 amount: sanitizedAmount,
-                toMember: data.toMember 
+                toMember: data.toMember
               });
             } else {
               logger.error("Failed to deduct money from wallet", { error: walletResult.error });
@@ -1133,14 +1134,14 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             logger.error("Failed to update wallet/settlements after debt payment", { error: error.message });
           }
         }
-        
+
         logger.logTransaction("payment_recorded", sanitizedAmount, true);
-        
+
         // Send transaction notification emails (async, non-blocking)
         setTimeout(async () => {
           try {
             console.log('📧 Sending transaction notification emails for payment...');
-            
+
             // Prepare transaction data for email
             const transactionData: TransactionData = {
               id: transactionId,
@@ -1156,21 +1157,21 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               description: sanitizedNote || "Payment",
               method: data.method
             };
-            
+
             // Send notification email to current user regardless of their role in the payment
             const currentUserData: UserData = {
               uid: user.uid,
               email: user.email,
               name: user.name
             };
-            
+
             const emailResult = await sendTransactionNotifications(transactionData, [currentUserData]);
             if (emailResult.success) {
               console.log('✅ Payment notification email sent successfully');
             } else {
               console.warn('⚠️ Payment notification email failed:', emailResult.errors);
             }
-            
+
           } catch (emailError: any) {
             console.error('❌ Failed to send payment notification email:', emailError);
             // Email failure doesn't affect transaction success
@@ -1179,15 +1180,15 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       } else {
         logger.logTransaction("payment_failed", sanitizedAmount, false);
       }
-      
+
       return { success: result.success, error: result.error };
     } catch (error: any) {
-      logger.error("Record payment error", { 
+      logger.error("Record payment error", {
         groupId: data.groupId,
         fromMember: data.fromMember,
         toMember: data.toMember,
         amount: data.amount,
-        error: error.message 
+        error: error.message
       });
       return { success: false, error: error.message || "Failed to record payment" };
     }
@@ -1203,7 +1204,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       const sanitizedAmount = sanitizeAmount(amount);
-      
+
       // Use the enterprise settlement system with group context
       const result = await markDebtPaid(groupId, toMember, sanitizedAmount);
       return result;
@@ -1223,7 +1224,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       const sanitizedAmount = sanitizeAmount(amount);
-      
+
       // Use the enterprise settlement system with group context
       const result = await markPaymentReceived(groupId, fromMember, sanitizedAmount);
       return result;
@@ -1272,8 +1273,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         type: "wallet_add",
         title: "Money Added to Wallet",
         amount: sanitizedAmount,
-        date: new Date().toLocaleDateString("en-US", { 
-          month: "short", 
+        date: new Date().toLocaleDateString("en-US", {
+          month: "short",
           day: "numeric",
           year: "numeric"
         }),
@@ -1337,7 +1338,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
       const groupRef = ref(database, `groups/${groupId}`);
       await retryOperation(() => update(groupRef, sanitizedData));
-      
+
       return { success: true };
     } catch (error: any) {
       console.error("Update group error:", error);
@@ -1360,8 +1361,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
       // Check for pending settlements in this specific group
       const settlements = getSettlements(groupId);
-      
-      const hasPendingSettlements = Object.values(settlements).some((settlement: any) => 
+
+      const hasPendingSettlements = Object.values(settlements).some((settlement: any) =>
         settlement.toReceive > 0 || settlement.toPay > 0
       );
 
@@ -1415,7 +1416,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   const getTransactionsByMember = (groupId: string, memberId: string): Transaction[] => {
     return transactions.filter((t) => {
       if (t.groupId !== groupId) return false;
-      
+
       if (t.type === "expense") {
         return t.paidBy === memberId || t.participants?.some((p) => p.id === memberId);
       } else {

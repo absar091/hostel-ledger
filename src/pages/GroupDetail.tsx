@@ -555,8 +555,8 @@ const GroupDetail = () => {
         onClose={() => setShowAddExpense(false)}
         groups={groupForSheet}
         onSubmit={handleExpenseSubmit}
-        onAddMember={async (data) => {
-          const result = await addMemberToGroup(group.id, data);
+        onAddMember={async (groupId, data) => {
+          const result = await addMemberToGroup(groupId, data);
           if (result.success) {
             toast.success(`Added temporary member: ${data.name}`);
           } else {

@@ -308,52 +308,50 @@ const MemberDetailSheet = ({
                     </div>
                   </div>
 
-                  {/* Balance Change Ledger - Show separate debts */}
-                  <div className="bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl p-4 mt-3 border border-[#4a6850]/10">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="text-center flex-1">
-                        <p className="text-[#4a6850]/80 text-xs mb-2 font-black uppercase tracking-wide">Before</p>
-                        <div className="space-y-1">
+                  {/* Balance Change Ledger - Compact Mobile Layout */}
+                  <div className="bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl p-3 mt-3 border border-[#4a6850]/10">
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                      <div className="text-center">
+                        <p className="text-[#4a6850]/80 text-xs mb-1 font-black uppercase tracking-wide">Before</p>
+                        <div className="space-y-0.5">
                           {theyOweYouBefore > 0 && (
-                            <p className="font-black text-[#4a6850] text-sm">
-                              They owe Rs {theyOweYouBefore.toLocaleString()}
+                            <p className="font-black text-[#4a6850] text-xs">
+                              They owe<br/>Rs {theyOweYouBefore.toLocaleString()}
                             </p>
                           )}
                           {youOweThemBefore > 0 && (
-                            <p className="font-black text-red-600 text-sm">
-                              You owe Rs {youOweThemBefore.toLocaleString()}
+                            <p className="font-black text-red-600 text-xs">
+                              You owe<br/>Rs {youOweThemBefore.toLocaleString()}
                             </p>
                           )}
                           {theyOweYouBefore === 0 && youOweThemBefore === 0 && (
-                            <p className="font-black text-gray-500 text-sm">Settled</p>
+                            <p className="font-black text-gray-500 text-xs">Settled</p>
                           )}
                         </div>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-[#4a6850]/60 mx-3" />
-                      <div className="text-center flex-1">
-                        <p className="text-[#4a6850]/80 text-xs mb-2 font-black uppercase tracking-wide">Change</p>
-                        <p className={`font-black text-base ${transaction.balanceChange > 0 ? "text-[#4a6850]" : transaction.balanceChange < 0 ? "text-red-600" : "text-gray-500"}`}>
-                          {transaction.balanceChange > 0 ? `+Rs ${transaction.balanceChange.toLocaleString()}` : 
-                           transaction.balanceChange < 0 ? `-Rs ${Math.abs(transaction.balanceChange).toLocaleString()}` : 
-                           "Rs 0"}
+                      <div className="text-center flex flex-col items-center justify-center">
+                        <ArrowRight className="w-4 h-4 text-[#4a6850]/60 mb-1" />
+                        <p className={`font-black text-sm ${transaction.balanceChange > 0 ? "text-[#4a6850]" : transaction.balanceChange < 0 ? "text-red-600" : "text-gray-500"}`}>
+                          {transaction.balanceChange > 0 ? `+${transaction.balanceChange}` : 
+                           transaction.balanceChange < 0 ? `${transaction.balanceChange}` : 
+                           "0"}
                         </p>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-[#4a6850]/60 mx-3" />
-                      <div className="text-center flex-1">
-                        <p className="text-[#4a6850]/80 text-xs mb-2 font-black uppercase tracking-wide">After</p>
-                        <div className="space-y-1">
+                      <div className="text-center">
+                        <p className="text-[#4a6850]/80 text-xs mb-1 font-black uppercase tracking-wide">After</p>
+                        <div className="space-y-0.5">
                           {theyOweYouAfter > 0 && (
-                            <p className="font-black text-[#4a6850] text-sm">
-                              They owe Rs {theyOweYouAfter.toLocaleString()}
+                            <p className="font-black text-[#4a6850] text-xs">
+                              They owe<br/>Rs {theyOweYouAfter.toLocaleString()}
                             </p>
                           )}
                           {youOweThemAfter > 0 && (
-                            <p className="font-black text-red-600 text-sm">
-                              You owe Rs {youOweThemAfter.toLocaleString()}
+                            <p className="font-black text-red-600 text-xs">
+                              You owe<br/>Rs {youOweThemAfter.toLocaleString()}
                             </p>
                           )}
                           {theyOweYouAfter === 0 && youOweThemAfter === 0 && (
-                            <p className="font-black text-gray-500 text-sm">Settled</p>
+                            <p className="font-black text-gray-500 text-xs">Settled</p>
                           )}
                         </div>
                       </div>

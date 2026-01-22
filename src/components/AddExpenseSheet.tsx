@@ -14,6 +14,9 @@ import { toast } from "sonner";
 interface Member {
   id: string;
   name: string;
+  isTemporary?: boolean;
+  deletionCondition?: 'SETTLED' | 'TIME_LIMIT' | null;
+  expiresAt?: number | null;
 }
 
 interface Group {
@@ -35,7 +38,7 @@ interface AddExpenseSheetProps {
     note: string;
     place: string;
   }) => void;
-  onAddMember?: (data: { name: string; isTemporary: boolean; deletionCondition: 'SETTLED' | 'TIME_LIMIT' }) => void;
+  onAddMember?: (groupId: string, data: { name: string; isTemporary: boolean; deletionCondition: 'SETTLED' | 'TIME_LIMIT' }) => void;
 }
 
 import {
@@ -66,12 +69,21 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
   const [showTempMemberInput, setShowTempMemberInput] = useState(false);
   const [tempMemberName, setTempMemberName] = useState("");
   const [tempMemberCondition, setTempMemberCondition] = useState<'SETTLED' | 'TIME_LIMIT'>('TIME_LIMIT');
+  // Optimistic update state
+  const [localTempMembers, setLocalTempMembers] = useState<Member[]>([]);
 
   // Get members from selected group
+  // Get members from selected group + local temp members
   const members = useMemo(() => {
     const group = groups.find((g) => g.id === selectedGroup);
-    return group?.members || [];
-  }, [groups, selectedGroup]);
+    const groupMembers = group?.members || [];
+
+    // Filter out local members that might have been synced already (by name checking or ID if available)
+    const syncedMemberNames = new Set(groupMembers.map(m => m.name.toLowerCase()));
+    const uniqueLocalMembers = localTempMembers.filter(m => !syncedMemberNames.has(m.name.toLowerCase()));
+
+    return [...groupMembers, ...uniqueLocalMembers];
+  }, [groups, selectedGroup, localTempMembers]);
 
   // Auto-select group if only one exists
   useEffect(() => {
@@ -249,21 +261,50 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
     return true;
   };
 
-  const handleAddTempMember = () => {
+  const handleAddTempMember = async () => {
+    console.log("handleAddTempMember called", { tempMemberName, tempMemberCondition, onAddMember: !!onAddMember });
+
     if (!tempMemberName.trim()) {
       toast.error("Please enter a name");
       return;
     }
 
-    if (onAddMember) {
-      onAddMember({
-        name: tempMemberName,
-        isTemporary: true,
-        deletionCondition: tempMemberCondition
-      });
-      setTempMemberName("");
-      setShowTempMemberInput(false);
-      toast.success("Temporary member added");
+    if (onAddMember && selectedGroup) {
+      try {
+        console.log("Calling onAddMember with groupId:", selectedGroup);
+
+        // Generate ID for consistency
+        const tempId = `member_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+        // Optimistic update
+        const tempMember: Member = {
+          id: tempId,
+          name: tempMemberName,
+          isTemporary: true,
+          deletionCondition: tempMemberCondition
+        };
+        setLocalTempMembers(prev => [...prev, tempMember]);
+
+        await onAddMember(selectedGroup, {
+          id: tempId,
+          name: tempMemberName,
+          isTemporary: true,
+          deletionCondition: tempMemberCondition
+        });
+        console.log("onAddMember completed successfully");
+        setTempMemberName("");
+        setShowTempMemberInput(false);
+      } catch (error) {
+        console.error("Error adding temp member:", error);
+        toast.error("Failed to add member");
+        // Rollback optimistic update
+        setLocalTempMembers(prev => prev.filter(m => m.name !== tempMemberName));
+      }
+    } else if (!selectedGroup) {
+      toast.error("Please select a group first");
+    } else {
+      console.warn("onAddMember prop not provided");
+      toast.error("Unable to add member - function not available");
     }
   };
 
@@ -395,7 +436,15 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                     )}
                   >
                     <Avatar name={member.name} size="sm" />
-                    <span className="font-black flex-1 text-left text-gray-900 tracking-tight truncate">{member.name}</span>
+                    <div className="flex-1 text-left min-w-0">
+                      <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
+                      {member.isTemporary && (
+                        <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600 mt-0.5">
+                          {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                          <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
+                        </div>
+                      )}
+                    </div>
                     {paidBy === member.id && (
                       <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
                         <Check className="w-3.5 h-3.5 text-white font-bold" />
@@ -435,6 +484,12 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                       <Avatar name={member.name} size="sm" />
                       <div className="flex-1 text-left min-w-0">
                         <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
+                        {member.isTemporary && (
+                          <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600 mt-0.5">
+                            {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                            <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
+                          </div>
+                        )}
                         {isSelected && (
                           <div className="text-xs text-[#4a6850] font-bold">
                             Rs {splitDetails.perPerson} share
