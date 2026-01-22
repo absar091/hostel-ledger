@@ -45,7 +45,6 @@ export const database = getDatabase(app);
 export const db = getFirestore(app);
 
 // Initialize Firebase Messaging (only in supported browsers)
-// Note: This must be initialized synchronously, not with await at top level
 let messaging: ReturnType<typeof getMessaging> | null = null;
 
 // Initialize messaging asynchronously
@@ -54,21 +53,8 @@ const initMessaging = async () => {
     if (typeof window !== 'undefined') {
       const supported = await isMessagingSupported();
       if (supported) {
-        // Wait for service worker to be ready (PWA service worker)
-        if ('serviceWorker' in navigator) {
-          try {
-            await navigator.serviceWorker.ready;
-            console.log('✅ Service Worker ready');
-            
-            // Now initialize messaging with the existing service worker
-            messaging = getMessaging(app);
-            console.log('✅ Firebase Messaging initialized');
-          } catch (swError) {
-            console.error('❌ Service Worker error:', swError);
-          }
-        } else {
-          console.warn('⚠️ Service Worker not supported');
-        }
+        messaging = getMessaging(app);
+        console.log('✅ Firebase Messaging initialized');
       } else {
         console.warn('⚠️ Firebase Messaging not supported in this browser');
       }
