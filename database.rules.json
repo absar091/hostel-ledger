@@ -53,7 +53,7 @@
       "$uid": {
         ".read": "$uid === auth.uid",
         ".write": "$uid === auth.uid && auth != null",
-        ".validate": "newData.hasChildren(['fcmToken', 'updatedAt']) && newData.child('fcmToken').isString()"
+        ".validate": "newData.hasChildren(['subscription', 'updatedAt']) || newData.hasChildren(['fcmToken', 'updatedAt'])"
       }
     }
   }

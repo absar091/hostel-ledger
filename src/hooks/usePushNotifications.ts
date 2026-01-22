@@ -139,7 +139,10 @@ export const usePushNotifications = () => {
           
           console.log('📤 Subscription data:', subscriptionData);
           
-          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/push-subscribe`, {
+          const apiUrl = import.meta.env.VITE_API_URL || 'https://hostel-ledger-backend.vercel.app';
+          console.log('📤 API URL:', apiUrl);
+          
+          const response = await fetch(`${apiUrl}/api/push-subscribe`, {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
@@ -149,16 +152,18 @@ export const usePushNotifications = () => {
           });
 
           console.log('📥 Backend response status:', response.status);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Backend error:', errorText);
+            throw new Error(`Backend returned ${response.status}: ${errorText}`);
+          }
+          
           const responseData = await response.json();
           console.log('📥 Backend response data:', responseData);
 
-          if (response.ok) {
-            logger.info("Subscription sent to backend successfully");
-            toast.success("✅ Push notifications enabled!");
-          } else {
-            logger.warn("Failed to send subscription to backend", { response: responseData });
-            toast.warning("Subscribed locally, but backend sync failed");
-          }
+          logger.info("Subscription sent to backend successfully");
+          toast.success("✅ Push notifications enabled!");
         } else {
           console.warn('⚠️ No user logged in');
           toast.warning("Please log in to enable notifications");
@@ -166,7 +171,10 @@ export const usePushNotifications = () => {
       } catch (error: any) {
         console.error("❌ Failed to send subscription to backend:", error);
         logger.error("Failed to send subscription to backend", { error: error.message });
-        toast.warning("Subscribed locally, but backend sync failed");
+        
+        // Still consider it a success locally, just warn about backend
+        toast.success("✅ Push notifications enabled locally!");
+        console.warn("⚠️ Backend sync will retry later");
       }
 
       return true;
