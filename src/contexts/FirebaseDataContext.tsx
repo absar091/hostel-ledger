@@ -112,6 +112,11 @@ export interface GroupMember {
   phone?: string | null;
   userId?: string; // Firebase user ID for real users
   balance?: number; // Calculated balance - optional since computed dynamically
+  isTemporary?: boolean;
+  tempId?: string;
+  deletionCondition?: 'SETTLED' | 'TIME_LIMIT';
+  expiresAt?: number;
+  deletionNotified?: boolean;
 }
 
 export interface Group {
@@ -153,7 +158,7 @@ interface FirebaseDataContextType {
   createGroup: (data: { name: string; emoji: string; members: { name: string; paymentDetails?: PaymentDetails; phone?: string }[] }) => Promise<{ success: boolean; error?: string }>;
   updateGroup: (groupId: string, data: Partial<Group>) => Promise<{ success: boolean; error?: string }>;
   deleteGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>;
-  addMemberToGroup: (groupId: string, member: { name: string; paymentDetails?: PaymentDetails; phone?: string }) => Promise<{ success: boolean; error?: string }>;
+  addMemberToGroup: (groupId: string, member: { name: string; paymentDetails?: PaymentDetails; phone?: string; isTemporary?: boolean; deletionCondition?: 'SETTLED' | 'TIME_LIMIT' }) => Promise<{ success: boolean; error?: string }>;
   removeMemberFromGroup: (groupId: string, memberId: string) => Promise<{ success: boolean; error?: string }>;
   updateMemberPaymentDetails: (groupId: string, memberId: string, paymentDetails: PaymentDetails, phone?: string) => Promise<{ success: boolean; error?: string }>;
   addExpense: (data: { groupId: string; amount: number; paidBy: string; participants: string[]; note: string; place: string }) => Promise<{ success: boolean; error?: string }>;
@@ -273,12 +278,60 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
     const cleanup = setupListeners();
 
+    // Check for expired temporary members periodically
+    const checkExpiredMembers = async () => {
+      if (!user || groups.length === 0) return;
+      
+      const now = Date.now();
+      
+      for (const group of groups) {
+        const expiredMembers = group.members.filter(m => 
+          m.isTemporary && 
+          m.deletionCondition === 'TIME_LIMIT' && 
+          m.expiresAt && 
+          m.expiresAt < now
+        );
+
+        if (expiredMembers.length > 0) {
+          for (const member of expiredMembers) {
+            console.log(`Removing expired temporary member: ${member.name} from group ${group.name}`);
+            try {
+               // Only remove if no pending settlements (safety check) - reusing remove logic would be best but for now calling the function
+               // Since we are inside the context, we can call the function directly if it was defined outside or use the logic here.
+               // However, `removeMemberFromGroup` is defined below. We might need to move it up or duplicate logic safely.
+               // For simplicity in this step, we will call the API function if available, but since it's defined inside, 
+               // we'll rely on the user manually dealing with it or implementing a robust backend/cron solution later.
+               // Actually, let's just implement the removal logic right here for the interval check.
+               
+               const settlements = getSettlements(group.id);
+               const memberSettlement = settlements[member.id];
+               const hasDebt = memberSettlement && (memberSettlement.toReceive > 0 || memberSettlement.toPay > 0);
+               
+               if (!hasDebt) {
+                 const updatedMembers = group.members.filter(m => m.id !== member.id);
+                 const groupRef = ref(database, `groups/${group.id}/members`);
+                 await set(groupRef, updatedMembers);
+                 // Send email notification about deletion? - Requirement says "send user the email that his member will be deleted"
+                 // That usually means BEFORE deletion or at creation. The request said "send user the email tshs his msmsber will be deleetd afater one week".
+                 // So the email is sent AT CREATION.
+               }
+            } catch (e) {
+              console.error("Failed to auto-remove member", e);
+            }
+          }
+        }
+      }
+    };
+    
+    const intervalId = setInterval(checkExpiredMembers, 60000); // Check every minute
+
     return () => {
       cleanup.then(cleanupFn => {
         if (cleanupFn) cleanupFn();
       });
+      clearInterval(intervalId);
     };
-  }, [user]);
+  }, [user, groups]); // Added groups dependency to check regularly
 
   const createGroup = async (data: { 
     name: string; 
@@ -371,7 +424,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addMemberToGroup = async (groupId: string, member: { name: string; paymentDetails?: PaymentDetails; phone?: string }): Promise<{ success: boolean; error?: string }> => {
+  const addMemberToGroup = async (groupId: string, member: { name: string; paymentDetails?: PaymentDetails; phone?: string; isTemporary?: boolean; deletionCondition?: 'SETTLED' | 'TIME_LIMIT' }): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
     try {
@@ -398,7 +451,36 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         name: sanitizeString(member.name),
         paymentDetails: member.paymentDetails || {},
         phone: member.phone ? sanitizeString(member.phone) : null,
+        isTemporary: member.isTemporary || false,
+        deletionCondition: member.deletionCondition,
+        expiresAt: member.deletionCondition === 'TIME_LIMIT' ? Date.now() + (7 * 24 * 60 * 60 * 1000) : undefined, // 1 week default
       };
+
+      if (member.isTemporary && member.deletionCondition === 'TIME_LIMIT' && user.email) {
+        // Send email notification about auto-deletion
+         try {
+           const response = await fetch('/api/send-email', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({
+               to: user.email,
+               subject: `Temporary Member Alert: ${newMember.name}`,
+               html: `
+                 <div style="font-family: sans-serif; padding: 20px;">
+                   <h2>Temporary Member Added</h2>
+                   <p>You added <b>${newMember.name}</b> as a temporary member to group <b>${group.name}</b>.</p>
+                   <p>This member is scheduled to be automatically removed on <b>${new Date(newMember.expiresAt!).toLocaleDateString()}</b>.</p>
+                   <p>Please ensure all debts are settled before this date.</p>
+                 </div>
+               `
+             })
+           });
+           
+           if (!response.ok) console.warn("Failed to send temp member notification");
+         } catch (e) {
+           console.error("Error sending email", e);
+         }
+      }
 
       const updatedMembers = [...group.members, newMember];
       const groupRef = ref(database, `groups/${groupId}/members`);

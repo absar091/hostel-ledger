@@ -66,7 +66,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
   const splitDetails = useMemo(() => {
     const totalAmount = parseFloat(amount) || 0;
     const splitCount = participants.length;
-    
+
     if (splitCount === 0 || totalAmount === 0) {
       return { perPerson: 0, toReceive: 0, toGive: 0, othersCount: 0 };
     }
@@ -74,12 +74,12 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
     // Use same calculation as backend for consistency
     const baseAmount = Math.floor(totalAmount / splitCount);
     const remainder = totalAmount % splitCount;
-    
+
     // Most people get baseAmount, first 'remainder' people get baseAmount + 1
-    const perPersonAmounts = Array.from({ length: splitCount }, (_, index) => 
+    const perPersonAmounts = Array.from({ length: splitCount }, (_, index) =>
       baseAmount + (index < remainder ? 1 : 0)
     );
-    
+
     const paidByMember = members.find((m) => m.id === paidBy);
     const isPaidByYou = paidByMember?.name === "You";
     const youParticipated = participants.some(
@@ -92,33 +92,33 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
       const yourShare = payerIndex >= 0 ? perPersonAmounts[payerIndex] : 0;
       const othersTotal = totalAmount - yourShare;
       const othersCount = youParticipated ? splitCount - 1 : splitCount;
-      
-      return { 
+
+      return {
         perPerson: baseAmount, // Show base amount for display
         actualAmounts: perPersonAmounts,
-        toReceive: othersTotal, 
-        toGive: 0, 
-        othersCount 
+        toReceive: othersTotal,
+        toGive: 0,
+        othersCount
       };
     } else {
       // Someone else paid, you may owe them
       if (youParticipated) {
         const yourIndex = participants.findIndex(id => members.find(m => m.id === id)?.name === "You");
         const yourShare = yourIndex >= 0 ? perPersonAmounts[yourIndex] : baseAmount;
-        return { 
-          perPerson: baseAmount, 
+        return {
+          perPerson: baseAmount,
           actualAmounts: perPersonAmounts,
-          toReceive: 0, 
-          toGive: yourShare, 
-          othersCount: 0 
+          toReceive: 0,
+          toGive: yourShare,
+          othersCount: 0
         };
       }
-      return { 
-        perPerson: baseAmount, 
+      return {
+        perPerson: baseAmount,
         actualAmounts: perPersonAmounts,
-        toReceive: 0, 
-        toGive: 0, 
-        othersCount: 0 
+        toReceive: 0,
+        toGive: 0,
+        othersCount: 0
       };
     }
   }, [amount, paidBy, participants, members]);
@@ -186,7 +186,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
           note: note.trim().substring(0, 200),
           place: place.trim().substring(0, 100),
         });
-        
+
         await updatePendingCount();
         toast.success("Saved offline — will sync when online", {
           description: "Your expense is saved locally and will sync automatically",
@@ -239,7 +239,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
         <SheetHeader className="flex-shrink-0 mb-6 pt-2">
           {/* Handle Bar */}
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
-          
+
           {/* Offline Indicator */}
           {offline && (
             <div className="mx-auto mb-4 inline-flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-full px-4 py-2">
@@ -247,7 +247,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
               <span className="text-xs font-bold text-orange-700">Offline Mode - Will sync later</span>
             </div>
           )}
-          
+
           <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">
             {step === 1 && "Select Group"}
             {step === 2 && "Enter Amount"}
@@ -275,7 +275,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
               </ul>
             </div>
           )}
-          
+
           {/* Step 1: Select Group - iPhone Style */}
           {step === 1 && (
             <div className="space-y-4 animate-fade-in">
@@ -340,7 +340,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
             <div className="space-y-4 animate-fade-in">
               <div className="flex items-center gap-3 justify-center mb-6">
                 <p className="text-sm text-[#4a6850]/80 font-bold text-center">Select who paid for this expense</p>
-                <Tooltip 
+                <Tooltip
                   content="Choose the person who actually paid the money upfront. The app will calculate how much others owe them."
                   position="bottom"
                 />
@@ -375,14 +375,14 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
                 <p className="text-sm text-[#4a6850]/80 font-bold text-center">
                   Select everyone who shared this expense (including who paid)
                 </p>
-                <Tooltip 
+                <Tooltip
                   content="Choose all people who should split this cost. The expense will be divided equally among selected members."
                   position="bottom"
                 />
               </div>
               {members.map((member) => {
                 const isSelected = participants.includes(member.id);
-                
+
                 return (
                   <button
                     key={member.id}
@@ -461,7 +461,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
                   maxLength={100}
                 />
               </div>
-              
+
               {/* Final Summary - iPhone Style */}
               <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-6 mt-8 shadow-[0_25px_70px_rgba(74,104,80,0.3)] text-white">
                 <div className="text-sm text-white/90 mb-3 font-black uppercase tracking-wide">Final Summary</div>
@@ -507,8 +507,8 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
                 Continue <ChevronRight className="w-5 h-5 ml-2 font-bold" />
               </Button>
             ) : (
-              <Button 
-                onClick={handleSubmit} 
+              <Button
+                onClick={handleSubmit}
                 className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all"
               >
                 Add Expense
