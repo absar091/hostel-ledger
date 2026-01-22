@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Push Subscribe</title>
+</head>
+<body>
+    <h1>Test Push Subscription</h1>
+    <button onclick="testSubscribe()">Test Subscribe</button>
+    <pre id="output"></pre>
+
+    <script>
+        async function testSubscribe() {
+            const output = document.getElementById('output');
+            output.textContent = 'Testing...\n';
+
+            try {
+                // Test data
+                const testData = {
+                    userId: 'D9hUghzCTISNtE2l2zbS30iRrXR2',
+                    subscription: {
+                        endpoint: 'https://test-endpoint.com',
+                        keys: {
+                            p256dh: 'test-key',
+                            auth: 'test-auth'
+                        }
+                    }
+                };
+
+                output.textContent += 'Sending request to backend...\n';
+                output.textContent += JSON.stringify(testData, null, 2) + '\n\n';
+
+                const response = await fetch('https://hostel-ledger-backend.vercel.app/api/push-subscribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                output.textContent += `Response status: ${response.status}\n`;
+                
+                const data = await response.json();
+                output.textContent += 'Response data:\n';
+                output.textContent += JSON.stringify(data, null, 2) + '\n';
+
+                if (response.ok) {
+                    output.textContent += '\n✅ SUCCESS! Subscription stored.\n';
+                } else {
+                    output.textContent += '\n❌ FAILED! Subscription not stored.\n';
+                }
+
+            } catch (error) {
+                output.textContent += '\n❌ ERROR: ' + error.message + '\n';
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
