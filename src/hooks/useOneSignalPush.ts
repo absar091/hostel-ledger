@@ -41,6 +41,8 @@ export const useOneSignalPush = () => {
           await OneSignal.init({
             appId: appId,
             allowLocalhostAsSecureOrigin: true,
+            serviceWorkerParam: { scope: '/' },
+            serviceWorkerPath: 'OneSignalSDK.sw.js',
           });
           oneSignalInitialized = true;
           console.log('✅ OneSignal initialized');
