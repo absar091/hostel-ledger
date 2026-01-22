@@ -278,10 +278,67 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
     const cleanup = setupListeners();
 
-    // Check for expired temporary members periodically
-    const checkExpiredMembers = async () => {
-      if (!user || groups.length === 0) return;
 
+
+
+
+    /*
+    // for (const member of expiredMembers) {
+
+    // However, `removeMemberFromGroup` is defined below. We might need to move it up or duplicate logic safely.
+    // For simplicity in this step, we will call the API function if available, but since it's defined inside, 
+    // we'll rely on the user manually dealing with it or implementing a robust backend/cron solution later.
+    // Actually, let's just implement the removal logic right here for the interval check.
+
+
+
+    // Send email notification about deletion
+    if (user.email) {
+      try {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: user.email,
+            subject: `Temporary Member Removed: ${member.name}`,
+            html: `
+                          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                            <h2 style="color: #4a6850;">Temporary Member Removed</h2>
+                            <p>The temporary member <b>${member.name}</b> in group <b>${group.name}</b> has reached their time limit.</p>
+                            <p>Since all debts were settled, they have been automatically removed from the group.</p>
+                            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                            <p style="color: #666; font-size: 12px;">This is an automated message from Hostel Ledger.</p>
+                          </div>
+                        `
+          })
+        });
+        console.log(`Sent removal email for ${member.name}`);
+      } catch (mailError) {
+        console.error("Failed to send removal email", mailError);
+      }
+    }
+  }
+  } catch (e) {
+  console.error("Failed to auto-remove member", e);
+}
+}
+  }
+  }
+  };
+
+    */
+    return () => {
+      cleanup.then(cleanupFn => {
+        if (cleanupFn) cleanupFn();
+      });
+    };
+  }, [user]);
+
+  // Separate effect for checking expired members to avoid stale closures
+  useEffect(() => {
+    if (!user || groups.length === 0) return;
+
+    const checkExpiredMembers = async () => {
       const now = Date.now();
 
       for (const group of groups) {
@@ -296,15 +353,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           for (const member of expiredMembers) {
             console.log(`Removing expired temporary member: ${member.name} from group ${group.name}`);
             try {
-              // Only remove if no pending settlements (safety check) - reusing remove logic would be best but for now calling the function
-              // Since we are inside the context, we can call the function directly if it was defined outside or use the logic here.
-              // However, `removeMemberFromGroup` is defined below. We might need to move it up or duplicate logic safely.
-              // For simplicity in this step, we will call the API function if available, but since it's defined inside, 
-              // we'll rely on the user manually dealing with it or implementing a robust backend/cron solution later.
-              // Actually, let's just implement the removal logic right here for the interval check.
-
               const settlements = getSettlements(group.id);
-              const memberSettlement = settlements[member.id];
+              const memberSettlement = settlements[member.id] || { toReceive: 0, toPay: 0 };
               const hasDebt = memberSettlement && (memberSettlement.toReceive > 0 || memberSettlement.toPay > 0);
 
               if (!hasDebt) {
@@ -347,14 +397,10 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const intervalId = setInterval(checkExpiredMembers, 60000); // Check every minute
+    checkExpiredMembers(); // Run immediately
 
-    return () => {
-      cleanup.then(cleanupFn => {
-        if (cleanupFn) cleanupFn();
-      });
-      clearInterval(intervalId);
-    };
-  }, [user]); // Removed groups dependency to prevent infinite loop
+    return () => clearInterval(intervalId);
+  }, [user, groups]); // Re-run when groups change
 
   const createGroup = async (data: {
     name: string;
