@@ -995,30 +995,6 @@ app.get('/api/push-subscription/:userId', generalLimiter, async (req, res) => {
     });
   }
 });
-      return res.status(400).json({
-        success: false,
-        error: 'userId is required'
-      });
-    }
-
-    const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
-    const snapshot = await subscriptionsRef.once('value');
-    const subscription = snapshot.val();
-    
-    res.json({
-      success: true,
-      hasSubscription: !!subscription,
-      endpoint: subscription ? subscription.endpoint : null
-    });
-
-  } catch (error) {
-    console.error('❌ Get subscription error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get subscription status: ' + error.message
-    });
-  }
-});
 
 // Unsubscribe from push notifications
 app.delete('/api/push-unsubscribe/:userId', generalLimiter, async (req, res) => {
