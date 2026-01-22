@@ -1246,7 +1246,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             if (emailResult.success) {
               console.log('✅ Payment notification email sent successfully');
             } else {
-              console.warn('⚠️ Payment notification email failed:', emailResult.error);
+              console.warn('⚠️ Payment notification email failed:', emailResult.errors);
             }
 
           } catch (emailError: any) {
