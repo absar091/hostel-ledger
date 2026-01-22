@@ -787,24 +787,45 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
       });
     }
 
-    // Send notification via OneSignal REST API
-    // Using included_segments to send to all subscribed users since External ID might not be set
+    // Get OneSignal Player ID from Firebase Realtime Database
+    let playerId = null;
+    try {
+      const playerRef = admin.database().ref(`oneSignalPlayers/${userId}`);
+      const snapshot = await playerRef.once('value');
+      const playerData = snapshot.val();
+      
+      if (playerData && playerData.playerId) {
+        playerId = playerData.playerId;
+        console.log('✅ Found Player ID for user:', playerId);
+      } else {
+        console.warn('⚠️ No Player ID found for user:', userId);
+        return res.status(404).json({
+          success: false,
+          error: 'User has not enabled push notifications'
+        });
+      }
+    } catch (error) {
+      console.error('❌ Failed to get Player ID:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to get user notification settings'
+      });
+    }
+
+    // Send notification via OneSignal REST API using Player ID
     const notificationData = {
       app_id: oneSignalAppId,
-      included_segments: ['Subscribed Users'], // Send to all subscribed users
+      include_player_ids: [playerId], // Send to specific player
       headings: { en: title },
       contents: { en: body },
       web_url: data?.url || undefined,
       chrome_web_icon: icon || '/only-logo.png',
       chrome_web_badge: badge || '/only-logo.png',
-      data: {
-        ...data,
-        targetUserId: userId // Include in data for filtering on client side
-      }
+      data: data || {}
     };
 
-    console.log('📤 Sending to OneSignal API (all subscribed users)...');
-    console.log('📝 Target user ID:', userId);
+    console.log('📤 Sending to OneSignal API (Player ID)...');
+    console.log('📝 Target Player ID:', playerId);
     
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
@@ -877,24 +898,48 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
       });
     }
 
-    // Send notification via OneSignal REST API to multiple users
-    // Using included_segments to send to all subscribed users since External ID might not be set
+    // Get OneSignal Player IDs from Firebase Realtime Database
+    const playerIds = [];
+    for (const userId of userIds) {
+      try {
+        const playerRef = admin.database().ref(`oneSignalPlayers/${userId}`);
+        const snapshot = await playerRef.once('value');
+        const playerData = snapshot.val();
+        
+        if (playerData && playerData.playerId) {
+          playerIds.push(playerData.playerId);
+          console.log('✅ Found Player ID for user:', userId);
+        } else {
+          console.warn('⚠️ No Player ID found for user:', userId);
+        }
+      } catch (error) {
+        console.error('❌ Failed to get Player ID for user:', userId, error);
+      }
+    }
+
+    if (playerIds.length === 0) {
+      console.warn('⚠️ No Player IDs found for any users');
+      return res.json({
+        success: true,
+        message: 'No users have enabled push notifications',
+        recipients: 0
+      });
+    }
+
+    // Send notification via OneSignal REST API to multiple players
     const notificationData = {
       app_id: oneSignalAppId,
-      included_segments: ['Subscribed Users'], // Send to all subscribed users
+      include_player_ids: playerIds, // Send to specific players only
       headings: { en: title },
       contents: { en: body },
       web_url: data?.url || undefined,
       chrome_web_icon: icon || '/only-logo.png',
       chrome_web_badge: badge || '/only-logo.png',
-      data: {
-        ...data,
-        targetUserIds: userIds.join(',') // Include in data for filtering on client side
-      }
+      data: data || {}
     };
 
-    console.log('📤 Sending to OneSignal API (all subscribed users)...');
-    console.log('📝 Target user IDs:', userIds);
+    console.log('📤 Sending to OneSignal API (Player IDs)...');
+    console.log('📝 Target Player IDs:', playerIds);
     
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',

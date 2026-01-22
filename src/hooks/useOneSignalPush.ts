@@ -138,8 +138,27 @@ export const useOneSignalPush = () => {
         await OneSignal.login(currentUser.uid);
         console.log('✅ OneSignal user ID set:', currentUser.uid);
         
-        // Verify it was set
-        const externalId = await OneSignal.User.getExternalId();
+        // Get OneSignal Player ID
+        const playerId = await OneSignal.User.PushSubscription.id;
+        console.log('🎯 OneSignal Player ID:', playerId);
+        
+        // Store Player ID in Firebase Realtime Database
+        if (playerId) {
+          try {
+            const { getDatabase, ref, set } = await import('firebase/database');
+            const db = getDatabase();
+            await set(ref(db, `oneSignalPlayers/${currentUser.uid}`), {
+              playerId: playerId,
+              updatedAt: new Date().toISOString()
+            });
+            console.log('✅ Player ID stored in Firebase');
+          } catch (error) {
+            console.error('❌ Failed to store Player ID:', error);
+          }
+        }
+        
+        // Verify External ID was set
+        const externalId = OneSignal.User.externalId;
         console.log('🔍 Verified External ID:', externalId);
       } else {
         console.warn('⚠️ No Firebase user found, cannot set External ID');
