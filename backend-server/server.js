@@ -736,10 +736,8 @@ app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
 // PUSH NOTIFICATION ENDPOINTS
 // Last updated: 2026-01-22 - Force rebuild v3 - Cache bust
 // CRITICAL: These endpoints MUST be before the 404 handler
+// Using Firebase Realtime Database for subscription storage
 // ============================================
-
-// Store push subscriptions (in production, use Firebase Realtime Database)
-const pushSubscriptions = new Map();
 
 // Subscribe to push notifications
 app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
@@ -763,15 +761,11 @@ app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
 
     console.log('🔔 Storing push subscription for user:', userId);
     
-    // Store subscription in memory (in production, save to Firebase)
-    pushSubscriptions.set(userId, subscription);
-    
-    // TODO: Save to Firebase Realtime Database
-    // const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
-    // await subscriptionsRef.set(subscription);
+    // Store subscription in Firebase Realtime Database
+    const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
+    await subscriptionsRef.set(subscription);
 
-    console.log('✅ Push subscription stored successfully');
-    console.log('📊 Total subscriptions:', pushSubscriptions.size);
+    console.log('✅ Push subscription stored successfully in Firebase');
 
     res.json({
       success: true,
@@ -801,8 +795,10 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
 
     console.log('🔔 Sending push notification to user:', userId);
 
-    // Get subscription from memory (in production, get from Firebase)
-    const subscription = pushSubscriptions.get(userId);
+    // Get subscription from Firebase Realtime Database
+    const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
+    const snapshot = await subscriptionsRef.once('value');
+    const subscription = snapshot.val();
     
     if (!subscription) {
       console.warn('⚠️ No push subscription found for user:', userId);
@@ -863,10 +859,10 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
     // Handle invalid or expired tokens
     if (error.code === 'messaging/invalid-registration-token' || 
         error.code === 'messaging/registration-token-not-registered') {
-      console.warn('⚠️ Token expired or invalid, removing from storage');
+      console.warn('⚠️ Token expired or invalid, removing from Firebase');
       const { userId } = req.body;
       if (userId) {
-        pushSubscriptions.delete(userId);
+        await admin.database().ref(`pushSubscriptions/${userId}`).remove();
       }
     }
 
@@ -920,7 +916,10 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
     // Send to all users
     for (const userId of userIds) {
       try {
-        const subscription = pushSubscriptions.get(userId);
+        // Get subscription from Firebase
+        const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
+        const snapshot = await subscriptionsRef.once('value');
+        const subscription = snapshot.val();
         
         if (!subscription) {
           console.warn('⚠️ No subscription for user:', userId);
@@ -969,7 +968,7 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
         // Remove expired tokens
         if (error.code === 'messaging/invalid-registration-token' || 
             error.code === 'messaging/registration-token-not-registered') {
-          pushSubscriptions.delete(userId);
+          await admin.database().ref(`pushSubscriptions/${userId}`).remove();
         }
       }
     }
@@ -1003,7 +1002,9 @@ app.get('/api/push-subscription/:userId', generalLimiter, async (req, res) => {
       });
     }
 
-    const subscription = pushSubscriptions.get(userId);
+    const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
+    const snapshot = await subscriptionsRef.once('value');
+    const subscription = snapshot.val();
     
     res.json({
       success: true,
@@ -1034,13 +1035,13 @@ app.delete('/api/push-unsubscribe/:userId', generalLimiter, async (req, res) => 
 
     console.log('🔕 Removing push subscription for user:', userId);
 
-    const existed = pushSubscriptions.has(userId);
-    pushSubscriptions.delete(userId);
+    const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
+    const snapshot = await subscriptionsRef.once('value');
+    const existed = snapshot.exists();
+    
+    await subscriptionsRef.remove();
 
-    // TODO: Remove from Firebase
-    // await admin.database().ref(`pushSubscriptions/${userId}`).remove();
-
-    console.log('✅ Push subscription removed');
+    console.log('✅ Push subscription removed from Firebase');
 
     res.json({
       success: true,
