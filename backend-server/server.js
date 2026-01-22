@@ -43,6 +43,15 @@ try {
     process.env.VAPID_PRIVATE_KEY
   );
   console.log('✅ Web Push configured with VAPID keys');
+  
+  // For FCM endpoints, we also need to set GCM API key
+  // FCM uses the Firebase Server Key for authorization
+  if (process.env.FCM_SERVER_KEY) {
+    webpush.setGCMAPIKey(process.env.FCM_SERVER_KEY);
+    console.log('✅ FCM Server Key configured');
+  } else {
+    console.warn('⚠️ FCM_SERVER_KEY not set - FCM push notifications may fail');
+  }
 } catch (error) {
   console.error('❌ Web Push configuration failed:', error.message);
   console.warn('⚠️ Push notifications will not work without VAPID keys');
@@ -778,7 +787,7 @@ app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
   }
 });
 
-// Send push notification to a specific user
+// Send push notification to a specific user using Firebase Admin SDK
 app.post('/api/push-notify', generalLimiter, async (req, res) => {
   try {
     const { userId, title, body, icon, badge, tag, data } = req.body;
@@ -795,11 +804,6 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
     // Get subscription from memory (in production, get from Firebase)
     const subscription = pushSubscriptions.get(userId);
     
-    // TODO: Get from Firebase Realtime Database
-    // const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
-    // const snapshot = await subscriptionsRef.once('value');
-    // const subscription = snapshot.val();
-
     if (!subscription) {
       console.warn('⚠️ No push subscription found for user:', userId);
       return res.status(404).json({
@@ -808,53 +812,83 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
       });
     }
 
-    // Prepare notification payload
-    const payload = JSON.stringify({
-      title: title,
-      body: body,
-      icon: icon || '/only-logo.png',
-      badge: badge || '/only-logo.png',
-      tag: tag || 'default',
-      data: data || {}
-    });
+    // Extract FCM token from subscription endpoint
+    const fcmToken = extractFCMToken(subscription.endpoint);
+    
+    if (!fcmToken) {
+      console.error('❌ Could not extract FCM token from endpoint');
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid subscription endpoint'
+      });
+    }
+
+    // Prepare FCM message
+    const message = {
+      token: fcmToken,
+      notification: {
+        title: title,
+        body: body,
+        icon: icon || '/only-logo.png',
+      },
+      data: data || {},
+      webpush: {
+        notification: {
+          icon: icon || '/only-logo.png',
+          badge: badge || '/only-logo.png',
+          tag: tag || 'default',
+        }
+      }
+    };
 
     console.log('📤 Sending notification:', { title, body, userId });
 
-    // Send push notification
-    const result = await webpush.sendNotification(subscription, payload);
+    // Send using Firebase Admin SDK
+    const response = await admin.messaging().send(message);
     
     console.log('✅ Push notification sent successfully');
-    console.log('📊 Response status:', result.statusCode);
+    console.log('📊 Response:', response);
 
     res.json({
       success: true,
       message: 'Push notification sent successfully',
-      statusCode: result.statusCode
+      messageId: response
     });
 
   } catch (error) {
     console.error('❌ Push notify error:', error);
     
-    // Handle expired subscriptions
-    if (error.statusCode === 410) {
-      console.warn('⚠️ Subscription expired, removing from storage');
+    // Handle invalid or expired tokens
+    if (error.code === 'messaging/invalid-registration-token' || 
+        error.code === 'messaging/registration-token-not-registered') {
+      console.warn('⚠️ Token expired or invalid, removing from storage');
       const { userId } = req.body;
       if (userId) {
         pushSubscriptions.delete(userId);
-        // TODO: Remove from Firebase
-        // await admin.database().ref(`pushSubscriptions/${userId}`).remove();
       }
     }
 
     res.status(500).json({
       success: false,
       error: 'Failed to send push notification: ' + error.message,
-      statusCode: error.statusCode
+      code: error.code
     });
   }
 });
 
-// Send push notification to multiple users
+// Helper function to extract FCM token from endpoint URL
+function extractFCMToken(endpoint) {
+  try {
+    // FCM endpoint format: https://fcm.googleapis.com/fcm/send/TOKEN
+    const match = endpoint.match(/\/fcm\/send\/(.+)$/);
+    return match ? match[1] : null;
+  } catch (error) {
+    console.error('Error extracting FCM token:', error);
+    return null;
+  }
+}
+
+// Send push notification to multiple users using Firebase Admin SDK
 app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
   try {
     const { userIds, title, body, icon, badge, tag, data } = req.body;
@@ -875,15 +909,6 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
 
     console.log('🔔 Sending push notifications to', userIds.length, 'users');
 
-    const payload = JSON.stringify({
-      title: title,
-      body: body,
-      icon: icon || '/only-logo.png',
-      badge: badge || '/only-logo.png',
-      tag: tag || 'default',
-      data: data || {}
-    });
-
     const results = {
       success: 0,
       failed: 0,
@@ -902,7 +927,33 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
           continue;
         }
 
-        await webpush.sendNotification(subscription, payload);
+        const fcmToken = extractFCMToken(subscription.endpoint);
+        
+        if (!fcmToken) {
+          console.error('❌ Could not extract FCM token for user:', userId);
+          results.failed++;
+          results.errors.push({ userId, error: 'Invalid subscription endpoint' });
+          continue;
+        }
+
+        const message = {
+          token: fcmToken,
+          notification: {
+            title: title,
+            body: body,
+            icon: icon || '/only-logo.png',
+          },
+          data: data || {},
+          webpush: {
+            notification: {
+              icon: icon || '/only-logo.png',
+              badge: badge || '/only-logo.png',
+              tag: tag || 'default',
+            }
+          }
+        };
+
+        await admin.messaging().send(message);
         results.success++;
         console.log('✅ Notification sent to:', userId);
 
@@ -911,8 +962,9 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
         results.failed++;
         results.errors.push({ userId, error: error.message });
 
-        // Remove expired subscriptions
-        if (error.statusCode === 410) {
+        // Remove expired tokens
+        if (error.code === 'messaging/invalid-registration-token' || 
+            error.code === 'messaging/registration-token-not-registered') {
           pushSubscriptions.delete(userId);
         }
       }
