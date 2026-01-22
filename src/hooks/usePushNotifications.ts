@@ -125,24 +125,44 @@ export const usePushNotifications = () => {
       // Send subscription to backend
       try {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
+        console.log('📤 Sending subscription to backend for user:', user.uid);
+        
         if (user.uid) {
+          const subscriptionData = {
+            userId: user.uid,
+            subscription: subscription.toJSON()
+          };
+          
+          console.log('📤 Subscription data:', subscriptionData);
+          
           const response = await fetch(`${import.meta.env.VITE_API_URL}/api/push-subscribe`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: user.uid,
-              subscription: subscription.toJSON()
-            })
+            headers: { 
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache'
+            },
+            body: JSON.stringify(subscriptionData)
           });
+
+          console.log('📥 Backend response status:', response.status);
+          const responseData = await response.json();
+          console.log('📥 Backend response data:', responseData);
 
           if (response.ok) {
             logger.info("Subscription sent to backend successfully");
+            toast.success("✅ Subscribed successfully!");
           } else {
-            logger.warn("Failed to send subscription to backend");
+            logger.warn("Failed to send subscription to backend", { response: responseData });
+            toast.warning("Subscribed locally, but backend sync failed");
           }
+        } else {
+          console.warn('⚠️ No user ID found in localStorage');
+          toast.warning("Please log in again to enable notifications");
         }
       } catch (error: any) {
+        console.error("❌ Failed to send subscription to backend:", error);
         logger.error("Failed to send subscription to backend", { error: error.message });
+        toast.warning("Subscribed locally, but backend sync failed");
       }
 
       return true;
