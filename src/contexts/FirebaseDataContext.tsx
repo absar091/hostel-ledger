@@ -1246,7 +1246,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             if (emailResult.success) {
               console.log('✅ Payment notification email sent successfully');
             } else {
-              console.warn('⚠️ Payment notification email failed:', emailResult.errors);
+              console.warn('⚠️ Payment notification email failed:', emailResult.error);
             }
 
           } catch (emailError: any) {
@@ -1276,7 +1276,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
     const validation = validateAmount(amount);
     if (!validation.isValid) {
-      return { success: false, error: validation.errors.join(", ") };
+      return { success: false, error: validation.error || "Invalid amount" };
     }
 
     try {
@@ -1296,7 +1296,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
     const validation = validateAmount(amount);
     if (!validation.isValid) {
-      return { success: false, error: validation.errors.join(", ") };
+      return { success: false, error: validation.error || "Invalid amount" };
     }
 
     try {
@@ -1316,7 +1316,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
     const validation = validateAmount(amount);
     if (!validation.isValid) {
-      return { success: false, error: validation.errors.join(", ") };
+      return { success: false, error: validation.error || "Invalid amount" };
     }
 
     const transaction = new TransactionManager();
