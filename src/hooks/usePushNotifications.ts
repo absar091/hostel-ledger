@@ -124,12 +124,16 @@ export const usePushNotifications = () => {
       
       // Send subscription to backend
       try {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        console.log('📤 Sending subscription to backend for user:', user.uid);
+        // Get user from Firebase Auth context instead of localStorage
+        const { getAuth } = await import('firebase/auth');
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
         
-        if (user.uid) {
+        console.log('📤 Sending subscription to backend for user:', currentUser?.uid);
+        
+        if (currentUser?.uid) {
           const subscriptionData = {
-            userId: user.uid,
+            userId: currentUser.uid,
             subscription: subscription.toJSON()
           };
           
@@ -156,8 +160,8 @@ export const usePushNotifications = () => {
             toast.warning("Subscribed locally, but backend sync failed");
           }
         } else {
-          console.warn('⚠️ No user ID found in localStorage');
-          toast.warning("Please log in again to enable notifications");
+          console.warn('⚠️ No user logged in');
+          toast.warning("Please log in to enable notifications");
         }
       } catch (error: any) {
         console.error("❌ Failed to send subscription to backend:", error);
