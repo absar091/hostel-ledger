@@ -161,6 +161,21 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Test endpoint to verify push routes are loaded
+app.get('/api/push-test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Push notification routes are active!',
+    availableEndpoints: [
+      'POST /api/push-subscribe',
+      'POST /api/push-notify',
+      'POST /api/push-notify-multiple',
+      'GET /api/push-subscription/:userId',
+      'DELETE /api/push-unsubscribe/:userId'
+    ]
+  });
+});
+
 // Apply general rate limiting to API endpoints only
 app.use('/api', generalLimiter);
 
