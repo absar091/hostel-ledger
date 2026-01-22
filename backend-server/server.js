@@ -742,41 +742,45 @@ app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
 // Subscribe to push notifications
 app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
   try {
-    const { userId, subscription } = req.body;
+    const { userId, fcmToken } = req.body;
 
-    if (!userId || !subscription) {
+    if (!userId || !fcmToken) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: userId, subscription'
+        error: 'Missing required fields: userId, fcmToken'
       });
     }
 
-    // Validate subscription object
-    if (!subscription.endpoint || !subscription.keys) {
+    // Validate FCM token format (basic check)
+    if (typeof fcmToken !== 'string' || fcmToken.length < 50) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid subscription object'
+        error: 'Invalid FCM token format'
       });
     }
 
-    console.log('🔔 Storing push subscription for user:', userId);
+    console.log('🔔 Storing FCM token for user:', userId);
+    console.log('📝 Token length:', fcmToken.length);
     
-    // Store subscription in Firebase Realtime Database
+    // Store FCM token in Firebase Realtime Database
     const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
-    await subscriptionsRef.set(subscription);
+    await subscriptionsRef.set({
+      fcmToken: fcmToken,
+      updatedAt: new Date().toISOString()
+    });
 
-    console.log('✅ Push subscription stored successfully in Firebase');
+    console.log('✅ FCM token stored successfully in Firebase');
 
     res.json({
       success: true,
-      message: 'Push subscription stored successfully'
+      message: 'FCM token stored successfully'
     });
 
   } catch (error) {
     console.error('❌ Push subscribe error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to store push subscription: ' + error.message
+      error: 'Failed to store FCM token: ' + error.message
     });
   }
 });
@@ -795,12 +799,12 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
 
     console.log('🔔 Sending push notification to user:', userId);
 
-    // Get subscription from Firebase Realtime Database
+    // Get FCM token from Firebase Realtime Database
     const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
     const snapshot = await subscriptionsRef.once('value');
-    const subscription = snapshot.val();
+    const subscriptionData = snapshot.val();
     
-    if (!subscription) {
+    if (!subscriptionData || !subscriptionData.fcmToken) {
       console.warn('⚠️ No push subscription found for user:', userId);
       return res.status(404).json({
         success: false,
@@ -808,24 +812,15 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
       });
     }
 
-    // Extract FCM token from subscription endpoint
-    const fcmToken = extractFCMToken(subscription.endpoint);
-    
-    if (!fcmToken) {
-      console.error('❌ Could not extract FCM token from endpoint');
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid subscription endpoint'
-      });
-    }
+    const fcmToken = subscriptionData.fcmToken;
+    console.log('📝 Using FCM token (length):', fcmToken.length);
 
-    // Prepare FCM message - use correct FCM notification structure
+    // Prepare FCM message with correct structure
     const message = {
       token: fcmToken,
       notification: {
         title: title,
         body: body,
-        // image: icon || '/only-logo.png', // Optional: large image
       },
       data: data ? Object.fromEntries(
         Object.entries(data).map(([key, value]) => [key, String(value)])
@@ -874,18 +869,6 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
   }
 });
 
-// Helper function to extract FCM token from endpoint URL
-function extractFCMToken(endpoint) {
-  try {
-    // FCM endpoint format: https://fcm.googleapis.com/fcm/send/TOKEN
-    const match = endpoint.match(/\/fcm\/send\/(.+)$/);
-    return match ? match[1] : null;
-  } catch (error) {
-    console.error('Error extracting FCM token:', error);
-    return null;
-  }
-}
-
 // Send push notification to multiple users using Firebase Admin SDK
 app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
   try {
@@ -916,33 +899,25 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
     // Send to all users
     for (const userId of userIds) {
       try {
-        // Get subscription from Firebase
+        // Get FCM token from Firebase
         const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
         const snapshot = await subscriptionsRef.once('value');
-        const subscription = snapshot.val();
+        const subscriptionData = snapshot.val();
         
-        if (!subscription) {
+        if (!subscriptionData || !subscriptionData.fcmToken) {
           console.warn('⚠️ No subscription for user:', userId);
           results.failed++;
           results.errors.push({ userId, error: 'No subscription found' });
           continue;
         }
 
-        const fcmToken = extractFCMToken(subscription.endpoint);
-        
-        if (!fcmToken) {
-          console.error('❌ Could not extract FCM token for user:', userId);
-          results.failed++;
-          results.errors.push({ userId, error: 'Invalid subscription endpoint' });
-          continue;
-        }
+        const fcmToken = subscriptionData.fcmToken;
 
         const message = {
           token: fcmToken,
           notification: {
             title: title,
             body: body,
-            // image: icon || '/only-logo.png', // Optional: large image
           },
           data: data ? Object.fromEntries(
             Object.entries(data).map(([key, value]) => [key, String(value)])
@@ -996,6 +971,30 @@ app.get('/api/push-subscription/:userId', generalLimiter, async (req, res) => {
     const { userId } = req.params;
 
     if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId is required'
+      });
+    }
+
+    const subscriptionsRef = admin.database().ref(`pushSubscriptions/${userId}`);
+    const snapshot = await subscriptionsRef.once('value');
+    const subscriptionData = snapshot.val();
+    
+    res.json({
+      success: true,
+      hasSubscription: !!subscriptionData,
+      hasFcmToken: !!(subscriptionData && subscriptionData.fcmToken)
+    });
+
+  } catch (error) {
+    console.error('❌ Get subscription error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get subscription status: ' + error.message
+    });
+  }
+});
       return res.status(400).json({
         success: false,
         error: 'userId is required'

@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 import { getFirestore } from 'firebase/firestore';
+import { getMessaging, isSupported as isMessagingSupported } from 'firebase/messaging';
 
 // Your Firebase configuration for hostel-ledger project
 const firebaseConfig = {
@@ -42,6 +43,43 @@ export const database = getDatabase(app);
 
 // Initialize Cloud Firestore and get a reference to the service
 export const db = getFirestore(app);
+
+// Initialize Firebase Messaging (only in supported browsers)
+// Note: This must be initialized synchronously, not with await at top level
+let messaging: ReturnType<typeof getMessaging> | null = null;
+
+// Initialize messaging asynchronously
+const initMessaging = async () => {
+  try {
+    if (typeof window !== 'undefined') {
+      const supported = await isMessagingSupported();
+      if (supported) {
+        messaging = getMessaging(app);
+        console.log('✅ Firebase Messaging initialized');
+      } else {
+        console.warn('⚠️ Firebase Messaging not supported in this browser');
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ Firebase Messaging initialization failed:', error);
+  }
+};
+
+// Initialize messaging when module loads
+if (typeof window !== 'undefined') {
+  initMessaging();
+}
+
+// Helper to get messaging instance (waits for initialization if needed)
+export const getMessagingInstance = async (): Promise<ReturnType<typeof getMessaging> | null> => {
+  if (messaging) return messaging;
+  
+  // Wait a bit for initialization
+  await new Promise(resolve => setTimeout(resolve, 100));
+  return messaging;
+};
+
+export { messaging };
 
 // Default export
 export default app;

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { logger } from "@/lib/logger";
 import { toast } from "sonner";
+import { getMessagingInstance } from "@/lib/firebase";
+import { getToken, deleteToken, isSupported as isMessagingSupported } from "firebase/messaging";
 
 export interface PushNotificationState {
   isSupported: boolean;
@@ -20,23 +22,32 @@ export const usePushNotifications = () => {
   // Check if push notifications are supported
   useEffect(() => {
     const checkSupport = async () => {
-      const isSupported = 
-        "serviceWorker" in navigator &&
-        "PushManager" in window &&
-        "Notification" in window;
+      try {
+        const isSupported = await isMessagingSupported();
+        
+        if (isSupported) {
+          const permission = Notification.permission;
+          const messaging = await getMessagingInstance();
+          
+          // Check if we have an FCM token stored
+          const hasToken = !!messaging;
 
-      if (isSupported) {
-        const permission = Notification.permission;
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
-
-        setState({
-          isSupported: true,
-          isSubscribed: !!subscription,
-          permission,
-          isLoading: false,
-        });
-      } else {
+          setState({
+            isSupported: true,
+            isSubscribed: hasToken && permission === "granted",
+            permission,
+            isLoading: false,
+          });
+        } else {
+          setState({
+            isSupported: false,
+            isSubscribed: false,
+            permission: "denied",
+            isLoading: false,
+          });
+        }
+      } catch (error) {
+        console.error("Error checking push notification support:", error);
         setState({
           isSupported: false,
           isSubscribed: false,
@@ -80,29 +91,29 @@ export const usePushNotifications = () => {
     }
   }, [state.isSupported, state.permission]);
 
-  // Subscribe to push notifications
+  // Subscribe to push notifications using Firebase Messaging SDK
   const subscribe = useCallback(async (): Promise<boolean> => {
     if (!state.isSupported) {
+      toast.error("Push notifications are not supported on this device");
       return false;
     }
 
     try {
-      const registration = await navigator.serviceWorker.ready;
-      
-      // Check if already subscribed
-      const existingSubscription = await registration.pushManager.getSubscription();
-      if (existingSubscription) {
-        setState((prev) => ({ ...prev, isSubscribed: true }));
-        return true;
-      }
-
       // Request permission first
       const hasPermission = await requestPermission();
       if (!hasPermission) {
         return false;
       }
 
-      // Subscribe to push notifications
+      // Get Firebase Messaging instance
+      const messaging = await getMessagingInstance();
+      if (!messaging) {
+        logger.error("Firebase Messaging not initialized");
+        toast.error("Push notifications not available");
+        return false;
+      }
+
+      // Get VAPID public key
       const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
       
       if (!vapidPublicKey) {
@@ -111,33 +122,38 @@ export const usePushNotifications = () => {
         return false;
       }
 
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
+      // Get FCM token using Firebase Messaging SDK
+      console.log('🔔 Requesting FCM token...');
+      const fcmToken = await getToken(messaging, {
+        vapidKey: vapidPublicKey,
       });
 
-      logger.info("Push notification subscription created", { 
-        endpoint: subscription.endpoint 
-      });
+      if (!fcmToken) {
+        logger.error("Failed to get FCM token");
+        toast.error("Failed to enable push notifications");
+        return false;
+      }
+
+      console.log('✅ FCM token obtained:', fcmToken.substring(0, 20) + '...');
+      logger.info("FCM token obtained successfully");
 
       setState((prev) => ({ ...prev, isSubscribed: true }));
       
-      // Send subscription to backend
+      // Send FCM token to backend
       try {
-        // Get user from Firebase Auth context instead of localStorage
         const { getAuth } = await import('firebase/auth');
         const auth = getAuth();
         const currentUser = auth.currentUser;
         
-        console.log('📤 Sending subscription to backend for user:', currentUser?.uid);
+        console.log('📤 Sending FCM token to backend for user:', currentUser?.uid);
         
         if (currentUser?.uid) {
           const subscriptionData = {
             userId: currentUser.uid,
-            subscription: subscription.toJSON()
+            fcmToken: fcmToken
           };
           
-          console.log('📤 Subscription data:', subscriptionData);
+          console.log('📤 Subscription data:', { userId: currentUser.uid, tokenLength: fcmToken.length });
           
           const response = await fetch(`${import.meta.env.VITE_API_URL}/api/push-subscribe`, {
             method: 'POST',
@@ -153,10 +169,10 @@ export const usePushNotifications = () => {
           console.log('📥 Backend response data:', responseData);
 
           if (response.ok) {
-            logger.info("Subscription sent to backend successfully");
-            toast.success("✅ Subscribed successfully!");
+            logger.info("FCM token sent to backend successfully");
+            toast.success("✅ Push notifications enabled!");
           } else {
-            logger.warn("Failed to send subscription to backend", { response: responseData });
+            logger.warn("Failed to send FCM token to backend", { response: responseData });
             toast.warning("Subscribed locally, but backend sync failed");
           }
         } else {
@@ -164,38 +180,58 @@ export const usePushNotifications = () => {
           toast.warning("Please log in to enable notifications");
         }
       } catch (error: any) {
-        console.error("❌ Failed to send subscription to backend:", error);
-        logger.error("Failed to send subscription to backend", { error: error.message });
+        console.error("❌ Failed to send FCM token to backend:", error);
+        logger.error("Failed to send FCM token to backend", { error: error.message });
         toast.warning("Subscribed locally, but backend sync failed");
       }
 
       return true;
     } catch (error: any) {
+      console.error("❌ Failed to subscribe to push notifications:", error);
       logger.error("Failed to subscribe to push notifications", { error: error.message });
       toast.error("Failed to enable push notifications");
       return false;
     }
   }, [state.isSupported, requestPermission]);
 
-  // Unsubscribe from push notifications
+  // Unsubscribe from push notifications using Firebase Messaging SDK
   const unsubscribe = useCallback(async (): Promise<boolean> => {
     if (!state.isSupported) {
       return false;
     }
 
     try {
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
-
-      if (subscription) {
-        await subscription.unsubscribe();
-        logger.info("Push notification subscription removed");
-        setState((prev) => ({ ...prev, isSubscribed: false }));
-        toast.success("Push notifications disabled");
-        return true;
+      const messaging = await getMessagingInstance();
+      if (!messaging) {
+        logger.warn("Firebase Messaging not initialized");
+        return false;
       }
 
-      return false;
+      // Delete FCM token
+      await deleteToken(messaging);
+      logger.info("FCM token deleted");
+      
+      // Remove from backend
+      try {
+        const { getAuth } = await import('firebase/auth');
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        
+        if (currentUser?.uid) {
+          await fetch(`${import.meta.env.VITE_API_URL}/api/push-unsubscribe/${currentUser.uid}`, {
+            method: 'DELETE',
+            headers: { 
+              'Cache-Control': 'no-cache'
+            }
+          });
+        }
+      } catch (error) {
+        console.warn("Failed to remove subscription from backend:", error);
+      }
+
+      setState((prev) => ({ ...prev, isSubscribed: false }));
+      toast.success("Push notifications disabled");
+      return true;
     } catch (error: any) {
       logger.error("Failed to unsubscribe from push notifications", { error: error.message });
       toast.error("Failed to disable push notifications");
