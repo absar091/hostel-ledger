@@ -38,16 +38,21 @@ export const useOneSignalPush = () => {
         }
 
         if (!oneSignalInitialized) {
-          // Wait a bit for PWA service worker to register first
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // Wait for PWA service worker to register first
+          await new Promise(resolve => setTimeout(resolve, 2000));
           
           await OneSignal.init({
             appId: appId,
             allowLocalhostAsSecureOrigin: true,
-            serviceWorkerPath: 'OneSignalSDK.sw.js',
+            serviceWorkerPath: '/OneSignalSDK.sw.js',
+            serviceWorkerParam: { scope: '/' },
             // Persist notification permission
             persistNotification: true,
             autoResubscribe: true,
+            // Prompt options
+            notifyButton: {
+              enable: false, // We handle our own UI
+            },
           });
           oneSignalInitialized = true;
           console.log('✅ OneSignal initialized');

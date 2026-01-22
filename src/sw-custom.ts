@@ -84,46 +84,8 @@ registerRoute(
   })
 );
 
-// Push Notification Handler
-self.addEventListener('push', (event: PushEvent) => {
-  const data = event.data?.json() ?? {};
-  const title = data.title || 'Hostel Ledger';
-  const options: NotificationOptions = {
-    body: data.body || 'New update available',
-    icon: '/only-logo.png',
-    badge: '/only-logo.png',
-    tag: data.tag || 'default',
-    data: data.data || {},
-    requireInteraction: false
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(title, options)
-  );
-});
-
-// Notification Click Handler
-self.addEventListener('notificationclick', (event: NotificationEvent) => {
-  event.notification.close();
-
-  const urlToOpen = event.notification.data?.url || '/';
-
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clientList) => {
-        // Check if there's already a window open
-        for (const client of clientList) {
-          if (client.url === urlToOpen && 'focus' in client) {
-            return client.focus();
-          }
-        }
-        // Open new window if none exists
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(urlToOpen);
-        }
-      })
-  );
-});
+// NOTE: Push notification handling is now done by OneSignal service worker
+// We removed the push and notificationclick handlers to avoid conflicts
 
 // Periodic Background Sync (for checking new expenses)
 self.addEventListener('periodicsync', (event: any) => {

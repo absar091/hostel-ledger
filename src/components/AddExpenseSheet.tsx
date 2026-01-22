@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, ChevronRight, AlertCircle, WifiOff } from "lucide-react";
+import { Check, ChevronRight, AlertCircle, WifiOff, UserPlus, Clock, Ban } from "lucide-react";
 import Avatar from "./Avatar";
 import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
@@ -35,9 +35,23 @@ interface AddExpenseSheetProps {
     note: string;
     place: string;
   }) => void;
+  onAddMember?: (data: { name: string; isTemporary: boolean; deletionCondition: 'SETTLED' | 'TIME_LIMIT' }) => void;
 }
 
-const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetProps) => {
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
+// ... existing imports
+
+const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddExpenseSheetProps) => {
   const [step, setStep] = useState(1);
   const [selectedGroup, setSelectedGroup] = useState("");
   const [amount, setAmount] = useState("");
@@ -47,6 +61,11 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
   const [place, setPlace] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const { offline, updatePendingCount } = useOffline();
+
+  // Temp member state
+  const [showTempMemberInput, setShowTempMemberInput] = useState(false);
+  const [tempMemberName, setTempMemberName] = useState("");
+  const [tempMemberCondition, setTempMemberCondition] = useState<'SETTLED' | 'TIME_LIMIT'>('TIME_LIMIT');
 
   // Get members from selected group
   const members = useMemo(() => {
@@ -230,6 +249,24 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
     return true;
   };
 
+  const handleAddTempMember = () => {
+    if (!tempMemberName.trim()) {
+      toast.error("Please enter a name");
+      return;
+    }
+
+    if (onAddMember) {
+      onAddMember({
+        name: tempMemberName,
+        isTemporary: true,
+        deletionCondition: tempMemberCondition
+      });
+      setTempMemberName("");
+      setShowTempMemberInput(false);
+      toast.success("Temporary member added");
+    }
+  };
+
   const paidByName = members.find((m) => m.id === paidBy)?.name;
   const selectedGroupData = groups.find((g) => g.id === selectedGroup);
 
@@ -411,6 +448,15 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit }: AddExpenseSheetPro
                   </button>
                 );
               })}
+
+              {/* Add Temp Member Button */}
+              <button
+                onClick={() => setShowTempMemberInput(true)}
+                className="w-full flex items-center justify-center gap-2 p-4 rounded-3xl border-2 border-dashed border-[#4a6850]/30 text-[#4a6850] font-bold hover:bg-[#4a6850]/5 transition-all mt-4"
+              >
+                <UserPlus className="w-5 h-5" />
+                Add Temporary Member
+              </button>
 
               {/* Split Summary - iPhone Style */}
               {participants.length > 0 && paidBy && (

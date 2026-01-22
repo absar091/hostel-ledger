@@ -33,6 +33,40 @@
           "value": "*"
         }
       ]
+    },
+    {
+      "source": "/OneSignalSDK.sw.js",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/OneSignalSDKWorker.js",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
     }
   ],
   "rewrites": [
@@ -41,7 +75,7 @@
       "destination": "/_auth-action.html"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!OneSignalSDK|OneSignalSDKWorker).*)",
       "destination": "/index.html"
     }
   ]

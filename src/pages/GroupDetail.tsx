@@ -26,7 +26,7 @@ const GroupDetail = () => {
   const { getGroupById, getTransactionsByGroup, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup } = useFirebaseData();
   const { getSettlements, user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
-  
+
   const [activeTab, setActiveTab] = useState<"ledger" | "members" | "summary">("ledger");
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
@@ -48,7 +48,7 @@ const GroupDetail = () => {
     setShowGroupGuide(false);
     markPageGuideShown('group-detail');
   };
-  
+
   const group = id ? getGroupById(id) : undefined;
   const transactions = id ? getTransactionsByGroup(id) : [];
   const settlements = id ? getSettlements(id) : {};
@@ -61,10 +61,10 @@ const GroupDetail = () => {
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
     if (!group || !selectedMember) return [];
-    
+
     const currentUser = group.members.find((m) => m.isCurrentUser);
     if (!currentUser) return [];
-    
+
     return transactions
       .filter((t) => {
         if (t.type === "payment") {
@@ -78,12 +78,12 @@ const GroupDetail = () => {
           // Only show expenses where both current user and selected member were involved
           const memberInvolved = t.participants?.some((p) => p.id === selectedMember.id);
           const youInvolved = t.participants?.some((p) => p.id === currentUser.id);
-          
+
           // Must involve both parties (either as payer or participant)
           const bothInvolved = memberInvolved && youInvolved;
           const memberPaidForYou = t.paidBy === selectedMember.id && youInvolved;
           const youPaidForMember = t.paidBy === currentUser.id && memberInvolved;
-          
+
           return bothInvolved || memberPaidForYou || youPaidForMember;
         }
         return false;
@@ -91,7 +91,7 @@ const GroupDetail = () => {
       .map((t) => {
         let direction: "gave" | "received" = "received";
         let balanceChange = 0; // positive = they owe you more, negative = you owe them more
-        
+
         if (t.type === "payment") {
           if (t.from === selectedMember.id && t.to === currentUser.id) {
             // They paid you - they owe you less now
@@ -115,7 +115,7 @@ const GroupDetail = () => {
             balanceChange = -yourShare; // You owe them more
           }
         }
-        
+
         // Calculate display amount based on transaction type
         let amount = t.amount;
         if (t.type === "expense") {
@@ -127,7 +127,7 @@ const GroupDetail = () => {
             amount = t.participants?.find((p) => p.id === currentUser.id)?.amount || 0;
           }
         }
-        
+
         return {
           id: t.id,
           type: t.type,
@@ -147,7 +147,7 @@ const GroupDetail = () => {
       <div className="min-h-screen bg-white flex items-center justify-center">
         {/* iPhone-style top accent border */}
         <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
-        
+
         <div className="text-center">
           <div className="text-6xl mb-4">🔍</div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Group not found</h2>
@@ -201,7 +201,7 @@ const GroupDetail = () => {
     note: string;
   }) => {
     if (!currentUser) return;
-    
+
     recordPayment({
       groupId: data.groupId,
       fromMember: data.fromMember,
@@ -210,7 +210,7 @@ const GroupDetail = () => {
       method: data.method,
       note: data.note,
     });
-    
+
     const memberName = group.members.find((m) => m.id === data.fromMember)?.name;
     toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
   };
@@ -228,7 +228,7 @@ const GroupDetail = () => {
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0);
   const expenseCount = transactions.filter((t) => t.type === "expense").length;
-  
+
   // Find the member who has paid the most in expenses (actual top contributor)
   const memberExpenseContributions = group.members.map(member => {
     const totalPaid = transactions
@@ -239,7 +239,7 @@ const GroupDetail = () => {
       totalPaid
     };
   });
-  
+
   const topSpender = memberExpenseContributions.reduce((prev, curr) => {
     return curr.totalPaid > prev.totalPaid ? curr : prev;
   });
@@ -248,7 +248,7 @@ const GroupDetail = () => {
     <div className="min-h-screen bg-white pb-24">
       {/* iPhone-style top accent border */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
-      
+
       {/* Header - iPhone Style Enhanced */}
       <header className="sticky top-0 bg-white/95 backdrop-blur-xl z-50 border-b border-[#4a6850]/10 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
         <div className="px-4 py-5">
@@ -259,7 +259,7 @@ const GroupDetail = () => {
             >
               <ArrowLeft className="w-5 h-5 text-[#4a6850] font-bold" />
             </button>
-            
+
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">{group.emoji}</span>
@@ -269,8 +269,8 @@ const GroupDetail = () => {
                 {group.members.length} members {totalPending > 0 && `• Rs ${totalPending.toLocaleString()} pending`}
               </p>
             </div>
-            
-            <button 
+
+            <button
               onClick={() => setShowGroupSettings(true)}
               className="w-11 h-11 rounded-2xl bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
             >
@@ -289,11 +289,10 @@ const GroupDetail = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`flex-1 py-3 px-4 rounded-2xl text-sm font-black transition-all duration-200 ${
-                activeTab === tab.id
+              className={`flex-1 py-3 px-4 rounded-2xl text-sm font-black transition-all duration-200 ${activeTab === tab.id
                   ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] scale-105"
                   : "bg-white/80 text-[#4a6850]/80 hover:bg-white border border-[#4a6850]/10 hover:scale-102"
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -345,13 +344,13 @@ const GroupDetail = () => {
           <div className="space-y-4 animate-fade-in">
             {group.members.map((member, index) => {
               const isYou = member.isCurrentUser;
-              
+
               // Get settlement data for this member
               const memberSettlement = settlements[member.id] || { toReceive: 0, toPay: 0 };
               const youOweThisMember = memberSettlement.toPay > 0;
               const thisMemberOwesYou = memberSettlement.toReceive > 0;
               const isSettled = memberSettlement.toReceive === 0 && memberSettlement.toPay === 0;
-              
+
               const handleSettlementClick = () => {
                 setSettlementMember({
                   id: member.id,
@@ -359,7 +358,7 @@ const GroupDetail = () => {
                 });
                 setShowMemberSettlement(true);
               };
-              
+
               return (
                 <div
                   key={member.id}
@@ -398,7 +397,7 @@ const GroupDetail = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     {!isYou && !isSettled && (
                       <div className="flex flex-col gap-2">
                         <Button
@@ -410,7 +409,7 @@ const GroupDetail = () => {
                         </Button>
                       </div>
                     )}
-                    
+
                     {!isYou && (
                       <Button
                         variant="ghost"
@@ -459,7 +458,7 @@ const GroupDetail = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Top Contributor Card - iPhone Style */}
             <div className="bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
               <div className="flex items-center gap-3 mb-4">
@@ -473,8 +472,8 @@ const GroupDetail = () => {
                 <div className="flex-1 min-w-0">
                   <div className="font-black text-gray-900 text-base mb-1 tracking-tight truncate">{topSpender.name}</div>
                   <div className="text-xs text-[#4a6850] font-bold">
-                    {topSpender.totalPaid > 0 
-                      ? `Paid Rs ${topSpender.totalPaid.toLocaleString()} in expenses` 
+                    {topSpender.totalPaid > 0
+                      ? `Paid Rs ${topSpender.totalPaid.toLocaleString()} in expenses`
                       : `No expenses paid yet`}
                   </div>
                 </div>
@@ -510,44 +509,43 @@ const GroupDetail = () => {
       {/* Floating Action Buttons - Enhanced iPhone Style */}
       <div className="fixed bottom-4 left-4 right-4 flex gap-4 z-40 pb-safe">
         <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                onClick={() => setShowRecordPayment(true)}
-                disabled={groupTotalToReceive <= 0}
-                variant="outline"
-                className={`flex-1 h-12 rounded-2xl text-sm font-black transition-all ${
-                  groupTotalToReceive <= 0 
-                    ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70' 
-                    : 'bg-white border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 hover:border-[#4a6850]/50 shadow-[0_8px_32px_rgba(74,104,80,0.15)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.25)]'
+          <TooltipTrigger asChild>
+            <Button
+              onClick={() => setShowRecordPayment(true)}
+              disabled={groupTotalToReceive <= 0}
+              variant="outline"
+              className={`flex-1 h-12 rounded-2xl text-sm font-black transition-all ${groupTotalToReceive <= 0
+                  ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70'
+                  : 'bg-white border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 hover:border-[#4a6850]/50 shadow-[0_8px_32px_rgba(74,104,80,0.15)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.25)]'
                 }`}
-              >
-                <HandCoins className="w-4 h-4 mr-2 font-bold" />
-                Record Payment
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800">
-              <p>
-                {groupTotalToReceive <= 0 
-                  ? 'No pending payments in this group. Nobody owes you money here.' 
-                  : 'Record money received from a member to settle their debt'
-                }
-              </p>
-            </TooltipContent>
-          </Tooltip>
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                onClick={() => setShowAddExpense(true)}
-                className="flex-1 h-12 rounded-2xl text-sm font-black bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all border-t-2 border-[#5a7860]/40"
-              >
-                <Plus className="w-4 h-4 mr-2 font-bold" />
-                Add Expense
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800">
-              <p>Add a shared expense and split it among members</p>
-            </TooltipContent>
+            >
+              <HandCoins className="w-4 h-4 mr-2 font-bold" />
+              Record Payment
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800">
+            <p>
+              {groupTotalToReceive <= 0
+                ? 'No pending payments in this group. Nobody owes you money here.'
+                : 'Record money received from a member to settle their debt'
+              }
+            </p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={() => setShowAddExpense(true)}
+              className="flex-1 h-12 rounded-2xl text-sm font-black bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all border-t-2 border-[#5a7860]/40"
+            >
+              <Plus className="w-4 h-4 mr-2 font-bold" />
+              Add Expense
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800">
+            <p>Add a shared expense and split it among members</p>
+          </TooltipContent>
         </Tooltip>
       </div>
 
@@ -557,6 +555,9 @@ const GroupDetail = () => {
         onClose={() => setShowAddExpense(false)}
         groups={groupForSheet}
         onSubmit={handleExpenseSubmit}
+        onAddMember={(data) => {
+          addMemberToGroup(group.id, data);
+        }}
       />
 
       {/* Record Payment Sheet */}

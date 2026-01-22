@@ -250,10 +250,10 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                     </div>
                     
                     <Select value={bankName} onValueChange={setBankName}>
-                      <SelectTrigger className="h-12 text-sm rounded-2xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 focus:border-[#4a6850] bg-white">
+                      <SelectTrigger className="h-12 text-sm rounded-2xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 focus:border-[#4a6850] bg-white z-[110]">
                         <SelectValue placeholder="Select bank (optional)" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[120] max-h-[200px] overflow-y-auto">
                         {BANKS.map((bank) => (
                           <SelectItem key={bank} value={bank}>
                             {bank}
