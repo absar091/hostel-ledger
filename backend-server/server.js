@@ -36,6 +36,7 @@ try {
 }
 
 // Configure Web Push with VAPID keys
+// Updated: 2026-01-22 - Added FCM_SERVER_KEY support
 try {
   webpush.setVapidDetails(
     'mailto:hostelledger@aarx.online',
