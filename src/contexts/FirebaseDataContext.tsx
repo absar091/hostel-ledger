@@ -773,34 +773,45 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             // Send push notifications to all group members (including payer for testing)
             try {
               console.log('🔔 Sending push notifications for expense...');
+              console.log('📊 Group members:', group.members.map(m => ({ name: m.name, userId: m.userId })));
               
-              const notificationPromises = group.members
-                .filter(member => member.userId) // Notify everyone with userId (including payer for testing)
-                .map(async (member) => {
+              const membersWithUserId = group.members.filter(member => member.userId);
+              console.log('📊 Members with userId:', membersWithUserId.map(m => ({ name: m.name, userId: m.userId })));
+              
+              const notificationPromises = membersWithUserId.map(async (member) => {
                   try {
+                    console.log(`📤 Sending push notification to ${member.name} (${member.userId})...`);
+                    
+                    const requestBody = {
+                      userId: member.userId,
+                      title: `New Expense in ${group.name}`,
+                      body: `${payer.name} paid Rs ${sanitizedAmount.toLocaleString()} for "${sanitizedNote || 'Expense'}"`,
+                      icon: '/only-logo.png',
+                      badge: '/only-logo.png',
+                      tag: `expense-${transactionId}`,
+                      data: {
+                        type: 'expense',
+                        transactionId,
+                        groupId: data.groupId,
+                        amount: sanitizedAmount
+                      }
+                    };
+                    
+                    console.log('📤 Request body:', requestBody);
+                    
                     const response = await fetch(`${import.meta.env.VITE_API_URL}/api/push-notify`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        userId: member.userId,
-                        title: `New Expense in ${group.name}`,
-                        body: `${payer.name} paid Rs ${sanitizedAmount.toLocaleString()} for "${sanitizedNote || 'Expense'}"`,
-                        icon: '/only-logo.png',
-                        badge: '/only-logo.png',
-                        tag: `expense-${transactionId}`,
-                        data: {
-                          type: 'expense',
-                          transactionId,
-                          groupId: data.groupId,
-                          amount: sanitizedAmount
-                        }
-                      })
+                      body: JSON.stringify(requestBody)
                     });
+                    
+                    const responseData = await response.json();
+                    console.log(`📥 Response for ${member.name}:`, responseData);
                     
                     if (response.ok) {
                       console.log(`✅ Push notification sent to ${member.name}`);
                     } else {
-                      console.warn(`⚠️ Push notification failed for ${member.name}`);
+                      console.warn(`⚠️ Push notification failed for ${member.name}:`, responseData);
                     }
                   } catch (error) {
                     console.error(`❌ Failed to send push notification to ${member.name}:`, error);

@@ -133,14 +133,18 @@ app.get('/', (req, res) => {
   res.json({ 
     success: true, 
     message: 'Hostel Ledger Email API',
-    version: '1.0.0',
+    version: '3.0.0-push-active',
     endpoints: {
       health: '/health',
       sendEmail: '/api/send-email',
       sendVerification: '/api/send-verification',
       sendPasswordReset: '/api/send-password-reset',
       sendWelcome: '/api/send-welcome',
-      sendTransactionAlert: '/api/send-transaction-alert'
+      sendTransactionAlert: '/api/send-transaction-alert',
+      pushSubscribe: '/api/push-subscribe',
+      pushNotify: '/api/push-notify',
+      pushNotifyMultiple: '/api/push-notify-multiple',
+      pushTest: '/api/push-test'
     },
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
@@ -156,8 +160,9 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
-    version: '2.0.0-push-notifications', // Updated version to verify deployment
-    pushEndpointsActive: true
+    version: '3.0.0-push-active', // Updated version to verify new deployment
+    pushEndpointsActive: true,
+    deployedAt: '2026-01-22T12:00:00Z'
   });
 });
 
@@ -716,7 +721,8 @@ app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
 
 // ============================================
 // PUSH NOTIFICATION ENDPOINTS
-// Last updated: 2026-01-21 - Force rebuild v2
+// Last updated: 2026-01-22 - Force rebuild v3 - Cache bust
+// CRITICAL: These endpoints MUST be before the 404 handler
 // ============================================
 
 // Store push subscriptions (in production, use Firebase Realtime Database)
