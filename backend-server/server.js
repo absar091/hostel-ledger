@@ -58,8 +58,12 @@ app.use(cors({
   origin: true, // Allow all origins during debugging
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Cache-Control']
 }));
+
+// Handle preflight requests explicitly
+app.options('*', cors());
+
 app.use(express.json());
 
 // Rate limiting for email endpoints - very generous limits for testing
