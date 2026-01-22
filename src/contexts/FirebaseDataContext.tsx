@@ -1156,62 +1156,67 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         description: "Add payment to member transaction lists"
       });
 
+      // Add wallet and settlement updates to transaction manager
+      if (data.toMember === user.uid) {
+        // Current user is receiving payment
+        transaction.addOperation({
+          execute: async () => {
+             const result = await addToAuthWallet(sanitizedAmount);
+             if (!result.success) throw new Error(result.error || "Failed to add money to wallet");
+             return result;
+          },
+          rollback: async () => {
+             await deductMoneyFromWallet(sanitizedAmount);
+          },
+          description: "Add payment to wallet"
+        });
+
+        transaction.addOperation({
+          execute: async () => {
+            // Reduce receivable
+            const result = await addToReceivable(data.groupId, data.fromMember, -sanitizedAmount);
+             if (!result.success) throw new Error(result.error || "Failed to update settlement");
+             return result;
+          },
+          rollback: async () => {
+             // Add back receivable
+             await addToReceivable(data.groupId, data.fromMember, sanitizedAmount);
+          },
+          description: "Update settlement (reduce receivable)"
+        });
+
+      } else if (data.fromMember === user.uid) {
+        // Current user is making payment
+        transaction.addOperation({
+          execute: async () => {
+             const result = await deductMoneyFromWallet(sanitizedAmount);
+             if (!result.success) throw new Error(result.error || "Failed to deduct money from wallet");
+             return result;
+          },
+          rollback: async () => {
+             await addToAuthWallet(sanitizedAmount);
+          },
+          description: "Deduct payment from wallet"
+        });
+
+        transaction.addOperation({
+           execute: async () => {
+             // Reduce payable
+             const result = await addToPayable(data.groupId, data.toMember, -sanitizedAmount);
+             if (!result.success) throw new Error(result.error || "Failed to update settlement");
+             return result;
+           },
+           rollback: async () => {
+             // Add back payable
+             await addToPayable(data.groupId, data.toMember, sanitizedAmount);
+           },
+           description: "Update settlement (reduce payable)"
+        });
+      }
+
       const result = await transaction.execute();
 
       if (result.success) {
-        // CRITICAL FIX: Update settlements and wallet after transaction is created
-        if (data.toMember === user.uid) {
-          // Current user is receiving payment - add money to wallet and update settlements
-          try {
-            // Step 1: Add money to wallet
-            const walletResult = await addToAuthWallet(sanitizedAmount);
-            if (walletResult.success) {
-              // Step 2: Update settlements (reduce receivable)
-              const settlements = getSettlements(data.groupId);
-              const currentSettlement = settlements[data.fromMember] || { toReceive: 0, toPay: 0 };
-              await updateSettlement(
-                data.groupId,
-                data.fromMember,
-                Math.max(0, currentSettlement.toReceive - sanitizedAmount),
-                currentSettlement.toPay
-              );
-              logger.info("Updated wallet and settlements for payment received", {
-                amount: sanitizedAmount,
-                fromMember: data.fromMember
-              });
-            } else {
-              logger.error("Failed to add money to wallet", { error: walletResult.error });
-            }
-          } catch (error: any) {
-            logger.error("Failed to update wallet/settlements after payment", { error: error.message });
-          }
-        } else if (data.fromMember === user.uid) {
-          // Current user is making payment - deduct from wallet and update settlements
-          try {
-            // Step 1: Deduct money from wallet
-            const walletResult = await deductMoneyFromWallet(sanitizedAmount);
-            if (walletResult.success) {
-              // Step 2: Update settlements (reduce payable)
-              const settlements = getSettlements(data.groupId);
-              const currentSettlement = settlements[data.toMember] || { toReceive: 0, toPay: 0 };
-              await updateSettlement(
-                data.groupId,
-                data.toMember,
-                currentSettlement.toReceive,
-                Math.max(0, currentSettlement.toPay - sanitizedAmount)
-              );
-              logger.info("Updated wallet and settlements for payment made", {
-                amount: sanitizedAmount,
-                toMember: data.toMember
-              });
-            } else {
-              logger.error("Failed to deduct money from wallet", { error: walletResult.error });
-            }
-          } catch (error: any) {
-            logger.error("Failed to update wallet/settlements after debt payment", { error: error.message });
-          }
-        }
-
         logger.logTransaction("payment_recorded", sanitizedAmount, true);
 
         // Send transaction notification emails (async, non-blocking)

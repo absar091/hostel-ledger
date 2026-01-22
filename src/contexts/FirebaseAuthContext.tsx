@@ -10,7 +10,7 @@ import {
   confirmPasswordReset,
   fetchSignInMethodsForEmail
 } from "firebase/auth";
-import { ref, set, get, update, push, onValue, off } from "firebase/database";
+import { ref, set, get, update, push, onValue, off, runTransaction } from "firebase/database";
 import { auth, database } from "@/lib/firebase";
 import { logger } from "@/lib/logger";
 import { retryOperation } from "@/lib/transaction";
@@ -638,25 +638,21 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, error: "User not authenticated" };
     }
 
-    // const validation = validateAmount(amount);
-    // if (!validation.isValid) {
-    //   return { success: false, error: validation.error || "Invalid amount" };
-    // }
-
     try {
-      // const sanitizedAmount = sanitizeAmount(amount);
       const sanitizedAmount = Math.max(0, Math.min(amount, 1000000));
-      const newWalletBalance = user.walletBalance + sanitizedAmount;
+      const userRef = ref(database, `users/${user.uid}/walletBalance`);
 
-      const userRef = ref(database, `users/${user.uid}`);
-      await retryOperation(() => update(userRef, {
-        walletBalance: newWalletBalance
-      }));
+      let newBalance = 0;
+      await runTransaction(userRef, (currentBalance) => {
+        const val = currentBalance || 0;
+        newBalance = val + sanitizedAmount;
+        return newBalance;
+      });
 
       // Update local state
       setUser(prev => prev ? {
         ...prev,
-        walletBalance: newWalletBalance
+        walletBalance: newBalance
       } : null);
 
       logger.logTransaction("wallet_add", sanitizedAmount, true);
@@ -672,14 +668,22 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, error: "Invalid amount or user not authenticated" };
     }
 
-    if (user.walletBalance < amount) {
-      return { success: false, error: "Insufficient wallet balance" };
-    }
-
     try {
-      const newBalance = user.walletBalance - amount;
       const userRef = ref(database, `users/${user.uid}/walletBalance`);
-      await set(userRef, newBalance);
+      let newBalance = 0;
+
+      const result = await runTransaction(userRef, (currentBalance) => {
+        const val = currentBalance || 0;
+        if (val < amount) {
+          return; // Abort transaction if insufficient funds
+        }
+        newBalance = val - amount;
+        return newBalance;
+      });
+
+      if (!result.committed) {
+         return { success: false, error: "Insufficient wallet balance" };
+      }
 
       // Update local state
       setUser(prev => prev ? { ...prev, walletBalance: newBalance } : null);
@@ -792,12 +796,37 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, error: "Invalid amount or user not authenticated" };
     }
 
-    const groupSettlements = user.settlements[groupId] || {};
-    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
+    try {
+      const settlementRef = ref(database, `users/${user.uid}/settlements/${groupId}/${personId}`);
+      let newSettlement = { toReceive: 0, toPay: 0 };
 
-    const result = await updateSettlement(groupId, personId, currentSettlement.toReceive + amount, currentSettlement.toPay);
+      await runTransaction(settlementRef, (current) => {
+        const val = current || { toReceive: 0, toPay: 0 };
+        newSettlement = {
+          toReceive: Math.max(0, (val.toReceive || 0) + amount),
+          toPay: val.toPay || 0
+        };
+        return newSettlement;
+      });
 
-    return result;
+      // Update local state
+      setUser(prev => {
+        if (!prev) return null;
+        const newSettlements = { ...prev.settlements };
+        if (!newSettlements[groupId]) {
+          newSettlements[groupId] = {};
+        } else {
+          newSettlements[groupId] = { ...newSettlements[groupId] };
+        }
+        newSettlements[groupId][personId] = newSettlement;
+        return { ...prev, settlements: newSettlements };
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      console.error("Add to receivable error:", error);
+      return { success: false, error: error.message || "Failed to update settlement" };
+    }
   };
 
   const addToPayable = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
@@ -805,9 +834,37 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, error: "Invalid amount or user not authenticated" };
     }
 
-    const groupSettlements = user.settlements[groupId] || {};
-    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
-    return await updateSettlement(groupId, personId, currentSettlement.toReceive, currentSettlement.toPay + amount);
+    try {
+      const settlementRef = ref(database, `users/${user.uid}/settlements/${groupId}/${personId}`);
+      let newSettlement = { toReceive: 0, toPay: 0 };
+
+      await runTransaction(settlementRef, (current) => {
+        const val = current || { toReceive: 0, toPay: 0 };
+        newSettlement = {
+          toReceive: val.toReceive || 0,
+          toPay: Math.max(0, (val.toPay || 0) + amount)
+        };
+        return newSettlement;
+      });
+
+      // Update local state
+      setUser(prev => {
+        if (!prev) return null;
+        const newSettlements = { ...prev.settlements };
+        if (!newSettlements[groupId]) {
+          newSettlements[groupId] = {};
+        } else {
+          newSettlements[groupId] = { ...newSettlements[groupId] };
+        }
+        newSettlements[groupId][personId] = newSettlement;
+        return { ...prev, settlements: newSettlements };
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      console.error("Add to payable error:", error);
+      return { success: false, error: error.message || "Failed to update settlement" };
+    }
   };
 
   const markPaymentReceived = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
@@ -815,26 +872,48 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, error: "Invalid amount or user not authenticated" };
     }
 
-    const groupSettlements = user.settlements[groupId] || {};
-    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
-
-    // Allow partial payments - don't require exact amount
-    if (currentSettlement.toReceive <= 0) {
-      return { success: false, error: "No pending receivables from this person in this group" };
-    }
-
-    // Allow paying more than owed (in case of overpayment)
-    const actualAmount = Math.min(amount, currentSettlement.toReceive);
-
     try {
-      // Step 1: Add real money to wallet
+      const settlementRef = ref(database, `users/${user.uid}/settlements/${groupId}/${personId}`);
+
+      // Get fresh settlement data
+      const snapshot = await get(settlementRef);
+      const currentSettlement = snapshot.val() || { toReceive: 0, toPay: 0 };
+
+      if (currentSettlement.toReceive <= 0) {
+        return { success: false, error: "No pending receivables from this person in this group" };
+      }
+
+      const actualAmount = Math.min(amount, currentSettlement.toReceive);
+
+      // Step 1: Add real money to wallet (Atomic)
       const addResult = await addMoneyToWallet(actualAmount);
       if (!addResult.success) {
         return addResult;
       }
 
-      // Step 2: Reduce receivable amount
-      await updateSettlement(groupId, personId, currentSettlement.toReceive - actualAmount, currentSettlement.toPay);
+      // Step 2: Reduce receivable amount (Atomic)
+      let newSettlement = { toReceive: 0, toPay: 0 };
+      await runTransaction(settlementRef, (current) => {
+        const val = current || { toReceive: 0, toPay: 0 };
+        newSettlement = {
+          toReceive: Math.max(0, (val.toReceive || 0) - actualAmount),
+          toPay: val.toPay || 0
+        };
+        return newSettlement;
+      });
+
+      // Update local state for settlement
+      setUser(prev => {
+        if (!prev) return null;
+        const newSettlements = { ...prev.settlements };
+        if (!newSettlements[groupId]) {
+          newSettlements[groupId] = {};
+        } else {
+          newSettlements[groupId] = { ...newSettlements[groupId] };
+        }
+        newSettlements[groupId][personId] = newSettlement;
+        return { ...prev, settlements: newSettlements };
+      });
 
       // Step 3: Create transaction record
       const transactionsRef = ref(database, 'transactions');
@@ -883,26 +962,47 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, error: "Invalid amount or user not authenticated" };
     }
 
-    const groupSettlements = user.settlements[groupId] || {};
-    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
-
-    // Allow partial payments - don't require exact amount
-    if (currentSettlement.toPay <= 0) {
-      return { success: false, error: "No pending debts to this person in this group" };
-    }
-
-    // Allow paying more than owed (in case of overpayment)
-    const actualAmount = Math.min(amount, currentSettlement.toPay);
-
     try {
-      // Step 1: Deduct real money from wallet
+      const settlementRef = ref(database, `users/${user.uid}/settlements/${groupId}/${personId}`);
+
+      const snapshot = await get(settlementRef);
+      const currentSettlement = snapshot.val() || { toReceive: 0, toPay: 0 };
+
+      if (currentSettlement.toPay <= 0) {
+        return { success: false, error: "No pending debts to this person in this group" };
+      }
+
+      const actualAmount = Math.min(amount, currentSettlement.toPay);
+
+      // Step 1: Deduct real money from wallet (Atomic)
       const deductResult = await deductMoneyFromWallet(actualAmount);
       if (!deductResult.success) {
         return deductResult;
       }
 
-      // Step 2: Reduce payable amount
-      await updateSettlement(groupId, personId, currentSettlement.toReceive, currentSettlement.toPay - actualAmount);
+      // Step 2: Reduce payable amount (Atomic)
+      let newSettlement = { toReceive: 0, toPay: 0 };
+      await runTransaction(settlementRef, (current) => {
+        const val = current || { toReceive: 0, toPay: 0 };
+        newSettlement = {
+          toReceive: val.toReceive || 0,
+          toPay: Math.max(0, (val.toPay || 0) - actualAmount)
+        };
+        return newSettlement;
+      });
+
+      // Update local state for settlement
+      setUser(prev => {
+        if (!prev) return null;
+        const newSettlements = { ...prev.settlements };
+        if (!newSettlements[groupId]) {
+          newSettlements[groupId] = {};
+        } else {
+          newSettlements[groupId] = { ...newSettlements[groupId] };
+        }
+        newSettlements[groupId][personId] = newSettlement;
+        return { ...prev, settlements: newSettlements };
+      });
 
       // Step 3: Create transaction record
       const transactionsRef = ref(database, 'transactions');
