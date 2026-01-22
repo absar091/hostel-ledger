@@ -486,6 +486,14 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       const updatedMembers = [...group.members, newMember];
       const groupRef = ref(database, `groups/${groupId}/members`);
 
+      // Optimistic local update to ensure validation passes immediately
+      setGroups(prev => prev.map(g => {
+        if (g.id === groupId) {
+          return { ...g, members: updatedMembers };
+        }
+        return g;
+      }));
+
       await retryOperation(() => set(groupRef, updatedMembers));
 
       return { success: true };
