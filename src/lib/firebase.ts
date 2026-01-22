@@ -54,8 +54,26 @@ const initMessaging = async () => {
     if (typeof window !== 'undefined') {
       const supported = await isMessagingSupported();
       if (supported) {
-        messaging = getMessaging(app);
-        console.log('✅ Firebase Messaging initialized');
+        // Register Firebase Messaging service worker first
+        if ('serviceWorker' in navigator) {
+          try {
+            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+              scope: '/firebase-cloud-messaging-push-scope',
+            });
+            console.log('✅ Firebase Messaging SW registered:', registration.scope);
+            
+            // Wait a bit for service worker to be ready
+            await navigator.serviceWorker.ready;
+            
+            // Now initialize messaging
+            messaging = getMessaging(app);
+            console.log('✅ Firebase Messaging initialized');
+          } catch (swError) {
+            console.error('❌ Failed to register Firebase Messaging SW:', swError);
+          }
+        } else {
+          console.warn('⚠️ Service Worker not supported');
+        }
       } else {
         console.warn('⚠️ Firebase Messaging not supported in this browser');
       }
@@ -74,9 +92,14 @@ if (typeof window !== 'undefined') {
 export const getMessagingInstance = async (): Promise<ReturnType<typeof getMessaging> | null> => {
   if (messaging) return messaging;
   
-  // Wait a bit for initialization
-  await new Promise(resolve => setTimeout(resolve, 100));
-  return messaging;
+  // Wait for initialization (max 5 seconds)
+  for (let i = 0; i < 50; i++) {
+    if (messaging) return messaging;
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  
+  console.warn('⚠️ Firebase Messaging not initialized after 5 seconds');
+  return null;
 };
 
 export { messaging };

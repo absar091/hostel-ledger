@@ -106,10 +106,11 @@ export const usePushNotifications = () => {
       }
 
       // Get Firebase Messaging instance
+      console.log('🔔 Getting Firebase Messaging instance...');
       const messaging = await getMessagingInstance();
       if (!messaging) {
         logger.error("Firebase Messaging not initialized");
-        toast.error("Push notifications not available");
+        toast.error("Push notifications not available. Please refresh the page.");
         return false;
       }
 
@@ -124,68 +125,87 @@ export const usePushNotifications = () => {
 
       // Get FCM token using Firebase Messaging SDK
       console.log('🔔 Requesting FCM token...');
-      const fcmToken = await getToken(messaging, {
-        vapidKey: vapidPublicKey,
-      });
+      
+      try {
+        const fcmToken = await getToken(messaging, {
+          vapidKey: vapidPublicKey,
+        });
 
-      if (!fcmToken) {
-        logger.error("Failed to get FCM token");
-        toast.error("Failed to enable push notifications");
+        if (!fcmToken) {
+          logger.error("Failed to get FCM token");
+          toast.error("Failed to enable push notifications");
+          return false;
+        }
+
+        console.log('✅ FCM token obtained:', fcmToken.substring(0, 20) + '...');
+        logger.info("FCM token obtained successfully");
+
+        setState((prev) => ({ ...prev, isSubscribed: true }));
+        
+        // Send FCM token to backend
+        try {
+          const { getAuth } = await import('firebase/auth');
+          const auth = getAuth();
+          const currentUser = auth.currentUser;
+          
+          console.log('📤 Sending FCM token to backend for user:', currentUser?.uid);
+          
+          if (currentUser?.uid) {
+            const subscriptionData = {
+              userId: currentUser.uid,
+              fcmToken: fcmToken
+            };
+            
+            console.log('📤 Subscription data:', { userId: currentUser.uid, tokenLength: fcmToken.length });
+            
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/push-subscribe`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache'
+              },
+              body: JSON.stringify(subscriptionData)
+            });
+
+            console.log('📥 Backend response status:', response.status);
+            const responseData = await response.json();
+            console.log('📥 Backend response data:', responseData);
+
+            if (response.ok) {
+              logger.info("FCM token sent to backend successfully");
+              toast.success("✅ Push notifications enabled!");
+            } else {
+              logger.warn("Failed to send FCM token to backend", { response: responseData });
+              toast.warning("Subscribed locally, but backend sync failed");
+            }
+          } else {
+            console.warn('⚠️ No user logged in');
+            toast.warning("Please log in to enable notifications");
+          }
+        } catch (error: any) {
+          console.error("❌ Failed to send FCM token to backend:", error);
+          logger.error("Failed to send FCM token to backend", { error: error.message });
+          toast.warning("Subscribed locally, but backend sync failed");
+        }
+
+        return true;
+      } catch (tokenError: any) {
+        console.error("❌ FCM token error:", tokenError);
+        
+        // Provide more specific error messages
+        if (tokenError.code === 'messaging/permission-blocked') {
+          toast.error("Notification permission was blocked. Please enable it in browser settings.");
+        } else if (tokenError.code === 'messaging/failed-service-worker-registration') {
+          toast.error("Service worker registration failed. Please refresh the page.");
+        } else if (tokenError.message?.includes('Failed to fetch')) {
+          toast.error("Network error. Please check your connection and try again.");
+        } else {
+          toast.error("Failed to enable push notifications: " + tokenError.message);
+        }
+        
+        logger.error("Failed to get FCM token", { error: tokenError.message, code: tokenError.code });
         return false;
       }
-
-      console.log('✅ FCM token obtained:', fcmToken.substring(0, 20) + '...');
-      logger.info("FCM token obtained successfully");
-
-      setState((prev) => ({ ...prev, isSubscribed: true }));
-      
-      // Send FCM token to backend
-      try {
-        const { getAuth } = await import('firebase/auth');
-        const auth = getAuth();
-        const currentUser = auth.currentUser;
-        
-        console.log('📤 Sending FCM token to backend for user:', currentUser?.uid);
-        
-        if (currentUser?.uid) {
-          const subscriptionData = {
-            userId: currentUser.uid,
-            fcmToken: fcmToken
-          };
-          
-          console.log('📤 Subscription data:', { userId: currentUser.uid, tokenLength: fcmToken.length });
-          
-          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/push-subscribe`, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Cache-Control': 'no-cache'
-            },
-            body: JSON.stringify(subscriptionData)
-          });
-
-          console.log('📥 Backend response status:', response.status);
-          const responseData = await response.json();
-          console.log('📥 Backend response data:', responseData);
-
-          if (response.ok) {
-            logger.info("FCM token sent to backend successfully");
-            toast.success("✅ Push notifications enabled!");
-          } else {
-            logger.warn("Failed to send FCM token to backend", { response: responseData });
-            toast.warning("Subscribed locally, but backend sync failed");
-          }
-        } else {
-          console.warn('⚠️ No user logged in');
-          toast.warning("Please log in to enable notifications");
-        }
-      } catch (error: any) {
-        console.error("❌ Failed to send FCM token to backend:", error);
-        logger.error("Failed to send FCM token to backend", { error: error.message });
-        toast.warning("Subscribed locally, but backend sync failed");
-      }
-
-      return true;
     } catch (error: any) {
       console.error("❌ Failed to subscribe to push notifications:", error);
       logger.error("Failed to subscribe to push notifications", { error: error.message });
