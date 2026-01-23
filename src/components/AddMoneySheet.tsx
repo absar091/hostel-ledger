@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Wallet, PiggyBank } from "lucide-react";
 import Tooltip from "./Tooltip";
+import { toast } from "sonner";
 
 interface AddMoneySheetProps {
   open: boolean;
@@ -23,8 +24,9 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
 
   const handleSubmit = () => {
     const amountValue = parseFloat(amount);
-    
+
     if (isNaN(amountValue) || amountValue <= 0) {
+      toast.error("Please enter a valid amount greater than zero");
       return;
     }
 
@@ -45,13 +47,13 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
         <SheetHeader className="flex-shrink-0 mb-6 pt-2">
           {/* Handle Bar */}
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
-          
+
           <div className="flex items-center justify-center gap-3">
             <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight flex items-center justify-center gap-3">
               <PiggyBank className="w-7 h-7 text-[#4a6850]" />
               Add to Available Budget
             </SheetTitle>
-            <Tooltip 
+            <Tooltip
               content="Add money to your wallet balance. This represents actual money you have available to spend on group expenses."
               position="bottom"
             />
@@ -116,7 +118,7 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
               <div>
                 <h4 className="font-black text-gray-900 mb-2 tracking-tight">Available Budget Tracking</h4>
                 <p className="text-sm text-[#4a6850]/80 font-bold leading-relaxed">
-                  This adds to your Available Budget (real money). When you pay for group expenses, 
+                  This adds to your Available Budget (real money). When you pay for group expenses,
                   the full amount will be deducted from this balance.
                 </p>
               </div>

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import Avatar from "@/components/Avatar";
 import { ArrowDownLeft, ArrowUpRight, CheckCircle, DollarSign, Edit3 } from "lucide-react";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { toast } from "sonner";
 
 interface MemberSettlementSheetProps {
   open: boolean;
@@ -43,11 +44,11 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
         setShowCustomReceive(false);
         onClose();
       } else {
-        alert(result.error || "Failed to mark payment as received");
+        toast.error(result.error || "Failed to mark payment as received");
       }
     } catch (error) {
       console.error("Error marking payment received:", error);
-      alert("Failed to mark payment as received");
+      toast.error("Failed to mark payment as received");
     } finally {
       setIsProcessing(false);
     }
@@ -66,11 +67,11 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
         setShowCustomPay(false);
         onClose();
       } else {
-        alert(result.error || "Failed to mark debt as paid");
+        toast.error(result.error || "Failed to mark debt as paid");
       }
     } catch (error) {
       console.error("Error marking debt paid:", error);
-      alert("Failed to mark debt as paid");
+      toast.error("Failed to mark debt as paid");
     } finally {
       setIsProcessing(false);
     }
@@ -79,7 +80,11 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
   const handleCustomReceive = () => {
     const amount = parseFloat(customReceiveAmount);
     if (isNaN(amount) || amount <= 0) {
-      alert("Please enter a valid amount");
+      toast.error("Please enter a valid amount");
+      return;
+    }
+    if (amount > memberSettlement.toReceive) {
+      toast.error(`Amount exceeds ${member.name}'s debt (Rs ${memberSettlement.toReceive.toLocaleString()})`);
       return;
     }
     handleMarkReceived(amount);
@@ -88,7 +93,11 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
   const handleCustomPay = () => {
     const amount = parseFloat(customPayAmount);
     if (isNaN(amount) || amount <= 0) {
-      alert("Please enter a valid amount");
+      toast.error("Please enter a valid amount");
+      return;
+    }
+    if (amount > memberSettlement.toPay) {
+      toast.error(`Amount exceeds your debt (Rs ${memberSettlement.toPay.toLocaleString()})`);
       return;
     }
     handleMarkPaid(amount);

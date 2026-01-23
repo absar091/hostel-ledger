@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { saveOfflineExpense } from "@/lib/offlineDB";
 import { useOffline } from "@/hooks/useOffline";
 import { toast } from "sonner";
+import { calculateExpenseSplit } from "@/lib/expenseLogic";
 // import { validateExpenseData, sanitizeString, sanitizeAmount } from "@/lib/validation";
 
 interface Member {
@@ -37,6 +38,7 @@ interface AddExpenseSheetProps {
     participants: string[];
     note: string;
     place: string;
+    stagedMembers?: Member[];
   }) => void;
   onAddMember?: (groupId: string, data: { name: string; isTemporary: boolean; deletionCondition: 'SETTLED' | 'TIME_LIMIT' }) => void;
 }
@@ -93,64 +95,62 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
     }
   }, [open, groups]);
 
-  // Calculate split details
+  // Calculate split details using the shared logic engine to ensure cent-precision
   const splitDetails = useMemo(() => {
     const totalAmount = parseFloat(amount) || 0;
-    const splitCount = participants.length;
-
-    if (splitCount === 0 || totalAmount === 0) {
+    if (totalAmount <= 0 || participants.length === 0) {
       return { perPerson: 0, toReceive: 0, toGive: 0, othersCount: 0 };
     }
 
-    // Use same calculation as backend for consistency
-    const baseAmount = Math.floor(totalAmount / splitCount);
-    const remainder = totalAmount % splitCount;
+    const participantsForSplit = participants.map(id => {
+      const m = members.find(m => m.id === id);
+      return { id, name: m?.name || "Member" };
+    });
 
-    // Most people get baseAmount, first 'remainder' people get baseAmount + 1
-    const perPersonAmounts = Array.from({ length: splitCount }, (_, index) =>
-      baseAmount + (index < remainder ? 1 : 0)
-    );
+    try {
+      const splits = calculateExpenseSplit(totalAmount, participantsForSplit, paidBy);
 
-    const paidByMember = members.find((m) => m.id === paidBy);
-    const isPaidByYou = paidByMember?.name === "You";
-    const youParticipated = participants.some(
-      (id) => members.find((m) => m.id === id)?.name === "You"
-    );
+      const paidByMember = members.find((m) => m.id === paidBy);
+      const isPaidByYou = paidByMember?.name === "You";
 
-    if (isPaidByYou) {
-      // You paid, so you receive from others
-      const payerIndex = participants.findIndex(id => members.find(m => m.id === id)?.name === "You");
-      const yourShare = payerIndex >= 0 ? perPersonAmounts[payerIndex] : 0;
-      const othersTotal = totalAmount - yourShare;
-      const othersCount = youParticipated ? splitCount - 1 : splitCount;
+      const youParticipant = participants.some(id => {
+        const m = members.find(m => m.id === id);
+        return m?.name === "You";
+      });
 
-      return {
-        perPerson: baseAmount, // Show base amount for display
-        actualAmounts: perPersonAmounts,
-        toReceive: othersTotal,
-        toGive: 0,
-        othersCount
-      };
-    } else {
-      // Someone else paid, you may owe them
-      if (youParticipated) {
-        const yourIndex = participants.findIndex(id => members.find(m => m.id === id)?.name === "You");
-        const yourShare = yourIndex >= 0 ? perPersonAmounts[yourIndex] : baseAmount;
+      if (isPaidByYou) {
+        // You paid, so you receive from everyone else's shares
+        const othersTotal = splits
+          .filter(s => {
+            const m = members.find(mem => mem.id === s.participantId);
+            return m?.name !== "You";
+          })
+          .reduce((sum, s) => sum + s.amount, 0);
+
+        const othersCount = youParticipant ? participants.length - 1 : participants.length;
+
         return {
-          perPerson: baseAmount,
-          actualAmounts: perPersonAmounts,
+          perPerson: totalAmount / participants.length, // Display average
+          toReceive: othersTotal,
+          toGive: 0,
+          othersCount
+        };
+      } else {
+        // Someone else paid
+        const yourSplit = splits.find(s => {
+          const m = members.find(mem => mem.id === s.participantId);
+          return m?.name === "You";
+        });
+
+        return {
+          perPerson: totalAmount / participants.length,
           toReceive: 0,
-          toGive: yourShare,
+          toGive: yourSplit?.amount || 0,
           othersCount: 0
         };
       }
-      return {
-        perPerson: baseAmount,
-        actualAmounts: perPersonAmounts,
-        toReceive: 0,
-        toGive: 0,
-        othersCount: 0
-      };
+    } catch (e) {
+      return { perPerson: 0, toReceive: 0, toGive: 0, othersCount: 0 };
     }
   }, [amount, paidBy, participants, members]);
 
@@ -163,6 +163,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
     setNote("");
     setPlace("");
     setValidationErrors([]);
+    setLocalTempMembers([]); // Clear any staged members
     onClose();
   };
 
@@ -240,7 +241,10 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
       participants,
       note: note.trim().substring(0, 200),
       place: place.trim().substring(0, 100),
+      stagedMembers: localTempMembers.length > 0 ? localTempMembers : undefined,
     });
+    // Clear local state after submission
+    setLocalTempMembers([]);
     handleClose();
   };
 
@@ -261,51 +265,32 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
     return true;
   };
 
-  const handleAddTempMember = async () => {
-    console.log("handleAddTempMember called", { tempMemberName, tempMemberCondition, onAddMember: !!onAddMember });
-
+  const handleAddTempMember = () => {
     if (!tempMemberName.trim()) {
       toast.error("Please enter a name");
       return;
     }
 
-    if (onAddMember && selectedGroup) {
-      try {
-        console.log("Calling onAddMember with groupId:", selectedGroup);
-
-        // Generate ID for consistency
-        const tempId = `member_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-
-        // Optimistic update
-        const tempMember: Member = {
-          id: tempId,
-          name: tempMemberName,
-          isTemporary: true,
-          deletionCondition: tempMemberCondition
-        };
-        setLocalTempMembers(prev => [...prev, tempMember]);
-
-        await onAddMember(selectedGroup, {
-          id: tempId,
-          name: tempMemberName,
-          isTemporary: true,
-          deletionCondition: tempMemberCondition
-        });
-        console.log("onAddMember completed successfully");
-        setTempMemberName("");
-        setShowTempMemberInput(false);
-      } catch (error) {
-        console.error("Error adding temp member:", error);
-        toast.error("Failed to add member");
-        // Rollback optimistic update
-        setLocalTempMembers(prev => prev.filter(m => m.name !== tempMemberName));
-      }
-    } else if (!selectedGroup) {
+    if (!selectedGroup) {
       toast.error("Please select a group first");
-    } else {
-      console.warn("onAddMember prop not provided");
-      toast.error("Unable to add member - function not available");
+      return;
     }
+
+    // Generate ID for consistency (temp ID for staged member)
+    const tempId = `staged_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    // staged members are only added to group on submission
+    const tempMember: Member = {
+      id: tempId,
+      name: tempMemberName.trim(),
+      isTemporary: true,
+      deletionCondition: tempMemberCondition
+    };
+
+    setLocalTempMembers(prev => [...prev, tempMember]);
+    setTempMemberName("");
+    setShowTempMemberInput(false);
+    toast.success("Member added to split selection");
   };
 
   const paidByName = members.find((m) => m.id === paidBy)?.name;

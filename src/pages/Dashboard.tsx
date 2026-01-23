@@ -62,7 +62,7 @@ const Dashboard = () => {
   // Onboarding and guide states
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showDashboardGuide, setShowDashboardGuide] = useState(false);
-  
+
   // Notification prompt state
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [isEnablingNotifications, setIsEnablingNotifications] = useState(false);
@@ -91,11 +91,11 @@ const Dashboard = () => {
     const checkNotificationPrompt = () => {
       // Check if we should show notification prompt
       const hasSeenPrompt = localStorage.getItem('hasSeenNotificationPrompt');
-      
+
       if (
-        isInstalled && 
-        notificationsSupported && 
-        notificationPermission === 'default' && 
+        isInstalled &&
+        notificationsSupported &&
+        notificationPermission === 'default' &&
         !hasSeenPrompt &&
         !showOnboarding // Don't show during onboarding
       ) {
@@ -364,13 +364,38 @@ const Dashboard = () => {
     participants: string[];
     note: string;
     place: string;
+    stagedMembers?: any[];
   }) => {
     try {
+      // Step 1: Create any staged (temporary) members first
+      let updatedParticipants = [...data.participants];
+
+      if (data.stagedMembers && data.stagedMembers.length > 0) {
+        for (const staged of data.stagedMembers) {
+          const createResult = await addMemberToGroup(data.groupId, {
+            name: staged.name,
+            isTemporary: true,
+            deletionCondition: staged.deletionCondition
+          });
+
+          if (createResult.success && createResult.memberId) {
+            // Replace the staged ID with the real ID in participants
+            updatedParticipants = updatedParticipants.map(id => id === staged.id ? createResult.memberId! : id);
+            // If the staged member was the payer, update paidBy too
+            // Note: Standard AddExpenseSheet usually restricts paidBy to regular members, 
+            // but we'll include this for robustness
+          } else {
+            toast.error(`Failed to create member ${staged.name}. Expense might split incorrectly.`);
+          }
+        }
+      }
+
+      // Step 2: Add the expense with real member IDs
       const result = await addExpense({
         groupId: data.groupId,
         amount: data.amount,
         paidBy: data.paidBy,
-        participants: data.participants,
+        participants: updatedParticipants,
         note: data.note,
         place: data.place,
       });
