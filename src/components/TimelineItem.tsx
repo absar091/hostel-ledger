@@ -4,6 +4,7 @@ import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car, Wallet, Plus } fr
 interface Participant {
   name: string;
   amount: number;
+  isTemporary?: boolean;
 }
 
 interface TimelineItemProps {
@@ -41,10 +42,10 @@ const TimelineItem = ({
   category = "other",
   onClick,
 }: TimelineItemProps) => {
-  const Icon = type === "payment" ? HandCoins : 
-               type === "wallet_add" ? Plus :
-               type === "wallet_deduct" ? Wallet :
-               categoryIcons[category];
+  const Icon = type === "payment" ? HandCoins :
+    type === "wallet_add" ? Plus :
+      type === "wallet_deduct" ? Wallet :
+        categoryIcons[category];
 
   // Wallet transactions
   if (type === "wallet_add") {
@@ -57,12 +58,12 @@ const TimelineItem = ({
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center shrink-0 shadow-lg">
             <Plus className="w-6 h-6 text-white font-bold" />
           </div>
-          
+
           <div className="flex-1 min-w-0">
             <div className="font-black text-gray-900 tracking-tight text-lg truncate">{title}</div>
             <div className="text-sm text-[#4a6850]/80 font-bold">Added to wallet</div>
           </div>
-          
+
           <div className="text-right shrink-0">
             <div className="font-black text-[#4a6850] text-xl tracking-tight tabular-nums">+Rs {amount.toLocaleString()}</div>
             <div className="text-xs text-[#4a6850]/60 font-bold">{date}</div>
@@ -82,12 +83,12 @@ const TimelineItem = ({
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shrink-0 shadow-lg">
             <Wallet className="w-6 h-6 text-white font-bold" />
           </div>
-          
+
           <div className="flex-1 min-w-0">
             <div className="font-black text-gray-900 tracking-tight text-lg truncate">{title}</div>
             <div className="text-sm text-red-600/80 font-bold">Deducted from wallet</div>
           </div>
-          
+
           <div className="text-right shrink-0">
             <div className="font-black text-red-600 text-xl tracking-tight tabular-nums">-Rs {amount.toLocaleString()}</div>
             <div className="text-xs text-red-500/60 font-bold">{date}</div>
@@ -107,7 +108,7 @@ const TimelineItem = ({
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shrink-0 shadow-lg">
             <HandCoins className="w-6 h-6 text-white font-bold" />
           </div>
-          
+
           <div className="flex-1 min-w-0">
             <div className="font-black text-gray-900 tracking-tight text-lg truncate">Payment Received</div>
             <div className="text-sm text-emerald-600/80 font-bold truncate">
@@ -117,7 +118,7 @@ const TimelineItem = ({
               <div className="text-xs text-emerald-500/60 mt-1 capitalize font-bold">{method}</div>
             )}
           </div>
-          
+
           <div className="text-right shrink-0">
             <div className="font-black text-emerald-600 text-xl tracking-tight tabular-nums">+Rs {amount.toLocaleString()}</div>
             <div className="text-xs text-emerald-500/60 font-bold">{date}</div>
@@ -136,11 +137,11 @@ const TimelineItem = ({
         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shrink-0 shadow-lg">
           <Icon className="w-6 h-6 text-gray-600 font-bold" />
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <div className="font-black text-gray-900 tracking-tight text-lg truncate">{title}</div>
           <div className="text-sm text-gray-600 font-bold truncate">Paid by {paidBy}</div>
-          
+
           {participants && participants.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
               {participants.map((p) => {
@@ -148,13 +149,15 @@ const TimelineItem = ({
                 return (
                   <span
                     key={p.name}
-                    className={`inline-flex items-center gap-1 text-xs rounded-2xl px-3 py-1.5 font-black ${
-                      isPayer 
-                        ? "bg-gradient-to-r from-[#4a6850]/20 to-[#3d5643]/20 text-[#4a6850] border border-[#4a6850]/30" 
-                        : "bg-gradient-to-r from-orange-100 to-red-100 text-orange-700 border border-orange-200"
-                    }`}
+                    className={`inline-flex items-center gap-1 text-xs rounded-2xl px-3 py-1.5 font-black ${isPayer
+                      ? "bg-gradient-to-r from-[#4a6850]/20 to-[#3d5643]/20 text-[#4a6850] border border-[#4a6850]/30"
+                      : "bg-gradient-to-r from-orange-100 to-red-100 text-orange-700 border border-orange-200"
+                      }`}
                   >
                     <span className="font-black truncate max-w-[100px]">{p.name}</span>
+                    {p.isTemporary && (
+                      <span className="px-1 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[8px] font-black uppercase tracking-wider">Temp</span>
+                    )}
                     {isPayer ? (
                       <span className="text-[#4a6850]/80 font-bold">paid</span>
                     ) : (
@@ -166,7 +169,7 @@ const TimelineItem = ({
             </div>
           )}
         </div>
-        
+
         <div className="text-right shrink-0">
           <div className="font-black text-gray-900 text-xl tracking-tight tabular-nums">Rs {amount.toLocaleString()}</div>
           <div className="text-xs text-gray-500 font-bold">{date}</div>

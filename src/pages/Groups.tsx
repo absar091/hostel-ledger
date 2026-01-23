@@ -18,13 +18,13 @@ const Groups = () => {
   const { user, getSettlements } = useFirebaseAuth();
   const { groups, createGroup } = useFirebaseData();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
-  
+
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("groups");
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [showGroupsGuide, setShowGroupsGuide] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSettlement, setShowSettlement] = useState(false);
-  const [selectedSettlement, setSelectedSettlement] = useState<{ groupId: string; memberId: string; memberName: string } | null>(null);
+  const [selectedSettlement, setSelectedSettlement] = useState<{ groupId: string; memberId: string; memberName: string; isTemporary?: boolean } | null>(null);
   const [activeFilter, setActiveFilter] = useState<"all" | "unsettled" | "favorites">("all");
   const [favoriteGroups, setFavoriteGroups] = useState<string[]>(() => {
     // Load favorites from localStorage
@@ -78,7 +78,7 @@ const Groups = () => {
         paymentDetails: m.paymentDetails,
       })),
     });
-    
+
     if (result.success) {
       toast.success(`Created group "${data.name}"`);
     } else {
@@ -92,10 +92,10 @@ const Groups = () => {
       const newFavorites = prev.includes(groupId)
         ? prev.filter(id => id !== groupId)
         : [...prev, groupId];
-      
+
       // Save to localStorage
       localStorage.setItem(`favoriteGroups_${user?.uid}`, JSON.stringify(newFavorites));
-      
+
       return newFavorites;
     });
   };
@@ -110,10 +110,10 @@ const Groups = () => {
       filtered = filtered.filter(group => {
         // Search in group name
         if (group.name.toLowerCase().includes(query)) return true;
-        
+
         // Search in member names
         if (group.members.some(m => m.name.toLowerCase().includes(query))) return true;
-        
+
         return false;
       });
     }
@@ -124,12 +124,12 @@ const Groups = () => {
         const groupSettlements = groupSettlementsMap[group.id] || {};
         let toReceive = 0;
         let toPay = 0;
-        
+
         Object.values(groupSettlements).forEach((settlement: any) => {
           toReceive += settlement.toReceive || 0;
           toPay += settlement.toPay || 0;
         });
-        
+
         return toReceive > 0 || toPay > 0;
       });
     } else if (activeFilter === "favorites") {
@@ -155,10 +155,10 @@ const Groups = () => {
   return (
     <>
       <Sidebar />
-      
+
       <AppContainer className="bg-[#F8F9FA]">
         <DesktopHeader />
-        
+
         {/* Header Section */}
         <header className="p-4 lg:p-8 pb-4">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 lg:mb-6 gap-4">
@@ -187,34 +187,31 @@ const Groups = () => {
               </div>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-2 lg:pb-0 hide-scrollbar">
-              <button 
+              <button
                 onClick={() => setActiveFilter("all")}
-                className={`px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold border flex items-center gap-2 transition-all whitespace-nowrap flex-shrink-0 ${
-                  activeFilter === "all"
+                className={`px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold border flex items-center gap-2 transition-all whitespace-nowrap flex-shrink-0 ${activeFilter === "all"
                     ? "bg-[#4a6850] text-white border-[#4a6850] shadow-lg"
                     : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 <Filter className="w-3 lg:w-4 h-3 lg:h-4" />
                 All
               </button>
-              <button 
+              <button
                 onClick={() => setActiveFilter("unsettled")}
-                className={`px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold border transition-all whitespace-nowrap flex-shrink-0 ${
-                  activeFilter === "unsettled"
+                className={`px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold border transition-all whitespace-nowrap flex-shrink-0 ${activeFilter === "unsettled"
                     ? "bg-[#4a6850] text-white border-[#4a6850] shadow-lg"
                     : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 Unsettled
               </button>
-              <button 
+              <button
                 onClick={() => setActiveFilter("favorites")}
-                className={`px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold border transition-all whitespace-nowrap flex-shrink-0 ${
-                  activeFilter === "favorites"
+                className={`px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold border transition-all whitespace-nowrap flex-shrink-0 ${activeFilter === "favorites"
                     ? "bg-[#4a6850] text-white border-[#4a6850] shadow-lg"
                     : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 Favorites
               </button>
@@ -229,37 +226,40 @@ const Groups = () => {
               const groupSettlements = groupSettlementsMap[group.id] || {};
               let toReceive = 0;
               let toPay = 0;
-              
+
               Object.values(groupSettlements).forEach((settlement: any) => {
                 toReceive += settlement.toReceive || 0;
                 toPay += settlement.toPay || 0;
               });
-              
+
               const hasReceivable = toReceive > 0;
               const hasPayable = toPay > 0;
               const isSettled = toReceive === 0 && toPay === 0;
-              
+
               // Find the member to settle with (the one with the highest amount)
               const memberToSettle = Object.entries(groupSettlements).reduce((max, [memberId, settlement]: [string, any]) => {
                 const totalAmount = (settlement.toReceive || 0) + (settlement.toPay || 0);
                 const maxAmount = (max.settlement?.toReceive || 0) + (max.settlement?.toPay || 0);
                 return totalAmount > maxAmount ? { memberId, settlement } : max;
               }, { memberId: '', settlement: null as any });
-              
-              const memberName = group.members.find(m => m.id === memberToSettle.memberId)?.name || '';
-              
+
+              const memberObj = group.members.find(m => m.id === memberToSettle.memberId);
+              const memberName = memberObj?.name || '';
+              const isTemporary = memberObj?.isTemporary || false;
+
               const handleSettleClick = (e: React.MouseEvent) => {
                 e.stopPropagation();
                 if (!isSettled && memberToSettle.memberId) {
                   setSelectedSettlement({
                     groupId: group.id,
                     memberId: memberToSettle.memberId,
-                    memberName: memberName
+                    memberName: memberName,
+                    isTemporary: isTemporary
                   });
                   setShowSettlement(true);
                 }
               };
-              
+
               return (
                 <div
                   key={group.id}
@@ -276,12 +276,11 @@ const Groups = () => {
                         }}
                         className="bg-white/20 backdrop-blur-md p-2 rounded-full hover:bg-white/30 transition-all active:scale-95"
                       >
-                        <Star 
-                          className={`w-4 h-4 ${
-                            favoriteGroups.includes(group.id)
+                        <Star
+                          className={`w-4 h-4 ${favoriteGroups.includes(group.id)
                               ? "fill-yellow-400 text-yellow-400"
                               : "text-white"
-                          }`}
+                            }`}
                         />
                       </button>
                       <div className="bg-white/20 backdrop-blur-md px-2 lg:px-3 py-1 rounded-full text-[9px] lg:text-[10px] font-bold text-white uppercase tracking-wider">
@@ -337,11 +336,10 @@ const Groups = () => {
                     <div className="flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300">
                       <button
                         onClick={handleSettleClick}
-                        className={`flex-1 text-white text-xs font-bold py-2 rounded-lg transition-colors ${
-                          isSettled
+                        className={`flex-1 text-white text-xs font-bold py-2 rounded-lg transition-colors ${isSettled
                             ? "bg-slate-200 text-slate-500 cursor-not-allowed"
                             : "bg-[#4a6850] hover:bg-[#3d5643]"
-                        }`}
+                          }`}
                         disabled={isSettled}
                       >
                         {isSettled ? "Settled" : "Settle Up"}
@@ -383,11 +381,11 @@ const Groups = () => {
               </div>
               <h3 className="text-xl lg:text-2xl font-black text-gray-900 mb-2 lg:mb-3 tracking-tight px-4">No groups found</h3>
               <p className="text-slate-500 mb-6 lg:mb-8 max-w-sm mx-auto leading-relaxed text-sm lg:text-base px-4">
-                {searchQuery 
+                {searchQuery
                   ? `No groups match "${searchQuery}". Try a different search term.`
                   : activeFilter === "favorites"
-                  ? "You haven't marked any groups as favorites yet."
-                  : "All groups are settled up!"}
+                    ? "You haven't marked any groups as favorites yet."
+                    : "All groups are settled up!"}
               </p>
               {(searchQuery || activeFilter !== "all") && (
                 <button
@@ -459,6 +457,7 @@ const Groups = () => {
             member={{
               id: selectedSettlement.memberId,
               name: selectedSettlement.memberName,
+              isTemporary: selectedSettlement.isTemporary,
             }}
             groupId={selectedSettlement.groupId}
           />

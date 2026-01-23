@@ -424,7 +424,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                     position="bottom"
                   />
                 </div>
-                {members.map((member) => (
+                {members.filter(m => !m.isTemporary).map((member) => (
                   <button
                     key={member.id}
                     onClick={() => setPaidBy(member.id)}
@@ -483,7 +483,12 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                     >
                       <Avatar name={member.name} size="sm" />
                       <div className="flex-1 text-left min-w-0">
-                        <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
+                          {member.isTemporary && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                          )}
+                        </div>
                         {member.isTemporary && (
                           <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600 mt-0.5">
                             {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}

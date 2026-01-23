@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowUpRight, ArrowDownLeft, Plus, User, CreditCard, Users, Wallet, Send, X, WifiOff, RefreshCw } from "@/lib/icons";
+import { ArrowUpRight, ArrowDownLeft, Plus, User, CreditCard, Users, Wallet, Send, X, WifiOff, RefreshCw, Share2 } from "@/lib/icons";
+import TransactionSuccessSheet from "@/components/TransactionSuccessSheet";
 import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
@@ -63,6 +64,11 @@ const Dashboard = () => {
   // Onboarding and guide states
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showDashboardGuide, setShowDashboardGuide] = useState(false);
+
+  // Success Sheet states
+  const [showSuccessSheet, setShowSuccessSheet] = useState(false);
+  const [successTransaction, setSuccessTransaction] = useState<any>(null);
+  const [successType, setSuccessType] = useState<"expense" | "payment">("expense");
 
   // Tooltip states for mobile
   const [showBalanceTooltip, setShowBalanceTooltip] = useState(false);
@@ -259,7 +265,13 @@ const Dashboard = () => {
       id: g.id,
       name: g.name,
       emoji: g.emoji,
-      members: g.members.map((m) => ({ id: m.id, name: m.name })),
+      members: g.members.map((m) => ({
+        id: m.id,
+        name: m.name,
+        isTemporary: m.isTemporary,
+        deletionCondition: m.deletionCondition,
+        expiresAt: m.expiresAt
+      })),
     }));
   }, [groups]);
 
@@ -340,6 +352,11 @@ const Dashboard = () => {
 
       if (result.success) {
         toast.success(`Added expense of Rs ${data.amount.toLocaleString()}`);
+        if (result.transaction) {
+          setSuccessTransaction(result.transaction);
+          setSuccessType("expense");
+          setShowSuccessSheet(true);
+        }
       } else {
         toast.error(result.error || "Failed to add expense");
       }
@@ -371,6 +388,11 @@ const Dashboard = () => {
         const group = groups.find((g) => g.id === data.groupId);
         const memberName = group?.members.find((m) => m.id === data.fromMember)?.name;
         toast.success(`Recorded Rs ${data.amount.toLocaleString()} from ${memberName}`);
+        if (result.transaction) {
+          setSuccessTransaction(result.transaction);
+          setSuccessType("payment");
+          setShowSuccessSheet(true);
+        }
       } else {
         toast.error(result.error || "Failed to record payment");
       }
@@ -476,12 +498,38 @@ const Dashboard = () => {
                 <p className="text-xs lg:text-sm text-[#4a6850]/80 capitalize font-medium truncate">{transaction.type}</p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95 flex-shrink-0 ml-3 lg:ml-4"
-            >
-              <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
-            </button>
+            <div className="flex items-center gap-2 lg:gap-3 ml-3 lg:ml-4">
+              <button
+                onClick={async () => {
+                  if (navigator.share) {
+                    try {
+                      const shareText = `🧾 Hostel Ledger Receipt\n\n` +
+                        `Title: ${selectedTransaction.title}\n` +
+                        `Amount: Rs ${selectedTransaction.amount.toLocaleString()}\n` +
+                        `Date: ${selectedTransaction.date}\n` +
+                        `${selectedTransaction.type === "expense" ? `Paid by: ${selectedTransaction.paidByName}` : `From: ${selectedTransaction.fromName} To: ${selectedTransaction.toName}`}\n\n` +
+                        `Shared via Hostel Ledger 🚀`;
+
+                      await navigator.share({
+                        title: 'Transaction Receipt',
+                        text: shareText,
+                      });
+                    } catch (err) {
+                      console.error('Error sharing:', err);
+                    }
+                  }
+                }}
+                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+              >
+                <Share2 className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" />
+              </button>
+              <button
+                onClick={onClose}
+                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+              >
+                <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
+              </button>
+            </div>
           </div>
 
           {/* Scrollable content - iPhone Style */}
@@ -493,6 +541,26 @@ const Dashboard = () => {
                 <div className="text-3xl lg:text-5xl font-black text-gray-900 mb-1.5 lg:mb-2 tracking-tighter tabular-nums">
                   Rs {transaction.amount.toLocaleString()}
                 </div>
+                {transaction.type === 'expense' && transaction.paidBy !== user?.uid && (
+                  <div className="mb-2">
+                    {(() => {
+                      const userPart = transaction.participants?.find((p: any) => p.id === user?.uid);
+                      if (userPart) {
+                        return (
+                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100 shadow-sm">
+                            <span className="text-xs font-black uppercase tracking-wider">Your Share: Rs {userPart.amount.toLocaleString()}</span>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-500 border border-slate-100 shadow-sm">
+                            <span className="text-xs font-black uppercase tracking-wider">Not a participant</span>
+                          </div>
+                        );
+                      }
+                    })()}
+                  </div>
+                )}
                 <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">
                   {transaction.date}
                   {transaction.timestamp && ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
@@ -518,7 +586,12 @@ const Dashboard = () => {
                     <User className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Paid by</div>
-                      <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transaction.paidByName}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transaction.paidByName}</div>
+                        {transaction.paidByIsTemporary && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -529,7 +602,12 @@ const Dashboard = () => {
                     <ArrowUpRight className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Payment</div>
-                      <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transaction.fromName} → {transaction.toName}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transaction.fromName} → {transaction.toName}</div>
+                        {(transaction.fromIsTemporary || transaction.toIsTemporary) && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                        )}
+                      </div>
                       {transaction.method && (
                         <div className="text-xs lg:text-sm text-[#4a6850]/80 capitalize font-medium">via {transaction.method}</div>
                       )}
@@ -544,7 +622,12 @@ const Dashboard = () => {
                     <div className="space-y-2 lg:space-y-3 max-h-32 overflow-y-auto">
                       {transaction.participants.map((participant: any, index: number) => (
                         <div key={index} className="flex justify-between items-center gap-2">
-                          <span className="font-semibold text-gray-900 truncate flex-1 text-sm lg:text-base">{participant.name}</span>
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className="font-semibold text-gray-900 truncate text-sm lg:text-base">{participant.name}</span>
+                            {participant.isTemporary && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                            )}
+                          </div>
                           <span className="text-xs lg:text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">Rs {participant.amount.toLocaleString()}</span>
                         </div>
                       ))}
@@ -1350,11 +1433,19 @@ const Dashboard = () => {
                       </div>
                       {todayTransactions.slice(0, 3).map((transaction) => {
                         const transactionGroup = groups.find(g => g.id === transaction.groupId);
+                        const isPayer = transaction.paidBy === user?.uid;
+                        const userParticipant = transaction.participants?.find((p: any) => p.id === user?.uid);
+                        const isParticipant = !!userParticipant;
+
                         const typeLabel = transaction.type === 'expense'
-                          ? (transaction.paidBy === user?.uid ? 'You paid' : 'Expense')
+                          ? (isPayer ? 'You paid' : isParticipant ? 'You owe' : 'Group expense')
                           : transaction.type === 'payment'
                             ? 'Payment received'
                             : 'Wallet';
+
+                        const displayAmount = transaction.type === 'expense'
+                          ? (isPayer ? transaction.amount : isParticipant ? userParticipant.amount : 0)
+                          : transaction.amount;
 
                         return (
                           <button
@@ -1384,13 +1475,15 @@ const Dashboard = () => {
                               </p>
                             </div>
                             <div className="text-right flex-shrink-0">
-                              <p className={`font-black tabular-nums ${transaction.type === 'expense' ? 'text-rose-500' : 'text-slate-900 dark:text-white'
+                              <p className={`font-black tabular-nums ${transaction.type === 'expense'
+                                ? (isPayer || isParticipant ? 'text-rose-500' : 'text-slate-400')
+                                : 'text-slate-900 dark:text-white'
                                 }`}>
-                                Rs {transaction.amount.toLocaleString()}
+                                {transaction.type === 'expense' && !isPayer && !isParticipant ? '-' : `Rs ${displayAmount.toLocaleString()}`}
                               </p>
                               <p className="text-xs text-slate-400">
                                 {transaction.type === 'expense'
-                                  ? (transaction.paidBy === user?.uid ? 'Paid by you' : 'You owe')
+                                  ? (isPayer ? 'Paid by you' : isParticipant ? 'You owe' : 'Not involved')
                                   : 'Received'}
                               </p>
                             </div>
@@ -1442,13 +1535,15 @@ const Dashboard = () => {
                               </p>
                             </div>
                             <div className="text-right flex-shrink-0">
-                              <p className={`font-black tabular-nums ${transaction.type === 'expense' ? 'text-rose-500' : 'text-slate-900 dark:text-white'
+                              <p className={`font-black tabular-nums ${transaction.type === 'expense'
+                                ? (isPayer || isParticipant ? 'text-rose-500' : 'text-slate-400')
+                                : 'text-slate-900 dark:text-white'
                                 }`}>
-                                Rs {transaction.amount.toLocaleString()}
+                                {transaction.type === 'expense' && !isPayer && !isParticipant ? '-' : `Rs ${displayAmount.toLocaleString()}`}
                               </p>
                               <p className="text-xs text-slate-400">
                                 {transaction.type === 'expense'
-                                  ? (transaction.paidBy === user?.uid ? 'Paid by you' : 'You owe')
+                                  ? (isPayer ? 'Paid by you' : isParticipant ? 'You owe' : 'Not involved')
                                   : 'Received'}
                               </p>
                             </div>
@@ -1500,13 +1595,15 @@ const Dashboard = () => {
                               </p>
                             </div>
                             <div className="text-right flex-shrink-0">
-                              <p className={`font-black tabular-nums ${transaction.type === 'expense' ? 'text-rose-500' : 'text-slate-900 dark:text-white'
+                              <p className={`font-black tabular-nums ${transaction.type === 'expense'
+                                ? (isPayer || isParticipant ? 'text-rose-500' : 'text-slate-400')
+                                : 'text-slate-900 dark:text-white'
                                 }`}>
-                                Rs {transaction.amount.toLocaleString()}
+                                {transaction.type === 'expense' && !isPayer && !isParticipant ? '-' : `Rs ${displayAmount.toLocaleString()}`}
                               </p>
                               <p className="text-xs text-slate-400">
                                 {transaction.type === 'expense'
-                                  ? (transaction.paidBy === user?.uid ? 'Paid by you' : 'You owe')
+                                  ? (isPayer ? 'Paid by you' : isParticipant ? 'You owe' : 'Not involved')
                                   : 'Received'}
                               </p>
                             </div>
@@ -1614,6 +1711,16 @@ const Dashboard = () => {
           }}
           member={selectedMemberForPayment}
           onConfirmPayment={handlePaymentConfirmation}
+        />
+
+        <TransactionSuccessSheet
+          open={showSuccessSheet}
+          onClose={() => {
+            setShowSuccessSheet(false);
+            setSuccessTransaction(null);
+          }}
+          transaction={successTransaction}
+          type={successType}
         />
       </AppContainer>
     </>

@@ -19,6 +19,7 @@ interface Member {
     raastId?: string;
   };
   phone?: string;
+  isTemporary?: boolean;
 }
 
 interface Group {
@@ -58,18 +59,18 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
 
   // Get settlement data for selected group
   const settlements = selectedGroup ? getSettlements(selectedGroup) : {};
-  
+
   // Get selected member's details including settlement info
   const selectedMemberData = useMemo(() => {
     if (!fromMember || !selectedGroup) return null;
-    
+
     const member = otherMembers.find(m => m.id === fromMember);
     if (!member) return null;
-    
+
     const settlement = settlements[fromMember] || { toReceive: 0, toPay: 0 };
     const group = groups.find(g => g.id === selectedGroup);
     const fullMember = group?.members.find(m => m.id === fromMember);
-    
+
     return {
       ...member,
       settlement,
@@ -99,17 +100,17 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
   const handleSubmit = () => {
     // Final validation before submission
     const amountValue = parseFloat(amount);
-    
+
     if (!selectedGroup) {
       console.error("No group selected");
       return;
     }
-    
+
     if (!fromMember) {
       console.error("No payer selected");
       return;
     }
-    
+
     if (isNaN(amountValue) || amountValue <= 0) {
       console.error("Invalid amount");
       return;
@@ -151,7 +152,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
         <SheetHeader className="flex-shrink-0 mb-6 pt-2">
           {/* Handle Bar */}
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
-          
+
           <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">
             {step === 1 && "Select Group"}
             {step === 2 && "Who Paid You?"}
@@ -219,7 +220,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   const owesYou = settlement.toReceive > 0;
                   const youOwe = settlement.toPay > 0;
                   const isSettled = settlement.toReceive === 0 && settlement.toPay === 0;
-                  
+
                   return (
                     <button
                       key={member.id}
@@ -233,7 +234,12 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     >
                       <Avatar name={member.name} size="sm" />
                       <div className="flex-1 text-left min-w-0">
-                        <div className="font-black text-gray-900 tracking-tight truncate">{member.name}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="font-black text-gray-900 tracking-tight truncate">{member.name}</div>
+                          {member.isTemporary && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                          )}
+                        </div>
                         <div className="text-xs font-bold truncate">
                           {isSettled ? (
                             <span className="text-[#4a6850]">✅ All settled</span>
@@ -283,7 +289,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Payment Details - Compact */}
                   {selectedMemberData.paymentDetails && Object.keys(selectedMemberData.paymentDetails).length > 0 && (
                     <div className="mt-3 pt-3 border-t border-[#4a6850]/20">
@@ -319,7 +325,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Quick Amount Suggestion - Compact */}
                   {selectedMemberData.settlement.toReceive > 0 && (
                     <div className="mt-3 pt-3 border-t border-[#4a6850]/20">
@@ -364,7 +370,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide">
                     Payment method
                   </label>
-                  <Tooltip 
+                  <Tooltip
                     content="Select how you received the payment"
                     position="top"
                   />
@@ -388,7 +394,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                       method === "cash" ? "text-[#4a6850]" : "text-gray-900"
                     )}>Cash</span>
                   </button>
-                  
+
                   <button
                     onClick={() => setMethod("online")}
                     className={cn(

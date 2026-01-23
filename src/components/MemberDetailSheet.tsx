@@ -39,6 +39,7 @@ interface MemberDetailSheetProps {
       raastId?: string;
     };
     phone?: string;
+    isTemporary?: boolean;
   } | null;
   transactions: Transaction[];
   settlementInfo?: SettlementInfo;
@@ -48,31 +49,31 @@ interface MemberDetailSheetProps {
 
 // Calculate running balances for ledger view - Track separate debts
 const calculateBalanceHistory = (
-  transactions: Transaction[], 
-  currentTheyOweYou: number, 
+  transactions: Transaction[],
+  currentTheyOweYou: number,
   currentYouOweThem: number
 ) => {
-  const history: { 
-    transaction: Transaction; 
-    theyOweYouBefore: number; 
+  const history: {
+    transaction: Transaction;
+    theyOweYouBefore: number;
     youOweThemBefore: number;
-    theyOweYouAfter: number; 
+    theyOweYouAfter: number;
     youOweThemAfter: number;
   }[] = [];
-  
+
   let runningTheyOweYou = currentTheyOweYou;
   let runningYouOweThem = currentYouOweThem;
-  
+
   // Transactions are in reverse chronological order (newest first)
   // Work backwards to calculate the balance progression
   for (const transaction of transactions) {
     const theyOweYouAfter = runningTheyOweYou;
     const youOweThemAfter = runningYouOweThem;
-    
+
     // Calculate before balances based on transaction type
     let theyOweYouBefore = theyOweYouAfter;
     let youOweThemBefore = youOweThemAfter;
-    
+
     if (transaction.balanceChange > 0) {
       // Positive change = they owe you more (or you owe them less)
       if (transaction.direction === "received") {
@@ -92,7 +93,7 @@ const calculateBalanceHistory = (
         youOweThemBefore = youOweThemAfter + transaction.balanceChange;
       }
     }
-    
+
     history.push({
       transaction,
       theyOweYouBefore,
@@ -100,19 +101,19 @@ const calculateBalanceHistory = (
       theyOweYouAfter,
       youOweThemAfter,
     });
-    
+
     // Move to the previous balance for next iteration
     runningTheyOweYou = theyOweYouBefore;
     runningYouOweThem = youOweThemBefore;
   }
-  
+
   return history;
 };
 
-const MemberDetailSheet = ({ 
-  open, 
-  onClose, 
-  member, 
+const MemberDetailSheet = ({
+  open,
+  onClose,
+  member,
   transactions,
   settlementInfo,
   onRecordPayment,
@@ -140,8 +141,13 @@ const MemberDetailSheet = ({
           {/* Member Summary with Separate Debt Display */}
           <div className="flex flex-col items-center mb-6">
             <Avatar name={member.name} size="lg" />
-            <h2 className="text-xl font-black mt-3 text-gray-900 tracking-tight">{member.name}</h2>
-            
+            <div className="flex items-center gap-2 mt-3">
+              <h2 className="text-xl font-black text-gray-900 tracking-tight">{member.name}</h2>
+              {member.isTemporary && (
+                <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+              )}
+            </div>
+
             {/* Separate Debt Display - NOT auto-balanced */}
             <div className="mt-3 space-y-2 text-center">
               {theyOweYou > 0 && (
@@ -196,65 +202,65 @@ const MemberDetailSheet = ({
           {/* Quick Actions - Both directions now available */}
           <div className="flex gap-3 mb-6">
             {/* Receive Payment Button */}
-              {theyOweYou > 0 && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={onRecordPayment}
-                      className="flex-1 h-14 bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] hover:from-[#3d5643] hover:to-[#2f4336] transition-all"
-                    >
-                      <ArrowDownLeft className="w-5 h-5 mr-2" />
-                      Received from {member.name}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800 max-w-xs">
-                    <p>Record a payment you received from {member.name} to reduce their debt</p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-              
-              {/* Pay to Member Button - NEW */}
-              {youOweThem > 0 && onPayToMember && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={onPayToMember}
-                      className="flex-1 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(59,130,246,0.3)] hover:shadow-[0_12px_40px_rgba(59,130,246,0.4)] hover:from-blue-700 hover:to-indigo-700 transition-all"
-                    >
-                      <ArrowUpRight className="w-5 h-5 mr-2" />
-                      Pay to {member.name}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800 max-w-xs">
-                    <p>Pay the full amount (Rs {youOweThem.toLocaleString()}) you owe to {member.name}</p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-              
-              {/* General Record Payment if no specific debts */}
-              {theyOweYou === 0 && youOweThem === 0 && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={onRecordPayment}
-                      variant="outline"
-                      className="flex-1 h-14 border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
-                    >
-                      <HandCoins className="w-5 h-5 mr-2" />
-                      Record Payment
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800">
-                    <p>Record a payment between you and {member.name}</p>
-                  </TooltipContent>
-                </Tooltip>
+            {theyOweYou > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={onRecordPayment}
+                    className="flex-1 h-14 bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] hover:from-[#3d5643] hover:to-[#2f4336] transition-all"
+                  >
+                    <ArrowDownLeft className="w-5 h-5 mr-2" />
+                    Received from {member.name}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800 max-w-xs">
+                  <p>Record a payment you received from {member.name} to reduce their debt</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+
+            {/* Pay to Member Button - NEW */}
+            {youOweThem > 0 && onPayToMember && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={onPayToMember}
+                    className="flex-1 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(59,130,246,0.3)] hover:shadow-[0_12px_40px_rgba(59,130,246,0.4)] hover:from-blue-700 hover:to-indigo-700 transition-all"
+                  >
+                    <ArrowUpRight className="w-5 h-5 mr-2" />
+                    Pay to {member.name}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800 max-w-xs">
+                  <p>Pay the full amount (Rs {youOweThem.toLocaleString()}) you owe to {member.name}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+
+            {/* General Record Payment if no specific debts */}
+            {theyOweYou === 0 && youOweThem === 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={onRecordPayment}
+                    variant="outline"
+                    className="flex-1 h-14 border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
+                  >
+                    <HandCoins className="w-5 h-5 mr-2" />
+                    Record Payment
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800">
+                  <p>Record a payment between you and {member.name}</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
 
           {/* Balance History Ledger */}
           <div className="space-y-3">
             <h3 className="font-black text-gray-900 mb-4 text-lg tracking-tight">Balance Ledger with {member.name}</h3>
-            
+
             {balanceHistory.length > 0 ? (
               balanceHistory.map(({ transaction, theyOweYouBefore, youOweThemBefore, theyOweYouAfter, youOweThemAfter }) => (
                 <div
@@ -263,11 +269,10 @@ const MemberDetailSheet = ({
                 >
                   {/* Transaction Header */}
                   <div className="flex items-start gap-4 mb-4">
-                    <div className={`w-12 h-12 rounded-3xl flex items-center justify-center shrink-0 shadow-lg ${
-                      transaction.direction === "received"
+                    <div className={`w-12 h-12 rounded-3xl flex items-center justify-center shrink-0 shadow-lg ${transaction.direction === "received"
                         ? "bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white"
                         : "bg-gradient-to-br from-red-500 to-orange-500 text-white"
-                    }`}>
+                      }`}>
                       {transaction.type === "payment" ? (
                         <HandCoins className={`w-6 h-6 font-bold`} />
                       ) : transaction.direction === "received" ? (
@@ -276,7 +281,7 @@ const MemberDetailSheet = ({
                         <ArrowUpRight className="w-6 h-6 font-bold" />
                       )}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="font-black text-gray-900 text-lg tracking-tight">{transaction.title}</div>
                       <div className="flex items-center gap-2 text-sm text-[#4a6850]/80 mt-2 font-bold">
@@ -300,10 +305,9 @@ const MemberDetailSheet = ({
                         </div>
                       )}
                     </div>
-                    
-                    <div className={`font-black text-xl tracking-tight ${
-                      transaction.direction === "received" ? "text-[#4a6850]" : "text-red-600"
-                    }`}>
+
+                    <div className={`font-black text-xl tracking-tight ${transaction.direction === "received" ? "text-[#4a6850]" : "text-red-600"
+                      }`}>
                       {transaction.direction === "received" ? "+" : "-"}Rs {transaction.amount.toLocaleString()}
                     </div>
                   </div>
@@ -316,12 +320,12 @@ const MemberDetailSheet = ({
                         <div className="space-y-0.5">
                           {theyOweYouBefore > 0 && (
                             <p className="font-black text-[#4a6850] text-xs">
-                              They owe<br/>Rs {theyOweYouBefore.toLocaleString()}
+                              They owe<br />Rs {theyOweYouBefore.toLocaleString()}
                             </p>
                           )}
                           {youOweThemBefore > 0 && (
                             <p className="font-black text-red-600 text-xs">
-                              You owe<br/>Rs {youOweThemBefore.toLocaleString()}
+                              You owe<br />Rs {youOweThemBefore.toLocaleString()}
                             </p>
                           )}
                           {theyOweYouBefore === 0 && youOweThemBefore === 0 && (
@@ -332,9 +336,9 @@ const MemberDetailSheet = ({
                       <div className="text-center flex flex-col items-center justify-center">
                         <ArrowRight className="w-4 h-4 text-[#4a6850]/60 mb-1" />
                         <p className={`font-black text-sm ${transaction.balanceChange > 0 ? "text-[#4a6850]" : transaction.balanceChange < 0 ? "text-red-600" : "text-gray-500"}`}>
-                          {transaction.balanceChange > 0 ? `+${transaction.balanceChange}` : 
-                           transaction.balanceChange < 0 ? `${transaction.balanceChange}` : 
-                           "0"}
+                          {transaction.balanceChange > 0 ? `+${transaction.balanceChange}` :
+                            transaction.balanceChange < 0 ? `${transaction.balanceChange}` :
+                              "0"}
                         </p>
                       </div>
                       <div className="text-center">
@@ -342,12 +346,12 @@ const MemberDetailSheet = ({
                         <div className="space-y-0.5">
                           {theyOweYouAfter > 0 && (
                             <p className="font-black text-[#4a6850] text-xs">
-                              They owe<br/>Rs {theyOweYouAfter.toLocaleString()}
+                              They owe<br />Rs {theyOweYouAfter.toLocaleString()}
                             </p>
                           )}
                           {youOweThemAfter > 0 && (
                             <p className="font-black text-red-600 text-xs">
-                              You owe<br/>Rs {youOweThemAfter.toLocaleString()}
+                              You owe<br />Rs {youOweThemAfter.toLocaleString()}
                             </p>
                           )}
                           {theyOweYouAfter === 0 && youOweThemAfter === 0 && (
@@ -369,9 +373,9 @@ const MemberDetailSheet = ({
         </div>
 
         <div className="pt-4 border-t border-[#4a6850]/10 mt-auto bg-white flex-shrink-0">
-          <Button 
-            onClick={onClose} 
-            variant="secondary" 
+          <Button
+            onClick={onClose}
+            variant="secondary"
             className="w-full h-14 rounded-3xl font-black shadow-lg hover:shadow-xl transition-all"
           >
             Close

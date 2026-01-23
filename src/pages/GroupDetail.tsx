@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Settings, ChevronRight, Plus, HandCoins, Users } from "lucide-react";
+import { ArrowLeft, Settings, ChevronRight, Plus, HandCoins, Users, Share2 } from "lucide-react";
+import TransactionSuccessSheet from "@/components/TransactionSuccessSheet";
 import { Button } from "@/components/ui/button";
 import TimelineItem from "@/components/TimelineItem";
 import Avatar from "@/components/Avatar";
@@ -31,11 +32,16 @@ const GroupDetail = () => {
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<{ id: string; name: string; balance: number; paymentDetails?: any; phone?: string } | null>(null);
+  const [selectedMember, setSelectedMember] = useState<{ id: string; name: string; balance: number; paymentDetails?: any; phone?: string; isTemporary?: boolean } | null>(null);
   const [showMemberDetail, setShowMemberDetail] = useState(false);
   const [showMemberSettlement, setShowMemberSettlement] = useState(false);
-  const [settlementMember, setSettlementMember] = useState<{ id: string; name: string; avatar?: string } | null>(null);
+  const [settlementMember, setSettlementMember] = useState<{ id: string; name: string; avatar?: string; isTemporary?: boolean } | null>(null);
   const [showGroupGuide, setShowGroupGuide] = useState(false);
+
+  // Success Sheet states
+  const [showSuccessSheet, setShowSuccessSheet] = useState(false);
+  const [successTransaction, setSuccessTransaction] = useState<any>(null);
+  const [successType, setSuccessType] = useState<"expense" | "payment">("expense");
 
   // Check if we should show page guide
   useEffect(() => {
@@ -157,7 +163,13 @@ const GroupDetail = () => {
     );
   }
 
-  const members = group.members.map((m) => ({ id: m.id, name: m.name }));
+  const members = group.members.map((m) => ({
+    id: m.id,
+    name: m.name,
+    isTemporary: m.isTemporary,
+    deletionCondition: m.deletionCondition,
+    expiresAt: m.expiresAt
+  }));
   const currentUser = group.members.find((m) => m.isCurrentUser);
 
   // Calculate total pending
@@ -168,13 +180,13 @@ const GroupDetail = () => {
     return sum;
   }, 0);
 
-  const handleMemberClick = (member: { id: string; name: string; balance: number; paymentDetails?: any; phone?: string }) => {
+  const handleMemberClick = (member: { id: string; name: string; balance: number; paymentDetails?: any; phone?: string; isTemporary?: boolean }) => {
     if (member.id === currentUser?.id) return;
     setSelectedMember(member);
     setShowMemberDetail(true);
   };
 
-  const handleExpenseSubmit = (data: {
+  const handleExpenseSubmit = async (data: {
     groupId: string;
     amount: number;
     paidBy: string;
@@ -182,7 +194,7 @@ const GroupDetail = () => {
     note: string;
     place: string;
   }) => {
-    addExpense({
+    const result = await addExpense({
       groupId: data.groupId,
       amount: data.amount,
       paidBy: data.paidBy,
@@ -190,10 +202,20 @@ const GroupDetail = () => {
       note: data.note,
       place: data.place,
     });
-    toast.success(`Added expense of Rs ${data.amount}`);
+
+    if (result.success) {
+      toast.success(`Added expense of Rs ${data.amount}`);
+      if (result.transaction) {
+        setSuccessTransaction(result.transaction);
+        setSuccessType("expense");
+        setShowSuccessSheet(true);
+      }
+    } else {
+      toast.error(result.error || "Failed to add expense");
+    }
   };
 
-  const handlePaymentSubmit = (data: {
+  const handlePaymentSubmit = async (data: {
     groupId: string;
     fromMember: string;
     amount: number;
@@ -202,7 +224,7 @@ const GroupDetail = () => {
   }) => {
     if (!currentUser) return;
 
-    recordPayment({
+    const result = await recordPayment({
       groupId: data.groupId,
       fromMember: data.fromMember,
       toMember: currentUser.id,
@@ -211,8 +233,17 @@ const GroupDetail = () => {
       note: data.note,
     });
 
-    const memberName = group.members.find((m) => m.id === data.fromMember)?.name;
-    toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
+    if (result.success) {
+      const memberName = group.members.find((m) => m.id === data.fromMember)?.name;
+      toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
+      if (result.transaction) {
+        setSuccessTransaction(result.transaction);
+        setSuccessType("payment");
+        setShowSuccessSheet(true);
+      }
+    } else {
+      toast.error(result.error || "Failed to record payment");
+    }
   };
 
   // Single group for this page
@@ -355,6 +386,7 @@ const GroupDetail = () => {
                 setSettlementMember({
                   id: member.id,
                   name: member.name,
+                  isTemporary: member.isTemporary,
                 });
                 setShowMemberSettlement(true);
               };
@@ -375,7 +407,12 @@ const GroupDetail = () => {
                       )}
                     </div>
                     <div className="flex-1">
-                      <div className="font-black text-gray-900 tracking-tight text-base">{member.name}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-black text-gray-900 tracking-tight text-base">{member.name}</div>
+                        {member.isTemporary && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                        )}
+                      </div>
                       <div className="text-xs mt-1">
                         {isYou ? (
                           <span className="text-[#4a6850] font-black">You</span>
@@ -586,6 +623,7 @@ const GroupDetail = () => {
             balance: selectedMember.balance,
             paymentDetails: selectedMember.paymentDetails,
             phone: selectedMember.phone,
+            isTemporary: selectedMember.isTemporary,
           }}
           transactions={memberTransactions}
           settlementInfo={{
@@ -665,6 +703,16 @@ const GroupDetail = () => {
         emoji="🏢"
         show={showGroupGuide}
         onClose={handleGroupGuideClose}
+      />
+
+      <TransactionSuccessSheet
+        open={showSuccessSheet}
+        onClose={() => {
+          setShowSuccessSheet(false);
+          setSuccessTransaction(null);
+        }}
+        transaction={successTransaction}
+        type={successType}
       />
     </div>
   );

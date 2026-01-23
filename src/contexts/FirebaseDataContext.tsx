@@ -123,6 +123,7 @@ export interface Group {
   id: string;
   name: string;
   emoji: string;
+  coverPhoto?: string;
   members: GroupMember[];
   createdBy: string;
   createdAt: string;
@@ -137,7 +138,7 @@ export interface Transaction {
   date: string;
   paidBy: string;
   paidByName: string;
-  participants?: { id: string; name: string; amount: number }[];
+  participants?: { id: string; name: string; amount: number; isTemporary?: boolean }[];
   from?: string;
   fromName?: string;
   to?: string;
@@ -147,6 +148,9 @@ export interface Transaction {
   note?: string;
   walletBalanceBefore?: number;
   walletBalanceAfter?: number;
+  paidByIsTemporary?: boolean;
+  fromIsTemporary?: boolean;
+  toIsTemporary?: boolean;
   createdAt: string;
   timestamp?: number;
 }
@@ -161,8 +165,8 @@ interface FirebaseDataContextType {
   addMemberToGroup: (groupId: string, member: { name: string; paymentDetails?: PaymentDetails; phone?: string; isTemporary?: boolean; deletionCondition?: 'SETTLED' | 'TIME_LIMIT' }) => Promise<{ success: boolean; error?: string }>;
   removeMemberFromGroup: (groupId: string, memberId: string) => Promise<{ success: boolean; error?: string }>;
   updateMemberPaymentDetails: (groupId: string, memberId: string, paymentDetails: PaymentDetails, phone?: string) => Promise<{ success: boolean; error?: string }>;
-  addExpense: (data: { groupId: string; amount: number; paidBy: string; participants: string[]; note: string; place: string }) => Promise<{ success: boolean; error?: string }>;
-  recordPayment: (data: { groupId: string; fromMember: string; toMember: string; amount: number; method: "cash" | "online"; note?: string }) => Promise<{ success: boolean; error?: string }>;
+  addExpense: (data: { groupId: string; amount: number; paidBy: string; participants: string[]; note: string; place: string }) => Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
+  recordPayment: (data: { groupId: string; fromMember: string; toMember: string; amount: number; method: "cash" | "online"; note?: string }) => Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
   payMyDebt: (groupId: string, toMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   markPaymentAsPaid: (groupId: string, fromMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   addMoneyToWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string }>;
@@ -282,51 +286,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
 
 
-    /*
-    // for (const member of expiredMembers) {
 
-    // However, `removeMemberFromGroup` is defined below. We might need to move it up or duplicate logic safely.
-    // For simplicity in this step, we will call the API function if available, but since it's defined inside, 
-    // we'll rely on the user manually dealing with it or implementing a robust backend/cron solution later.
-    // Actually, let's just implement the removal logic right here for the interval check.
-
-
-
-    // Send email notification about deletion
-    if (user.email) {
-      try {
-        await fetch('/api/send-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: user.email,
-            subject: `Temporary Member Removed: ${member.name}`,
-            html: `
-                          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-                            <h2 style="color: #4a6850;">Temporary Member Removed</h2>
-                            <p>The temporary member <b>${member.name}</b> in group <b>${group.name}</b> has reached their time limit.</p>
-                            <p>Since all debts were settled, they have been automatically removed from the group.</p>
-                            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-                            <p style="color: #666; font-size: 12px;">This is an automated message from Hostel Ledger.</p>
-                          </div>
-                        `
-          })
-        });
-        console.log(`Sent removal email for ${member.name}`);
-      } catch (mailError) {
-        console.error("Failed to send removal email", mailError);
-      }
-    }
-  }
-  } catch (e) {
-  console.error("Failed to auto-remove member", e);
-}
-}
-  }
-  }
-  };
-
-    */
     return () => {
       cleanup.then(cleanupFn => {
         if (cleanupFn) cleanupFn();
@@ -342,12 +302,24 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       const now = Date.now();
 
       for (const group of groups) {
-        const expiredMembers = group.members.filter(m =>
-          m.isTemporary &&
-          m.deletionCondition === 'TIME_LIMIT' &&
-          m.expiresAt &&
-          m.expiresAt < now
-        );
+        const settlements = getSettlements(group.id);
+
+        const expiredMembers = group.members.filter(m => {
+          if (!m.isTemporary) return false;
+
+          const memberSettlement = settlements[m.id] || { toReceive: 0, toPay: 0 };
+          const hasDebt = memberSettlement.toReceive > 0 || memberSettlement.toPay > 0;
+
+          if (m.deletionCondition === 'SETTLED') {
+            return !hasDebt;
+          }
+
+          if (m.deletionCondition === 'TIME_LIMIT') {
+            return !hasDebt && m.expiresAt && m.expiresAt < now;
+          }
+
+          return false;
+        });
 
         if (expiredMembers.length > 0) {
           for (const member of expiredMembers) {
@@ -405,7 +377,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   const createGroup = async (data: {
     name: string;
     emoji: string;
-    members: { name: string; paymentDetails?: PaymentDetails; phone?: string }[]
+    members: { name: string; paymentDetails?: PaymentDetails; phone?: string }[];
+    coverPhoto?: string;
   }): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
@@ -440,6 +413,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         id: groupId,
         name: data.name.trim().substring(0, 50),
         emoji: data.emoji.trim().substring(0, 10),
+        coverPhoto: data.coverPhoto || undefined,
         members: [
           {
             id: user.uid,
@@ -653,7 +627,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     participants: string[];
     note: string;
     place: string
-  }): Promise<{ success: boolean; error?: string }> => {
+  }): Promise<{ success: boolean; error?: string; transaction?: Transaction }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
     // Validate input
@@ -832,10 +806,12 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         timestamp: Date.now(), // Store numeric timestamp for time display
         paidBy: data.paidBy,
         paidByName: payer.name,
+        paidByIsTemporary: !!payer.isTemporary,
         participants: splits.map((split) => ({
           id: split.participantId,
           name: split.participantName,
           amount: split.amount,
+          isTemporary: !!participantMembers.find(m => m.id === split.participantId)?.isTemporary
         })),
         place: sanitizedPlace || null,
         note: sanitizedNote || null,
@@ -1002,7 +978,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         logger.logTransaction("expense_failed", sanitizedAmount, false);
       }
 
-      return { success: result.success, error: result.error };
+      return { success: result.success, error: result.error, transaction: result.success ? newTransaction : undefined };
     } catch (error: any) {
       logger.error("Add expense error", {
         groupId: data.groupId,
@@ -1020,7 +996,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     amount: number;
     method: "cash" | "online";
     note?: string
-  }): Promise<{ success: boolean; error?: string }> => {
+  }): Promise<{ success: boolean; error?: string; transaction?: Transaction }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
     // Validate input
@@ -1097,10 +1073,13 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         timestamp: Date.now(), // Store numeric timestamp for time display
         paidBy: data.fromMember,
         paidByName: fromPerson.name,
+        paidByIsTemporary: !!fromPerson.isTemporary,
         from: data.fromMember,
         fromName: fromPerson.name,
+        fromIsTemporary: !!fromPerson.isTemporary,
         to: data.toMember,
         toName: toPerson.name,
+        toIsTemporary: !!toPerson.isTemporary,
         method: data.method,
         note: sanitizedNote,
         walletBalanceBefore: walletBalanceBefore,
@@ -1258,7 +1237,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         logger.logTransaction("payment_failed", sanitizedAmount, false);
       }
 
-      return { success: result.success, error: result.error };
+      return { success: result.success, error: result.error, transaction: result.success ? newTransaction : undefined };
     } catch (error: any) {
       logger.error("Record payment error", {
         groupId: data.groupId,

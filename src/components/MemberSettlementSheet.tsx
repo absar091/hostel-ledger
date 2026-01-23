@@ -13,8 +13,9 @@ interface MemberSettlementSheetProps {
     id: string;
     name: string;
     avatar?: string;
+    isTemporary?: boolean;
   };
-  groupId: string; // ADDED: Group context for proper settlement tracking
+  groupId: string;
 }
 
 const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlementSheetProps) => {
@@ -24,15 +25,15 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
   const [customPayAmount, setCustomPayAmount] = useState("");
   const [showCustomReceive, setShowCustomReceive] = useState(false);
   const [showCustomPay, setShowCustomPay] = useState(false);
-  
+
   // FIXED: Get group-specific settlements instead of aggregated
   const settlements = getSettlements(groupId);
   const memberSettlement = settlements[member.id] || { toReceive: 0, toPay: 0 };
-  
+
   const handleMarkReceived = async (amount?: number) => {
     const finalAmount = amount || memberSettlement.toReceive;
     if (finalAmount <= 0) return;
-    
+
     setIsProcessing(true);
     try {
       // FIXED: Pass groupId as first parameter
@@ -55,7 +56,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
   const handleMarkPaid = async (amount?: number) => {
     const finalAmount = amount || memberSettlement.toPay;
     if (finalAmount <= 0) return;
-    
+
     setIsProcessing(true);
     try {
       // FIXED: Pass groupId as first parameter
@@ -103,7 +104,13 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
         <SheetHeader className="flex-shrink-0 mb-6 bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-3xl border-b border-[#4a6850]/10">
           <SheetTitle className="text-center flex items-center justify-center gap-3 font-black text-xl tracking-tight text-gray-900">
             <Avatar name={member.name} size="sm" />
-            {member.name} — Settlement Details
+            <div className="flex items-center gap-2">
+              {member.name}
+              {member.isTemporary && (
+                <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+              )}
+            </div>
+            — Settlement Details
           </SheetTitle>
           <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
             Manage payments and settlements with this group member
@@ -138,14 +145,14 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="text-4xl font-black text-[#4a6850] mb-6 tracking-tight tabular-nums">
                     Rs {memberSettlement.toReceive.toLocaleString()}
                   </div>
-                  
+
                   {!showCustomReceive ? (
                     <div className="space-y-3">
-                      <Button 
+                      <Button
                         onClick={() => handleMarkReceived()}
                         disabled={isProcessing}
                         className="w-full h-14 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all text-base"
@@ -153,8 +160,8 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                         <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" />
                         <span className="truncate">Mark Full Amount Received Rs {memberSettlement.toReceive.toLocaleString()}</span>
                       </Button>
-                      
-                      <Button 
+
+                      <Button
                         onClick={() => setShowCustomReceive(true)}
                         disabled={isProcessing}
                         variant="outline"
@@ -178,9 +185,9 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                           className="border-[#4a6850]/30 focus:border-[#4a6850] h-12 rounded-2xl font-bold text-lg"
                         />
                       </div>
-                      
+
                       <div className="flex gap-3">
-                        <Button 
+                        <Button
                           onClick={handleCustomReceive}
                           disabled={isProcessing || !customReceiveAmount}
                           className="flex-1 h-12 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
@@ -188,8 +195,8 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                           <CheckCircle className="w-4 h-4 mr-2" />
                           Mark Received
                         </Button>
-                        
-                        <Button 
+
+                        <Button
                           onClick={() => {
                             setShowCustomReceive(false);
                             setCustomReceiveAmount("");
@@ -202,7 +209,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                       </div>
                     </div>
                   )}
-                  
+
                   <p className="text-xs text-[#4a6850]/80 mt-3 text-center font-bold">
                     This will add money to your Available Budget
                   </p>
@@ -225,14 +232,14 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="text-4xl font-black text-red-700 mb-6 tracking-tight tabular-nums">
                     Rs {memberSettlement.toPay.toLocaleString()}
                   </div>
-                  
+
                   {!showCustomPay ? (
                     <div className="space-y-3">
-                      <Button 
+                      <Button
                         onClick={() => handleMarkPaid()}
                         disabled={isProcessing}
                         className="w-full h-14 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(239,68,68,0.3)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.4)] transition-all text-base"
@@ -240,8 +247,8 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                         <DollarSign className="w-5 h-5 mr-2 flex-shrink-0" />
                         <span className="truncate">Pay Full Amount Rs {memberSettlement.toPay.toLocaleString()}</span>
                       </Button>
-                      
-                      <Button 
+
+                      <Button
                         onClick={() => setShowCustomPay(true)}
                         disabled={isProcessing}
                         variant="outline"
@@ -265,9 +272,9 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                           className="border-red-300 focus:border-red-500 h-12 rounded-2xl font-bold text-lg"
                         />
                       </div>
-                      
+
                       <div className="flex gap-3">
-                        <Button 
+                        <Button
                           onClick={handleCustomPay}
                           disabled={isProcessing || !customPayAmount}
                           className="flex-1 h-12 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
@@ -275,8 +282,8 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                           <DollarSign className="w-4 h-4 mr-2" />
                           Mark Paid
                         </Button>
-                        
-                        <Button 
+
+                        <Button
                           onClick={() => {
                             setShowCustomPay(false);
                             setCustomPayAmount("");
@@ -289,7 +296,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                       </div>
                     </div>
                   )}
-                  
+
                   <p className="text-xs text-red-600 mt-3 text-center font-bold">
                     This will deduct money from your Available Budget
                   </p>
@@ -305,7 +312,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                   <div>
                     <h4 className="font-black text-blue-900 mb-2 text-lg tracking-tight">Enterprise-Safe Tracking</h4>
                     <p className="text-sm text-blue-700 font-bold leading-relaxed">
-                      These amounts are tracked separately and never auto-merged. 
+                      These amounts are tracked separately and never auto-merged.
                       Each settlement requires your explicit confirmation.
                     </p>
                   </div>
