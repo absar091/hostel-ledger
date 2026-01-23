@@ -43,6 +43,7 @@ export interface UserProfile {
   settlements: { [groupId: string]: { [personId: string]: { toReceive: number; toPay: number } } }; // CORRECTED: Group-aware settlement tracking
   createdAt: string;
   emailVerified?: boolean; // Email verification status
+  favoriteGroups?: string[]; // Array of favorite group IDs
 }
 
 interface FirebaseAuthContextType {
@@ -86,6 +87,9 @@ interface FirebaseAuthContextType {
   addIndividualDebt: (groupId: string, personId: string, debt: any) => Promise<{ success: boolean; error?: string }>;
   settleIndividualDebt: (groupId: string, personId: string, debtId: string, amount?: number) => Promise<{ success: boolean; error?: string }>;
   settleNetAmount: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
+  // Favorite groups
+  toggleFavoriteGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>;
+  getFavoriteGroups: () => string[];
 }
 
 const FirebaseAuthContext = createContext<FirebaseAuthContextType | undefined>(undefined);
@@ -963,6 +967,33 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     return { success: true };
   };
 
+  // Favorite groups functions
+  const toggleFavoriteGroup = async (groupId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: "User not authenticated" };
+
+    try {
+      const currentFavorites = user.favoriteGroups || [];
+      const newFavorites = currentFavorites.includes(groupId)
+        ? currentFavorites.filter(id => id !== groupId)
+        : [...currentFavorites, groupId];
+
+      const userRef = ref(database, `users/${user.uid}/favoriteGroups`);
+      await set(userRef, newFavorites);
+
+      // Update local state
+      setUser(prev => prev ? { ...prev, favoriteGroups: newFavorites } : null);
+
+      return { success: true };
+    } catch (error: any) {
+      logger.error("Failed to toggle favorite group", { error: error.message, groupId });
+      return { success: false, error: error.message };
+    }
+  };
+
+  const getFavoriteGroups = (): string[] => {
+    return user?.favoriteGroups || [];
+  };
+
   return (
     <FirebaseAuthContext.Provider value={{
       user,
@@ -994,7 +1025,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       getIndividualDebts,
       addIndividualDebt,
       settleIndividualDebt,
-      settleNetAmount
+      settleNetAmount,
+      toggleFavoriteGroup,
+      getFavoriteGroups
     }}>
       {children}
     </FirebaseAuthContext.Provider>

@@ -15,7 +15,7 @@ import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 const Groups = () => {
   const navigate = useNavigate();
-  const { user, getSettlements } = useFirebaseAuth();
+  const { user, getSettlements, toggleFavoriteGroup, getFavoriteGroups } = useFirebaseAuth();
   const { groups, createGroup } = useFirebaseData();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
 
@@ -26,11 +26,7 @@ const Groups = () => {
   const [showSettlement, setShowSettlement] = useState(false);
   const [selectedSettlement, setSelectedSettlement] = useState<{ groupId: string; memberId: string; memberName: string; isTemporary?: boolean } | null>(null);
   const [activeFilter, setActiveFilter] = useState<"all" | "unsettled" | "favorites">("all");
-  const [favoriteGroups, setFavoriteGroups] = useState<string[]>(() => {
-    // Load favorites from localStorage
-    const saved = localStorage.getItem(`favoriteGroups_${user?.uid}`);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const favoriteGroups = getFavoriteGroups();
 
   // Pre-calculate all group settlements
   const groupSettlementsMap = useMemo(() => {
@@ -68,6 +64,7 @@ const Groups = () => {
     name: string;
     emoji: string;
     members: { name: string; phone?: string; paymentDetails?: any }[];
+    coverPhoto?: string;
   }) => {
     const result = await createGroup({
       name: data.name,
@@ -77,6 +74,7 @@ const Groups = () => {
         phone: m.phone,
         paymentDetails: m.paymentDetails,
       })),
+      coverPhoto: data.coverPhoto,
     });
 
     if (result.success) {
@@ -87,17 +85,11 @@ const Groups = () => {
   };
 
   // Toggle favorite
-  const toggleFavorite = (groupId: string) => {
-    setFavoriteGroups(prev => {
-      const newFavorites = prev.includes(groupId)
-        ? prev.filter(id => id !== groupId)
-        : [...prev, groupId];
-
-      // Save to localStorage
-      localStorage.setItem(`favoriteGroups_${user?.uid}`, JSON.stringify(newFavorites));
-
-      return newFavorites;
-    });
+  const handleToggleFavorite = async (groupId: string) => {
+    const result = await toggleFavoriteGroup(groupId);
+    if (!result.success) {
+      toast.error("Failed to update favorite");
+    }
   };
 
   // Filter and search groups
@@ -266,13 +258,20 @@ const Groups = () => {
                   onClick={() => handleGroupClick(group.id)}
                   className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-slate-100 cursor-pointer"
                 >
-                  {/* Header with gradient */}
-                  <div className={`h-24 lg:h-32 w-full bg-gradient-to-br ${getGroupGradient(index)} relative`}>
+                  {/* Header with gradient or cover photo */}
+                  <div className={`h-24 lg:h-32 w-full relative overflow-hidden ${!group.coverPhoto ? `bg-gradient-to-br ${getGroupGradient(index)}` : ''}`}>
+                    {group.coverPhoto && (
+                      <img 
+                        src={group.coverPhoto} 
+                        alt={group.name}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
                     <div className="absolute top-3 lg:top-4 right-3 lg:right-4 flex items-center gap-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          toggleFavorite(group.id);
+                          handleToggleFavorite(group.id);
                         }}
                         className="bg-white/20 backdrop-blur-md p-2 rounded-full hover:bg-white/30 transition-all active:scale-95"
                       >
