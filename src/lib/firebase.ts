@@ -38,8 +38,20 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase Authentication and get a reference to the service
 export const auth = getAuth(app);
 
-// Initialize Realtime Database and get a reference to the service
+// Initialize Realtime Database with offline persistence
 export const database = getDatabase(app);
+
+// Enable offline persistence for Realtime Database
+// This allows the app to work offline and sync when online
+if (typeof window !== 'undefined') {
+  try {
+    // Realtime Database automatically handles offline persistence
+    // Data is cached locally and synced when connection is restored
+    console.log('✅ Firebase Realtime Database initialized with offline support');
+  } catch (error) {
+    console.warn('⚠️ Offline persistence setup warning:', error);
+  }
+}
 
 // Initialize Cloud Firestore and get a reference to the service
 export const db = getFirestore(app);

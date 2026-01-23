@@ -1239,11 +1239,19 @@ const Dashboard = () => {
                       </div>
                       {todayTransactions.slice(0, 3).map((transaction) => {
                         const transactionGroup = groups.find(g => g.id === transaction.groupId);
+                        const isPayer = transaction.paidBy === user?.uid;
+                        const userParticipant = transaction.participants?.find((p: any) => p.id === user?.uid);
+                        const isParticipant = !!userParticipant;
+
                         const typeLabel = transaction.type === 'expense'
-                          ? (transaction.paidBy === user?.uid ? 'You paid' : 'Expense')
+                          ? (isPayer ? 'You paid' : isParticipant ? 'You owe' : 'Group expense')
                           : transaction.type === 'payment'
                             ? 'Payment received'
                             : 'Wallet';
+
+                        const displayAmount = transaction.type === 'expense'
+                          ? (isPayer ? transaction.amount : isParticipant ? userParticipant.amount : 0)
+                          : transaction.amount;
 
                         return (
                           <button
@@ -1273,9 +1281,11 @@ const Dashboard = () => {
                               </p>
                             </div>
                             <div className="text-right flex-shrink-0">
-                              <p className={`font-black text-sm tabular-nums ${transaction.type === 'expense' ? 'text-rose-500' : 'text-slate-900 dark:text-white'
+                              <p className={`font-black text-sm tabular-nums ${transaction.type === 'expense'
+                                ? (isPayer || isParticipant ? 'text-rose-500' : 'text-slate-400')
+                                : 'text-slate-900 dark:text-white'
                                 }`}>
-                                Rs {transaction.amount.toLocaleString()}
+                                {transaction.type === 'expense' && !isPayer && !isParticipant ? '-' : `Rs ${displayAmount.toLocaleString()}`}
                               </p>
                             </div>
                           </button>
@@ -1292,11 +1302,19 @@ const Dashboard = () => {
                       </div>
                       {yesterdayTransactions.slice(0, 2).map((transaction) => {
                         const transactionGroup = groups.find(g => g.id === transaction.groupId);
+                        const isPayer = transaction.paidBy === user?.uid;
+                        const userParticipant = transaction.participants?.find((p: any) => p.id === user?.uid);
+                        const isParticipant = !!userParticipant;
+
                         const typeLabel = transaction.type === 'expense'
-                          ? (transaction.paidBy === user?.uid ? 'You paid' : 'Expense')
+                          ? (isPayer ? 'You paid' : isParticipant ? 'You owe' : 'Group expense')
                           : transaction.type === 'payment'
                             ? 'Payment received'
                             : 'Wallet';
+
+                        const displayAmount = transaction.type === 'expense'
+                          ? (isPayer ? transaction.amount : isParticipant ? userParticipant.amount : 0)
+                          : transaction.amount;
 
                         return (
                           <button
@@ -1326,9 +1344,11 @@ const Dashboard = () => {
                               </p>
                             </div>
                             <div className="text-right flex-shrink-0">
-                              <p className={`font-black text-sm tabular-nums ${transaction.type === 'expense' ? 'text-rose-500' : 'text-slate-900 dark:text-white'
+                              <p className={`font-black text-sm tabular-nums ${transaction.type === 'expense'
+                                ? (isPayer || isParticipant ? 'text-rose-500' : 'text-slate-400')
+                                : 'text-slate-900 dark:text-white'
                                 }`}>
-                                Rs {transaction.amount.toLocaleString()}
+                                {transaction.type === 'expense' && !isPayer && !isParticipant ? '-' : `Rs ${displayAmount.toLocaleString()}`}
                               </p>
                             </div>
                           </button>
@@ -1345,11 +1365,19 @@ const Dashboard = () => {
                       </div>
                       {olderTransactions.slice(0, 3 - todayTransactions.length - yesterdayTransactions.length).map((transaction) => {
                         const transactionGroup = groups.find(g => g.id === transaction.groupId);
+                        const isPayer = transaction.paidBy === user?.uid;
+                        const userParticipant = transaction.participants?.find((p: any) => p.id === user?.uid);
+                        const isParticipant = !!userParticipant;
+
                         const typeLabel = transaction.type === 'expense'
-                          ? (transaction.paidBy === user?.uid ? 'You paid' : 'Expense')
+                          ? (isPayer ? 'You paid' : isParticipant ? 'You owe' : 'Group expense')
                           : transaction.type === 'payment'
                             ? 'Payment received'
                             : 'Wallet';
+
+                        const displayAmount = transaction.type === 'expense'
+                          ? (isPayer ? transaction.amount : isParticipant ? userParticipant.amount : 0)
+                          : transaction.amount;
 
                         return (
                           <button
@@ -1379,9 +1407,11 @@ const Dashboard = () => {
                               </p>
                             </div>
                             <div className="text-right flex-shrink-0">
-                              <p className={`font-black text-sm tabular-nums ${transaction.type === 'expense' ? 'text-rose-500' : 'text-slate-900 dark:text-white'
+                              <p className={`font-black text-sm tabular-nums ${transaction.type === 'expense'
+                                ? (isPayer || isParticipant ? 'text-rose-500' : 'text-slate-400')
+                                : 'text-slate-900 dark:text-white'
                                 }`}>
-                                Rs {transaction.amount.toLocaleString()}
+                                {transaction.type === 'expense' && !isPayer && !isParticipant ? '-' : `Rs ${displayAmount.toLocaleString()}`}
                               </p>
                             </div>
                           </button>
@@ -1501,11 +1531,19 @@ const Dashboard = () => {
                       </div>
                       {yesterdayTransactions.slice(0, 2).map((transaction) => {
                         const transactionGroup = groups.find(g => g.id === transaction.groupId);
+                        const isPayer = transaction.paidBy === user?.uid;
+                        const userParticipant = transaction.participants?.find((p: any) => p.id === user?.uid);
+                        const isParticipant = !!userParticipant;
+
                         const typeLabel = transaction.type === 'expense'
-                          ? (transaction.paidBy === user?.uid ? 'You paid' : 'Expense')
+                          ? (isPayer ? 'You paid' : isParticipant ? 'You owe' : 'Group expense')
                           : transaction.type === 'payment'
                             ? 'Payment received'
                             : 'Wallet';
+
+                        const displayAmount = transaction.type === 'expense'
+                          ? (isPayer ? transaction.amount : isParticipant ? userParticipant.amount : 0)
+                          : transaction.amount;
 
                         return (
                           <button
@@ -1561,11 +1599,19 @@ const Dashboard = () => {
                       </div>
                       {olderTransactions.slice(0, 3 - todayTransactions.length - yesterdayTransactions.length).map((transaction) => {
                         const transactionGroup = groups.find(g => g.id === transaction.groupId);
+                        const isPayer = transaction.paidBy === user?.uid;
+                        const userParticipant = transaction.participants?.find((p: any) => p.id === user?.uid);
+                        const isParticipant = !!userParticipant;
+
                         const typeLabel = transaction.type === 'expense'
-                          ? (transaction.paidBy === user?.uid ? 'You paid' : 'Expense')
+                          ? (isPayer ? 'You paid' : isParticipant ? 'You owe' : 'Group expense')
                           : transaction.type === 'payment'
                             ? 'Payment received'
                             : 'Wallet';
+
+                        const displayAmount = transaction.type === 'expense'
+                          ? (isPayer ? transaction.amount : isParticipant ? userParticipant.amount : 0)
+                          : transaction.amount;
 
                         return (
                           <button
