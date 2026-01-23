@@ -36,7 +36,7 @@ export const calculateExpenseSplit = (
   
   return participants.map((participant, index) => {
     // Rotate remainder distribution starting from payer
-    const adjustedIndex = (index + startIndex) % participants.length;
+    const adjustedIndex = (index - startIndex + participants.length) % participants.length;
     const getsRemainder = adjustedIndex < remainder;
     
     return {
