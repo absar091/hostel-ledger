@@ -25,7 +25,7 @@ import { useFirebaseData, type Transaction } from "@/contexts/FirebaseDataContex
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useOffline } from "@/hooks/useOffline";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useOneSignalPush } from "@/hooks/useOneSignalPush";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -36,10 +36,8 @@ const Dashboard = () => {
   const {
     isSupported: notificationsSupported,
     permission: notificationPermission,
-    requestPermission,
     subscribe: subscribeToPush,
-    registerPeriodicSync
-  } = usePushNotifications();
+  } = useOneSignalPush();
   const {
     shouldShowOnboarding,
     shouldShowPageGuide,
@@ -64,6 +62,10 @@ const Dashboard = () => {
   // Onboarding and guide states
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showDashboardGuide, setShowDashboardGuide] = useState(false);
+  
+  // Notification prompt state
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
+  const [isEnablingNotifications, setIsEnablingNotifications] = useState(false);
 
   // Success Sheet states
   const [showSuccessSheet, setShowSuccessSheet] = useState(false);
@@ -84,25 +86,48 @@ const Dashboard = () => {
     }
   }, [shouldShowOnboarding, shouldShowPageGuide]);
 
-  // Request notification permissions when app is installed
+  // Show notification prompt when app is first installed
   useEffect(() => {
-    const setupNotifications = async () => {
-      if (isInstalled && notificationsSupported && notificationPermission === 'default') {
-        // Wait a bit before asking for permissions (better UX)
-        setTimeout(async () => {
-          const granted = await requestPermission();
-          if (granted) {
-            // Subscribe to push notifications
-            await subscribeToPush();
-            // Register periodic sync
-            await registerPeriodicSync();
-          }
-        }, 2000);
+    const checkNotificationPrompt = () => {
+      // Check if we should show notification prompt
+      const hasSeenPrompt = localStorage.getItem('hasSeenNotificationPrompt');
+      
+      if (
+        isInstalled && 
+        notificationsSupported && 
+        notificationPermission === 'default' && 
+        !hasSeenPrompt &&
+        !showOnboarding // Don't show during onboarding
+      ) {
+        // Wait a bit for better UX
+        setTimeout(() => {
+          setShowNotificationPrompt(true);
+        }, 3000);
       }
     };
 
-    setupNotifications();
-  }, [isInstalled, notificationsSupported, notificationPermission, requestPermission, subscribeToPush, registerPeriodicSync]);
+    checkNotificationPrompt();
+  }, [isInstalled, notificationsSupported, notificationPermission, showOnboarding]);
+
+  // Handle notification prompt actions
+  const handleEnableNotifications = async () => {
+    setIsEnablingNotifications(true);
+    try {
+      const success = await subscribeToPush();
+      if (success) {
+        setShowNotificationPrompt(false);
+        localStorage.setItem('hasSeenNotificationPrompt', 'true');
+        toast.success("Notifications enabled! 🔔");
+      }
+    } finally {
+      setIsEnablingNotifications(false);
+    }
+  };
+
+  const handleDismissNotificationPrompt = () => {
+    setShowNotificationPrompt(false);
+    localStorage.setItem('hasSeenNotificationPrompt', 'true');
+  };
 
   // Onboarding steps
   const onboardingSteps = [
@@ -769,6 +794,46 @@ const Dashboard = () => {
             <p className="text-gray-500 font-semibold text-sm">Welcome back,</p>
             <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-gray-900">{user?.name || "User"}</h2>
           </section>
+
+          {/* Notification Prompt Card - First Time Install */}
+          {showNotificationPrompt && (
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-3xl p-5 shadow-lg animate-fade-in">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                  <span className="text-2xl">🔔</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-black text-blue-900 text-base mb-1.5 tracking-tight">Stay Updated!</h3>
+                  <p className="text-sm text-blue-700 font-medium leading-relaxed mb-4">
+                    Get instant notifications when expenses are added or payments are received. Never miss an update!
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleEnableNotifications}
+                      disabled={isEnablingNotifications}
+                      className="flex-1 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 text-sm"
+                    >
+                      {isEnablingNotifications ? "Enabling..." : "Enable Notifications"}
+                    </button>
+                    <button
+                      onClick={handleDismissNotificationPrompt}
+                      disabled={isEnablingNotifications}
+                      className="px-4 h-10 border-2 border-blue-300 text-blue-700 hover:bg-blue-100 font-black rounded-2xl transition-all disabled:opacity-50 text-sm"
+                    >
+                      Later
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={handleDismissNotificationPrompt}
+                  disabled={isEnablingNotifications}
+                  className="w-8 h-8 rounded-full hover:bg-blue-200 flex items-center justify-center transition-colors flex-shrink-0"
+                >
+                  <X className="w-4 h-4 text-blue-700" />
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* PRIMARY CARD: Enhanced with last transaction time - Moved further down */}
           <section className="mesh-gradient rounded-3xl p-5 lg:p-6 text-white shadow-2xl shadow-[#4a6850]/30 relative">

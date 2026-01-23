@@ -103,7 +103,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
       <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
         <SheetHeader className="flex-shrink-0 mb-4 pt-2">
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
-          
+
           <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">
             Settlement Details
           </SheetTitle>
@@ -162,8 +162,8 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                     <div className="space-y-2">
                       <Button
                         onClick={() => handleMarkReceived()}
-                        disabled={isProcessing}
-                        className="w-full h-12 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all text-sm"
+                        disabled={isProcessing || !hasReceivable}
+                        className="w-full h-12 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all text-sm disabled:opacity-50"
                       >
                         <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span className="truncate">Mark Full Amount Received</span>
@@ -249,8 +249,8 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                     <div className="space-y-2">
                       <Button
                         onClick={() => handleMarkPaid()}
-                        disabled={isProcessing}
-                        className="w-full h-12 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all text-sm"
+                        disabled={isProcessing || !hasPayable}
+                        className="w-full h-12 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all text-sm disabled:opacity-50"
                       >
                         <DollarSign className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span className="truncate">Pay Full Amount</span>

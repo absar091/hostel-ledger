@@ -51,11 +51,22 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
   const [method, setMethod] = useState<"cash" | "online">("cash");
   const [note, setNote] = useState("");
 
-  // Get members from selected group (exclude "You")
+  // Get members from selected group (exclude "You") and sort by those who owe money
   const otherMembers = useMemo(() => {
     const group = groups.find((g) => g.id === selectedGroup);
-    return group?.members.filter((m) => m.name !== "You") || [];
-  }, [groups, selectedGroup]);
+    if (!group) return [];
+
+    // Filter out "You"
+    const members = group.members.filter((m) => m.name !== "You");
+
+    // Sort by amount they owe (toReceive) descending
+    const groupSettlements = getSettlements(selectedGroup);
+    return [...members].sort((a, b) => {
+      const oweA = groupSettlements[a.id]?.toReceive || 0;
+      const oweB = groupSettlements[b.id]?.toReceive || 0;
+      return oweB - oweA;
+    });
+  }, [groups, selectedGroup, getSettlements]);
 
   // Get settlement data for selected group
   const settlements = selectedGroup ? getSettlements(selectedGroup) : {};
@@ -111,6 +122,13 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
       return;
     }
 
+    // Check if the member actually owes money
+    const settlement = settlements[fromMember] || { toReceive: 0, toPay: 0 };
+    if (settlement.toReceive <= 0) {
+      alert(`${selectedMemberName} doesn't owe any money in this group. Records must match actual debts.`);
+      return;
+    }
+
     if (isNaN(amountValue) || amountValue <= 0) {
       console.error("Invalid amount");
       return;
@@ -135,7 +153,12 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
 
   const canProceed = () => {
     if (step === 1) return selectedGroup !== "";
-    if (step === 2) return fromMember !== "";
+    if (step === 2) {
+      if (!fromMember) return false;
+      // Member must owe money to proceed to Step 3
+      const settlement = settlements[fromMember] || { toReceive: 0, toPay: 0 };
+      return settlement.toReceive > 0;
+    }
     if (step === 3) {
       const amountValue = parseFloat(amount);
       return amountValue > 0 && !isNaN(amountValue);
@@ -225,11 +248,13 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     <button
                       key={member.id}
                       onClick={() => setFromMember(member.id)}
+                      disabled={!owesYou}
                       className={cn(
                         "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
                         fromMember === member.id
                           ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
-                          : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5"
+                          : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5",
+                        !owesYou && "opacity-50 grayscale cursor-not-allowed border-dashed bg-gray-50"
                       )}
                     >
                       <Avatar name={member.name} size="sm" />
@@ -239,14 +264,17 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                           {member.isTemporary && (
                             <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
                           )}
+                          {!owesYou && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-wider">No Debt</span>
+                          )}
                         </div>
                         <div className="text-xs font-bold truncate">
                           {isSettled ? (
-                            <span className="text-[#4a6850]">✅ All settled</span>
+                            <span className="text-emerald-600 font-black">✅ All settled</span>
                           ) : owesYou ? (
-                            <span className="text-[#4a6850]">Owes Rs {settlement.toReceive.toLocaleString()}</span>
+                            <span className="text-[#4a6850] font-black">Owes Rs {settlement.toReceive.toLocaleString()}</span>
                           ) : youOwe ? (
-                            <span className="text-red-500">You owe Rs {settlement.toPay.toLocaleString()}</span>
+                            <span className="text-red-500 font-black">You owe Rs {settlement.toPay.toLocaleString()}</span>
                           ) : (
                             <span className="text-gray-500">No pending</span>
                           )}

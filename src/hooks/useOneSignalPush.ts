@@ -49,10 +49,6 @@ export const useOneSignalPush = () => {
             // Persist notification permission
             persistNotification: true,
             autoResubscribe: true,
-            // Prompt options
-            notifyButton: {
-              enable: false, // We handle our own UI
-            },
           });
           oneSignalInitialized = true;
           console.log('✅ OneSignal initialized');
@@ -61,13 +57,18 @@ export const useOneSignalPush = () => {
         // Check subscription status
         const permission = OneSignal.Notifications.permission;
         const isSubscribed = OneSignal.User.PushSubscription.optedIn;
+        
+        // Get actual browser permission state
+        const browserPermission = typeof Notification !== 'undefined' 
+          ? Notification.permission 
+          : 'default';
 
-        console.log('📊 OneSignal status:', { permission, isSubscribed });
+        console.log('📊 OneSignal status:', { permission, isSubscribed, browserPermission });
 
         setState({
           isSupported: true,
           isSubscribed: isSubscribed,
-          permission: permission ? "granted" : "default",
+          permission: browserPermission,
           isLoading: false,
         });
 
@@ -105,9 +106,14 @@ export const useOneSignalPush = () => {
     try {
       const permission = await OneSignal.Notifications.requestPermission();
       
+      // Get actual browser permission
+      const browserPermission = typeof Notification !== 'undefined' 
+        ? Notification.permission 
+        : 'default';
+      
       setState((prev) => ({ 
         ...prev, 
-        permission: permission ? "granted" : "denied" 
+        permission: browserPermission
       }));
 
       if (permission) {

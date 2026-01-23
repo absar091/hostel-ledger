@@ -1,10 +1,12 @@
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const NotificationIcon = () => {
+  const navigate = useNavigate();
+
   const handleNotificationClick = () => {
-    // Future: Handle notification center or settings
-    console.log("Notification center clicked");
+    navigate("/notifications");
   };
 
   return (

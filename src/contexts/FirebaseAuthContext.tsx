@@ -677,7 +677,6 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       await set(userRef, newBalance);
 
       // Update local state
-      // Update local state
       setUser(prev => prev ? { ...prev, walletBalance: newBalance } : null);
 
       return { success: true };

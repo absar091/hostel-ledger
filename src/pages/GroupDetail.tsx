@@ -551,10 +551,12 @@ const GroupDetail = () => {
               onClick={() => setShowRecordPayment(true)}
               disabled={groupTotalToReceive <= 0}
               variant="outline"
-              className={`flex-1 h-12 rounded-2xl text-sm font-black transition-all ${groupTotalToReceive <= 0
-                ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70'
-                : 'bg-white border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 hover:border-[#4a6850]/50 shadow-[0_8px_32px_rgba(74,104,80,0.15)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.25)]'
-                }`}
+              className={cn(
+                "flex-1 h-12 rounded-2xl text-sm font-black transition-all shadow-[0_8px_32px_rgba(74,104,80,0.15)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.25)]",
+                groupTotalToReceive <= 0
+                  ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70"
+                  : "bg-white border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 hover:border-[#4a6850]/50"
+              )}
             >
               <HandCoins className="w-4 h-4 mr-2 font-bold" />
               Record Payment
