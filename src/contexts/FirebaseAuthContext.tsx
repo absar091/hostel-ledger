@@ -109,6 +109,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
       }
       setIsLoading(false);
+    }, (error) => {
+      logger.error("Auth state change error", { error: error.message });
+      setIsLoading(false);
     });
 
     return () => unsubscribe();
@@ -130,7 +133,6 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         const verificationData = verificationSnapshot.exists() ? verificationSnapshot.val() : {};
 
         logger.debug("User profile loaded from database", { uid });
-        console.log('[fetchUserProfile] Raw userData from Firebase:', userData);
 
         const userProfile: UserProfile = {
           uid,
@@ -145,8 +147,6 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           createdAt: userData.createdAt,
           emailVerified: verificationData.emailVerified || false
         };
-
-        console.log('[fetchUserProfile] Constructed userProfile with photoURL:', userProfile.photoURL);
 
         setUser(userProfile);
         logger.setUserId(uid);
@@ -280,17 +280,13 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       // Try Firebase Auth first
       try {
-        console.log('🔍 Attempting Firebase Auth signup...');
-        console.log('📧 Email:', sanitizedEmail);
-        console.log('🔑 Password length:', data.password?.length);
-        console.log('👤 Name:', sanitizedName);
-        console.log('✅ Email Verified:', data.emailVerified);
+        logger.info('Attempting Firebase Auth signup', { email: sanitizedEmail });
 
         // Create Firebase Auth user
         const userCredential = await createUserWithEmailAndPassword(auth, sanitizedEmail, data.password);
         const firebaseUser = userCredential.user;
 
-        console.log('✅ Firebase Auth user created:', firebaseUser.uid);
+        logger.info('Firebase Auth user created', { uid: firebaseUser.uid });
 
         // Update Firebase Auth profile
         await updateProfile(firebaseUser, {
@@ -320,11 +316,10 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           email: sanitizedEmail
         });
 
-        setUser(userProfile);
         return { success: true };
 
       } catch (authError: any) {
-        console.error("Firebase Auth signup failed:", authError);
+        logger.error("Firebase Auth signup failed", { email: sanitizedEmail, error: authError.message });
 
         // If Firebase Auth is disabled, show helpful error message
         if (authError.code === 'auth/admin-restricted-operation') {
@@ -358,7 +353,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
     } catch (error: any) {
-      console.error("Signup error:", error);
+      logger.error("Signup error", { email: data.email, error: error.message });
       return { success: false, error: error.message || "Signup failed" };
     } finally {
       setIsLoading(false);
@@ -370,8 +365,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       await signOut(auth);
       setUser(null);
       setFirebaseUser(null);
-    } catch (error) {
-      console.error("Logout error:", error);
+    } catch (error: any) {
+      logger.error("Logout error", { error: error.message });
     }
   };
 
@@ -483,26 +478,24 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           const result = await response.json();
           if (result.success) {
             if (result.exists) {
-              console.log('❌ Email already exists (backend check):', email);
+              logger.info('Email exists', { email });
               return true;
             } else {
-              console.log('✅ Email is available (backend check):', email);
+              logger.info('Email is available', { email });
               return false;
             }
           }
         } else {
-          console.warn('⚠️ Backend email check failed, falling back to Firebase Auth');
+          logger.warn('Backend email check failed, falling back to Firebase Auth', { email });
         }
       } catch (backendError: any) {
         console.warn('⚠️ Backend email check error, falling back to Firebase Auth:', backendError.message);
       }
 
-      // Fallback check: Use Firebase Auth to check if email exists
       try {
         const methods = await fetchSignInMethodsForEmail(auth, email);
         if (methods.length > 0) {
-          console.log('❌ Email already exists in Firebase Auth:', email);
-          console.log('🔐 Sign-in methods:', methods);
+          logger.info('Email exists in Firebase Auth', { email, methods });
           return true;
         }
       } catch (authError: any) {
@@ -538,10 +531,10 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         });
       }
 
-      console.log('✅ Email marked as verified for user:', uid);
+      logger.info('Email marked as verified', { uid });
       return { success: true };
     } catch (error: any) {
-      console.error("Error marking email as verified:", error);
+      logger.error("Error marking email as verified", { uid, error: error.message });
       return { success: false, error: error.message || "Failed to mark email as verified" };
     }
   };
@@ -552,8 +545,6 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      console.log('[updateUserProfile] Input data:', data);
-
       // Clean data to remove undefined values
       const cleanData = Object.fromEntries(
         Object.entries(data).filter(([_, value]) => value !== undefined)
@@ -582,7 +573,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       return { success: true };
     } catch (error: any) {
-      console.error("Update profile error:", error);
+      logger.error("Update profile error", { uid: user.uid, error: error.message });
       return { success: false, error: error.message || "Failed to update profile" };
     }
   };
@@ -632,7 +623,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       return { success: true };
     } catch (error: any) {
-      console.error("Remove profile picture error:", error);
+      logger.error("Remove profile picture error", { uid: user.uid, error: error.message });
       return { success: false, error: error.message || "Failed to remove profile picture" };
     }
   };
@@ -686,11 +677,12 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       await set(userRef, newBalance);
 
       // Update local state
+      // Update local state
       setUser(prev => prev ? { ...prev, walletBalance: newBalance } : null);
 
       return { success: true };
     } catch (error: any) {
-      console.error("Deduct money error:", error);
+      logger.error("Deduct money error", { uid: user.uid, amount, error: error.message });
       return { success: false, error: error.message || "Failed to deduct money" };
     }
   };
@@ -786,7 +778,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       return { success: true };
     } catch (error: any) {
-      console.error("Update settlement error:", error);
+      logger.error("Update settlement error", { uid: user.uid, groupId, personId, error: error.message });
       return { success: false, error: error.message || "Failed to update settlement" };
     }
   };
@@ -877,7 +869,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       return { success: true };
     } catch (error: any) {
-      console.error("Mark payment received error:", error);
+      logger.error("Mark payment received error", { uid: user.uid, groupId, personId, amount, error: error.message });
       return { success: false, error: error.message || "Failed to mark payment as received" };
     }
   };
@@ -945,7 +937,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       return { success: true };
     } catch (error: any) {
-      console.error("Mark debt paid error:", error);
+      logger.error("Mark debt paid error", { uid: user.uid, groupId, personId, amount, error: error.message });
       return { success: false, error: error.message || "Failed to mark debt as paid" };
     }
   };

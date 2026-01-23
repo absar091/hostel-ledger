@@ -100,81 +100,89 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white shadow-[0_25px_70px_rgba(74,104,80,0.3)] border-t-2 border-[#4a6850]/20 z-[100]">
-        <SheetHeader className="flex-shrink-0 mb-6 bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-3xl border-b border-[#4a6850]/10">
-          <SheetTitle className="text-center flex items-center justify-center gap-3 font-black text-xl tracking-tight text-gray-900">
-            <Avatar name={member.name} size="sm" />
-            <div className="flex items-center gap-2">
-              {member.name}
-              {member.isTemporary && (
-                <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
-              )}
-            </div>
-            — Settlement Details
+      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
+        <SheetHeader className="flex-shrink-0 mb-4 pt-2">
+          <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
+          
+          <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">
+            Settlement Details
           </SheetTitle>
           <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
-            Manage payments and settlements with this group member
+            Manage payments with {member.name}
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-6 pb-4">
+        <div className="flex-1 overflow-y-auto space-y-3 pb-4">
+          {/* Member Info Card */}
+          <div className="flex items-center gap-3 bg-[#4a6850]/5 rounded-2xl p-3 border border-[#4a6850]/20">
+            <Avatar name={member.name} size="sm" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-black text-gray-900 text-sm truncate">{member.name}</span>
+                {member.isTemporary && (
+                  <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                )}
+              </div>
+            </div>
+          </div>
+
           {isSettled ? (
-            // All Settled State
-            <div className="text-center py-12 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
-              <CheckCircle className="w-20 h-20 text-[#4a6850] mx-auto mb-6" />
-              <h3 className="text-2xl font-black text-[#4a6850] mb-3 tracking-tight">All Settled! 🎉</h3>
-              <p className="text-[#4a6850]/80 font-bold text-lg">
+            // All Settled State - Compact
+            <div className="text-center py-8 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl border border-[#4a6850]/20 shadow-md">
+              <CheckCircle className="w-16 h-16 text-[#4a6850] mx-auto mb-4" />
+              <h3 className="text-xl font-black text-[#4a6850] mb-2 tracking-tight">All Settled! 🎉</h3>
+              <p className="text-[#4a6850]/80 font-bold text-sm">
                 No pending payments with {member.name}
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* What they owe you */}
+            <div className="space-y-3">
+              {/* What they owe you - Compact */}
               {hasReceivable && (
-                <div className="bg-gradient-to-br from-[#4a6850]/10 to-[#3d5643]/10 border border-[#4a6850]/30 rounded-3xl p-6 shadow-[0_20px_60px_rgba(74,104,80,0.15)]">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-3xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center shadow-lg">
-                      <ArrowDownLeft className="w-7 h-7 text-white font-bold" />
+                <div className="bg-gradient-to-br from-[#4a6850]/10 to-[#3d5643]/10 border border-[#4a6850]/30 rounded-2xl p-4 shadow-md">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center shadow-md">
+                      <ArrowDownLeft className="w-5 h-5 text-white font-bold" />
                     </div>
-                    <div>
-                      <h4 className="font-black text-[#4a6850] text-lg tracking-tight">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-black text-[#4a6850] text-sm tracking-tight truncate">
                         {member.name} owes you
                       </h4>
-                      <p className="text-sm text-[#4a6850]/80 font-bold">
-                        From expenses you paid on their behalf
+                      <p className="text-xs text-[#4a6850]/80 font-bold truncate">
+                        From expenses you paid
                       </p>
                     </div>
                   </div>
 
-                  <div className="text-4xl font-black text-[#4a6850] mb-6 tracking-tight tabular-nums">
+                  <div className="text-3xl font-black text-[#4a6850] mb-4 tracking-tight tabular-nums">
                     Rs {memberSettlement.toReceive.toLocaleString()}
                   </div>
 
                   {!showCustomReceive ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <Button
                         onClick={() => handleMarkReceived()}
                         disabled={isProcessing}
-                        className="w-full h-14 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all text-base"
+                        className="w-full h-12 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all text-sm"
                       >
-                        <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" />
-                        <span className="truncate">Mark Full Amount Received Rs {memberSettlement.toReceive.toLocaleString()}</span>
+                        <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+                        <span className="truncate">Mark Full Amount Received</span>
                       </Button>
 
                       <Button
                         onClick={() => setShowCustomReceive(true)}
                         disabled={isProcessing}
                         variant="outline"
-                        className="w-full h-12 border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
+                        className="w-full h-10 border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-2xl shadow-sm hover:shadow-md transition-all text-sm"
                       >
-                        <Edit3 className="w-4 h-4 mr-2" />
+                        <Edit3 className="w-3.5 h-3.5 mr-2" />
                         Partial Payment
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <div>
-                        <label className="text-sm font-black text-[#4a6850] mb-3 block uppercase tracking-wide">
+                        <label className="text-xs font-black text-[#4a6850] mb-2 block uppercase tracking-wide">
                           Amount Received
                         </label>
                         <Input
@@ -182,17 +190,17 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                           placeholder="Enter amount"
                           value={customReceiveAmount}
                           onChange={(e) => setCustomReceiveAmount(e.target.value)}
-                          className="border-[#4a6850]/30 focus:border-[#4a6850] h-12 rounded-2xl font-bold text-lg"
+                          className="border-[#4a6850]/30 focus:border-[#4a6850] h-10 rounded-xl font-bold text-base"
                         />
                       </div>
 
-                      <div className="flex gap-3">
+                      <div className="flex gap-2">
                         <Button
                           onClick={handleCustomReceive}
                           disabled={isProcessing || !customReceiveAmount}
-                          className="flex-1 h-12 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
+                          className="flex-1 h-10 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all text-sm"
                         >
-                          <CheckCircle className="w-4 h-4 mr-2" />
+                          <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
                           Mark Received
                         </Button>
 
@@ -202,7 +210,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                             setCustomReceiveAmount("");
                           }}
                           variant="outline"
-                          className="flex-1 h-12 border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
+                          className="flex-1 h-10 border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-2xl shadow-sm hover:shadow-md transition-all text-sm"
                         >
                           Cancel
                         </Button>
@@ -210,58 +218,58 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                     </div>
                   )}
 
-                  <p className="text-xs text-[#4a6850]/80 mt-3 text-center font-bold">
+                  <p className="text-xs text-[#4a6850]/80 mt-2 text-center font-bold">
                     This will add money to your Available Budget
                   </p>
                 </div>
               )}
 
-              {/* What you owe them */}
+              {/* What you owe them - Compact */}
               {hasPayable && (
-                <div className="bg-gradient-to-br from-red-50 to-orange-50 border border-red-300 rounded-3xl p-6 shadow-[0_20px_60px_rgba(239,68,68,0.15)]">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-3xl bg-gradient-to-br from-red-600 to-orange-600 flex items-center justify-center shadow-lg">
-                      <ArrowUpRight className="w-7 h-7 text-white font-bold" />
+                <div className="bg-gradient-to-br from-red-50 to-orange-50 border border-red-300 rounded-2xl p-4 shadow-md">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-600 to-orange-600 flex items-center justify-center shadow-md">
+                      <ArrowUpRight className="w-5 h-5 text-white font-bold" />
                     </div>
-                    <div>
-                      <h4 className="font-black text-red-800 text-lg tracking-tight">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-black text-red-800 text-sm tracking-tight truncate">
                         You owe {member.name}
                       </h4>
-                      <p className="text-sm text-red-600 font-bold">
-                        From expenses they paid on your behalf
+                      <p className="text-xs text-red-600 font-bold truncate">
+                        From expenses they paid
                       </p>
                     </div>
                   </div>
 
-                  <div className="text-4xl font-black text-red-700 mb-6 tracking-tight tabular-nums">
+                  <div className="text-3xl font-black text-red-700 mb-4 tracking-tight tabular-nums">
                     Rs {memberSettlement.toPay.toLocaleString()}
                   </div>
 
                   {!showCustomPay ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <Button
                         onClick={() => handleMarkPaid()}
                         disabled={isProcessing}
-                        className="w-full h-14 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(239,68,68,0.3)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.4)] transition-all text-base"
+                        className="w-full h-12 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all text-sm"
                       >
-                        <DollarSign className="w-5 h-5 mr-2 flex-shrink-0" />
-                        <span className="truncate">Pay Full Amount Rs {memberSettlement.toPay.toLocaleString()}</span>
+                        <DollarSign className="w-4 h-4 mr-2 flex-shrink-0" />
+                        <span className="truncate">Pay Full Amount</span>
                       </Button>
 
                       <Button
                         onClick={() => setShowCustomPay(true)}
                         disabled={isProcessing}
                         variant="outline"
-                        className="w-full h-12 border-red-300 text-red-700 hover:bg-red-50 font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
+                        className="w-full h-10 border-red-300 text-red-700 hover:bg-red-50 font-black rounded-2xl shadow-sm hover:shadow-md transition-all text-sm"
                       >
-                        <Edit3 className="w-4 h-4 mr-2" />
+                        <Edit3 className="w-3.5 h-3.5 mr-2" />
                         Partial Payment
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <div>
-                        <label className="text-sm font-black text-red-800 mb-3 block uppercase tracking-wide">
+                        <label className="text-xs font-black text-red-800 mb-2 block uppercase tracking-wide">
                           Amount to Pay
                         </label>
                         <Input
@@ -269,17 +277,17 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                           placeholder="Enter amount"
                           value={customPayAmount}
                           onChange={(e) => setCustomPayAmount(e.target.value)}
-                          className="border-red-300 focus:border-red-500 h-12 rounded-2xl font-bold text-lg"
+                          className="border-red-300 focus:border-red-500 h-10 rounded-xl font-bold text-base"
                         />
                       </div>
 
-                      <div className="flex gap-3">
+                      <div className="flex gap-2">
                         <Button
                           onClick={handleCustomPay}
                           disabled={isProcessing || !customPayAmount}
-                          className="flex-1 h-12 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
+                          className="flex-1 h-10 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all text-sm"
                         >
-                          <DollarSign className="w-4 h-4 mr-2" />
+                          <DollarSign className="w-3.5 h-3.5 mr-1.5" />
                           Mark Paid
                         </Button>
 
@@ -289,7 +297,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                             setCustomPayAmount("");
                           }}
                           variant="outline"
-                          className="flex-1 h-12 border-red-300 text-red-700 hover:bg-red-50 font-black rounded-3xl shadow-lg hover:shadow-xl transition-all"
+                          className="flex-1 h-10 border-red-300 text-red-700 hover:bg-red-50 font-black rounded-2xl shadow-sm hover:shadow-md transition-all text-sm"
                         >
                           Cancel
                         </Button>
@@ -297,21 +305,21 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                     </div>
                   )}
 
-                  <p className="text-xs text-red-600 mt-3 text-center font-bold">
+                  <p className="text-xs text-red-600 mt-2 text-center font-bold">
                     This will deduct money from your Available Budget
                   </p>
                 </div>
               )}
 
-              {/* Enterprise Note */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-300 rounded-3xl p-6 shadow-[0_20px_60px_rgba(59,130,246,0.15)]">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mt-1 shadow-lg">
-                    <CheckCircle className="w-6 h-6 text-white font-bold" />
+              {/* Enterprise Note - Compact */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-300 rounded-2xl p-4 shadow-md">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md flex-shrink-0">
+                    <CheckCircle className="w-5 h-5 text-white font-bold" />
                   </div>
-                  <div>
-                    <h4 className="font-black text-blue-900 mb-2 text-lg tracking-tight">Enterprise-Safe Tracking</h4>
-                    <p className="text-sm text-blue-700 font-bold leading-relaxed">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-black text-blue-900 mb-1.5 text-sm tracking-tight">Enterprise-Safe Tracking</h4>
+                    <p className="text-xs text-blue-700 font-bold leading-relaxed">
                       These amounts are tracked separately and never auto-merged.
                       Each settlement requires your explicit confirmation.
                     </p>
@@ -326,7 +334,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
           <Button
             variant="secondary"
             onClick={onClose}
-            className="w-full h-14 rounded-3xl font-black shadow-lg hover:shadow-xl transition-all"
+            className="w-full h-12 rounded-2xl font-black shadow-md hover:shadow-lg transition-all"
           >
             Close
           </Button>

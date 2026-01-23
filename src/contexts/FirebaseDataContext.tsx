@@ -67,7 +67,7 @@ const validatePaymentData = (data: {
   fromMember: string;
   amount: number;
   method: string;
-  note: string;
+  note?: string;
 }): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
@@ -228,14 +228,14 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             } else {
               setGroups([]);
             }
-          } catch (error) {
-            console.error("Error loading groups:", error);
+          } catch (error: any) {
+            logger.error("Error loading groups", { uid: user.uid, error: error.message });
             setGroups([]);
           } finally {
             setIsLoading(false);
           }
         }, (error) => {
-          console.error("Groups listener error:", error);
+          logger.error("Groups listener error", { uid: user.uid, error: error.message });
           setIsLoading(false);
           // Don't throw error, just log it and continue
         });
@@ -260,12 +260,12 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             } else {
               setTransactions([]);
             }
-          } catch (error) {
-            console.error("Error loading transactions:", error);
+          } catch (error: any) {
+            logger.error("Error loading transactions", { uid: user.uid, error: error.message });
             setTransactions([]);
           }
         }, (error) => {
-          console.error("Transactions listener error:", error);
+          logger.error("Transactions listener error", { uid: user.uid, error: error.message });
           // Don't throw error, just log it and continue
         });
 
@@ -274,8 +274,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           off(groupsRef, 'value', groupsListener);
           off(transactionsRef, 'value', transactionsListener);
         };
-      } catch (error) {
-        console.error("Error setting up Firebase listeners:", error);
+      } catch (error: any) {
+        logger.error("Error setting up Firebase listeners", { uid: user.uid, error: error.message });
         setIsLoading(false);
       }
     };
@@ -323,7 +323,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
         if (expiredMembers.length > 0) {
           for (const member of expiredMembers) {
-            console.log(`Removing expired temporary member: ${member.name} from group ${group.name}`);
+            logger.info("Removing expired temporary member", { memberName: member.name, groupName: group.name, groupId: group.id });
             try {
               const settlements = getSettlements(group.id);
               const memberSettlement = settlements[member.id] || { toReceive: 0, toPay: 0 };
@@ -354,9 +354,9 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                         `
                       })
                     });
-                    console.log(`Sent removal email for ${member.name}`);
-                  } catch (mailError) {
-                    console.error("Failed to send removal email", mailError);
+                    logger.info("Sent removal email", { memberName: member.name, email: user.email });
+                  } catch (mailError: any) {
+                    logger.error("Failed to send removal email", { memberName: member.name, error: mailError.message });
                   }
                 }
               }
@@ -874,7 +874,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         // Use setTimeout instead of setImmediate for better async behavior
         setTimeout(async () => {
           try {
-            console.log('📧 Sending transaction notification emails for expense...');
+            logger.info('Sending transaction notification emails for expense', { transactionId });
 
             // Prepare transaction data for email
             const transactionData: TransactionData = {
@@ -901,15 +901,14 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
             const emailResult = await sendTransactionNotifications(transactionData, [currentUserData]);
             if (emailResult.success) {
-              console.log('✅ Transaction notification email sent successfully');
+              logger.info('Transaction notification email sent successfully', { transactionId });
             } else {
-              console.warn('⚠️ Transaction notification email failed:', emailResult.errors);
+              logger.warn('Transaction notification email failed', { transactionId, errors: emailResult.errors });
             }
 
             // Send push notifications to all group members (including payer for testing)
             try {
-              console.log('🔔 Sending push notifications for expense...');
-              console.log('📊 Group members:', group.members.map(m => ({ name: m.name, userId: m.userId })));
+              logger.info('Sending push notifications for expense', { transactionId, groupId: data.groupId });
 
               const membersWithUserId = group.members.filter(member => member.userId);
               console.log('📊 Members with userId:', membersWithUserId.map(m => ({ name: m.name, userId: m.userId })));
@@ -962,15 +961,15 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               });
 
               await Promise.allSettled(notificationPromises);
-              console.log('✅ Push notifications sent to all members');
+              logger.info('Push notifications sent to all members', { transactionId });
 
             } catch (pushError: any) {
-              console.error('❌ Failed to send push notifications:', pushError);
+              logger.error('Failed to send push notifications', { transactionId, error: pushError.message });
               // Push notification failure doesn't affect transaction success
             }
 
           } catch (emailError: any) {
-            console.error('❌ Failed to send transaction notification emails:', emailError);
+            logger.error('Failed to send transaction notification emails', { transactionId, error: emailError.message });
             // Email failure doesn't affect transaction success
           }
         }, 0); // Use setTimeout with 0ms delay for better async behavior
@@ -1162,7 +1161,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               logger.error("Failed to add money to wallet", { error: walletResult.error });
             }
           } catch (error: any) {
-            logger.error("Failed to update wallet/settlements after payment", { error: error.message });
+            logger.error("Failed to update wallet/settlements after payment", { transactionId, error: error.message });
           }
         } else if (data.fromMember === user.uid) {
           // Current user is making payment - deduct from wallet and update settlements
@@ -1180,14 +1179,15 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                 Math.max(0, currentSettlement.toPay - sanitizedAmount)
               );
               logger.info("Updated wallet and settlements for payment made", {
+                transactionId,
                 amount: sanitizedAmount,
                 toMember: data.toMember
               });
             } else {
-              logger.error("Failed to deduct money from wallet", { error: walletResult.error });
+              logger.error("Failed to deduct money from wallet", { transactionId, error: walletResult.error });
             }
           } catch (error: any) {
-            logger.error("Failed to update wallet/settlements after debt payment", { error: error.message });
+            logger.error("Failed to update wallet/settlements after debt payment", { transactionId, error: error.message });
           }
         }
 
@@ -1196,7 +1196,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         // Send transaction notification emails (async, non-blocking)
         setTimeout(async () => {
           try {
-            console.log('📧 Sending transaction notification emails for payment...');
+            logger.info('Sending transaction notification emails for payment', { transactionId });
 
             // Prepare transaction data for email
             const transactionData: TransactionData = {
@@ -1223,13 +1223,13 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
             const emailResult = await sendTransactionNotifications(transactionData, [currentUserData]);
             if (emailResult.success) {
-              console.log('✅ Payment notification email sent successfully');
+              logger.info('Payment notification email sent successfully', { transactionId });
             } else {
-              console.warn('⚠️ Payment notification email failed:', emailResult.errors);
+              logger.warn('Payment notification email failed', { transactionId, errors: emailResult.errors });
             }
 
           } catch (emailError: any) {
-            console.error('❌ Failed to send payment notification email:', emailError);
+            logger.error('Failed to send payment notification email', { transactionId, error: emailError.message });
             // Email failure doesn't affect transaction success
           }
         }, 0); // Use setTimeout with 0ms delay for better async behavior
@@ -1265,7 +1265,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       const result = await markDebtPaid(groupId, toMember, sanitizedAmount);
       return result;
     } catch (error: any) {
-      console.error("Pay debt error:", error);
+      logger.error("Pay debt error", { groupId, toMember, amount, error: error.message });
       return { success: false, error: error.message || "Failed to pay debt" };
     }
   };
@@ -1285,7 +1285,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       const result = await markPaymentReceived(groupId, fromMember, sanitizedAmount);
       return result;
     } catch (error: any) {
-      console.error("Mark payment as paid error:", error);
+      logger.error("Mark payment as paid error", { groupId, fromMember, amount, error: error.message });
       return { success: false, error: error.message || "Failed to mark payment as paid" };
     }
   };

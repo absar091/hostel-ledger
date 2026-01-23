@@ -18,31 +18,31 @@ export interface SettlementUpdate {
  * CORRECTED: Fair distribution of expense amount with proper remainder handling
  */
 export const calculateExpenseSplit = (
-  totalAmount: number, 
-  participants: Array<{id: string, name: string}>,
+  totalAmount: number,
+  participants: Array<{ id: string, name: string }>,
   payerId: string
 ): ExpenseSplit[] => {
   if (participants.length === 0) {
     throw new Error("Must have at least one participant");
   }
 
-  const baseAmount = Math.floor(totalAmount / participants.length);
-  const remainder = totalAmount % participants.length;
-  
+  // Work with cents to avoid floating point errors
+  const totalCents = Math.round(totalAmount * 100);
+  const baseCents = Math.floor(totalCents / participants.length);
+  const remainderCents = totalCents % participants.length;
+
   // Distribute remainder fairly - rotate who gets extra amount
-  // This prevents same people from always paying more
   const payerIndex = participants.findIndex(p => p.id === payerId);
   const startIndex = payerIndex >= 0 ? payerIndex : 0;
-  
+
   return participants.map((participant, index) => {
-    // Rotate remainder distribution starting from payer
-    const adjustedIndex = (index + startIndex) % participants.length;
-    const getsRemainder = adjustedIndex < remainder;
-    
+    const adjustedIndex = (index + participants.length - startIndex) % participants.length;
+    const getsRemainder = adjustedIndex < remainderCents;
+
     return {
       participantId: participant.id,
       participantName: participant.name,
-      amount: baseAmount + (getsRemainder ? 1 : 0),
+      amount: (baseCents + (getsRemainder ? 1 : 0)) / 100,
       isRemainder: getsRemainder
     };
   });
@@ -58,10 +58,10 @@ export const calculateExpenseSettlements = (
   groupId: string
 ): SettlementUpdate[] => {
   const updates: SettlementUpdate[] = [];
-  
+
   const payerSplit = splits.find(s => s.participantId === payerId);
   const currentUserSplit = splits.find(s => s.participantId === currentUserId);
-  
+
   if (!payerSplit) {
     throw new Error("Payer must be a participant");
   }
@@ -91,7 +91,7 @@ export const calculateExpenseSettlements = (
       });
     }
   }
-  
+
   return updates;
 };
 
@@ -99,11 +99,11 @@ export const calculateExpenseSettlements = (
  * CORRECTED: Validate settlement consistency
  */
 export const validateSettlementConsistency = (
-  groupSettlements: Record<string, {toReceive: number, toPay: number}>,
+  groupSettlements: Record<string, { toReceive: number, toPay: number }>,
   currentUserId: string
 ): { isValid: boolean, errors: string[] } => {
   const errors: string[] = [];
-  
+
   // Rule 1: User cannot owe money to themselves
   if (groupSettlements[currentUserId]) {
     const selfSettlement = groupSettlements[currentUserId];
@@ -111,21 +111,21 @@ export const validateSettlementConsistency = (
       errors.push("User cannot have settlements with themselves");
     }
   }
-  
+
   // Rule 2: For each person, either toReceive OR toPay should be 0 (not both positive)
   Object.entries(groupSettlements).forEach(([personId, settlement]) => {
     if (settlement.toReceive > 0 && settlement.toPay > 0) {
       errors.push(`Person ${personId} has both receivable and payable amounts - should be netted`);
     }
-    
+
     if (settlement.toReceive < 0 || settlement.toPay < 0) {
       errors.push(`Person ${personId} has negative settlement amounts`);
     }
   });
-  
+
   // Rule 3: Total receivables should equal total payables in the group
   // (This would require group-wide validation, not just current user's view)
-  
+
   return {
     isValid: errors.length === 0,
     errors
@@ -136,16 +136,16 @@ export const validateSettlementConsistency = (
  * CORRECTED: Net settlements to prevent both owing and being owed by same person
  */
 export const netSettlements = (
-  settlements: Record<string, Record<string, {toReceive: number, toPay: number}>>
-): Record<string, Record<string, {toReceive: number, toPay: number}>> => {
+  settlements: Record<string, Record<string, { toReceive: number, toPay: number }>>
+): Record<string, Record<string, { toReceive: number, toPay: number }>> => {
   const netted = JSON.parse(JSON.stringify(settlements)); // Deep clone
-  
+
   Object.keys(netted).forEach(groupId => {
     const groupSettlements = netted[groupId];
-    
+
     Object.keys(groupSettlements).forEach(personId => {
       const settlement = groupSettlements[personId];
-      
+
       if (settlement.toReceive > 0 && settlement.toPay > 0) {
         // Net the amounts
         if (settlement.toReceive > settlement.toPay) {
@@ -162,7 +162,7 @@ export const netSettlements = (
       }
     });
   });
-  
+
   return netted;
 };
 
@@ -195,16 +195,16 @@ export const validatePaymentAmount = (
   if (paymentAmount <= 0) {
     return { isValid: false, actualAmount: 0, error: "Payment amount must be positive" };
   }
-  
+
   if (actualDebt <= 0) {
     return { isValid: false, actualAmount: 0, error: "No debt exists to pay" };
   }
-  
+
   if (paymentAmount > actualDebt && !allowOverpayment) {
     return { isValid: false, actualAmount: 0, error: `Payment amount (${paymentAmount}) exceeds debt (${actualDebt})` };
   }
-  
+
   const actualAmount = allowOverpayment ? paymentAmount : Math.min(paymentAmount, actualDebt);
-  
+
   return { isValid: true, actualAmount };
 };
