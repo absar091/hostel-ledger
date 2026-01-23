@@ -7,6 +7,7 @@ import Avatar from "./Avatar";
 import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { toast } from "sonner";
 
 interface Member {
   id: string;
@@ -122,15 +123,19 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
       return;
     }
 
-    // Check if the member actually owes money
     const settlement = settlements[fromMember] || { toReceive: 0, toPay: 0 };
     if (settlement.toReceive <= 0) {
-      alert(`${selectedMemberName} doesn't owe any money in this group. Records must match actual debts.`);
+      toast.error(`${selectedMemberName} doesn't owe any money in this group.`);
       return;
     }
 
     if (isNaN(amountValue) || amountValue <= 0) {
-      console.error("Invalid amount");
+      toast.error("Please enter a valid amount");
+      return;
+    }
+
+    if (amountValue > settlement.toReceive) {
+      toast.error(`Amount exceeds ${selectedMemberName}'s debt (Rs ${settlement.toReceive.toLocaleString()})`);
       return;
     }
 
@@ -161,7 +166,8 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
     }
     if (step === 3) {
       const amountValue = parseFloat(amount);
-      return amountValue > 0 && !isNaN(amountValue);
+      const settlement = settlements[fromMember] || { toReceive: 0, toPay: 0 };
+      return amountValue > 0 && !isNaN(amountValue) && amountValue <= settlement.toReceive;
     }
     return true;
   };
