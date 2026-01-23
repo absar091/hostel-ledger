@@ -159,7 +159,7 @@ interface FirebaseDataContextType {
   groups: Group[];
   transactions: Transaction[];
   isLoading: boolean;
-  createGroup: (data: { name: string; emoji: string; members: { name: string; paymentDetails?: PaymentDetails; phone?: string }[] }) => Promise<{ success: boolean; error?: string }>;
+  createGroup: (data: { name: string; emoji: string; members: { name: string; paymentDetails?: PaymentDetails; phone?: string }[]; coverPhoto?: string }) => Promise<{ success: boolean; error?: string }>;
   updateGroup: (groupId: string, data: Partial<Group>) => Promise<{ success: boolean; error?: string }>;
   deleteGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>;
   addMemberToGroup: (groupId: string, member: { name: string; paymentDetails?: PaymentDetails; phone?: string; isTemporary?: boolean; deletionCondition?: 'SETTLED' | 'TIME_LIMIT' }) => Promise<{ success: boolean; error?: string }>;
