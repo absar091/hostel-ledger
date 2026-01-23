@@ -539,7 +539,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
       await retryOperation(() => set(groupRef, updatedMembers));
 
-      return { success: true };
+      return { success: true, memberId: newMember.id };
     } catch (error: any) {
       console.error("Add member error:", error);
       return { success: false, error: error.message || "Failed to add member" };
