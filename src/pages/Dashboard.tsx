@@ -720,7 +720,7 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {/* Offline/Sync Indicator */}
+            {/* Offline/Sync Indicator - Auto-syncs in background */}
             {offline ? (
               <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 rounded-full px-3 py-1.5">
                 <WifiOff className="w-3.5 h-3.5 text-orange-600" />
@@ -731,15 +731,16 @@ const Dashboard = () => {
                   </span>
                 )}
               </div>
+            ) : isSyncing ? (
+              <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1.5">
+                <RefreshCw className="w-3.5 h-3.5 text-blue-600 animate-spin" />
+                <span className="text-xs font-bold text-blue-700">Syncing...</span>
+              </div>
             ) : pendingCount > 0 ? (
-              <button
-                onClick={syncNow}
-                disabled={isSyncing}
-                className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1.5 hover:bg-blue-100 active:scale-95 transition-all disabled:opacity-50"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 text-blue-600 ${isSyncing ? 'animate-spin' : ''}`} />
-                <span className="text-xs font-bold text-blue-700">Sync {pendingCount}</span>
-              </button>
+              <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1.5">
+                <RefreshCw className="w-3.5 h-3.5 text-green-600" />
+                <span className="text-xs font-bold text-green-700">{pendingCount} pending</span>
+              </div>
             ) : null}
 
             {isInstalled ? (

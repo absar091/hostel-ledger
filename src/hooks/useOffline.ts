@@ -49,15 +49,17 @@ export const useOffline = () => {
   // Handle online event
   const handleOnline = useCallback(() => {
     setOffline(false);
-    toast.success("Back online! Syncing...");
-    // Auto-sync when coming back online
-    setTimeout(() => syncNow(), 1000);
+    logger.info("Connection restored, auto-syncing...");
+    toast.success("Back online! Syncing...", { duration: 2000 });
+    // Auto-sync immediately when coming back online
+    setTimeout(() => syncNow(), 500);
   }, [syncNow]);
 
   // Handle offline event
   const handleOffline = useCallback(() => {
     setOffline(true);
-    toast.info("You're offline. Add Expense will save locally.");
+    logger.info("Connection lost, offline mode enabled");
+    toast.info("You're offline. Changes will sync when online.", { duration: 3000 });
   }, []);
 
   // Setup listeners
@@ -68,12 +70,27 @@ export const useOffline = () => {
     return cleanup;
   }, [handleOnline, handleOffline, updatePendingCount]);
 
-  // Auto-sync on mount if online
+  // Auto-sync on mount if online and has pending items
   useEffect(() => {
-    if (!offline && pendingCount > 0) {
+    if (!offline && pendingCount > 0 && !isSyncing) {
+      logger.info("Auto-syncing pending items on mount", { pendingCount });
       syncNow();
     }
-  }, []); // Only run once on mount
+  }, [offline, pendingCount]); // Run when offline status or pending count changes
+
+  // Periodic background sync every 30 seconds if online and has pending items
+  useEffect(() => {
+    if (offline || pendingCount === 0) return;
+
+    const intervalId = setInterval(() => {
+      if (!offline && pendingCount > 0 && !isSyncing) {
+        logger.info("Periodic background sync triggered", { pendingCount });
+        syncNow();
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(intervalId);
+  }, [offline, pendingCount, isSyncing, syncNow]);
 
   return {
     offline,
