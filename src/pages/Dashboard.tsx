@@ -24,7 +24,7 @@ import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData, type Transaction } from "@/contexts/FirebaseDataContext";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
-import { useOffline } from "@/hooks/useOffline";
+import { useSync } from "@/hooks/useSync";
 import { useOneSignalPush } from "@/hooks/useOneSignalPush";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +33,8 @@ const Dashboard = () => {
   const { user, getWalletBalance, getTotalToReceive, getTotalToPay, getSettlementDelta } = useFirebaseAuth();
   const { groups, createGroup, addExpense, recordPayment, addMoneyToWallet, payMyDebt, getAllTransactions, addMemberToGroup } = useFirebaseData();
   const { isInstalled } = usePWAInstall();
-  const { offline, pendingCount, isSyncing, syncNow } = useOffline();
+  const { isOnline, pendingCount, isSyncing, syncData: syncNow } = useSync();
+  const offline = !isOnline;
   const {
     isSupported: notificationsSupported,
     permission: notificationPermission,

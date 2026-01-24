@@ -65,7 +65,8 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
   const [note, setNote] = useState("");
   const [place, setPlace] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const { offline, updatePendingCount } = useOffline();
+  const { isOnline, updatePendingCount } = useSync();
+  const offline = !isOnline;
 
   // Temp member state
   const [showTempMemberInput, setShowTempMemberInput] = useState(false);
