@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Check, Share2, Download, X, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -74,6 +74,7 @@ const TransactionSuccessSheet = ({ open, onClose, transaction, type }: Transacti
     return (
         <Sheet open={open} onOpenChange={(val) => !val && onClose()}>
             <SheetContent side="bottom" className="h-[90vh] sm:h-[80vh] rounded-t-[40px] p-0 overflow-hidden bg-slate-50 border-none outline-none z-[120]">
+                <SheetTitle className="sr-only">Transaction Success Receipt</SheetTitle>
                 <div className="relative h-full flex flex-col p-6 animate-in fade-in slide-in-from-bottom-10 duration-500">
                     {/* Top Close Button */}
                     <button

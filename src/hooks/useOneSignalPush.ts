@@ -44,7 +44,7 @@ export const useOneSignalPush = () => {
           await OneSignal.init({
             appId: appId,
             allowLocalhostAsSecureOrigin: true,
-            serviceWorkerPath: 'OneSignalSDK.sw.js',
+            serviceWorkerPath: '/OneSignalSDKWorker.js',
             serviceWorkerParam: { scope: '/' },
             // Persist notification permission
             persistNotification: true,
