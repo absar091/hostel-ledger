@@ -66,7 +66,7 @@ const Groups = () => {
     members: { name: string; phone?: string; paymentDetails?: any }[];
     coverPhoto?: string;
   }) => {
-    const result = await createGroup({
+    const groupData: any = {
       name: data.name,
       emoji: data.emoji,
       members: data.members.map((m) => ({
@@ -74,8 +74,14 @@ const Groups = () => {
         phone: m.phone,
         paymentDetails: m.paymentDetails,
       })),
-      coverPhoto: data.coverPhoto,
-    });
+    };
+    
+    // Only add coverPhoto if it exists (Firebase doesn't allow undefined)
+    if (data.coverPhoto) {
+      groupData.coverPhoto = data.coverPhoto;
+    }
+    
+    const result = await createGroup(groupData);
 
     if (result.success) {
       toast.success(`Created group "${data.name}"`);
