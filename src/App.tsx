@@ -46,41 +46,60 @@ const queryClient = new QueryClient({
 // iPhone-style Loading Screen Component with Offline Detection
 const SplashScreen = ({ offline = false }: { offline?: boolean }) => {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-white">
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-[#4a6850]/5">
       {/* iPhone-style top accent border */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
       
-      <div className="flex flex-col items-center">
-        {/* App Logo with iPhone-style design */}
-        <div className="w-20 h-20 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl flex items-center justify-center shadow-[0_25px_70px_rgba(74,104,80,0.3)] mb-8 border-t-2 border-[#5a7860]/40">
-          <img
-            src="/only-logo.png"
-            alt="Hostel Ledger"
-            className="w-12 h-12 object-contain filter brightness-0 invert"
-            onError={(e) => {
-              // Fallback if image fails to load offline
-              e.currentTarget.style.display = 'none';
-            }}
-          />
+      <div className="flex flex-col items-center px-6">
+        {/* App Logo with enhanced iPhone-style design */}
+        <div className="relative mb-8">
+          {/* Glow effect */}
+          <div className="absolute inset-0 w-24 h-24 bg-[#4a6850]/20 rounded-[28px] blur-2xl"></div>
+          
+          {/* Logo container */}
+          <div className="relative w-24 h-24 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-[28px] flex items-center justify-center shadow-[0_20px_60px_rgba(74,104,80,0.25)] border border-[#5a7860]/20">
+            {/* Inner highlight */}
+            <div className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-white/10 to-transparent"></div>
+            
+            <img
+              src="/only-logo.png"
+              alt="Hostel Ledger"
+              className="relative w-14 h-14 object-contain filter brightness-0 invert z-10"
+              onError={(e) => {
+                // Fallback if image fails to load offline
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          </div>
         </div>
         
-        {/* App Name */}
-        <h1 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">Hostel Ledger</h1>
-        <p className="text-[#4a6850]/80 font-bold mb-8">Split expenses with ease</p>
+        {/* App Name with better typography */}
+        <h1 className="text-4xl font-black text-gray-900 mb-2 tracking-tight bg-clip-text">
+          Hostel Ledger
+        </h1>
+        <p className="text-[#4a6850] font-semibold text-base mb-10 tracking-wide">Split expenses with ease</p>
         
         {/* Loading Animation or Offline Message */}
         {offline ? (
           <div className="text-center">
-            <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mb-3">
-              <svg className="w-6 h-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414" />
+            {/* Offline icon with animation */}
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center mb-4 shadow-lg border border-orange-200/50">
+              <svg className="w-7 h-7 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414" />
               </svg>
             </div>
-            <p className="text-sm font-bold text-gray-700 mb-1">Loading offline data...</p>
-            <p className="text-xs text-gray-500">Will sync when online</p>
+            <p className="text-base font-bold text-gray-800 mb-1.5">Loading offline data...</p>
+            <p className="text-sm text-gray-500 font-medium">Will sync when online</p>
           </div>
         ) : (
-          <div className="w-8 h-8 border-2 border-[#4a6850]/20 border-t-[#4a6850] rounded-full animate-spin"></div>
+          <div className="flex flex-col items-center">
+            {/* Enhanced loading spinner */}
+            <div className="relative w-10 h-10 mb-3">
+              <div className="absolute inset-0 border-3 border-[#4a6850]/15 rounded-full"></div>
+              <div className="absolute inset-0 border-3 border-transparent border-t-[#4a6850] rounded-full animate-spin"></div>
+            </div>
+            <p className="text-sm font-medium text-gray-600">Loading your data...</p>
+          </div>
         )}
       </div>
     </div>
@@ -110,7 +129,23 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <SplashScreen offline={offline} />;
   }
 
+  // If no user and offline, check localStorage for cached user
   if (!user) {
+    // Don't redirect to login if offline - user might have cached data
+    if (offline) {
+      try {
+        const cachedUser = localStorage.getItem('cachedUser');
+        if (cachedUser) {
+          // User has cached data, let them through
+          console.log('✅ Allowing access with cached user data (offline mode)');
+          return <>{children}</>;
+        }
+      } catch (error) {
+        console.error('Failed to check cached user:', error);
+      }
+    }
+    
+    // No user and either online or no cached data - redirect to login
     return <Navigate to="/login" replace />;
   }
 

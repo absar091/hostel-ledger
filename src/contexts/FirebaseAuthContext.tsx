@@ -103,7 +103,21 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     // Set a timeout to force loading to complete after 5 seconds
     // This prevents infinite loading when offline
     const loadingTimeout = setTimeout(() => {
-      console.warn('⚠️ Auth loading timeout - forcing completion');
+      console.warn('⚠️ Auth loading timeout - checking localStorage cache');
+      
+      // Try to load cached user from localStorage
+      try {
+        const cachedUser = localStorage.getItem('cachedUser');
+        if (cachedUser) {
+          const parsedUser = JSON.parse(cachedUser);
+          console.log('✅ Loaded cached user from localStorage', parsedUser.uid);
+          setUser(parsedUser);
+          setFirebaseUser(null); // No Firebase user when offline
+        }
+      } catch (error) {
+        console.error('Failed to load cached user:', error);
+      }
+      
       setIsLoading(false);
     }, 5000);
 
@@ -116,11 +130,26 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setFirebaseUser(null);
         setUser(null);
+        // Clear cached user when logging out
+        localStorage.removeItem('cachedUser');
       }
       setIsLoading(false);
     }, (error) => {
       clearTimeout(loadingTimeout);
       logger.error("Auth state change error", { error: error.message });
+      
+      // Try to load cached user from localStorage on error
+      try {
+        const cachedUser = localStorage.getItem('cachedUser');
+        if (cachedUser) {
+          const parsedUser = JSON.parse(cachedUser);
+          console.log('✅ Loaded cached user from localStorage after auth error', parsedUser.uid);
+          setUser(parsedUser);
+        }
+      } catch (cacheError) {
+        console.error('Failed to load cached user:', cacheError);
+      }
+      
       setIsLoading(false);
     });
 
@@ -163,6 +192,14 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
         setUser(userProfile);
         logger.setUserId(uid);
+        
+        // Cache user profile to localStorage for offline access
+        try {
+          localStorage.setItem('cachedUser', JSON.stringify(userProfile));
+          console.log('✅ Cached user profile to localStorage');
+        } catch (error) {
+          console.error('Failed to cache user profile:', error);
+        }
       } else {
         logger.info("Creating new user profile", { uid });
 
@@ -378,6 +415,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       await signOut(auth);
       setUser(null);
       setFirebaseUser(null);
+      // Clear cached user on logout
+      localStorage.removeItem('cachedUser');
     } catch (error: any) {
       logger.error("Logout error", { error: error.message });
     }
