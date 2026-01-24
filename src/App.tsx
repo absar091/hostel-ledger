@@ -107,12 +107,10 @@ const SplashScreen = ({ offline = false }: { offline?: boolean }) => {
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useFirebaseAuth();
   const [offline, setOffline] = useState(!navigator.onLine);
-  const [showOfflineScreen, setShowOfflineScreen] = useState(false);
 
   useEffect(() => {
     const handleOnline = () => {
       setOffline(false);
-      setShowOfflineScreen(false);
     };
     const handleOffline = () => {
       setOffline(true);
@@ -132,19 +130,21 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <SplashScreen offline={offline} />;
   }
 
-  // If no user and offline, check localStorage for cached user
+  // If no user, check if we should redirect or show offline screen
   if (!user) {
-    // Don't redirect to login if offline - user might have cached data
+    // If offline, check for cached user before showing offline screen
     if (offline) {
       try {
         const cachedUser = localStorage.getItem('cachedUser');
         if (cachedUser) {
-          // User has cached data, let them through
-          console.log('✅ Allowing access with cached user data (offline mode)');
-          return <>{children}</>;
+          // User has cached data but auth context hasn't loaded it yet
+          // This shouldn't happen because FirebaseAuthContext loads it
+          // But if it does, show loading screen briefly
+          console.log('⚠️ Cached user exists but not loaded in context yet');
+          return <SplashScreen offline={true} />;
         } else {
           // No cached user - show offline screen
-          setShowOfflineScreen(true);
+          console.log('❌ No cached user found - showing offline screen');
           return <OfflineScreen onRetry={() => window.location.reload()} />;
         }
       } catch (error) {
@@ -152,16 +152,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       }
     }
     
-    // No user and either online or no cached data - redirect to login
+    // No user and online - redirect to login
     return <Navigate to="/login" replace />;
   }
 
-  // Show offline screen if offline and no cached data
-  if (offline && showOfflineScreen) {
-    return <OfflineScreen onRetry={() => window.location.reload()} />;
-  }
-
-  // Wrap with EmailVerificationGate to ensure email is verified
+  // User is loaded - wrap with EmailVerificationGate
   return (
     <EmailVerificationGate>
       {children}

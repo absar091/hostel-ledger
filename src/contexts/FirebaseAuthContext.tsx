@@ -100,6 +100,24 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // If offline, try to load cached user IMMEDIATELY
+    if (!navigator.onLine) {
+      console.log('📱 Offline detected - loading cached user immediately');
+      try {
+        const cachedUser = localStorage.getItem('cachedUser');
+        if (cachedUser) {
+          const parsedUser = JSON.parse(cachedUser);
+          console.log('✅ Loaded cached user from localStorage (immediate)', parsedUser.uid);
+          setUser(parsedUser);
+          setFirebaseUser(null);
+          setIsLoading(false);
+          return; // Skip Firebase auth when offline
+        }
+      } catch (error) {
+        console.error('Failed to load cached user:', error);
+      }
+    }
+
     // Shorter timeout when offline (2s), longer when online (5s)
     const timeoutDuration = navigator.onLine ? 5000 : 2000;
     

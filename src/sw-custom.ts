@@ -84,6 +84,23 @@ registerRoute(
   })
 );
 
+// Cache navigation requests (HTML pages) - CRITICAL for offline
+registerRoute(
+  ({ request }) => request.mode === 'navigate',
+  new NetworkFirst({
+    cacheName: 'pages-cache',
+    plugins: [
+      new CacheableResponsePlugin({
+        statuses: [0, 200],
+      }),
+      new ExpirationPlugin({
+        maxEntries: 10,
+        maxAgeSeconds: 24 * 60 * 60, // 1 day
+      }),
+    ],
+  })
+);
+
 // NOTE: Push notification handling is now done by OneSignal service worker
 // We removed the push and notificationclick handlers to avoid conflicts
 

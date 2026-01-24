@@ -14,10 +14,19 @@ export const OfflineScreen = ({ onRetry }: OfflineScreenProps) => {
     transactionCount: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isFirstTime, setIsFirstTime] = useState(false);
 
   useEffect(() => {
     const checkCache = async () => {
       try {
+        // Check if service worker is installed (first-time detection)
+        if ('serviceWorker' in navigator) {
+          const registration = await navigator.serviceWorker.getRegistration();
+          setIsFirstTime(!registration);
+        } else {
+          setIsFirstTime(true);
+        }
+
         const status = await getCacheStatus();
         setCacheStatus(status);
         
@@ -25,6 +34,7 @@ export const OfflineScreen = ({ onRetry }: OfflineScreenProps) => {
         console.log('📊 Cache Status:', status);
       } catch (error) {
         console.error('Failed to check cache status:', error);
+        setIsFirstTime(true); // Assume first time on error
       } finally {
         setIsLoading(false);
       }
@@ -58,14 +68,24 @@ export const OfflineScreen = ({ onRetry }: OfflineScreenProps) => {
         
         {/* Title */}
         <h1 className="text-3xl font-black text-gray-900 mb-3 text-center">
-          {!isLoading && !cacheStatus.hasUser ? "First-Time Setup" : "You're Offline"}
+          {!isLoading && isFirstTime ? "Internet Required" : !isLoading && !cacheStatus.hasUser ? "First-Time Setup" : "You're Offline"}
         </h1>
         
         {/* Loading or Status Message */}
         {isLoading ? (
           <div className="flex items-center gap-2 mb-8">
             <div className="w-5 h-5 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div>
-            <p className="text-base text-gray-600 font-medium">Checking cached data...</p>
+            <p className="text-base text-gray-600 font-medium">Checking...</p>
+          </div>
+        ) : isFirstTime ? (
+          <div className="mb-8 text-center">
+            <p className="text-base text-gray-700 font-medium mb-3 leading-relaxed">
+              <span className="font-bold text-gray-900">This is your first time opening Hostel Ledger.</span>
+            </p>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Please connect to the internet to download the app.<br />
+              After that, you can use it offline anytime! 🚀
+            </p>
           </div>
         ) : (
           <>
@@ -114,7 +134,7 @@ export const OfflineScreen = ({ onRetry }: OfflineScreenProps) => {
           )}
           
           {/* No Cache Warning */}
-          {!isLoading && !cacheStatus.hasUser && (
+          {!isLoading && (isFirstTime || !cacheStatus.hasUser) && (
             <div className="bg-white rounded-2xl p-4 shadow-md border border-orange-200">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
@@ -123,9 +143,14 @@ export const OfflineScreen = ({ onRetry }: OfflineScreenProps) => {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-gray-900 mb-1">No Cached Data</h3>
+                  <h3 className="font-bold text-gray-900 mb-1">
+                    {isFirstTime ? "Service Worker Not Installed" : "No Cached Data"}
+                  </h3>
                   <p className="text-sm text-gray-600">
-                    You need to connect to the internet at least once to use the app offline.
+                    {isFirstTime 
+                      ? "The app needs to download essential files. This only happens once and requires an internet connection."
+                      : "You need to connect to the internet at least once to use the app offline."
+                    }
                   </p>
                 </div>
               </div>
