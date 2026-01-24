@@ -28,6 +28,7 @@ import Budget from "./pages/Budget";
 import Activity from "./pages/Activity";
 import DownloadApp from "./pages/DownloadApp";
 import InstallApp from "./pages/InstallApp";
+import InstallGuide from "./pages/InstallGuide";
 import About from "./pages/About";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -192,6 +193,7 @@ const AppRoutes = () => (
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/download-app" element={<ProtectedRoute><DownloadApp /></ProtectedRoute>} />
       <Route path="/install-app" element={<InstallApp />} />
+      <Route path="/install-guide" element={<InstallGuide />} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
       <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
       <Route path="/group/:id" element={<ProtectedRoute><GroupDetail /></ProtectedRoute>} />
