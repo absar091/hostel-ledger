@@ -12,6 +12,7 @@ import EmailVerificationGate from "@/components/EmailVerificationGate";
 import ScrollToTop from "@/components/ScrollToTop";
 import { OfflineScreen } from "@/components/OfflineScreen";
 import { UpdateNotification } from "@/components/UpdateNotification";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 
 // Direct imports for better reliability in production
 import Index from "./pages/Index";
@@ -243,7 +244,8 @@ const App = () => (
               <FirebaseAuthProvider>
               <FirebaseDataProvider>
                 <AppRoutes />
-                {/* Update Notification - Shows when new version available */}
+                {/* Global Indicators */}
+                <OfflineIndicator />
                 <UpdateNotification />
               </FirebaseDataProvider>
             </FirebaseAuthProvider>

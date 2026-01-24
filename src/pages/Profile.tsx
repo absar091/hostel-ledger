@@ -482,7 +482,8 @@ const Profile = () => {
 
         {/* App Version */}
         <div className="text-center py-4">
-          <p className="text-xs text-gray-400 mb-3">Hostel Ledger v1.0.0</p>
+          <p className="text-xs text-gray-400 mb-1">Hostel Ledger v{import.meta.env.VITE_APP_VERSION || '1.0.0'}</p>
+          <p className="text-xs text-gray-500 mb-3">Build {new Date().toISOString().split('T')[0]}</p>
           <div className="flex items-center justify-center gap-2">
             <p className="text-xs text-gray-500">A Product By</p>
             <a 
