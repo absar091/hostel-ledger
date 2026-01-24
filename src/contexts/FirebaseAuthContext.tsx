@@ -100,7 +100,16 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Set a timeout to force loading to complete after 5 seconds
+    // This prevents infinite loading when offline
+    const loadingTimeout = setTimeout(() => {
+      console.warn('⚠️ Auth loading timeout - forcing completion');
+      setIsLoading(false);
+    }, 5000);
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      clearTimeout(loadingTimeout); // Clear timeout if auth completes normally
+      
       if (firebaseUser) {
         setFirebaseUser(firebaseUser);
         await fetchUserProfile(firebaseUser.uid);
@@ -110,11 +119,15 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       }
       setIsLoading(false);
     }, (error) => {
+      clearTimeout(loadingTimeout);
       logger.error("Auth state change error", { error: error.message });
       setIsLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(loadingTimeout);
+      unsubscribe();
+    };
   }, []);
 
   const fetchUserProfile = async (uid: string) => {
