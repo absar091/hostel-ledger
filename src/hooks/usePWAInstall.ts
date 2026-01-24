@@ -1,74 +1,51 @@
 import { useState, useEffect } from 'react';
 
 interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[];
-  readonly userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed';
-    platform: string;
-  }>;
-  prompt(): Promise<void>;
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-interface PWAInstallState {
-  isInstallable: boolean;
-  isInstalled: boolean;
-  platform: string;
-  showInstallPrompt: () => Promise<void>;
-  dismissPrompt: () => void;
-  isIOS: boolean;
-  isAndroid: boolean;
-  isDesktop: boolean;
-}
-
-export const usePWAInstall = (): PWAInstallState => {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+export const usePWAInstall = () => {
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
-
-  // Detect platform
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isAndroid = /Android/.test(navigator.userAgent);
-  const isDesktop = !isIOS && !isAndroid;
-  
-  const platform = isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop';
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    // Check if app is already installed
-    const checkIfInstalled = () => {
-      // Check if running in standalone mode (installed PWA)
-      if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
-        setIsInstalled(true);
-        return;
-      }
-      
-      // Check for iOS standalone mode
-      if ((window.navigator as any).standalone === true) {
-        setIsInstalled(true);
-        return;
-      }
-      
-      // Check for Android TWA or installed PWA
-      if (document.referrer.includes('android-app://')) {
-        setIsInstalled(true);
-        return;
-      }
+    // Check if already installed
+    const checkInstalled = () => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isIOSStandalone = (window.navigator as any).standalone === true;
+      setIsStandalone(standalone || isIOSStandalone);
+      setIsInstalled(standalone || isIOSStandalone);
     };
 
-    checkIfInstalled();
+    // Check if iOS
+    const checkIOS = () => {
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
+      setIsIOS(isIOSDevice);
+    };
 
-    // Listen for beforeinstallprompt event
+    checkInstalled();
+    checkIOS();
+
+    // Listen for beforeinstallprompt event (Android/Desktop Chrome)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       const promptEvent = e as BeforeInstallPromptEvent;
-      setDeferredPrompt(promptEvent);
+      setInstallPrompt(promptEvent);
       setIsInstallable(true);
+      console.log('📱 PWA install prompt available');
     };
 
     // Listen for app installed event
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setIsInstallable(false);
-      setDeferredPrompt(null);
+      setInstallPrompt(null);
+      console.log('✅ PWA installed successfully');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -80,39 +57,36 @@ export const usePWAInstall = (): PWAInstallState => {
     };
   }, []);
 
-  const showInstallPrompt = async (): Promise<void> => {
-    if (!deferredPrompt) return;
+  const promptInstall = async (): Promise<boolean> => {
+    if (!installPrompt) {
+      console.warn('⚠️ Install prompt not available');
+      return false;
+    }
 
     try {
-      await deferredPrompt.prompt();
-      const choiceResult = await deferredPrompt.userChoice;
+      await installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
       
-      if (choiceResult.outcome === 'accepted') {
-        console.log('User accepted the install prompt');
+      if (outcome === 'accepted') {
+        console.log('✅ User accepted install');
+        setIsInstallable(false);
+        setInstallPrompt(null);
+        return true;
       } else {
-        console.log('User dismissed the install prompt');
+        console.log('❌ User dismissed install');
+        return false;
       }
-      
-      setDeferredPrompt(null);
-      setIsInstallable(false);
     } catch (error) {
-      console.error('Error showing install prompt:', error);
+      console.error('Install prompt error:', error);
+      return false;
     }
   };
 
-  const dismissPrompt = () => {
-    setIsInstallable(false);
-    setDeferredPrompt(null);
-  };
-
   return {
-    isInstallable: isInstallable && !isInstalled,
+    isInstallable,
     isInstalled,
-    platform,
-    showInstallPrompt,
-    dismissPrompt,
     isIOS,
-    isAndroid,
-    isDesktop
+    isStandalone,
+    promptInstall,
   };
 };
