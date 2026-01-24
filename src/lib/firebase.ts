@@ -40,13 +40,25 @@ let db;
 
 try {
   app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  database = getDatabase(app);
-  db = getFirestore(app);
   
-  // Enable offline persistence for Realtime Database
+  // Only initialize auth and database if online or if they're already cached
   if (typeof window !== 'undefined') {
-    console.log('✅ Firebase Realtime Database initialized with offline support');
+    // Always initialize auth (it has offline support)
+    auth = getAuth(app);
+    
+    // Always initialize database (it has offline persistence)
+    database = getDatabase(app);
+    
+    // Always initialize Firestore
+    db = getFirestore(app);
+    
+    console.log('✅ Firebase initialized');
+    
+    if (!navigator.onLine) {
+      console.log('📱 Offline mode - Firebase will use cached data');
+    } else {
+      console.log('🌐 Online mode - Firebase will sync with server');
+    }
   }
 } catch (error) {
   console.error('❌ Firebase initialization failed:', error);

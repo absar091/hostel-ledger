@@ -205,11 +205,41 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
     setIsLoading(true);
 
+    // Try to load cached data immediately if offline
+    const loadCachedDataIfOffline = async () => {
+      if (!navigator.onLine) {
+        console.log('📱 Offline detected - loading cached data...');
+        try {
+          const { getCachedGroups, getCachedTransactions } = await import('@/lib/offlineDB');
+          const [cachedGroups, cachedTransactions] = await Promise.all([
+            getCachedGroups(),
+            getCachedTransactions()
+          ]);
+          
+          if (cachedGroups.length > 0 || cachedTransactions.length > 0) {
+            console.log('✅ Loaded cached data:', cachedGroups.length, 'groups,', cachedTransactions.length, 'transactions');
+            setGroups(cachedGroups);
+            setTransactions(cachedTransactions);
+            setIsLoading(false);
+            return true; // Cached data loaded
+          }
+        } catch (error) {
+          console.error('Failed to load cached data:', error);
+        }
+      }
+      return false; // No cached data or online
+    };
+
     // Add a small delay to ensure Firebase auth is fully established
     const setupListeners = async () => {
       try {
-        // Wait a bit for auth to be fully established
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Try to load cached data first if offline
+        const cachedDataLoaded = await loadCachedDataIfOffline();
+        
+        // Wait a bit for auth to be fully established (only if online)
+        if (!cachedDataLoaded) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
 
         // Listen to user's groups with error handling
         const groupsRef = ref(database, `userGroups/${user.uid}`);
@@ -224,13 +254,36 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               });
 
               const groupsData = await Promise.all(groupPromises);
-              setGroups(groupsData.filter(Boolean) as Group[]);
+              const filteredGroups = groupsData.filter(Boolean) as Group[];
+              setGroups(filteredGroups);
+              
+              // Cache groups to IndexedDB for offline access
+              try {
+                const { cacheGroups } = await import('@/lib/offlineDB');
+                await cacheGroups(filteredGroups);
+              } catch (cacheError) {
+                console.error('Failed to cache groups:', cacheError);
+              }
             } else {
               setGroups([]);
             }
           } catch (error: any) {
             logger.error("Error loading groups", { uid: user.uid, error: error.message });
-            setGroups([]);
+            
+            // Try to load cached groups on error
+            try {
+              const { getCachedGroups } = await import('@/lib/offlineDB');
+              const cachedGroups = await getCachedGroups();
+              if (cachedGroups.length > 0) {
+                console.log('✅ Loaded cached groups on error');
+                setGroups(cachedGroups);
+              } else {
+                setGroups([]);
+              }
+            } catch (cacheError) {
+              console.error('Failed to load cached groups:', cacheError);
+              setGroups([]);
+            }
           } finally {
             setIsLoading(false);
           }
@@ -257,12 +310,34 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                 .filter(Boolean)
                 .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
               setTransactions(sortedTransactions as Transaction[]);
+              
+              // Cache transactions to IndexedDB for offline access
+              try {
+                const { cacheTransactions } = await import('@/lib/offlineDB');
+                await cacheTransactions(sortedTransactions);
+              } catch (cacheError) {
+                console.error('Failed to cache transactions:', cacheError);
+              }
             } else {
               setTransactions([]);
             }
           } catch (error: any) {
             logger.error("Error loading transactions", { uid: user.uid, error: error.message });
-            setTransactions([]);
+            
+            // Try to load cached transactions on error
+            try {
+              const { getCachedTransactions } = await import('@/lib/offlineDB');
+              const cachedTransactions = await getCachedTransactions();
+              if (cachedTransactions.length > 0) {
+                console.log('✅ Loaded cached transactions on error');
+                setTransactions(cachedTransactions);
+              } else {
+                setTransactions([]);
+              }
+            } catch (cacheError) {
+              console.error('Failed to load cached transactions:', cacheError);
+              setTransactions([]);
+            }
           }
         }, (error) => {
           logger.error("Transactions listener error", { uid: user.uid, error: error.message });

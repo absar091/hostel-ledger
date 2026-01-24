@@ -10,6 +10,7 @@ import { SidebarProvider } from "@/contexts/SidebarContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import EmailVerificationGate from "@/components/EmailVerificationGate";
 import ScrollToTop from "@/components/ScrollToTop";
+import { OfflineScreen } from "@/components/OfflineScreen";
 
 // Direct imports for better reliability in production
 import Index from "./pages/Index";
@@ -91,10 +92,16 @@ const SplashScreen = ({ offline = false }: { offline?: boolean }) => {
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useFirebaseAuth();
   const [offline, setOffline] = useState(!navigator.onLine);
+  const [showOfflineScreen, setShowOfflineScreen] = useState(false);
 
   useEffect(() => {
-    const handleOnline = () => setOffline(false);
-    const handleOffline = () => setOffline(true);
+    const handleOnline = () => {
+      setOffline(false);
+      setShowOfflineScreen(false);
+    };
+    const handleOffline = () => {
+      setOffline(true);
+    };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -120,6 +127,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           // User has cached data, let them through
           console.log('✅ Allowing access with cached user data (offline mode)');
           return <>{children}</>;
+        } else {
+          // No cached user - show offline screen
+          setShowOfflineScreen(true);
+          return <OfflineScreen onRetry={() => window.location.reload()} />;
         }
       } catch (error) {
         console.error('Failed to check cached user:', error);
@@ -128,6 +139,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     
     // No user and either online or no cached data - redirect to login
     return <Navigate to="/login" replace />;
+  }
+
+  // Show offline screen if offline and no cached data
+  if (offline && showOfflineScreen) {
+    return <OfflineScreen onRetry={() => window.location.reload()} />;
   }
 
   // Wrap with EmailVerificationGate to ensure email is verified
