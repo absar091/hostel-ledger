@@ -25,7 +25,7 @@ export const useOneSignalPush = () => {
     const initOneSignal = async () => {
       try {
         const appId = import.meta.env.VITE_ONESIGNAL_APP_ID;
-        
+
         if (!appId) {
           console.warn('⚠️ OneSignal App ID not configured');
           setState({
@@ -40,11 +40,11 @@ export const useOneSignalPush = () => {
         if (!oneSignalInitialized) {
           // Wait for PWA service worker to register first
           await new Promise(resolve => setTimeout(resolve, 2000));
-          
+
           await OneSignal.init({
             appId: appId,
             allowLocalhostAsSecureOrigin: true,
-            serviceWorkerPath: '/OneSignalSDK.sw.js',
+            serviceWorkerPath: 'OneSignalSDK.sw.js',
             serviceWorkerParam: { scope: '/' },
             // Persist notification permission
             persistNotification: true,
@@ -57,10 +57,10 @@ export const useOneSignalPush = () => {
         // Check subscription status
         const permission = OneSignal.Notifications.permission;
         const isSubscribed = OneSignal.User.PushSubscription.optedIn;
-        
+
         // Get actual browser permission state
-        const browserPermission = typeof Notification !== 'undefined' 
-          ? Notification.permission 
+        const browserPermission = typeof Notification !== 'undefined'
+          ? Notification.permission
           : 'default';
 
         console.log('📊 OneSignal status:', { permission, isSubscribed, browserPermission });
@@ -105,14 +105,14 @@ export const useOneSignalPush = () => {
 
     try {
       const permission = await OneSignal.Notifications.requestPermission();
-      
+
       // Get actual browser permission
-      const browserPermission = typeof Notification !== 'undefined' 
-        ? Notification.permission 
+      const browserPermission = typeof Notification !== 'undefined'
+        ? Notification.permission
         : 'default';
-      
-      setState((prev) => ({ 
-        ...prev, 
+
+      setState((prev) => ({
+        ...prev,
         permission: browserPermission
       }));
 
@@ -150,16 +150,16 @@ export const useOneSignalPush = () => {
       const { getAuth } = await import('firebase/auth');
       const auth = getAuth();
       const currentUser = auth.currentUser;
-      
+
       if (currentUser?.uid) {
         console.log('🔑 Setting OneSignal External ID:', currentUser.uid);
         await OneSignal.login(currentUser.uid);
         console.log('✅ OneSignal user ID set:', currentUser.uid);
-        
+
         // Get OneSignal Player ID
         const playerId = await OneSignal.User.PushSubscription.id;
         console.log('🎯 OneSignal Player ID:', playerId);
-        
+
         // Store Player ID in Firebase Realtime Database
         if (playerId) {
           try {
@@ -171,7 +171,7 @@ export const useOneSignalPush = () => {
               userAgent: navigator.userAgent,
             });
             console.log('✅ Player ID stored in Firebase');
-            
+
             // Store in localStorage as backup
             localStorage.setItem('oneSignalPlayerId', playerId);
             localStorage.setItem('oneSignalUserId', currentUser.uid);
@@ -179,7 +179,7 @@ export const useOneSignalPush = () => {
             console.error('❌ Failed to store Player ID:', error);
           }
         }
-        
+
         // Verify External ID was set
         const externalId = OneSignal.User.externalId;
         console.log('🔍 Verified External ID:', externalId);
@@ -208,11 +208,11 @@ export const useOneSignalPush = () => {
 
     try {
       await OneSignal.User.PushSubscription.optOut();
-      
+
       setState((prev) => ({ ...prev, isSubscribed: false }));
       toast.success("Push notifications disabled");
       logger.info("Push notifications disabled");
-      
+
       return true;
     } catch (error: any) {
       logger.error("Failed to unsubscribe from push notifications", { error: error.message });
