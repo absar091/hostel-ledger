@@ -100,10 +100,13 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Set a timeout to force loading to complete after 5 seconds
+    // Shorter timeout when offline (2s), longer when online (5s)
+    const timeoutDuration = navigator.onLine ? 5000 : 2000;
+    
+    // Set a timeout to force loading to complete
     // This prevents infinite loading when offline
     const loadingTimeout = setTimeout(() => {
-      console.warn('⚠️ Auth loading timeout - checking localStorage cache');
+      console.warn(`⚠️ Auth loading timeout (${timeoutDuration}ms) - checking localStorage cache`);
       
       // Try to load cached user from localStorage
       try {
@@ -119,7 +122,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       setIsLoading(false);
-    }, 5000);
+    }, timeoutDuration);
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       clearTimeout(loadingTimeout); // Clear timeout if auth completes normally

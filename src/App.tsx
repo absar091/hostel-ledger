@@ -46,6 +46,15 @@ const queryClient = new QueryClient({
 
 // iPhone-style Loading Screen Component with Offline Detection
 const SplashScreen = ({ offline = false }: { offline?: boolean }) => {
+  const [showMessage, setShowMessage] = useState(false);
+
+  useEffect(() => {
+    // Show message faster when offline (300ms), slower when online (1000ms)
+    const delay = offline ? 300 : 1000;
+    const timer = setTimeout(() => setShowMessage(true), delay);
+    return () => clearTimeout(timer);
+  }, [offline]);
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-white">
       {/* iPhone-style top accent border */}
@@ -70,7 +79,7 @@ const SplashScreen = ({ offline = false }: { offline?: boolean }) => {
         <p className="text-[#4a6850]/80 font-bold mb-8">Split expenses with ease</p>
         
         {/* Loading Animation or Offline Message */}
-        {offline ? (
+        {offline && showMessage ? (
           <div className="text-center">
             <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mb-3">
               <svg className="w-6 h-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -78,10 +87,13 @@ const SplashScreen = ({ offline = false }: { offline?: boolean }) => {
               </svg>
             </div>
             <p className="text-sm font-bold text-gray-700 mb-1">Loading offline data...</p>
-            <p className="text-xs text-gray-500">Will sync when online</p>
+            <p className="text-xs text-gray-500">Just a moment</p>
           </div>
         ) : (
-          <div className="w-8 h-8 border-2 border-[#4a6850]/20 border-t-[#4a6850] rounded-full animate-spin"></div>
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-8 h-8 border-2 border-[#4a6850]/20 border-t-[#4a6850] rounded-full animate-spin"></div>
+            {showMessage && <p className="text-xs text-gray-500">Loading...</p>}
+          </div>
         )}
       </div>
     </div>
