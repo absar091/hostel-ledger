@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateExpenseSplit, validatePaymentAmount } from '../expenseLogic';
+import { calculateExpenseSplit, validatePaymentAmount, calculateGlobalExpenseSettlements } from '../expenseLogic';
 
 describe('expenseLogic', () => {
     describe('calculateExpenseSplit', () => {
@@ -61,6 +61,43 @@ describe('expenseLogic', () => {
             expect(splits.find(s => s.participantId === '3')?.amount).toBe(0.02);
             expect(splits.find(s => s.participantId === '1')?.amount).toBe(0.01);
             expect(splits.reduce((sum, s) => sum + s.amount, 0)).toBe(0.05);
+        });
+    });
+
+    describe('calculateGlobalExpenseSettlements', () => {
+        it('should generate updates for all pairs', () => {
+            const participants = [
+                { id: '1', name: 'User 1' },
+                { id: '2', name: 'User 2' },
+                { id: '3', name: 'User 3' },
+            ];
+            const splits = calculateExpenseSplit(30, participants, '1'); // User 1 pays 30
+            // Splits: {1: 10}, {2: 10}, {3: 10}
+
+            const updates = calculateGlobalExpenseSettlements(splits, '1', 'group1');
+
+            expect(updates).toHaveLength(4); // 2 pairs * 2 updates each
+
+            // User 1 receives 10 from User 2
+            expect(updates.find(u => u.userId === '1' && u.counterpartyId === '2')).toMatchObject({
+                toReceiveChange: 10,
+                toPayChange: 0
+            });
+            // User 2 pays 10 to User 1
+            expect(updates.find(u => u.userId === '2' && u.counterpartyId === '1')).toMatchObject({
+                toReceiveChange: 0,
+                toPayChange: 10
+            });
+             // User 1 receives 10 from User 3
+            expect(updates.find(u => u.userId === '1' && u.counterpartyId === '3')).toMatchObject({
+                toReceiveChange: 10,
+                toPayChange: 0
+            });
+            // User 3 pays 10 to User 1
+            expect(updates.find(u => u.userId === '3' && u.counterpartyId === '1')).toMatchObject({
+                toReceiveChange: 0,
+                toPayChange: 10
+            });
         });
     });
 

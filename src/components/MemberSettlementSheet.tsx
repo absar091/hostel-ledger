@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Avatar from "@/components/Avatar";
 import { ArrowDownLeft, ArrowUpRight, CheckCircle, DollarSign, Edit3 } from "lucide-react";
-import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { toast } from "sonner";
 
 interface MemberSettlementSheetProps {
@@ -20,7 +20,7 @@ interface MemberSettlementSheetProps {
 }
 
 const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlementSheetProps) => {
-  const { getSettlements, markPaymentReceived, markDebtPaid } = useFirebaseAuth();
+  const { getSettlements, markPaymentAsPaid, payMyDebt } = useFirebaseData();
   const [isProcessing, setIsProcessing] = useState(false);
   const [customReceiveAmount, setCustomReceiveAmount] = useState("");
   const [customPayAmount, setCustomPayAmount] = useState("");
@@ -38,7 +38,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
     setIsProcessing(true);
     try {
       // FIXED: Pass groupId as first parameter
-      const result = await markPaymentReceived(groupId, member.id, finalAmount);
+      const result = await markPaymentAsPaid(groupId, member.id, finalAmount);
       if (result.success) {
         setCustomReceiveAmount("");
         setShowCustomReceive(false);
@@ -61,7 +61,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
     setIsProcessing(true);
     try {
       // FIXED: Pass groupId as first parameter
-      const result = await markDebtPaid(groupId, member.id, finalAmount);
+      const result = await payMyDebt(groupId, member.id, finalAmount);
       if (result.success) {
         setCustomPayAmount("");
         setShowCustomPay(false);

@@ -6,7 +6,7 @@ import { Check, Banknote, Smartphone, ChevronRight, Info, CreditCard } from "luc
 import Avatar from "./Avatar";
 import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
-import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { toast } from "sonner";
 
 interface Member {
@@ -44,7 +44,7 @@ interface RecordPaymentSheetProps {
 }
 
 const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSheetProps) => {
-  const { getSettlements } = useFirebaseAuth();
+  const { getSettlements } = useFirebaseData();
   const [step, setStep] = useState(1);
   const [selectedGroup, setSelectedGroup] = useState("");
   const [fromMember, setFromMember] = useState("");

@@ -1,5 +1,6 @@
 import { ArrowDownLeft, ArrowUpRight, Plus } from "lucide-react";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import FinancialInfoDialog from "./FinancialInfoDialog";
 import {
   Tooltip,
@@ -21,7 +22,8 @@ const WalletCard = ({
   currency?: string;
   onAddMoney?: () => void;
 }) => {
-  const { getWalletBalance, getTotalToReceive, getTotalToPay, getSettlementDelta } = useFirebaseAuth();
+  const { getWalletBalance } = useFirebaseAuth();
+  const { getTotalToReceive, getTotalToPay, getSettlementDelta } = useFirebaseData();
   
   const availableBudget = getWalletBalance();
   const totalToReceive = getTotalToReceive();

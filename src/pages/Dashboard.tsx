@@ -30,8 +30,8 @@ import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, getWalletBalance, getTotalToReceive, getTotalToPay, getSettlementDelta } = useFirebaseAuth();
-  const { groups, createGroup, addExpense, recordPayment, addMoneyToWallet, payMyDebt, getAllTransactions, addMemberToGroup } = useFirebaseData();
+  const { user, getWalletBalance } = useFirebaseAuth();
+  const { groups, createGroup, addExpense, recordPayment, addMoneyToWallet, payMyDebt, getAllTransactions, addMemberToGroup, getTotalToReceive, getTotalToPay, getSettlementDelta } = useFirebaseData();
   const { isInstalled } = usePWAInstall();
   const { offline, pendingCount, isSyncing, syncNow } = useOffline();
   const {

@@ -14,8 +14,8 @@ import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 const Groups = () => {
   const navigate = useNavigate();
-  const { user, getSettlements } = useFirebaseAuth();
-  const { groups, createGroup } = useFirebaseData();
+  const { user } = useFirebaseAuth();
+  const { groups, createGroup, getSettlements } = useFirebaseData();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("groups");

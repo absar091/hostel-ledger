@@ -97,6 +97,7 @@ const validatePaymentData = (data: {
 import {
   calculateExpenseSplit,
   calculateExpenseSettlements,
+  calculateGlobalExpenseSettlements,
   validateSettlementConsistency,
   calculateWalletBalanceAfter,
   validatePaymentAmount
@@ -127,6 +128,7 @@ export interface Group {
   members: GroupMember[];
   createdBy: string;
   createdAt: string;
+  settlements?: { [personId: string]: { [otherPersonId: string]: { toReceive: number; toPay: number } } };
 }
 
 export interface Transaction {
@@ -174,6 +176,10 @@ interface FirebaseDataContextType {
   getTransactionsByGroup: (groupId: string) => Transaction[];
   getTransactionsByMember: (groupId: string, memberId: string) => Transaction[];
   getAllTransactions: () => Transaction[];
+  getSettlements: (groupId?: string) => { [personId: string]: { toReceive: number; toPay: number } };
+  getTotalToReceive: (groupId?: string) => number;
+  getTotalToPay: (groupId?: string) => number;
+  getSettlementDelta: (groupId?: string) => number;
 }
 
 const FirebaseDataContext = createContext<FirebaseDataContextType | undefined>(undefined);
@@ -183,12 +189,12 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     user,
     addMoneyToWallet: addToAuthWallet,
     deductMoneyFromWallet,
-    addToReceivable,
-    addToPayable,
-    markPaymentReceived,
-    markDebtPaid,
-    getSettlements,
-    updateSettlement
+    // addToReceivable, // Deprecated: Moving to Group settlements
+    // addToPayable, // Deprecated
+    // markPaymentReceived, // Deprecated
+    // markDebtPaid, // Deprecated
+    // getSettlements, // Deprecated
+    // updateSettlement // Deprecated
   } = useFirebaseAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -753,16 +759,14 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         splits: splits.map(s => ({ id: s.participantId, amount: s.amount }))
       });
 
-      // CORRECTED: Calculate proper settlement updates with group context
-      const settlementUpdates = calculateExpenseSettlements(
+      // CORRECTED: Calculate settlements for ALL users involved
+      const settlementUpdates = calculateGlobalExpenseSettlements(
         splits,
         data.paidBy,
-        user.uid,
         data.groupId
       );
 
       const isCurrentUserPayer = payer.isCurrentUser;
-      const currentUserSplit = splits.find(s => s.participantId === user.uid);
 
       if (isCurrentUserPayer) {
         // CORRECTED: User pays expense - deduct full amount from wallet
@@ -781,88 +785,36 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           },
           description: "Deduct expense amount from wallet"
         });
+      }
 
-        // CORRECTED: Create proper receivables for others' shares only
-        for (const update of settlementUpdates) {
-          if (update.toReceiveChange > 0) {
-            transaction.addOperation({
+      // CORRECTED: Update group settlements for ALL involved pairs
+      for (const update of settlementUpdates) {
+          transaction.addOperation({
               execute: async () => {
-                const result = await addToReceivable(update.groupId, update.personId, update.toReceiveChange);
-                logger.info("Added receivable", {
-                  personId: update.personId,
-                  amount: update.toReceiveChange,
-                  groupId: update.groupId
-                });
-                return result;
+                  const current = getGroupSettlement(data.groupId, update.userId, update.counterpartyId);
+                  const newToReceive = current.toReceive + update.toReceiveChange;
+                  const newToPay = current.toPay + update.toPayChange;
+
+                  const result = await updateGroupSettlement(data.groupId, update.userId, update.counterpartyId, newToReceive, newToPay);
+                  if (!result.success) throw new Error(result.error);
+
+                  logger.info("Updated group settlement", {
+                      groupId: data.groupId, userId: update.userId, counterpartyId: update.counterpartyId
+                  });
+                  return result;
               },
               rollback: async () => {
-                // CORRECTED: Proper rollback implementation
-                try {
-                  const settlements = getSettlements(update.groupId);
-                  const currentSettlement = settlements[update.personId] || { toReceive: 0, toPay: 0 };
-                  await updateSettlement(
-                    update.groupId,
-                    update.personId,
-                    Math.max(0, currentSettlement.toReceive - update.toReceiveChange),
-                    currentSettlement.toPay
-                  );
-                  logger.info("Rolled back receivable", {
-                    personId: update.personId,
-                    amount: update.toReceiveChange
-                  });
-                } catch (error) {
-                  logger.error("Failed to rollback receivable", {
-                    personId: update.personId,
-                    amount: update.toReceiveChange,
-                    error
-                  });
-                }
+                  try {
+                      const current = getGroupSettlement(data.groupId, update.userId, update.counterpartyId);
+                      const newToReceive = Math.max(0, current.toReceive - update.toReceiveChange);
+                      const newToPay = Math.max(0, current.toPay - update.toPayChange);
+                      await updateGroupSettlement(data.groupId, update.userId, update.counterpartyId, newToReceive, newToPay);
+                  } catch (error) {
+                      logger.error("Failed to rollback settlement", { error });
+                  }
               },
-              description: `Add receivable from ${update.personId}: Rs ${update.toReceiveChange}`
-            });
-          }
-        }
-      } else {
-        // CORRECTED: Someone else pays - create debt to payer for user's share only
-        for (const update of settlementUpdates) {
-          if (update.toPayChange > 0) {
-            transaction.addOperation({
-              execute: async () => {
-                const result = await addToPayable(update.groupId, update.personId, update.toPayChange);
-                logger.info("Added payable", {
-                  personId: update.personId,
-                  amount: update.toPayChange,
-                  groupId: update.groupId
-                });
-                return result;
-              },
-              rollback: async () => {
-                // CORRECTED: Proper rollback implementation
-                try {
-                  const settlements = getSettlements(update.groupId);
-                  const currentSettlement = settlements[update.personId] || { toReceive: 0, toPay: 0 };
-                  await updateSettlement(
-                    update.groupId,
-                    update.personId,
-                    currentSettlement.toReceive,
-                    Math.max(0, currentSettlement.toPay - update.toPayChange)
-                  );
-                  logger.info("Rolled back payable", {
-                    personId: update.personId,
-                    amount: update.toPayChange
-                  });
-                } catch (error) {
-                  logger.error("Failed to rollback payable", {
-                    personId: update.personId,
-                    amount: update.toPayChange,
-                    error
-                  });
-                }
-              },
-              description: `Add debt to ${update.personId}: Rs ${update.toPayChange}`
-            });
-          }
-        }
+              description: `Update settlement: ${update.userId} vs ${update.counterpartyId}`
+          });
       }
 
       // CORRECTED: Calculate proper wallet balance after transaction
@@ -1217,63 +1169,70 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         description: "Add payment to member transaction lists"
       });
 
+      // Update settlements for Payer (fromMember)
+      transaction.addOperation({
+          execute: async () => {
+              const current = getGroupSettlement(data.groupId, data.fromMember, data.toMember);
+              const newToPay = Math.max(0, current.toPay - sanitizedAmount);
+              await updateGroupSettlement(data.groupId, data.fromMember, data.toMember, current.toReceive, newToPay);
+              return true;
+          },
+          rollback: async () => {
+              const current = getGroupSettlement(data.groupId, data.fromMember, data.toMember);
+              const newToPay = current.toPay + sanitizedAmount;
+              await updateGroupSettlement(data.groupId, data.fromMember, data.toMember, current.toReceive, newToPay);
+          },
+          description: "Update payer settlement"
+      });
+
+      // Update settlements for Payee (toMember)
+      transaction.addOperation({
+          execute: async () => {
+              const current = getGroupSettlement(data.groupId, data.toMember, data.fromMember);
+              const newToReceive = Math.max(0, current.toReceive - sanitizedAmount);
+              await updateGroupSettlement(data.groupId, data.toMember, data.fromMember, newToReceive, current.toPay);
+              return true;
+          },
+          rollback: async () => {
+             const current = getGroupSettlement(data.groupId, data.toMember, data.fromMember);
+             const newToReceive = current.toReceive + sanitizedAmount;
+             await updateGroupSettlement(data.groupId, data.toMember, data.fromMember, newToReceive, current.toPay);
+          },
+          description: "Update payee settlement"
+      });
+
+      // Update Wallet if applicable
+      if (data.fromMember === user.uid) {
+           transaction.addOperation({
+               execute: async () => {
+                   const result = await deductMoneyFromWallet(sanitizedAmount);
+                   if (!result.success) throw new Error(result.error);
+                   return result;
+               },
+               rollback: async () => {
+                   await addToAuthWallet(sanitizedAmount);
+               },
+               description: "Deduct from wallet"
+           });
+      }
+
+      if (data.toMember === user.uid) {
+           transaction.addOperation({
+               execute: async () => {
+                   const result = await addToAuthWallet(sanitizedAmount);
+                   if (!result.success) throw new Error(result.error);
+                   return result;
+               },
+               rollback: async () => {
+                   await deductMoneyFromWallet(sanitizedAmount);
+               },
+               description: "Add to wallet"
+           });
+      }
+
       const result = await transaction.execute();
 
       if (result.success) {
-        // CRITICAL FIX: Update settlements and wallet after transaction is created
-        if (data.toMember === user.uid) {
-          // Current user is receiving payment - add money to wallet and update settlements
-          try {
-            // Step 1: Add money to wallet
-            const walletResult = await addToAuthWallet(sanitizedAmount);
-            if (walletResult.success) {
-              // Step 2: Update settlements (reduce receivable)
-              const settlements = getSettlements(data.groupId);
-              const currentSettlement = settlements[data.fromMember] || { toReceive: 0, toPay: 0 };
-              await updateSettlement(
-                data.groupId,
-                data.fromMember,
-                Math.max(0, currentSettlement.toReceive - sanitizedAmount),
-                currentSettlement.toPay
-              );
-              logger.info("Updated wallet and settlements for payment received", {
-                amount: sanitizedAmount,
-                fromMember: data.fromMember
-              });
-            } else {
-              logger.error("Failed to add money to wallet", { error: walletResult.error });
-            }
-          } catch (error: any) {
-            logger.error("Failed to update wallet/settlements after payment", { transactionId, error: error.message });
-          }
-        } else if (data.fromMember === user.uid) {
-          // Current user is making payment - deduct from wallet and update settlements
-          try {
-            // Step 1: Deduct money from wallet
-            const walletResult = await deductMoneyFromWallet(sanitizedAmount);
-            if (walletResult.success) {
-              // Step 2: Update settlements (reduce payable)
-              const settlements = getSettlements(data.groupId);
-              const currentSettlement = settlements[data.toMember] || { toReceive: 0, toPay: 0 };
-              await updateSettlement(
-                data.groupId,
-                data.toMember,
-                currentSettlement.toReceive,
-                Math.max(0, currentSettlement.toPay - sanitizedAmount)
-              );
-              logger.info("Updated wallet and settlements for payment made", {
-                transactionId,
-                amount: sanitizedAmount,
-                toMember: data.toMember
-              });
-            } else {
-              logger.error("Failed to deduct money from wallet", { transactionId, error: walletResult.error });
-            }
-          } catch (error: any) {
-            logger.error("Failed to update wallet/settlements after debt payment", { transactionId, error: error.message });
-          }
-        }
-
         logger.logTransaction("payment_recorded", sanitizedAmount, true);
 
         // Send transaction notification emails (async, non-blocking)
@@ -1336,41 +1295,27 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   const payMyDebt = async (groupId: string, toMember: string, amount: number): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
-    const validation = validateAmount(amount);
-    if (!validation.isValid) {
-      return { success: false, error: validation.error || "Invalid amount" };
-    }
-
-    try {
-      const sanitizedAmount = sanitizeAmount(amount);
-
-      // Use the enterprise settlement system with group context
-      const result = await markDebtPaid(groupId, toMember, sanitizedAmount);
-      return result;
-    } catch (error: any) {
-      logger.error("Pay debt error", { groupId, toMember, amount, error: error.message });
-      return { success: false, error: error.message || "Failed to pay debt" };
-    }
+    return recordPayment({
+      groupId,
+      fromMember: user.uid,
+      toMember,
+      amount,
+      method: "online",
+      note: "Debt payment from wallet"
+    });
   };
 
   const markPaymentAsPaid = async (groupId: string, fromMember: string, amount: number): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
-    const validation = validateAmount(amount);
-    if (!validation.isValid) {
-      return { success: false, error: validation.error || "Invalid amount" };
-    }
-
-    try {
-      const sanitizedAmount = sanitizeAmount(amount);
-
-      // Use the enterprise settlement system with group context
-      const result = await markPaymentReceived(groupId, fromMember, sanitizedAmount);
-      return result;
-    } catch (error: any) {
-      logger.error("Mark payment as paid error", { groupId, fromMember, amount, error: error.message });
-      return { success: false, error: error.message || "Failed to mark payment as paid" };
-    }
+    return recordPayment({
+      groupId,
+      fromMember,
+      toMember: user.uid,
+      amount,
+      method: "cash",
+      note: "Payment received from settlement"
+    });
   };
 
   const addMoneyToWallet = async (amount: number, note?: string): Promise<{ success: boolean; error?: string }> => {
@@ -1568,6 +1513,77 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     return transactions;
   };
 
+  // CORRECTED: Get settlements from Group data instead of User profile
+  const getSettlements = (groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
+    if (!user) return {};
+
+    if (groupId) {
+      const group = groups.find(g => g.id === groupId);
+      if (!group || !group.settlements || !group.settlements[user.uid]) return {};
+      // Return settlements for current user in this group
+      return group.settlements[user.uid] || {};
+    } else {
+      // Aggregate across all groups
+      const aggregated: { [personId: string]: { toReceive: number; toPay: number } } = {};
+
+      groups.forEach(group => {
+        if (group.settlements && group.settlements[user.uid]) {
+           const groupSettlements = group.settlements[user.uid];
+           Object.entries(groupSettlements).forEach(([personId, settlement]) => {
+             if (!aggregated[personId]) {
+               aggregated[personId] = { toReceive: 0, toPay: 0 };
+             }
+             aggregated[personId].toReceive += settlement.toReceive;
+             aggregated[personId].toPay += settlement.toPay;
+           });
+        }
+      });
+
+      return aggregated;
+    }
+  };
+
+  const getTotalToReceive = (groupId?: string): number => {
+    const settlements = getSettlements(groupId);
+    return Object.values(settlements).reduce((total, s) => total + (s.toReceive || 0), 0);
+  };
+
+  const getTotalToPay = (groupId?: string): number => {
+    const settlements = getSettlements(groupId);
+    return Object.values(settlements).reduce((total, s) => total + (s.toPay || 0), 0);
+  };
+
+  const getSettlementDelta = (groupId?: string): number => {
+    return getTotalToReceive(groupId) - getTotalToPay(groupId);
+  };
+
+  // Internal helper to get specific group settlement
+  const getGroupSettlement = (groupId: string, personId: string, counterpartyId: string) => {
+      const group = groups.find(g => g.id === groupId);
+      if (!group || !group.settlements || !group.settlements[personId]) {
+          return { toReceive: 0, toPay: 0 };
+      }
+      return group.settlements[personId][counterpartyId] || { toReceive: 0, toPay: 0 };
+  };
+
+  // Internal helper to update group settlements
+  const updateGroupSettlement = async (
+    groupId: string,
+    personId: string,
+    counterpartyId: string,
+    toReceive: number,
+    toPay: number
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+        const settlementRef = ref(database, `groups/${groupId}/settlements/${personId}/${counterpartyId}`);
+        const settlement = { toReceive: Math.max(0, toReceive), toPay: Math.max(0, toPay) };
+        await set(settlementRef, settlement);
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+  };
+
   return (
     <FirebaseDataContext.Provider
       value={{
@@ -1589,6 +1605,10 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         getTransactionsByGroup,
         getTransactionsByMember,
         getAllTransactions,
+        getSettlements,
+        getTotalToReceive,
+        getTotalToPay,
+        getSettlementDelta,
       }}
     >
       {children}
