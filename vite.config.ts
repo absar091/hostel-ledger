@@ -77,8 +77,59 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'],
-        maximumFileSizeToCacheInBytes: 5000000
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,woff,woff2}'],
+        globIgnores: ['**/node_modules/**/*', 'sw.js', 'workbox-*.js'],
+        maximumFileSizeToCacheInBytes: 5000000,
+      },
+      workbox: {
+        // Add navigation fallback for offline
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/, /^\/auth/],
+        // Runtime caching for external resources
+        runtimeCaching: [
+          {
+            // Cache Google Fonts
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            // Cache Firebase scripts if loaded from CDN
+            urlPattern: /^https:\/\/www\.gstatic\.com\/firebasejs\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'firebase-sdk-cache',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            // Cache images
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              }
+            }
+          }
+        ]
       },
       devOptions: {
         enabled: false,

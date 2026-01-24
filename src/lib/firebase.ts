@@ -32,29 +32,29 @@ if (missingVars.length > 0) {
   throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
 }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase with error handling for offline
+let app;
+let auth;
+let database;
+let db;
 
-// Initialize Firebase Authentication and get a reference to the service
-export const auth = getAuth(app);
-
-// Initialize Realtime Database with offline persistence
-export const database = getDatabase(app);
-
-// Enable offline persistence for Realtime Database
-// This allows the app to work offline and sync when online
-if (typeof window !== 'undefined') {
-  try {
-    // Realtime Database automatically handles offline persistence
-    // Data is cached locally and synced when connection is restored
+try {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  database = getDatabase(app);
+  db = getFirestore(app);
+  
+  // Enable offline persistence for Realtime Database
+  if (typeof window !== 'undefined') {
     console.log('✅ Firebase Realtime Database initialized with offline support');
-  } catch (error) {
-    console.warn('⚠️ Offline persistence setup warning:', error);
   }
+} catch (error) {
+  console.error('❌ Firebase initialization failed:', error);
+  // App will still load, but Firebase features won't work
 }
 
-// Initialize Cloud Firestore and get a reference to the service
-export const db = getFirestore(app);
+// Export with fallbacks
+export { auth, database, db };
 
 // Initialize Firebase Messaging (only in supported browsers)
 let messaging: ReturnType<typeof getMessaging> | null = null;
@@ -62,7 +62,7 @@ let messaging: ReturnType<typeof getMessaging> | null = null;
 // Initialize messaging asynchronously
 const initMessaging = async () => {
   try {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && navigator.onLine) {
       const supported = await isMessagingSupported();
       if (supported) {
         messaging = getMessaging(app);
@@ -76,14 +76,20 @@ const initMessaging = async () => {
   }
 };
 
-// Initialize messaging when module loads
-if (typeof window !== 'undefined') {
+// Initialize messaging when module loads (only if online)
+if (typeof window !== 'undefined' && navigator.onLine) {
   initMessaging();
 }
 
 // Helper to get messaging instance (waits for initialization if needed)
 export const getMessagingInstance = async (): Promise<ReturnType<typeof getMessaging> | null> => {
   if (messaging) return messaging;
+  
+  // Don't wait if offline
+  if (!navigator.onLine) {
+    console.warn('⚠️ Cannot initialize Firebase Messaging while offline');
+    return null;
+  }
   
   // Wait for initialization (max 5 seconds)
   for (let i = 0; i < 50; i++) {

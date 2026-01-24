@@ -26,6 +26,7 @@ import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useOffline } from "@/hooks/useOffline";
 import { useOneSignalPush } from "@/hooks/useOneSignalPush";
+import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
   const navigate = useNavigate();

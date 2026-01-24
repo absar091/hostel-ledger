@@ -145,12 +145,18 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
   };
 
   const handleSubmit = () => {
-    onSubmit({
+    const groupData: any = {
       name: groupName,
       emoji: groupEmoji,
       members: groupMembers,
-      coverPhoto: coverPhoto || undefined,
-    });
+    };
+    
+    // Only add coverPhoto if it exists (Firebase doesn't allow undefined)
+    if (coverPhoto) {
+      groupData.coverPhoto = coverPhoto;
+    }
+    
+    onSubmit(groupData);
     handleClose();
   };
 
