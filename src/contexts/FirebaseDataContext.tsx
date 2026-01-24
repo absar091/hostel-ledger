@@ -409,11 +409,10 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         phone: m.phone ? m.phone.trim().substring(0, 20) : null,
       }));
 
-      const newGroup: Group = {
+      const newGroup: Partial<Group> = {
         id: groupId,
         name: data.name.trim().substring(0, 50),
         emoji: data.emoji.trim().substring(0, 10),
-        coverPhoto: data.coverPhoto || undefined,
         members: [
           {
             id: user.uid,
@@ -433,6 +432,11 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         createdBy: user.uid,
         createdAt: new Date().toISOString(),
       };
+      
+      // Only add coverPhoto if it exists (Firebase doesn't allow undefined)
+      if (data.coverPhoto) {
+        newGroup.coverPhoto = data.coverPhoto;
+      }
 
       // Add operations to transaction
       transaction.addOperation({
