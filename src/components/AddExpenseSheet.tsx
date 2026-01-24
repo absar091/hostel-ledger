@@ -191,7 +191,6 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
     }
 
     // Additional business logic validation
-    const members = groups.find(g => g.id === selectedGroup)?.members || [];
     const payerExists = members.some(m => m.id === paidBy);
     if (!payerExists) {
       setValidationErrors(["Selected payer is not valid"]);

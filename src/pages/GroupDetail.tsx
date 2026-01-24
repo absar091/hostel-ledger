@@ -199,6 +199,7 @@ const GroupDetail = () => {
     try {
       // Step 1: Create any staged (temporary) members first
       let updatedParticipants = [...data.participants];
+      let updatedPaidBy = data.paidBy;
 
       if (data.stagedMembers && data.stagedMembers.length > 0) {
         for (const staged of data.stagedMembers) {
@@ -211,6 +212,10 @@ const GroupDetail = () => {
           if (createResult.success && createResult.memberId) {
             // Replace the staged ID with the real ID in participants
             updatedParticipants = updatedParticipants.map(id => id === staged.id ? createResult.memberId! : id);
+            // If the staged member was the payer, update paidBy too
+            if (updatedPaidBy === staged.id) {
+              updatedPaidBy = createResult.memberId!;
+            }
           } else {
             toast.error(`Failed to create member ${staged.name}. Expense might split incorrectly.`);
           }
@@ -221,7 +226,7 @@ const GroupDetail = () => {
       const result = await addExpense({
         groupId: data.groupId,
         amount: data.amount,
-        paidBy: data.paidBy,
+        paidBy: updatedPaidBy,
         participants: updatedParticipants,
         note: data.note,
         place: data.place,
