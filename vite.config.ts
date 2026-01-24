@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
-    react(), 
+    react(),
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
@@ -34,27 +34,27 @@ export default defineConfig(({ mode }) => ({
         categories: ["finance", "productivity", "utilities"],
         prefer_related_applications: false,
         icons: [
-          { 
-            src: "/only-logo.png", 
-            sizes: "192x192", 
+          {
+            src: "/only-logo.png",
+            sizes: "192x192",
             type: "image/png",
             purpose: "any"
           },
-          { 
-            src: "/only-logo.png", 
-            sizes: "512x512", 
+          {
+            src: "/only-logo.png",
+            sizes: "512x512",
             type: "image/png",
             purpose: "any"
           },
-          { 
-            src: "/only-logo.png", 
-            sizes: "192x192", 
+          {
+            src: "/only-logo.png",
+            sizes: "192x192",
             type: "image/png",
             purpose: "maskable"
           },
-          { 
-            src: "/only-logo.png", 
-            sizes: "512x512", 
+          {
+            src: "/only-logo.png",
+            sizes: "512x512",
             type: "image/png",
             purpose: "maskable"
           }
@@ -80,6 +80,8 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,woff,woff2}'],
         globIgnores: ['**/node_modules/**/*', 'sw.js', 'workbox-*.js'],
         maximumFileSizeToCacheInBytes: 5000000,
+        // Ensure index.html is always precached for navigation fallback
+        dontCacheBustURLsMatching: /\.[0-9a-f]{8}\./,
       },
       workbox: {
         // Add navigation fallback for offline

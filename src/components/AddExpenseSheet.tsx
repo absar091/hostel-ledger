@@ -7,7 +7,7 @@ import Avatar from "./Avatar";
 import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
 import { saveOfflineExpense } from "@/lib/offlineDB";
-import { useOffline } from "@/hooks/useOffline";
+import { useSync } from "@/hooks/useSync";
 import { toast } from "sonner";
 import { calculateExpenseSplit } from "@/lib/expenseLogic";
 // import { validateExpenseData, sanitizeString, sanitizeAmount } from "@/lib/validation";

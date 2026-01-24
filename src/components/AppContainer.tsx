@@ -2,6 +2,8 @@ import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/contexts/SidebarContext";
 
+import OfflineStatus from "./OfflineStatus";
+
 interface AppContainerProps {
   children: ReactNode;
   className?: string;
@@ -17,6 +19,7 @@ const AppContainer = ({ children, className }: AppContainerProps) => {
       className
     )}>
       {children}
+      <OfflineStatus />
     </div>
   );
 };
