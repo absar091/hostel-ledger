@@ -25,8 +25,8 @@ import {
 const GroupDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { getGroupById, getTransactionsByGroup, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup } = useFirebaseData();
-  const { getSettlements, user } = useFirebaseAuth();
+  const { getGroupById, getTransactionsByGroup, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup, getSettlements } = useFirebaseData();
+  const { user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
 
   const [activeTab, setActiveTab] = useState<"ledger" | "members" | "summary">("ledger");

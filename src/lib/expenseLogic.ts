@@ -14,6 +14,13 @@ export interface SettlementUpdate {
   toPayChange: number;     // Positive = increase payable
 }
 
+export interface GlobalSettlementUpdate {
+  userId: string;
+  counterpartyId: string;
+  toReceiveChange: number;
+  toPayChange: number;
+}
+
 /**
  * CORRECTED: Fair distribution of expense amount with proper remainder handling
  */
@@ -91,6 +98,40 @@ export const calculateExpenseSettlements = (
       });
     }
   }
+
+  return updates;
+};
+
+/**
+ * Calculate settlement updates for ALL users involved in the expense
+ */
+export const calculateGlobalExpenseSettlements = (
+  splits: ExpenseSplit[],
+  payerId: string,
+  groupId: string
+): GlobalSettlementUpdate[] => {
+  const updates: GlobalSettlementUpdate[] = [];
+
+  splits.forEach(split => {
+    if (split.participantId === payerId) return; // Payer doesn't owe themselves
+
+    // Payer is owed by Participant
+    // Update for Payer: Receives from Participant
+    updates.push({
+      userId: payerId,
+      counterpartyId: split.participantId,
+      toReceiveChange: split.amount,
+      toPayChange: 0
+    });
+
+    // Update for Participant: Pays to Payer
+    updates.push({
+      userId: split.participantId,
+      counterpartyId: payerId,
+      toReceiveChange: 0,
+      toPayChange: split.amount
+    });
+  });
 
   return updates;
 };

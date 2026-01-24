@@ -40,7 +40,6 @@ export interface UserProfile {
   photoURL?: string | null; // Profile picture URL from Cloudinary
   paymentDetails: PaymentDetails;
   walletBalance: number; // Available Budget (actual money you have)
-  settlements: { [groupId: string]: { [personId: string]: { toReceive: number; toPay: number } } }; // CORRECTED: Group-aware settlement tracking
   createdAt: string;
   emailVerified?: boolean; // Email verification status
   favoriteGroups?: string[]; // Array of favorite group IDs
@@ -73,20 +72,6 @@ interface FirebaseAuthContextType {
   addMoneyToWallet: (amount: number) => Promise<{ success: boolean; error?: string }>;
   deductMoneyFromWallet: (amount: number) => Promise<{ success: boolean; error?: string }>;
   getWalletBalance: () => number;
-  getSettlements: (groupId?: string) => { [personId: string]: { toReceive: number; toPay: number } };
-  getTotalToReceive: (groupId?: string) => number;
-  getTotalToPay: (groupId?: string) => number;
-  getSettlementDelta: (groupId?: string) => number;
-  updateSettlement: (groupId: string, personId: string, toReceive: number, toPay: number) => Promise<{ success: boolean; error?: string }>;
-  addToReceivable: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
-  addToPayable: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
-  markPaymentReceived: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
-  markDebtPaid: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
-  // New debt tracking methods
-  getIndividualDebts: (groupId: string, personId: string) => { youOwe: any[]; theyOwe: any[]; totalYouOwe: number; totalTheyOwe: number; netAmount: number };
-  addIndividualDebt: (groupId: string, personId: string, debt: any) => Promise<{ success: boolean; error?: string }>;
-  settleIndividualDebt: (groupId: string, personId: string, debtId: string, amount?: number) => Promise<{ success: boolean; error?: string }>;
-  settleNetAmount: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   // Favorite groups
   toggleFavoriteGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>;
   getFavoriteGroups: () => string[];
@@ -188,7 +173,6 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           photoURL: userData.photoURL || null, // Load profile picture URL
           paymentDetails: userData.paymentDetails || {},
           walletBalance: isNaN(userData.walletBalance) ? 0 : (userData.walletBalance || 0),
-          settlements: userData.settlements || {},
           createdAt: userData.createdAt,
           emailVerified: verificationData.emailVerified || false
         };
@@ -216,7 +200,6 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
             avatar: null,
             paymentDetails: {},
             walletBalance: 0,
-            settlements: {},
             createdAt: new Date().toISOString(),
             emailVerified: false
           };
@@ -354,7 +337,6 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           phone: sanitizedPhone,
           paymentDetails: {},
           walletBalance: 0,
-          settlements: {},
           createdAt: new Date().toISOString()
         };
 
@@ -745,272 +727,6 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const getWalletBalance = (): number => {
     const balance = user?.walletBalance || 0;
     return isNaN(balance) ? 0 : balance;
-  };
-
-  const getSettlements = (groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
-    if (!user?.settlements) return {};
-
-    if (groupId) {
-      // Return settlements for specific group
-      return user.settlements[groupId] || {};
-    } else {
-      // Return aggregated settlements across all groups
-      const aggregated: { [personId: string]: { toReceive: number; toPay: number } } = {};
-
-      Object.values(user.settlements).forEach(groupSettlements => {
-        Object.entries(groupSettlements).forEach(([personId, settlement]) => {
-          if (!aggregated[personId]) {
-            aggregated[personId] = { toReceive: 0, toPay: 0 };
-          }
-          aggregated[personId].toReceive += settlement.toReceive;
-          aggregated[personId].toPay += settlement.toPay;
-        });
-      });
-
-      return aggregated;
-    }
-  };
-
-  const getTotalToReceive = (groupId?: string): number => {
-    const settlements = getSettlements(groupId);
-    if (!settlements || Object.keys(settlements).length === 0) return 0;
-
-    return Object.values(settlements).reduce((sum, settlement) => {
-      const amount = settlement?.toReceive || 0;
-      return sum + (isNaN(amount) ? 0 : amount);
-    }, 0);
-  };
-
-  const getTotalToPay = (groupId?: string): number => {
-    const settlements = getSettlements(groupId);
-    if (!settlements || Object.keys(settlements).length === 0) return 0;
-
-    return Object.values(settlements).reduce((sum, settlement) => {
-      const amount = settlement?.toPay || 0;
-      return sum + (isNaN(amount) ? 0 : amount);
-    }, 0);
-  };
-
-  const getSettlementDelta = (groupId?: string): number => {
-    const toReceive = getTotalToReceive(groupId);
-    const toPay = getTotalToPay(groupId);
-
-    if (isNaN(toReceive) || isNaN(toPay)) return 0;
-    return toReceive - toPay;
-  };
-
-  const updateSettlement = async (groupId: string, personId: string, toReceive: number, toPay: number): Promise<{ success: boolean; error?: string }> => {
-    if (!user) {
-      return { success: false, error: "User not authenticated" };
-    }
-
-    try {
-      const userRef = ref(database, `users/${user.uid}/settlements/${groupId}/${personId}`);
-      const settlement = { toReceive: Math.max(0, toReceive), toPay: Math.max(0, toPay) };
-
-      await set(userRef, settlement);
-
-      // Update local state
-      setUser(prev => {
-        if (!prev) return null;
-
-        const newSettlements = { ...prev.settlements };
-        // Valid immutable update: copy the group level object too
-        if (!newSettlements[groupId]) {
-          newSettlements[groupId] = {};
-        } else {
-          newSettlements[groupId] = { ...newSettlements[groupId] };
-        }
-
-        newSettlements[groupId][personId] = settlement;
-
-        return {
-          ...prev,
-          settlements: newSettlements
-        };
-      });
-
-      return { success: true };
-    } catch (error: any) {
-      logger.error("Update settlement error", { uid: user.uid, groupId, personId, error: error.message });
-      return { success: false, error: error.message || "Failed to update settlement" };
-    }
-  };
-
-  const addToReceivable = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
-    if (!user || amount <= 0) {
-      return { success: false, error: "Invalid amount or user not authenticated" };
-    }
-
-    const groupSettlements = user.settlements[groupId] || {};
-    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
-
-    const result = await updateSettlement(groupId, personId, currentSettlement.toReceive + amount, currentSettlement.toPay);
-
-    return result;
-  };
-
-  const addToPayable = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
-    if (!user || amount <= 0) {
-      return { success: false, error: "Invalid amount or user not authenticated" };
-    }
-
-    const groupSettlements = user.settlements[groupId] || {};
-    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
-    return await updateSettlement(groupId, personId, currentSettlement.toReceive, currentSettlement.toPay + amount);
-  };
-
-  const markPaymentReceived = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
-    if (!user || amount <= 0) {
-      return { success: false, error: "Invalid amount or user not authenticated" };
-    }
-
-    const groupSettlements = user.settlements[groupId] || {};
-    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
-
-    // Allow partial payments - don't require exact amount
-    if (currentSettlement.toReceive <= 0) {
-      return { success: false, error: "No pending receivables from this person in this group" };
-    }
-
-    // Allow paying more than owed (in case of overpayment)
-    const actualAmount = Math.min(amount, currentSettlement.toReceive);
-
-    try {
-      // Step 1: Add real money to wallet
-      const addResult = await addMoneyToWallet(actualAmount);
-      if (!addResult.success) {
-        return addResult;
-      }
-
-      // Step 2: Reduce receivable amount
-      await updateSettlement(groupId, personId, currentSettlement.toReceive - actualAmount, currentSettlement.toPay);
-
-      // Step 3: Create transaction record
-      const transactionsRef = ref(database, 'transactions');
-      const newTransactionRef = push(transactionsRef);
-      const transactionId = newTransactionRef.key!;
-
-      const paymentTransaction = {
-        id: transactionId,
-        groupId: groupId, // CORRECTED: Use actual group ID instead of "settlement"
-        type: "payment" as const,
-        title: "Payment Received",
-        amount: actualAmount,
-        date: new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric"
-        }),
-        paidBy: personId,
-        paidByName: "Member", // We don't have their name in settlements
-        from: personId,
-        fromName: "Member",
-        to: user.uid,
-        toName: user.name,
-        method: "cash" as const,
-        note: `Payment received from settlement`,
-        walletBalanceBefore: user.walletBalance,
-        walletBalanceAfter: user.walletBalance + actualAmount,
-        createdAt: new Date().toISOString(),
-      };
-
-      await set(newTransactionRef, paymentTransaction);
-
-      // Add to user's transactions
-      const userTransactionRef = ref(database, `userTransactions/${user.uid}/${transactionId}`);
-      await set(userTransactionRef, true);
-
-      return { success: true };
-    } catch (error: any) {
-      logger.error("Mark payment received error", { uid: user.uid, groupId, personId, amount, error: error.message });
-      return { success: false, error: error.message || "Failed to mark payment as received" };
-    }
-  };
-
-  const markDebtPaid = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
-    if (!user || amount <= 0) {
-      return { success: false, error: "Invalid amount or user not authenticated" };
-    }
-
-    const groupSettlements = user.settlements[groupId] || {};
-    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
-
-    // Allow partial payments - don't require exact amount
-    if (currentSettlement.toPay <= 0) {
-      return { success: false, error: "No pending debts to this person in this group" };
-    }
-
-    // Allow paying more than owed (in case of overpayment)
-    const actualAmount = Math.min(amount, currentSettlement.toPay);
-
-    try {
-      // Step 1: Deduct real money from wallet
-      const deductResult = await deductMoneyFromWallet(actualAmount);
-      if (!deductResult.success) {
-        return deductResult;
-      }
-
-      // Step 2: Reduce payable amount
-      await updateSettlement(groupId, personId, currentSettlement.toReceive, currentSettlement.toPay - actualAmount);
-
-      // Step 3: Create transaction record
-      const transactionsRef = ref(database, 'transactions');
-      const newTransactionRef = push(transactionsRef);
-      const transactionId = newTransactionRef.key!;
-
-      const paymentTransaction = {
-        id: transactionId,
-        groupId: groupId, // CORRECTED: Use actual group ID instead of "settlement"
-        type: "payment" as const,
-        title: "Debt Payment",
-        amount: actualAmount,
-        date: new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric"
-        }),
-        paidBy: user.uid,
-        paidByName: user.name,
-        from: user.uid,
-        fromName: user.name,
-        to: personId,
-        toName: "Member",
-        method: "online" as const,
-        note: `Debt payment from wallet`,
-        walletBalanceBefore: user.walletBalance,
-        walletBalanceAfter: user.walletBalance - actualAmount,
-        createdAt: new Date().toISOString(),
-      };
-
-      await set(newTransactionRef, paymentTransaction);
-
-      // Add to user's transactions
-      const userTransactionRef = ref(database, `userTransactions/${user.uid}/${transactionId}`);
-      await set(userTransactionRef, true);
-
-      return { success: true };
-    } catch (error: any) {
-      logger.error("Mark debt paid error", { uid: user.uid, groupId, personId, amount, error: error.message });
-      return { success: false, error: error.message || "Failed to mark debt as paid" };
-    }
-  };
-
-  // Stub implementations for new interface methods
-  const getIndividualDebts = (groupId: string, personId: string) => {
-    return { youOwe: [], theyOwe: [], totalYouOwe: 0, totalTheyOwe: 0, netAmount: 0 };
-  };
-
-  const addIndividualDebt = async (groupId: string, personId: string, debt: any): Promise<{ success: boolean; error?: string }> => {
-    return { success: true };
-  };
-
-  const settleIndividualDebt = async (groupId: string, personId: string, debtId: string, amount?: number): Promise<{ success: boolean; error?: string }> => {
-    return { success: true };
-  };
-
-  const settleNetAmount = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
-    return { success: true };
   };
 
   // Favorite groups functions
