@@ -346,17 +346,26 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
           const senderSnap = await admin.database().ref(`users/${userId}/name`).get();
           const senderName = senderSnap.exists() ? senderSnap.val() : "Someone";
 
-          await invRef.set({
+          const invitationData = {
             id: invRef.key,
+            invitationId: invRef.key, // Alias for frontend compatibility
             groupId,
             groupName: newGroup.name,
             groupEmoji: newGroup.emoji,
             senderId: userId,
             senderName,
+            invitedBy: senderName, // Alias for frontend
             receiverId: inviteeUid,
             status: 'pending',
             createdAt: new Date().toISOString()
-          });
+          };
+
+          // Write to main invitations collection
+          await invRef.set(invitationData);
+
+          // ALSO write to userInvitations/{receiverId} so the invited user can see it
+          await admin.database().ref(`userInvitations/${inviteeUid}/${invRef.key}`).set(invitationData);
+          console.log(`✅ Invitation created for user ${inviteeUid} to group ${groupId}`);
 
           // Send email notification to existing user
           try {
@@ -572,6 +581,103 @@ app.post('/api/get-valid-user-details', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Error fetching user details:', error);
     res.status(500).json({ success: false, error: 'Failed to search user' });
+  }
+});
+
+
+// ============================================
+// RESPOND TO INVITATION (Accept/Decline)
+// ============================================
+app.post('/api/respond-invitation', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { invitationId, accept } = req.body;
+
+    if (!invitationId) {
+      return res.status(400).json({ success: false, error: 'Invitation ID is required' });
+    }
+
+    // Get the invitation from userInvitations
+    const userInvRef = admin.database().ref(`userInvitations/${userId}/${invitationId}`);
+    const invSnap = await userInvRef.get();
+
+    if (!invSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Invitation not found' });
+    }
+
+    const invitation = invSnap.val();
+
+    // Verify this invitation belongs to this user
+    if (invitation.receiverId !== userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+
+    // Check if already processed
+    if (invitation.status !== 'pending') {
+      return res.json({ success: true, message: 'Invitation already processed', status: invitation.status });
+    }
+
+    const newStatus = accept ? 'accepted' : 'declined';
+    const now = new Date().toISOString();
+
+    if (accept) {
+      // === ACCEPT: Add user to group ===
+      const groupId = invitation.groupId;
+
+      // Get user data
+      const userSnap = await admin.database().ref(`users/${userId}`).get();
+      const userData = userSnap.val() || {};
+
+      // Create member entry
+      const memberData = {
+        oderId: Date.now(), // ordering
+        name: userData.name || 'Member',
+        isRegistered: true,
+        userId: userId,
+        joinedAt: now
+      };
+
+      // Add user to group members
+      await admin.database().ref(`groups/${groupId}/members/${userId}`).set(memberData);
+
+      // Add group to user's groups list
+      const groupSnap = await admin.database().ref(`groups/${groupId}`).get();
+      const groupData = groupSnap.val();
+
+      if (groupData) {
+        await admin.database().ref(`users/${userId}/groups/${groupId}`).set({
+          name: groupData.name,
+          emoji: groupData.emoji || '👥',
+          coverPhoto: groupData.coverPhoto || null,
+          memberCount: (groupData.memberCount || 0) + 1,
+          role: 'member',
+          joinedAt: now
+        });
+
+        // Update group member count
+        const currentCount = groupData.memberCount || 0;
+        await admin.database().ref(`groups/${groupId}/memberCount`).set(currentCount + 1);
+      }
+
+      console.log(`✅ User ${userId} joined group ${groupId}`);
+    }
+
+    // Update invitation status in both locations
+    await admin.database().ref(`invitations/${invitationId}/status`).set(newStatus);
+    await admin.database().ref(`invitations/${invitationId}/respondedAt`).set(now);
+    await admin.database().ref(`userInvitations/${userId}/${invitationId}/status`).set(newStatus);
+    await admin.database().ref(`userInvitations/${userId}/${invitationId}/respondedAt`).set(now);
+
+    res.json({
+      success: true,
+      message: accept ? 'Successfully joined the group!' : 'Invitation declined',
+      status: newStatus,
+      groupId: accept ? invitation.groupId : null
+    });
+
+  } catch (error) {
+    console.error('Error responding to invitation:', error);
+    res.status(500).json({ success: false, error: 'Failed to respond to invitation' });
   }
 });
 
