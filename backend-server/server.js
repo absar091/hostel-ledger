@@ -682,6 +682,84 @@ app.post('/api/respond-invitation', authenticate, async (req, res) => {
 });
 
 
+// ============================================
+// CLAIM EMAIL INVITE (New user links to existing member)
+// Called after new user signs up via email invite link
+// ============================================
+app.post('/api/claim-email-invite', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const userEmail = req.user.email;
+    const { groupId } = req.body;
+
+    if (!groupId) {
+      return res.status(400).json({ success: false, error: 'Group ID is required' });
+    }
+
+    // Get the group
+    const groupSnap = await admin.database().ref(`groups/${groupId}`).get();
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const groupData = groupSnap.val();
+    const members = groupData.members || {};
+
+    // Find a manual member with matching email
+    let matchedMemberId = null;
+    let matchedMember = null;
+
+    for (const [memberId, member] of Object.entries(members)) {
+      if (member.email && member.email.toLowerCase() === userEmail.toLowerCase() && member.type === 'manual') {
+        matchedMemberId = memberId;
+        matchedMember = member;
+        break;
+      }
+    }
+
+    if (!matchedMemberId) {
+      return res.json({ success: false, error: 'No pending email invite found for this group' });
+    }
+
+    // Get user data
+    const userSnap = await admin.database().ref(`users/${userId}`).get();
+    const userData = userSnap.val() || {};
+
+    // Update the member entry to link it to this user
+    await admin.database().ref(`groups/${groupId}/members/${matchedMemberId}`).update({
+      userId: userId,
+      isRegistered: true,
+      type: 'registered',
+      name: userData.name || matchedMember.name,
+      claimedAt: new Date().toISOString()
+    });
+
+    // Add group to user's groups list
+    await admin.database().ref(`users/${userId}/groups/${groupId}`).set({
+      name: groupData.name,
+      emoji: groupData.emoji || '👥',
+      coverPhoto: groupData.coverPhoto || null,
+      memberCount: groupData.memberCount || 0,
+      role: 'member',
+      joinedAt: new Date().toISOString()
+    });
+
+    console.log(`✅ User ${userId} claimed email invite for group ${groupId}`);
+
+    res.json({
+      success: true,
+      message: 'Successfully joined the group!',
+      groupId,
+      groupName: groupData.name
+    });
+
+  } catch (error) {
+    console.error('Error claiming email invite:', error);
+    res.status(500).json({ success: false, error: 'Failed to claim invite' });
+  }
+});
+
+
 // Apply authentication middleware to ALL /api routes EXCEPT public ones
 app.use('/api', (req, res, next) => {
   // Public endpoints that don't need auth
