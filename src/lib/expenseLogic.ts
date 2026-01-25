@@ -14,6 +14,13 @@ export interface SettlementUpdate {
   toPayChange: number;     // Positive = increase payable
 }
 
+export interface GlobalSettlementUpdate {
+  fromId: string; // Debtor
+  toId: string;   // Creditor
+  amount: number;
+  groupId: string;
+}
+
 /**
  * CORRECTED: Fair distribution of expense amount with proper remainder handling
  */
@@ -49,7 +56,38 @@ export const calculateExpenseSplit = (
 };
 
 /**
- * CORRECTED: Calculate settlement updates for expense
+ * CORRECTED: Calculate global settlement updates for expense
+ * Returns all debt relationships created by this transaction
+ */
+export const calculateGlobalExpenseSettlements = (
+  splits: ExpenseSplit[],
+  payerId: string,
+  groupId: string
+): GlobalSettlementUpdate[] => {
+  const updates: GlobalSettlementUpdate[] = [];
+
+  const payerSplit = splits.find(s => s.participantId === payerId);
+  if (!payerSplit) {
+    throw new Error("Payer must be a participant");
+  }
+
+  // Everyone else owes the payer their split amount
+  splits.forEach(split => {
+    if (split.participantId !== payerId) {
+      updates.push({
+        fromId: split.participantId,
+        toId: payerId,
+        amount: split.amount,
+        groupId
+      });
+    }
+  });
+
+  return updates;
+};
+
+/**
+ * Legacy support wrapper using global calculation
  */
 export const calculateExpenseSettlements = (
   splits: ExpenseSplit[],
@@ -57,40 +95,28 @@ export const calculateExpenseSettlements = (
   currentUserId: string,
   groupId: string
 ): SettlementUpdate[] => {
+  const globalUpdates = calculateGlobalExpenseSettlements(splits, payerId, groupId);
   const updates: SettlementUpdate[] = [];
 
-  const payerSplit = splits.find(s => s.participantId === payerId);
-  const currentUserSplit = splits.find(s => s.participantId === currentUserId);
-
-  if (!payerSplit) {
-    throw new Error("Payer must be a participant");
-  }
-
-  if (payerId === currentUserId) {
-    // Current user paid the expense
-    // Create receivables for all other participants
-    splits.forEach(split => {
-      if (split.participantId !== currentUserId) {
-        updates.push({
-          personId: split.participantId,
-          groupId,
-          toReceiveChange: split.amount, // Others owe current user
-          toPayChange: 0
-        });
-      }
-    });
-  } else {
-    // Someone else paid the expense
-    if (currentUserSplit) {
-      // Current user participated - owes their share to payer
+  globalUpdates.forEach(update => {
+    if (update.toId === currentUserId) {
+      // Someone owes current user
       updates.push({
-        personId: payerId,
+        personId: update.fromId,
+        groupId,
+        toReceiveChange: update.amount,
+        toPayChange: 0
+      });
+    } else if (update.fromId === currentUserId) {
+      // Current user owes someone
+      updates.push({
+        personId: update.toId,
         groupId,
         toReceiveChange: 0,
-        toPayChange: currentUserSplit.amount // Current user owes payer
+        toPayChange: update.amount
       });
     }
-  }
+  });
 
   return updates;
 };
