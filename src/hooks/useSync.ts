@@ -113,7 +113,7 @@ export const useSync = () => {
 
     return {
         isOnline,
-        isSyncing,
+        isSyncing: isSyncingState,
         pendingCount,
         syncData,
         updatePendingCount
