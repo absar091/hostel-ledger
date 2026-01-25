@@ -497,22 +497,35 @@ app.post('/api/get-valid-user-details', authenticate, async (req, res) => {
       uid,
       username: userData.username,
       name: userData.name,
-      photoURL: userData.photoURL || null,
-      paymentMethods: {
-        jazzCash: !!userData.paymentDetails?.jazzCash,
-        easypaisa: !!userData.paymentDetails?.easypaisa,
-        bankName: !!userData.paymentDetails?.bankName,
-        raastId: !!userData.paymentDetails?.raastId
+      // Safety check for userData
+      if(!userData) {
+        console.error('User data is null despite snapshot exists');
+        return res.json({ success: true, exists: false });
       }
-    };
 
-    res.json({ success: true, exists: true, user: publicProfile });
+    const paymentDetails = userData.paymentDetails || {};
 
-  } catch (error) {
-    console.error('Error fetching user details:', error);
-    res.status(500).json({ success: false, error: 'Failed to search user' });
-  }
-});
+      // Sanitize return data (public info only)
+      const publicProfile = {
+        uid,
+        username: userData.username || 'Unknown',
+        name: userData.name || 'Unknown User',
+        photoURL: userData.photoURL || null,
+        paymentMethods: {
+          jazzCash: !!paymentDetails.jazzCash,
+          easypaisa: !!paymentDetails.easypaisa,
+          bankName: !!paymentDetails.bankName,
+          raastId: !!paymentDetails.raastId
+        }
+      };
+
+      res.json({ success: true, exists: true, user: publicProfile });
+
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+      res.status(500).json({ success: false, error: 'Failed to search user' });
+    }
+  });
 
 
 // Apply authentication middleware to ALL /api routes EXCEPT public ones
