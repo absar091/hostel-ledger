@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { ArrowLeft, Settings, ChevronRight, Plus, HandCoins, Users, Share2 } from "lucide-react";
+import GroupPendingInvitations from "@/components/GroupPendingInvitations";
 import TransactionSuccessSheet from "@/components/TransactionSuccessSheet";
 import { Button } from "@/components/ui/button";
 import TimelineItem from "@/components/TimelineItem";
@@ -413,6 +414,9 @@ const GroupDetail = () => {
 
         {activeTab === "members" && (
           <div className="space-y-4 animate-fade-in">
+            {/* Pending Invitations Section */}
+            {id && <GroupPendingInvitations groupId={id} />}
+
             {group.members.map((member, index) => {
               const isYou = member.isCurrentUser;
 
