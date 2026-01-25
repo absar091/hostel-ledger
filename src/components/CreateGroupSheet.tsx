@@ -398,16 +398,20 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                     </div>
                   </div>
 
-                  {/* INVITED EMAILS */}
+                  {/* INVITED EMAILS (New Users) */}
                   {invitedEmails.map(email => (
-                    <div key={email} className="flex items-center gap-3 p-3 bg-purple-50/50 border border-purple-100 rounded-2xl animate-fade-in">
+                    <div
+                      key={email}
+                      className="flex items-center gap-3 p-3 bg-purple-50/50 border border-purple-100 rounded-2xl animate-fade-in"
+                      title="This person will receive an email invitation to join Hostel Ledger and this group."
+                    >
                       <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center text-sm font-bold text-purple-600">
                         @
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="font-black text-sm text-gray-900 block truncate">{email}</span>
                         <span className="text-[10px] text-purple-600 font-bold flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span> Email Invite
+                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span> Email Invite • New User
                         </span>
                       </div>
                       <button onClick={() => handleRemoveEmailInvite(email)} className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors">
@@ -416,16 +420,20 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                     </div>
                   ))}
 
-                  {/* INVITED USERS */}
+                  {/* INVITED USERS (Existing App Users) */}
                   {invitedUsernames.map(username => (
-                    <div key={username} className="flex items-center gap-3 p-3 bg-blue-50/50 border border-blue-100 rounded-2xl animate-fade-in">
-                      <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-600">
+                    <div
+                      key={username}
+                      className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl animate-fade-in"
+                      title="This user already has a Hostel Ledger account. They'll receive an in-app invitation and email notification."
+                    >
+                      <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-600">
                         {username.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1">
                         <span className="font-black text-sm text-gray-900 block">@{username}</span>
-                        <span className="text-[10px] text-blue-600 font-bold flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span> Pending Invite
+                        <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> App User • Invite Sent
                         </span>
                       </div>
                       <button onClick={() => handleRemoveInvite(username)} className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors">
