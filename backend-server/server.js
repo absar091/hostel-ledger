@@ -325,13 +325,21 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
       createdAt: newGroup.createdAt
     });
 
-    // 4. Handle Invited Usernames (send invitations)
+    // 4. Handle Invited Usernames (send invitations to existing users)
     if (invitedUsernames && invitedUsernames.length > 0) {
       for (const username of invitedUsernames) {
         const usernameRef = admin.database().ref(`usernames/${username.toLowerCase()}`);
         const s = await usernameRef.get();
         if (s.exists()) {
-          const inviteeUid = s.val();
+          // Handle both formats: direct UID string or object
+          const uidData = s.val();
+          const inviteeUid = typeof uidData === 'string' ? uidData : (uidData?.uid || uidData?.userId || null);
+
+          if (!inviteeUid) {
+            console.error(`Invalid UID format for username ${username}:`, uidData);
+            continue;
+          }
+
           // Create invitation
           const invRef = admin.database().ref('invitations').push();
           // Fetch sender name
@@ -349,6 +357,38 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
             status: 'pending',
             createdAt: new Date().toISOString()
           });
+
+          // Send email notification to existing user
+          try {
+            const inviteeSnap = await admin.database().ref(`users/${inviteeUid}`).get();
+            if (inviteeSnap.exists()) {
+              const inviteeData = inviteeSnap.val();
+              const inviteeEmail = inviteeData.email;
+              const inviteeName = inviteeData.name || username;
+
+              if (inviteeEmail) {
+                const mailOptions = {
+                  from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
+                  to: inviteeEmail,
+                  subject: `${senderName} invited you to join "${newGroup.name}" on Hostel Ledger`,
+                  html: `
+                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                      <h2 style="color: #4a6850;">You've been invited! 🎉</h2>
+                      <p>Hello <strong>${inviteeName}</strong>,</p>
+                      <p><strong>${senderName}</strong> has invited you to join the group <strong>"${newGroup.name}"</strong> on Hostel Ledger.</p>
+                      <p>Open the app to accept or decline this invitation.</p>
+                      <a href="https://app.hostelledger.aarx.online" style="display: inline-block; background-color: #4a6850; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 16px 0;">Open Hostel Ledger</a>
+                    </div>
+                  `
+                };
+                await transporter.sendMail(mailOptions);
+                console.log(`✅ Invitation email sent to existing user: ${inviteeEmail}`);
+              }
+            }
+          } catch (emailErr) {
+            console.error(`❌ Failed to send invitation email to ${username}:`, emailErr);
+            // Don't fail the group creation, just log the error
+          }
         }
       }
     }
