@@ -265,7 +265,14 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
   const userId = req.user.uid;
 
   if (!name) return res.status(400).json({ success: false, error: 'Group name is required' });
-  if (!members || members.length === 0) return res.status(400).json({ success: false, error: 'Members are required' });
+
+  const hasManualMembers = members && members.length > 0;
+  const hasInvitedUsernames = invitedUsernames && invitedUsernames.length > 0;
+  const hasInvitedEmails = invitedEmails && invitedEmails.length > 0;
+
+  if (!hasManualMembers && !hasInvitedUsernames && !hasInvitedEmails) {
+    return res.status(400).json({ success: false, error: 'Please add at least one member (manual or invited)' });
+  }
 
   try {
     const groupsRef = admin.database().ref('groups');
