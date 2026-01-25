@@ -156,7 +156,12 @@ export const useOneSignalPush = () => {
         await OneSignal.login(currentUser.uid);
         console.log('✅ OneSignal user ID set:', currentUser.uid);
 
-        // Get OneSignal Player ID
+        // CRITICAL: Explicitly opt-in to receive push notifications
+        console.log('📲 Opting in to push notifications...');
+        await OneSignal.User.PushSubscription.optIn();
+        console.log('✅ Opted in to push notifications');
+
+        // Get OneSignal Player ID (after opt-in)
         const playerId = await OneSignal.User.PushSubscription.id;
         console.log('🎯 OneSignal Player ID:', playerId);
 
