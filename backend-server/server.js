@@ -5,7 +5,7 @@ const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
-const webpush = require('web-push');
+// Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
 
 // Initialize Firebase Admin SDK using environment variables
@@ -35,27 +35,11 @@ try {
   console.warn('⚠️ Email existence check will not work without Firebase Admin SDK');
 }
 
-// Configure Web Push with VAPID keys
-// Updated: 2026-01-22 - Added FCM_SERVER_KEY support
-try {
-  webpush.setVapidDetails(
-    'mailto:hostelledger@aarx.online',
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-  );
-  console.log('✅ Web Push configured with VAPID keys');
-
-  // For FCM endpoints, we also need to set GCM API key
-  // FCM uses the Firebase Server Key for authorization
-  if (process.env.FCM_SERVER_KEY) {
-    webpush.setGCMAPIKey(process.env.FCM_SERVER_KEY);
-    console.log('✅ FCM Server Key configured');
-  } else {
-    console.warn('⚠️ FCM_SERVER_KEY not set - FCM push notifications may fail');
-  }
-} catch (error) {
-  console.error('❌ Web Push configuration failed:', error.message);
-  console.warn('⚠️ Push notifications will not work without VAPID keys');
+// OneSignal Configuration Check
+if (process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY) {
+  console.log('✅ OneSignal configured for push notifications');
+} else {
+  console.warn('⚠️ OneSignal not configured - push notifications will not work');
 }
 
 const app = express();
@@ -933,18 +917,30 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
 });
 
 /**
- * Internal OneSignal Notification Helper
+ * Internal OneSignal Notification Helper (with detailed logging)
  */
 const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, badge, data }) => {
+  console.log('🔔 ============ ONESIGNAL NOTIFICATION START ============');
+  console.log('🔔 Target User IDs:', userIds);
+  console.log('🔔 Title:', title);
+  console.log('🔔 Body:', body);
+
   const oneSignalAppId = process.env.ONESIGNAL_APP_ID;
   const oneSignalApiKey = process.env.ONESIGNAL_REST_API_KEY;
 
   if (!oneSignalAppId || !oneSignalApiKey) {
+    console.error('❌ OneSignal NOT configured! Missing env vars:',
+      !oneSignalAppId ? 'ONESIGNAL_APP_ID' : '',
+      !oneSignalApiKey ? 'ONESIGNAL_REST_API_KEY' : ''
+    );
     throw new Error('OneSignal not configured on server');
   }
+  console.log('✅ OneSignal credentials found (App ID:', oneSignalAppId.substring(0, 8) + '...)');
 
   // Get OneSignal Player IDs from Firebase Realtime Database
   const playerIds = [];
+  console.log('🔍 Looking up Player IDs in Firebase...');
+
   for (const userId of userIds) {
     try {
       const playerRef = admin.database().ref(`oneSignalPlayers/${userId}`);
@@ -953,12 +949,18 @@ const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, b
 
       if (playerData && playerData.playerId) {
         playerIds.push(playerData.playerId);
+        console.log(`  ✅ User ${userId}: Player ID found (${playerData.playerId.substring(0, 12)}...)`);
+      } else {
+        console.log(`  ⚠️ User ${userId}: NO Player ID in Firebase (user may not have subscribed)`);
       }
     } catch (error) {
-      console.error(`❌ Failed to get Player ID for user: ${userId}`, error);
+      console.error(`  ❌ User ${userId}: Failed to get Player ID:`, error.message);
     }
   }
 
+  console.log('📊 Summary: Found', playerIds.length, 'Player IDs out of', userIds.length, 'users');
+
+  // Build notification payload
   const notificationData = {
     app_id: oneSignalAppId,
     include_external_user_ids: userIds,
@@ -969,6 +971,9 @@ const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, b
     chrome_web_badge: badge || '/only-logo.png',
     data: data || {}
   };
+
+  console.log('📤 Sending to OneSignal API...');
+  console.log('📤 Targeting:', playerIds.length > 0 ? `${playerIds.length} Player IDs` : 'External User IDs only');
 
   const response = await fetch('https://onesignal.com/api/v1/notifications', {
     method: 'POST',
@@ -982,8 +987,14 @@ const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, b
   const responseData = await response.json();
 
   if (!response.ok) {
-    throw new Error('OneSignal API error: ' + (responseData.errors?.[0] || 'Unknown error'));
+    console.error('❌ OneSignal API Error:', responseData);
+    console.log('🔔 ============ ONESIGNAL NOTIFICATION FAILED ============');
+    throw new Error('OneSignal API error: ' + (responseData.errors?.[0] || JSON.stringify(responseData)));
   }
+
+  console.log('✅ OneSignal API Response:', responseData);
+  console.log('📊 Recipients:', responseData.recipients || 0);
+  console.log('🔔 ============ ONESIGNAL NOTIFICATION SUCCESS ============');
 
   return responseData;
 };
