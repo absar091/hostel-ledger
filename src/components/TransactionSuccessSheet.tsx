@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Check, Share2, Download, X, CheckCircle2 } from "lucide-react";
+import { Check, Share2, Download, X, CheckCircle2, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import confetti from "canvas-confetti";
 
@@ -66,8 +67,23 @@ const TransactionSuccessSheet = ({ open, onClose, transaction, type }: Transacti
                 `${type === "expense" ? `Paid by: ${transaction.paidByName}` : `From: ${transaction.fromName} To: ${transaction.toName}`}\n\n` +
                 `Shared via Hostel Ledger 🚀`;
 
-            navigator.clipboard.writeText(shareText);
-            alert("Receipt copied to clipboard!");
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(shareText)
+                    .then(() => toast.success("Receipt copied to clipboard! 📋"))
+                    .catch(() => toast.error("Failed to copy receipt"));
+            } else {
+                try {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = shareText;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    toast.success("Receipt copied to clipboard! 📋");
+                } catch (err) {
+                    toast.error("Clipboard access denied");
+                }
+            }
         }
     };
 
@@ -115,7 +131,36 @@ const TransactionSuccessSheet = ({ open, onClose, transaction, type }: Transacti
                             <div className="p-8 pt-4 space-y-5">
                                 <div className="flex justify-between items-center gap-4 text-sm">
                                     <span className="text-slate-400 font-bold">Reference</span>
-                                    <span className="text-slate-900 font-black truncate max-w-[150px] font-mono">{transaction.id.substring(0, 12).toUpperCase()}</span>
+                                    <div className="flex items-center gap-2 max-w-[200px]">
+                                        <span className="text-slate-900 font-black truncate font-mono text-[10px] sm:text-xs">
+                                            {transaction.id.toUpperCase()}
+                                        </span>
+                                        <button
+                                            onClick={() => {
+                                                if (navigator.clipboard && navigator.clipboard.writeText) {
+                                                    navigator.clipboard.writeText(transaction.id)
+                                                        .then(() => toast.success("Transaction ID copied! 📋"))
+                                                        .catch(() => toast.error("Failed to copy ID"));
+                                                } else {
+                                                    try {
+                                                        const textArea = document.createElement("textarea");
+                                                        textArea.value = transaction.id;
+                                                        document.body.appendChild(textArea);
+                                                        textArea.select();
+                                                        document.execCommand('copy');
+                                                        document.body.removeChild(textArea);
+                                                        toast.success("Transaction ID copied! 📋");
+                                                    } catch (err) {
+                                                        toast.error("Clipboard access denied");
+                                                    }
+                                                }
+                                            }}
+                                            className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-all active:scale-90"
+                                            title="Copy ID"
+                                        >
+                                            <Copy className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="flex justify-between items-center gap-4 text-sm">
                                     <span className="text-slate-400 font-bold">Date</span>

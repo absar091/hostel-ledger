@@ -13,6 +13,7 @@ import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
 import AppContainer from "@/components/AppContainer";
 import PageGuide from "@/components/PageGuide";
+import TransactionDetailModal from "@/components/TransactionDetailModal";
 import { Input } from "@/components/ui/input";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
@@ -29,6 +30,7 @@ const Activity = () => {
   const [filterType, setFilterType] = useState<"all" | "expense" | "payment" | "wallet">("all");
   const [filterDate, setFilterDate] = useState<"all" | "today" | "week" | "month">("all");
   const [showActivityGuide, setShowActivityGuide] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
 
   // Check if we should show page guide
   useEffect(() => {
@@ -240,8 +242,8 @@ const Activity = () => {
             <button
               onClick={() => setFilterType("all")}
               className={`px-5 py-3 rounded-2xl text-sm font-black whitespace-nowrap transition-all shadow-lg ${filterType === "all"
-                  ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white scale-105"
-                  : "bg-white text-[#4a6850]/80 hover:bg-[#4a6850]/5 border border-[#4a6850]/10"
+                ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white scale-105"
+                : "bg-white text-[#4a6850]/80 hover:bg-[#4a6850]/5 border border-[#4a6850]/10"
                 }`}
             >
               All
@@ -249,8 +251,8 @@ const Activity = () => {
             <button
               onClick={() => setFilterType("expense")}
               className={`px-5 py-3 rounded-2xl text-sm font-black whitespace-nowrap transition-all shadow-lg ${filterType === "expense"
-                  ? "bg-gradient-to-r from-red-500 to-red-600 text-white scale-105"
-                  : "bg-white text-red-600/80 hover:bg-red-50 border border-red-500/10"
+                ? "bg-gradient-to-r from-red-500 to-red-600 text-white scale-105"
+                : "bg-white text-red-600/80 hover:bg-red-50 border border-red-500/10"
                 }`}
             >
               Expenses ({stats.expenseCount})
@@ -258,8 +260,8 @@ const Activity = () => {
             <button
               onClick={() => setFilterType("payment")}
               className={`px-5 py-3 rounded-2xl text-sm font-black whitespace-nowrap transition-all shadow-lg ${filterType === "payment"
-                  ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white scale-105"
-                  : "bg-white text-[#4a6850]/80 hover:bg-[#4a6850]/5 border border-[#4a6850]/10"
+                ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white scale-105"
+                : "bg-white text-[#4a6850]/80 hover:bg-[#4a6850]/5 border border-[#4a6850]/10"
                 }`}
             >
               Payments ({stats.paymentCount})
@@ -267,8 +269,8 @@ const Activity = () => {
             <button
               onClick={() => setFilterType("wallet")}
               className={`px-5 py-3 rounded-2xl text-sm font-black whitespace-nowrap transition-all shadow-lg ${filterType === "wallet"
-                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white scale-105"
-                  : "bg-white text-blue-600/80 hover:bg-blue-50 border border-blue-500/10"
+                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white scale-105"
+                : "bg-white text-blue-600/80 hover:bg-blue-50 border border-blue-500/10"
                 }`}
             >
               Wallet
@@ -281,8 +283,8 @@ const Activity = () => {
             <button
               onClick={() => setFilterDate("all")}
               className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition-all ${filterDate === "all"
-                  ? "bg-gray-800 text-white shadow-lg scale-105"
-                  : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
+                ? "bg-gray-800 text-white shadow-lg scale-105"
+                : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
                 }`}
             >
               All Time
@@ -290,8 +292,8 @@ const Activity = () => {
             <button
               onClick={() => setFilterDate("today")}
               className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition-all ${filterDate === "today"
-                  ? "bg-gray-800 text-white shadow-lg scale-105"
-                  : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
+                ? "bg-gray-800 text-white shadow-lg scale-105"
+                : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
                 }`}
             >
               Today
@@ -299,8 +301,8 @@ const Activity = () => {
             <button
               onClick={() => setFilterDate("week")}
               className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition-all ${filterDate === "week"
-                  ? "bg-gray-800 text-white shadow-lg scale-105"
-                  : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
+                ? "bg-gray-800 text-white shadow-lg scale-105"
+                : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
                 }`}
             >
               This Week
@@ -308,8 +310,8 @@ const Activity = () => {
             <button
               onClick={() => setFilterDate("month")}
               className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition-all ${filterDate === "month"
-                  ? "bg-gray-800 text-white shadow-lg scale-105"
-                  : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
+                ? "bg-gray-800 text-white shadow-lg scale-105"
+                : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
                 }`}
             >
               This Month
@@ -332,9 +334,10 @@ const Activity = () => {
                   : transaction.amount;
 
                 return (
-                  <div
+                  <button
                     key={transaction.id}
-                    className="w-full bg-white rounded-3xl p-5 border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
+                    onClick={() => setSelectedTransaction(transaction)}
+                    className="w-full bg-white rounded-3xl p-5 border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group text-left"
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
                     <div className="flex items-center gap-4">
@@ -360,8 +363,8 @@ const Activity = () => {
 
                       <div className="text-right flex-shrink-0">
                         <div className={`font-black text-base lg:text-xl tabular-nums tracking-tight ${transaction.type === "expense"
-                            ? (isPayer || isParticipant ? "text-red-600" : "text-slate-400")
-                            : transaction.type === "payment" ? "text-[#4a6850]" : "text-blue-600"
+                          ? (isPayer || isParticipant ? "text-red-600" : "text-slate-400")
+                          : transaction.type === "payment" ? "text-[#4a6850]" : "text-blue-600"
                           }`}>
                           {transaction.type === "expense" && !isPayer && !isParticipant ? "" : (transaction.type === "expense" ? "-" : "+")}
                           {transaction.type === "expense" && !isPayer && !isParticipant ? "-" : `Rs ${displayAmount.toLocaleString()}`}
@@ -371,7 +374,7 @@ const Activity = () => {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -403,6 +406,16 @@ const Activity = () => {
           show={showActivityGuide}
           onClose={handleActivityGuideClose}
         />
+
+        {/* Transaction Detail Modal */}
+        {selectedTransaction && (
+          <TransactionDetailModal
+            transaction={selectedTransaction}
+            onClose={() => setSelectedTransaction(null)}
+            groups={groups}
+            user={user}
+          />
+        )}
 
         {/* Bottom Navigation */}
         <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
