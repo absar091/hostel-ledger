@@ -1237,8 +1237,8 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     // 8. Notifications (Async - Call helper directly)
     setImmediate(async () => {
       try {
-        // Prepare data for OneSignal
-        const membersWithUserId = group.members.filter(m => m.userId && m.userId !== currentUserId);
+        // Send to ALL members including the user who added the expense
+        const membersWithUserId = group.members.filter(m => m.userId);
         if (membersWithUserId.length > 0) {
           const userIds = membersWithUserId.map(m => m.userId);
           await sendOneSignalNotificationInternal({
@@ -1412,19 +1412,21 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
       transaction: newTransaction
     });
 
-    // 7. Notifications (Async - Call helper directly)
+    // 7. Notifications (Async - Send to ALL group members)
     setImmediate(async () => {
       try {
-        const targetPerson = isPaying ? toPerson : fromPerson;
-        if (targetPerson.userId) {
+        // Send to ALL members including the user who recorded the payment
+        const membersWithUserId = group.members.filter(m => m.userId);
+        if (membersWithUserId.length > 0) {
+          const userIds = membersWithUserId.map(m => m.userId);
           await sendOneSignalNotificationInternal({
-            userIds: [targetPerson.userId],
-            title: isPaying ? "Money Received! 💸" : "Payment Confirmed! ✅",
+            userIds,
+            title: `Payment Recorded in ${group.name}`,
             body: isPaying
-              ? `${user.name} paid you Rs ${amount.toLocaleString()}.`
-              : `${user.name} marked your payment of Rs ${amount.toLocaleString()} as received.`,
+              ? `${user.name} paid Rs ${amount.toLocaleString()} to ${toPerson.name}`
+              : `${fromPerson.name} paid Rs ${amount.toLocaleString()} to ${user.name}`,
             data: {
-              type: isPaying ? 'payment_made' : 'payment_received',
+              type: 'payment',
               transactionId,
               groupId,
               amount
