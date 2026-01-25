@@ -109,7 +109,7 @@ const InvitationsList = () => {
                             <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleRespond(inv.invitationId, false)}
+                                onClick={() => handleRespond(inv.invitationId, false, inv.groupId)}
                                 disabled={processingId === inv.invitationId}
                                 className="rounded-xl border-red-100 text-red-600 hover:bg-red-50"
                             >
@@ -117,7 +117,7 @@ const InvitationsList = () => {
                             </Button>
                             <Button
                                 size="sm"
-                                onClick={() => handleRespond(inv.invitationId, true)}
+                                onClick={() => handleRespond(inv.invitationId, true, inv.groupId)}
                                 disabled={processingId === inv.invitationId}
                                 className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200"
                             >
