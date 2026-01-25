@@ -134,9 +134,13 @@ const TimelineItem = ({
       className="w-full bg-white border border-[#4a6850]/10 rounded-3xl p-5 shadow-lg text-left hover:shadow-xl hover:border-[#4a6850]/20 transition-all"
     >
       <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shrink-0 shadow-lg">
-          <Icon className="w-6 h-6 text-gray-600 font-bold" />
-        </div>
+        {paidBy ? (
+          <Avatar name={paidBy} size="md" />
+        ) : (
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shrink-0 shadow-lg">
+            <Icon className="w-6 h-6 text-gray-600 font-bold" />
+          </div>
+        )}
 
         <div className="flex-1 min-w-0">
           <div className="font-black text-gray-900 tracking-tight text-lg truncate">{title}</div>

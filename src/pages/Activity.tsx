@@ -101,12 +101,21 @@ const Activity = () => {
     const walletAdds = filteredTransactions.filter(t => t.type === "wallet_add");
 
     const totalSpent = expenses.reduce((sum, t) => {
-      if (t.paidBy === user?.uid) return sum + t.amount;
+      // 1. If you paid, add full amount
+      if (t.paidBy === user?.uid) return sum + (t.amount || 0);
+
+      // 2. If you are a participant, add your share
+      if (t.userShare !== undefined && t.userShare > 0) return sum + t.userShare;
+
+      // 3. Fallback: check participants array
       const userPart = t.participants?.find((p: any) => p.id === user?.uid);
-      return sum + (userPart ? userPart.amount : 0);
+      return sum + (userPart ? (userPart.amount || 0) : 0);
     }, 0);
+
     const totalReceived = payments.reduce((sum, t) => {
-      if (t.to === user?.uid) return sum + t.amount;
+      // 1. If you are the receiver
+      if (t.userRole === 'receiver') return sum + (t.amount || 0);
+      if (t.to === user?.uid) return sum + (t.amount || 0);
       return sum;
     }, 0);
     const totalAdded = walletAdds.reduce((sum, t) => sum + t.amount, 0);

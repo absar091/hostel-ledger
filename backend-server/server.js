@@ -1150,18 +1150,30 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     updates[`transactions/${transactionId}`] = newTransaction;
 
     // C. Add to userTransaction lists for all group members (Denormalized)
-    const transactionSummary = {
+    const transactionSummaryBase = {
       type: "expense",
       title: newTransaction.title || "Expense",
       amount,
       createdAt: newTransaction.createdAt,
       groupId,
-      timestamp
+      timestamp,
+      paidBy,
+      paidByName: payer.name,
+      paidByIsTemporary: !!payer.isTemporary,
+      memberCount: group.members.length,
+      participantsCount: participants.length
     };
 
     group.members.forEach(m => {
       if (m.userId) {
-        updates[`userTransactions/${m.userId}/${transactionId}`] = transactionSummary;
+        const userSummary = { ...transactionSummaryBase };
+        const split = splits.find(s => s.participantId === m.id);
+
+        userSummary.userIsPayer = (m.id === paidBy);
+        userSummary.userIsParticipant = !!split;
+        userSummary.userShare = split ? split.amount : 0;
+
+        updates[`userTransactions/${m.userId}/${transactionId}`] = userSummary;
       }
     });
 
@@ -1325,17 +1337,31 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     updates[`transactions/${transactionId}`] = newTransaction;
 
     // C. Add to userTransaction lists for relevant members (Denormalized)
-    const transactionSummary = {
+    const transactionSummaryBase = {
       type: "payment",
       title: newTransaction.title || "Payment",
       amount,
       createdAt: newTransaction.createdAt,
       groupId,
-      timestamp
+      timestamp,
+      paidBy: fromMember,
+      paidByName: fromPerson.name,
+      fromName: fromPerson.name,
+      toName: toPerson.name,
+      method,
+      memberCount: group.members.length
     };
 
-    if (fromPerson.userId) updates[`userTransactions/${fromPerson.userId}/${transactionId}`] = transactionSummary;
-    if (toPerson.userId) updates[`userTransactions/${toPerson.userId}/${transactionId}`] = transactionSummary;
+    if (fromPerson.userId) {
+      const userTxUpdate = { ...transactionSummaryBase };
+      userTxUpdate.userRole = 'payer';
+      updates[`userTransactions/${fromPerson.userId}/${transactionId}`] = userTxUpdate;
+    }
+    if (toPerson.userId) {
+      const userTxUpdate = { ...transactionSummaryBase };
+      userTxUpdate.userRole = 'receiver';
+      updates[`userTransactions/${toPerson.userId}/${transactionId}`] = userTxUpdate;
+    }
 
     // D. Update Bidirectional Settlements
     const otherPersonId = isPaying ? toMember : fromMember;
@@ -1461,7 +1487,8 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
       amount,
       createdAt: walletTransaction.createdAt,
       groupId: "wallet",
-      timestamp: walletTransaction.timestamp
+      timestamp: walletTransaction.timestamp,
+      note: walletTransaction.note
     };
 
     updates[`transactions/${transactionId}`] = walletTransaction;

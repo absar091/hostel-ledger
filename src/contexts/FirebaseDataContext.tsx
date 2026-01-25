@@ -128,6 +128,7 @@ export interface Group {
   emoji: string;
   coverPhoto?: string;
   members: GroupMember[];
+  memberCount?: number;
   createdBy: string;
   createdAt: string;
 }
@@ -156,6 +157,10 @@ export interface Transaction {
   toIsTemporary?: boolean;
   createdAt: string;
   timestamp?: number;
+  userIsPayer?: boolean;
+  userIsParticipant?: boolean;
+  userShare?: number;
+  userRole?: 'payer' | 'receiver' | 'none';
 }
 
 interface FirebaseDataContextType {
@@ -251,16 +256,52 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           try {
             if (snapshot.exists()) {
               const userGroups = snapshot.val();
-              const groupsList: Group[] = Object.entries(userGroups).map(([id, metadata]: [string, any]) => ({
-                id,
-                name: metadata.name || "Unnamed Group",
-                emoji: metadata.emoji || "📁",
-                coverPhoto: metadata.coverPhoto,
-                members: [], // Simplified for dashboard, full data fetched on demand if needed
-                createdBy: metadata.createdBy || "",
-                createdAt: metadata.createdAt || ""
-              }));
+              const groupPromises = Object.entries(userGroups).map(async ([id, metadata]: [string, any]) => {
+                // ALWAYS fetch full group data to ensure members are loaded
+                // The metadata path had a stale closure bug causing "0 members"
+                try {
+                  const groupRef = ref(database, `groups/${id}`);
+                  const groupSnapshot = await get(groupRef);
+                  if (groupSnapshot.exists()) {
+                    const fullData = groupSnapshot.val();
+                    const group = { id, ...fullData };
 
+                    // Update the index if needed (for quick name display during next load)
+                    if (typeof metadata !== 'object' || !metadata.name) {
+                      const userGroupMetadataRef = ref(database, `userGroups/${user.uid}/${id}`);
+                      set(userGroupMetadataRef, {
+                        name: group.name,
+                        emoji: group.emoji,
+                        coverPhoto: group.coverPhoto || null,
+                        memberCount: group.members?.length || 0,
+                        createdBy: group.createdBy,
+                        createdAt: group.createdAt
+                      }).catch(err => console.error("Index migration failed:", err));
+                    }
+
+                    return group;
+                  }
+                } catch (err) {
+                  console.error(`Failed to fetch group ${id}:`, err);
+
+                  // Fallback to metadata if fetch fails (offline scenario)
+                  if (typeof metadata === 'object' && metadata !== null && metadata.name) {
+                    return {
+                      id,
+                      name: metadata.name,
+                      emoji: metadata.emoji || "📁",
+                      coverPhoto: metadata.coverPhoto,
+                      members: [], // Empty but memberCount will show count
+                      memberCount: metadata.memberCount || 0,
+                      createdBy: metadata.createdBy || "",
+                      createdAt: metadata.createdAt || ""
+                    };
+                  }
+                }
+                return null;
+              });
+
+              const groupsList = (await Promise.all(groupPromises)).filter(Boolean) as Group[];
               setGroups(groupsList);
 
               // Cache groups to IndexedDB for offline access
@@ -305,19 +346,41 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           try {
             if (snapshot.exists()) {
               const userTransactions = snapshot.val();
-              const transactionsList: Transaction[] = Object.entries(userTransactions).map(([id, data]: [string, any]) => ({
-                id,
-                groupId: data.groupId || "unknown",
-                type: data.type || "expense",
-                title: data.title || "Transaction",
-                amount: data.amount || 0,
-                date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "Unknown Date",
-                createdAt: data.createdAt || new Date().toISOString(),
-                timestamp: data.timestamp || Date.now(),
-                paidBy: "", // Placeholder for dashboard
-                paidByName: ""
-              }));
+              const transactionPromises = Object.entries(userTransactions).map(async ([id, data]: [string, any]) => {
+                // ALWAYS fetch full transaction data to ensure participants are loaded
+                // The metadata shortcut was missing the participants array causing missing chips
+                try {
+                  const txRef = ref(database, `transactions/${id}`);
+                  const txSnapshot = await get(txRef);
+                  if (txSnapshot.exists()) {
+                    const fullTx = txSnapshot.val();
+                    return { id, ...fullTx };
+                  }
+                } catch (err) {
+                  console.error(`Failed to fetch transaction ${id}:`, err);
+                  // Fallback to metadata if fetch fails (offline scenario)
+                  if (typeof data === 'object' && data !== null && data.type) {
+                    return {
+                      id,
+                      groupId: data.groupId || "unknown",
+                      type: data.type || "expense",
+                      title: data.title || "Transaction",
+                      amount: data.amount || 0,
+                      date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "Unknown Date",
+                      createdAt: data.createdAt || new Date().toISOString(),
+                      timestamp: data.timestamp || Date.now(),
+                      paidBy: data.paidBy || "",
+                      paidByName: data.paidByName || "",
+                      participants: [], // Empty in offline fallback
+                      fromName: data.fromName || "",
+                      toName: data.toName || ""
+                    } as Transaction;
+                  }
+                }
+                return null;
+              });
 
+              const transactionsList = (await Promise.all(transactionPromises)).filter(Boolean) as Transaction[];
               const sortedTransactions = transactionsList.sort((a, b) =>
                 new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
               );
@@ -465,6 +528,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             name: newGroup.name,
             emoji: newGroup.emoji,
             coverPhoto: newGroup.coverPhoto || null,
+            memberCount: newGroup.members.length,
             createdBy: user.uid,
             createdAt: newGroup.createdAt
           };
@@ -558,6 +622,10 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
       await retryOperation(() => set(groupRef, updatedMembers));
 
+      // Update denormalized count for the current user
+      const userGroupMetadataCountRef = ref(database, `userGroups/${user.uid}/${groupId}/memberCount`);
+      set(userGroupMetadataCountRef, updatedMembers.length).catch(e => console.error("Failed to update index count", e));
+
       return { success: true, memberId: newMember.id };
     } catch (error: any) {
       console.error("Add member error:", error);
@@ -602,6 +670,10 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       const groupMembersRef = ref(database, `groups/${groupId}/members`);
 
       await retryOperation(() => set(groupMembersRef, updatedMembers));
+
+      // Update denormalized count for the current user
+      const userGroupMetadataCountRef = ref(database, `userGroups/${user.uid}/${groupId}/memberCount`);
+      set(userGroupMetadataCountRef, updatedMembers.length).catch(e => console.error("Failed to update index count", e));
 
       return { success: true };
     } catch (error: any) {
@@ -909,7 +981,21 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         const snapshot = await get(groupRef);
         if (snapshot.exists()) {
           const data = snapshot.val();
-          return { id: groupId, ...data };
+          const fullGroup = { id: groupId, ...data };
+
+          // Update global state with full details to fix "0 members" issue
+          setGroups(prev => prev.map(g => {
+            if (g.id === groupId) {
+              return {
+                ...g, ...fullGroup,
+                // Ensure memberCount matches the actual array length if available
+                memberCount: fullGroup.members?.length || fullGroup.memberCount || 0
+              };
+            }
+            return g;
+          }));
+
+          return fullGroup;
         }
       }
 

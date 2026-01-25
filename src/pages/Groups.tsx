@@ -75,12 +75,12 @@ const Groups = () => {
         paymentDetails: m.paymentDetails,
       })),
     };
-    
+
     // Only add coverPhoto if it exists (Firebase doesn't allow undefined)
     if (data.coverPhoto) {
       groupData.coverPhoto = data.coverPhoto;
     }
-    
+
     const result = await createGroup(groupData);
 
     if (result.success) {
@@ -109,8 +109,8 @@ const Groups = () => {
         // Search in group name
         if (group.name.toLowerCase().includes(query)) return true;
 
-        // Search in member names
-        if (group.members.some(m => m.name.toLowerCase().includes(query))) return true;
+        // Search in member names (only if loaded)
+        if (group.members && group.members.some(m => m.name.toLowerCase().includes(query))) return true;
 
         return false;
       });
@@ -188,8 +188,8 @@ const Groups = () => {
               <button
                 onClick={() => setActiveFilter("all")}
                 className={`px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold border flex items-center gap-2 transition-all whitespace-nowrap flex-shrink-0 ${activeFilter === "all"
-                    ? "bg-[#4a6850] text-white border-[#4a6850] shadow-lg"
-                    : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
+                  ? "bg-[#4a6850] text-white border-[#4a6850] shadow-lg"
+                  : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
                   }`}
               >
                 <Filter className="w-3 lg:w-4 h-3 lg:h-4" />
@@ -198,8 +198,8 @@ const Groups = () => {
               <button
                 onClick={() => setActiveFilter("unsettled")}
                 className={`px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold border transition-all whitespace-nowrap flex-shrink-0 ${activeFilter === "unsettled"
-                    ? "bg-[#4a6850] text-white border-[#4a6850] shadow-lg"
-                    : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
+                  ? "bg-[#4a6850] text-white border-[#4a6850] shadow-lg"
+                  : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
                   }`}
               >
                 Unsettled
@@ -207,8 +207,8 @@ const Groups = () => {
               <button
                 onClick={() => setActiveFilter("favorites")}
                 className={`px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold border transition-all whitespace-nowrap flex-shrink-0 ${activeFilter === "favorites"
-                    ? "bg-[#4a6850] text-white border-[#4a6850] shadow-lg"
-                    : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
+                  ? "bg-[#4a6850] text-white border-[#4a6850] shadow-lg"
+                  : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
                   }`}
               >
                 Favorites
@@ -242,7 +242,7 @@ const Groups = () => {
               }, { memberId: '', settlement: null as any });
 
               const memberObj = group.members.find(m => m.id === memberToSettle.memberId);
-              const memberName = memberObj?.name || '';
+              const memberName = memberObj?.name || (memberToSettle.memberId ? `Member (${memberToSettle.memberId.substring(0, 5)})` : '');
               const isTemporary = memberObj?.isTemporary || false;
 
               const handleSettleClick = (e: React.MouseEvent) => {
@@ -267,8 +267,8 @@ const Groups = () => {
                   {/* Header with gradient or cover photo */}
                   <div className={`h-24 lg:h-32 w-full relative overflow-hidden ${!group.coverPhoto ? `bg-gradient-to-br ${getGroupGradient(index)}` : ''}`}>
                     {group.coverPhoto && (
-                      <img 
-                        src={group.coverPhoto} 
+                      <img
+                        src={group.coverPhoto}
                         alt={group.name}
                         className="w-full h-full object-cover"
                       />
@@ -283,8 +283,8 @@ const Groups = () => {
                       >
                         <Star
                           className={`w-4 h-4 ${favoriteGroups.includes(group.id)
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "text-white"
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-white"
                             }`}
                         />
                       </button>
@@ -299,22 +299,35 @@ const Groups = () => {
                     <div className="flex justify-between items-start mb-3 lg:mb-4">
                       <div className="flex-1 min-w-0 mr-2">
                         <h3 className="text-base lg:text-lg font-bold text-gray-900 truncate">{group.name}</h3>
-                        <p className="text-slate-500 text-xs font-medium">
-                          {group.members.length} members
+                        <p className="text-slate-500 text-[10px] lg:text-xs font-medium">
+                          {group.memberCount !== undefined && group.members.length === 0
+                            ? `${group.memberCount} members`
+                            : `${group.members.length} members`}
                         </p>
                       </div>
-                      <div className="flex -space-x-2 flex-shrink-0">
-                        {group.members.slice(0, 3).map((member, idx) => (
-                          <div
-                            key={member.id}
-                            className="w-7 lg:w-8 h-7 lg:h-8 rounded-full border-2 border-white bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center text-white text-xs font-bold"
-                          >
-                            {member.name.charAt(0).toUpperCase()}
-                          </div>
-                        ))}
-                        {group.members.length > 3 && (
-                          <div className="w-7 lg:w-8 h-7 lg:h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
-                            +{group.members.length - 3}
+                      <div className="text-xs text-[#4a6850] font-bold">
+                        {group.memberCount || group.members.length} members
+                      </div>
+                      <div className="flex -space-x-1.5 lg:-space-x-2 flex-shrink-0">
+                        {group.members.length > 0 ? (
+                          <>
+                            {group.members.slice(0, 3).map((member, idx) => (
+                              <div
+                                key={member.id}
+                                className="w-7 lg:w-8 h-7 lg:h-8 rounded-full border-2 border-white bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center text-white text-[10px] lg:text-xs font-bold shadow-sm"
+                              >
+                                {member.name.charAt(0).toUpperCase()}
+                              </div>
+                            ))}
+                            {group.members.length > 3 && (
+                              <div className="w-7 lg:w-8 h-7 lg:h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[9px] lg:text-[10px] font-bold text-slate-500 shadow-sm">
+                                +{group.members.length - 3}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="w-7 lg:w-8 h-7 lg:h-8 rounded-full border-2 border-slate-50 bg-slate-50 flex items-center justify-center text-slate-300">
+                            <Users className="w-3 lg:w-4 h-3 lg:h-4" />
                           </div>
                         )}
                       </div>
@@ -342,8 +355,8 @@ const Groups = () => {
                       <button
                         onClick={handleSettleClick}
                         className={`flex-1 text-white text-xs font-bold py-2 rounded-lg transition-colors ${isSettled
-                            ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                            : "bg-[#4a6850] hover:bg-[#3d5643]"
+                          ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                          : "bg-[#4a6850] hover:bg-[#3d5643]"
                           }`}
                         disabled={isSettled}
                       >

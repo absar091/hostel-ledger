@@ -10,6 +10,7 @@ import { saveOfflineExpense } from "@/lib/offlineDB";
 import { useSync } from "@/hooks/useSync";
 import { toast } from "sonner";
 import { calculateExpenseSplit } from "@/lib/expenseLogic";
+import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 // import { validateExpenseData, sanitizeString, sanitizeAmount } from "@/lib/validation";
 
 interface Member {
@@ -71,15 +72,36 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
   const [showTempMemberInput, setShowTempMemberInput] = useState(false);
   const [tempMemberName, setTempMemberName] = useState("");
   const [tempMemberCondition, setTempMemberCondition] = useState<'SETTLED' | 'TIME_LIMIT'>('TIME_LIMIT');
-  // Optimistic update state
+  const [fullGroupData, setFullGroupData] = useState<Group | null>(null);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
+  const { fetchGroupDetail } = useFirebaseData();
 
   // Get members from selected group
   // Get members from selected group + local temp members
   // Get members from selected group
   const members = useMemo(() => {
+    if (fullGroupData && fullGroupData.id === selectedGroup) {
+      return fullGroupData.members;
+    }
     const group = groups.find((g) => g.id === selectedGroup);
     return group?.members || [];
-  }, [groups, selectedGroup]);
+  }, [groups, selectedGroup, fullGroupData]);
+
+  useEffect(() => {
+    const loadFullGroup = async () => {
+      if (selectedGroup) {
+        setIsLoadingMembers(true);
+        const fullData = await fetchGroupDetail(selectedGroup);
+        if (fullData) {
+          setFullGroupData(fullData as any);
+        }
+        setIsLoadingMembers(false);
+      } else {
+        setFullGroupData(null);
+      }
+    };
+    loadFullGroup();
+  }, [selectedGroup, fetchGroupDetail]);
 
   // Auto-select group if only one exists
   useEffect(() => {
@@ -157,7 +179,6 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
     setNote("");
     setPlace("");
     setValidationErrors([]);
-    setLocalTempMembers([]); // Clear any staged members
     onClose();
   };
 

@@ -8,6 +8,7 @@ import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
+import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 
 interface Member {
   id: string;
@@ -45,6 +46,7 @@ interface RecordPaymentSheetProps {
 
 const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSheetProps) => {
   const { getSettlements } = useFirebaseAuth();
+  const { fetchGroupDetail } = useFirebaseData();
   const [step, setStep] = useState(1);
   const [selectedGroup, setSelectedGroup] = useState("");
   const [fromMember, setFromMember] = useState("");
@@ -90,6 +92,20 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
       phone: fullMember?.phone
     };
   }, [fromMember, selectedGroup, otherMembers, settlements, groups]);
+
+  // Auto-select group if only one exists
+  // ... existing state ...
+
+  // Fetch full group details when a group is selected if members are missing
+  useEffect(() => {
+    if (selectedGroup) {
+      const group = groups.find(g => g.id === selectedGroup);
+      if (group && group.members.length === 0 && (group.memberCount || 0) > 0) {
+        // Trigger fetch to populate members
+        fetchGroupDetail(selectedGroup);
+      }
+    }
+  }, [selectedGroup, groups, fetchGroupDetail]);
 
   // Auto-select group if only one exists
   useEffect(() => {
@@ -216,7 +232,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   <div className="flex-1 text-left min-w-0">
                     <span className="font-black text-gray-900 tracking-tight block truncate">{group.name}</span>
                     <p className="text-xs text-[#4a6850]/80 font-bold">
-                      {group.members.length} members
+                      {group.memberCount || group.members.length} members
                     </p>
                   </div>
                   {selectedGroup === group.id && (

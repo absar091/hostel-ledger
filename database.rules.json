@@ -4,7 +4,7 @@
     ".write": false,
     "users": {
       "$uid": {
-        ".read": "$uid === auth.uid",
+        ".read": "auth != null",
         ".write": "$uid === auth.uid && auth != null",
         "walletBalance": {
           ".write": false
@@ -12,7 +12,7 @@
         "settlements": {
           ".write": false
         },
-        ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt']) && newData.child('uid').val() === auth.uid"
+        ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt']) && newData.child('uid').val() === $uid"
       }
     },
     "groups": {

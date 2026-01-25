@@ -153,7 +153,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                     <div className="flex-1 min-w-0">
                                         <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Group</div>
                                         <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transactionGroup.name}</div>
-                                        <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">{transactionGroup.members.length} members</div>
+                                        <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">{transactionGroup.memberCount || transactionGroup.members.length} members</div>
                                     </div>
                                 </div>
                             )}

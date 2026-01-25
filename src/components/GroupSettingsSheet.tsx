@@ -116,11 +116,10 @@ const GroupSettingsSheet = ({
                         setSelectedEmoji(emoji);
                         onUpdateGroup({ emoji });
                       }}
-                      className={`w-14 h-14 rounded-3xl text-2xl flex items-center justify-center transition-all shadow-lg hover:shadow-xl ${
-                        selectedEmoji === emoji
+                      className={`w-14 h-14 rounded-3xl text-2xl flex items-center justify-center transition-all shadow-lg hover:shadow-xl ${selectedEmoji === emoji
                           ? "bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white scale-110 border-2 border-[#4a6850]"
                           : "bg-white hover:bg-[#4a6850]/5 border border-[#4a6850]/10 hover:border-[#4a6850]/20"
-                      }`}
+                        }`}
                     >
                       {emoji}
                     </button>
@@ -132,7 +131,7 @@ const GroupSettingsSheet = ({
             {/* Members Section */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <Label className="text-sm font-black text-[#4a6850]/80 uppercase tracking-wide">Members ({group.members.length})</Label>
+                <Label className="text-sm font-black text-[#4a6850]/80 uppercase tracking-wide">Members ({((group as any).memberCount || group.members.length)})</Label>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -155,8 +154,8 @@ const GroupSettingsSheet = ({
                     className="h-12 rounded-2xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] bg-white"
                     autoFocus
                   />
-                  <Button 
-                    onClick={handleAddMember} 
+                  <Button
+                    onClick={handleAddMember}
                     disabled={!newMemberName.trim()}
                     className="h-12 px-6 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
                   >
@@ -227,9 +226,9 @@ const GroupSettingsSheet = ({
           </div>
 
           <div className="pt-6 border-t border-[#4a6850]/10 mt-auto bg-white flex-shrink-0">
-            <Button 
-              onClick={onClose} 
-              variant="secondary" 
+            <Button
+              onClick={onClose}
+              variant="secondary"
               className="w-full h-14 rounded-3xl font-black shadow-lg hover:shadow-xl transition-all"
             >
               Done

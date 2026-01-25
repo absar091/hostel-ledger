@@ -47,30 +47,29 @@ const ToPay = () => {
 
   // Calculate people the current user owes money to
   const peopleIOwe = useMemo(() => {
-    if (!user) return [];
+    if (!user || !user.settlements) return [];
 
     const people: PersonToPay[] = [];
 
-    // Use the settlements system from FirebaseAuth context
-    groups.forEach((group) => {
-      const currentUserMember = group.members.find((m) => m.isCurrentUser);
-      if (!currentUserMember) return;
+    // Iterate over settlements in the user profile
+    Object.entries(user.settlements).forEach(([groupId, groupSettlements]) => {
+      const group = groups.find(g => g.id === groupId);
+      if (!group) return;
 
-      group.members.forEach((member) => {
-        if (member.isCurrentUser) return;
+      Object.entries(groupSettlements).forEach(([memberId, settlements]) => {
+        if (settlements.toPay > 0) {
+          // Find member name in the group's members list (if loaded)
+          const member = group.members.find(m => m.id === memberId);
 
-        // Get settlements for this specific group and person
-        const settlements = user.settlements?.[group.id]?.[member.id];
-        if (settlements && settlements.toPay > 0) {
           people.push({
-            id: member.id,
-            name: member.name,
+            id: memberId,
+            name: member?.name || `Member (${memberId.substring(0, 5)})`,
             amount: settlements.toPay,
-            groupId: group.id,
+            groupId: groupId,
             groupName: group.name,
-            phone: member.phone,
-            paymentDetails: member.paymentDetails,
-            isTemporary: member.isTemporary,
+            phone: member?.phone,
+            paymentDetails: member?.paymentDetails,
+            isTemporary: member?.isTemporary,
           });
         }
       });

@@ -199,10 +199,14 @@ const GroupDetail = () => {
   }));
   const currentUser = group.members.find((m) => m.isCurrentUser);
 
-  // Calculate total pending
+  // Calculate total pending using settlements
   const totalPending = group.members.reduce((sum, m) => {
-    if (!m.isCurrentUser && m.balance < 0) {
-      return sum + Math.abs(m.balance);
+    if (!m.isCurrentUser) {
+      const settlement = settlements[m.id];
+      // If settlement exists and you owe them (toPay > 0)
+      if (settlement && settlement.toPay > 0) {
+        return sum + settlement.toPay;
+      }
     }
     return sum;
   }, 0);
@@ -303,9 +307,11 @@ const GroupDetail = () => {
     };
   });
 
-  const topSpender = memberExpenseContributions.reduce((prev, curr) => {
-    return curr.totalPaid > prev.totalPaid ? curr : prev;
-  });
+  const topSpender = memberExpenseContributions.length > 0
+    ? memberExpenseContributions.reduce((prev, curr) => {
+      return curr.totalPaid > prev.totalPaid ? curr : prev;
+    })
+    : null;
 
   return (
     <div className="min-h-screen bg-white pb-24">
@@ -329,7 +335,7 @@ const GroupDetail = () => {
                 <h1 className="text-xl font-black text-gray-900 tracking-tight truncate">{group.name}</h1>
               </div>
               <p className="text-xs text-[#4a6850]/80 font-bold mt-1">
-                {group.members.length} members {totalPending > 0 && `• Rs ${totalPending.toLocaleString()} pending`}
+                {group.memberCount || group.members.length} members {totalPending > 0 && `• Rs ${totalPending.toLocaleString()} pending`}
               </p>
             </div>
 
@@ -568,7 +574,7 @@ const GroupDetail = () => {
                 )}
               </div>
               <div className="text-xs text-[#4a6850]/80 font-bold">
-                {group.members.length} members in this group
+                {group.memberCount || group.members.length} members in this group
               </div>
             </div>
           </div>
