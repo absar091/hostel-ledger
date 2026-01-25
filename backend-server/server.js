@@ -1997,6 +1997,243 @@ app.post('/api/respond-invitation', generalLimiter, async (req, res) => {
   }
 });
 
+/**
+ * User Discovery Endpoint
+ * Fetches public user details by username
+ */
+app.post('/api/get-valid-user-details', authenticate, async (req, res) => {
+  const { username } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ success: false, error: 'Username is required' });
+  }
+
+  try {
+    const usernameRef = admin.database().ref(`usernames/${username.toLowerCase()}`);
+    const usernameSnapshot = await usernameRef.get();
+
+    if (!usernameSnapshot.exists()) {
+      return res.json({ success: true, exists: false });
+    }
+
+    const uid = usernameSnapshot.val();
+    const userRef = admin.database().ref(`users/${uid}`);
+    const userSnapshot = await userRef.get();
+
+    if (!userSnapshot.exists()) {
+      return res.json({ success: true, exists: false });
+    }
+
+    const userData = userSnapshot.val();
+
+    const publicProfile = {
+      uid,
+      username: userData.username,
+      name: userData.name,
+      photoURL: userData.photoURL || null,
+      paymentMethods: {
+        jazzCash: !!userData.paymentDetails?.jazzCash,
+        easypaisa: !!userData.paymentDetails?.easypaisa,
+        bankName: !!userData.paymentDetails?.bankName,
+        raastId: !!userData.paymentDetails?.raastId
+      }
+    };
+
+    res.json({ success: true, exists: true, user: publicProfile });
+  } catch (error) {
+    console.error('Error fetching user details:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch user details' });
+  }
+});
+
+/**
+ * Internal Invitation Endpoint
+ */
+app.post('/api/send-invitation', authenticate, async (req, res) => {
+  const { groupId, inviteeUsername } = req.body;
+  const senderUid = req.user.uid;
+
+  if (!groupId || !inviteeUsername) {
+    return res.status(400).json({ success: false, error: 'GroupId and inviteeUsername are required' });
+  }
+
+  try {
+    const groupRef = admin.database().ref(`groups/${groupId}`);
+    const groupSnapshot = await groupRef.get();
+    if (!groupSnapshot.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+    const groupData = groupSnapshot.val();
+
+    const usernameRef = admin.database().ref(`usernames/${inviteeUsername.toLowerCase()}`);
+    const usernameSnapshot = await usernameRef.get();
+    if (!usernameSnapshot.exists()) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    const inviteeUid = usernameSnapshot.val();
+
+    const membershipRef = admin.database().ref(`userGroups/${inviteeUid}/${groupId}`);
+    const membershipSnapshot = await membershipRef.get();
+    if (membershipSnapshot.exists()) {
+      return res.status(400).json({ success: false, error: 'User is already a member' });
+    }
+
+    const invitationsRef = admin.database().ref('invitations');
+    const newInviteRef = invitationsRef.push();
+
+    const senderRef = admin.database().ref(`users/${senderUid}`);
+    const senderSnapshot = await senderRef.get();
+    const senderName = senderSnapshot.exists() ? senderSnapshot.val().name : "Someone";
+
+    await newInviteRef.set({
+      id: newInviteRef.key,
+      groupId,
+      groupName: groupData.name,
+      groupEmoji: groupData.emoji || "📁",
+      senderId: senderUid,
+      senderName: senderName,
+      receiverId: inviteeUid,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    });
+
+    res.json({ success: true, message: 'Invitation sent', invitationId: newInviteRef.key });
+  } catch (error) {
+    console.error('Error sending invitation:', error);
+    res.status(500).json({ success: false, error: 'Failed to send invitation' });
+  }
+});
+
+/**
+ * Respond to Invitation Endpoint
+ */
+app.post('/api/respond-invitation', authenticate, async (req, res) => {
+  const { invitationId, accept } = req.body;
+  const userId = req.user.uid;
+
+  if (!invitationId) {
+    return res.status(400).json({ success: false, error: 'Invitation ID is required' });
+  }
+
+  try {
+    const inviteRef = admin.database().ref(`invitations/${invitationId}`);
+    const inviteSnapshot = await inviteRef.get();
+
+    if (!inviteSnapshot.exists()) {
+      return res.status(404).json({ success: false, error: 'Invitation not found' });
+    }
+
+    const inviteData = inviteSnapshot.val();
+    if (inviteData.receiverId !== userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized to respond to this invitation' });
+    }
+
+    if (accept) {
+      const groupRef = admin.database().ref(`groups/${inviteData.groupId}`);
+      const userRef = admin.database().ref(`users/${userId}`);
+      const [groupSnap, userSnap] = await Promise.all([groupRef.get(), userRef.get()]);
+
+      if (!groupSnap.exists() || !userSnap.exists()) {
+        return res.status(404).json({ success: false, error: 'Group or User data missing' });
+      }
+
+      const group = groupSnap.val();
+      const user = userSnap.val();
+
+      const members = group.members || [];
+      const newMember = {
+        id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        userId: userId,
+        name: user.name,
+        paymentDetails: user.paymentDetails || {},
+        phone: user.phone || null
+      };
+
+      members.push(newMember);
+
+      await groupRef.update({ members });
+      await admin.database().ref(`userGroups/${userId}/${inviteData.groupId}`).set({
+        name: group.name,
+        emoji: group.emoji,
+        coverPhoto: group.coverPhoto || null,
+        memberCount: members.length,
+        role: 'member',
+        joinedAt: new Date().toISOString()
+      });
+      await inviteRef.update({ status: 'accepted' });
+
+      res.json({ success: true, message: 'Joined group successfully' });
+    } else {
+      await inviteRef.update({ status: 'declined' });
+      res.json({ success: true, message: 'Invitation declined' });
+    }
+
+  } catch (error) {
+    console.error('Error responding to invitation:', error);
+    res.status(500).json({ success: false, error: 'Failed to respond' });
+  }
+});
+
+/**
+ * External Email Invitation Endpoint
+ */
+app.post('/api/send-external-invitation', authenticate, async (req, res) => {
+  const { groupId, email } = req.body;
+  const senderUid = req.user.uid;
+
+  if (!groupId || !email) {
+    return res.status(400).json({ success: false, error: 'GroupId and Email are required' });
+  }
+
+  try {
+    const groupRef = admin.database().ref(`groups/${groupId}`);
+    const groupSnapshot = await groupRef.get();
+    if (!groupSnapshot.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+    const groupData = groupSnapshot.val();
+
+    const senderRef = admin.database().ref(`users/${senderUid}`);
+    const senderSnapshot = await senderRef.get();
+    const senderName = senderSnapshot.exists() ? senderSnapshot.val().name : "A friend";
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: process.env.SMTP_PORT || 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+      tls: { rejectUnauthorized: false }
+    });
+
+    const inviteLink = `https://hostel-ledger.aarx.online/join/${groupId}`;
+
+    const mailOptions = {
+      from: '"Hostel Ledger" <' + process.env.SMTP_USER + '>',
+      to: email,
+      subject: `${senderName} invited you to join "${groupData.name}" on Hostel Ledger`,
+      html: `
+        <div style="font-family: sans-serif; padding: 20px;">
+          <h2>You've been invited! 🎉</h2>
+          <p><strong>${senderName}</strong> has invited you to join the group <strong>${groupData.name}</strong>.</p>
+          <p>Hostel Ledger makes it easy to split expenses and track shared costs.</p>
+          <a href="${inviteLink}" style="display: inline-block; background-color: #4a6850; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px;">Join Group</a>
+          <p style="margin-top: 30px; font-size: 12px; color: #666;">If you can't click the button, copy this link: ${inviteLink}</p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    res.json({ success: true, message: 'Email invitation sent' });
+
+  } catch (error) {
+    console.error('Error sending external invitation:', error);
+    res.status(500).json({ success: false, error: 'Failed to send email' });
+  }
+});
+
 // 404 handler - MUST BE LAST
 app.use('*', (req, res) => {
   res.status(404).json({
