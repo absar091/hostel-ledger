@@ -104,6 +104,8 @@ import {
 } from "@/lib/expenseLogic";
 import { logger } from "@/lib/logger";
 import { sendTransactionNotifications, triggerPushNotification, TransactionData, UserData } from "@/lib/transactionNotifications";
+import { callSecureApi } from "@/lib/api";
+import { saveOfflineExpense } from "@/lib/offlineDB";
 
 export interface GroupMember {
   id: string;
@@ -172,6 +174,7 @@ interface FirebaseDataContextType {
   markPaymentAsPaid: (groupId: string, fromMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   addMoneyToWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string }>;
   getGroupById: (groupId: string) => Group | undefined;
+  fetchGroupDetail: (groupId: string) => Promise<Group | null>;
   getTransactionsByGroup: (groupId: string) => Transaction[];
   getTransactionsByMember: (groupId: string, memberId: string) => Transaction[];
   getAllTransactions: () => Transaction[];
@@ -182,14 +185,10 @@ const FirebaseDataContext = createContext<FirebaseDataContextType | undefined>(u
 export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   const {
     user,
-    addMoneyToWallet: addToAuthWallet,
-    deductMoneyFromWallet,
-    addToReceivable,
-    addToPayable,
+    addMoneyToWallet: authAddMoneyToWallet,
     markPaymentReceived,
     markDebtPaid,
-    getSettlements,
-    updateSettlement
+    getSettlements
   } = useFirebaseAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -251,21 +250,23 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         const groupsListener = onValue(groupsRef, async (snapshot) => {
           try {
             if (snapshot.exists()) {
-              const userGroupIds = Object.keys(snapshot.val());
-              const groupPromises = userGroupIds.map(async (groupId) => {
-                const groupRef = ref(database, `groups/${groupId}`);
-                const groupSnapshot = await get(groupRef);
-                return groupSnapshot.exists() ? { id: groupId, ...groupSnapshot.val() } : null;
-              });
+              const userGroups = snapshot.val();
+              const groupsList: Group[] = Object.entries(userGroups).map(([id, metadata]: [string, any]) => ({
+                id,
+                name: metadata.name || "Unnamed Group",
+                emoji: metadata.emoji || "📁",
+                coverPhoto: metadata.coverPhoto,
+                members: [], // Simplified for dashboard, full data fetched on demand if needed
+                createdBy: metadata.createdBy || "",
+                createdAt: metadata.createdAt || ""
+              }));
 
-              const groupsData = await Promise.all(groupPromises);
-              const filteredGroups = groupsData.filter(Boolean) as Group[];
-              setGroups(filteredGroups);
+              setGroups(groupsList);
 
               // Cache groups to IndexedDB for offline access
               try {
                 const { cacheGroups } = await import('@/lib/offlineDB');
-                await cacheGroups(filteredGroups);
+                await cacheGroups(groupsList);
               } catch (cacheError) {
                 console.error('Failed to cache groups:', cacheError);
               }
@@ -303,18 +304,25 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         const transactionsListener = onValue(transactionsRef, async (snapshot) => {
           try {
             if (snapshot.exists()) {
-              const userTransactionIds = Object.keys(snapshot.val());
-              const transactionPromises = userTransactionIds.map(async (transactionId) => {
-                const transactionRef = ref(database, `transactions/${transactionId}`);
-                const transactionSnapshot = await get(transactionRef);
-                return transactionSnapshot.exists() ? { id: transactionId, ...transactionSnapshot.val() } : null;
-              });
+              const userTransactions = snapshot.val();
+              const transactionsList: Transaction[] = Object.entries(userTransactions).map(([id, data]: [string, any]) => ({
+                id,
+                groupId: data.groupId || "unknown",
+                type: data.type || "expense",
+                title: data.title || "Transaction",
+                amount: data.amount || 0,
+                date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "Unknown Date",
+                createdAt: data.createdAt || new Date().toISOString(),
+                timestamp: data.timestamp || Date.now(),
+                paidBy: "", // Placeholder for dashboard
+                paidByName: ""
+              }));
 
-              const transactionsData = await Promise.all(transactionPromises);
-              const sortedTransactions = transactionsData
-                .filter(Boolean)
-                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-              setTransactions(sortedTransactions as Transaction[]);
+              const sortedTransactions = transactionsList.sort((a, b) =>
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              );
+
+              setTransactions(sortedTransactions);
 
               // Cache transactions to IndexedDB for offline access
               try {
@@ -373,86 +381,6 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       });
     };
   }, [user]);
-
-  // Separate effect for checking expired members to avoid stale closures
-  useEffect(() => {
-    if (!user || groups.length === 0) return;
-
-    const checkExpiredMembers = async () => {
-      const now = Date.now();
-
-      for (const group of groups) {
-        const settlements = getSettlements(group.id);
-
-        const expiredMembers = group.members.filter(m => {
-          if (!m.isTemporary) return false;
-
-          const memberSettlement = settlements[m.id] || { toReceive: 0, toPay: 0 };
-          const hasDebt = memberSettlement.toReceive > 0 || memberSettlement.toPay > 0;
-
-          if (m.deletionCondition === 'SETTLED') {
-            return !hasDebt;
-          }
-
-          if (m.deletionCondition === 'TIME_LIMIT') {
-            return !hasDebt && m.expiresAt && m.expiresAt < now;
-          }
-
-          return false;
-        });
-
-        if (expiredMembers.length > 0) {
-          for (const member of expiredMembers) {
-            logger.info("Removing expired temporary member", { memberName: member.name, groupName: group.name, groupId: group.id });
-            try {
-              const settlements = getSettlements(group.id);
-              const memberSettlement = settlements[member.id] || { toReceive: 0, toPay: 0 };
-              const hasDebt = memberSettlement && (memberSettlement.toReceive > 0 || memberSettlement.toPay > 0);
-
-              if (!hasDebt) {
-                const updatedMembers = group.members.filter(m => m.id !== member.id);
-                const groupRef = ref(database, `groups/${group.id}/members`);
-                await set(groupRef, updatedMembers);
-
-                // Send email notification about deletion
-                if (user.email) {
-                  try {
-                    await fetch('/api/send-email', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        to: user.email,
-                        subject: `Temporary Member Removed: ${member.name}`,
-                        html: `
-                          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-                            <h2 style="color: #4a6850;">Temporary Member Removed</h2>
-                            <p>The temporary member <b>${member.name}</b> in group <b>${group.name}</b> has reached their time limit.</p>
-                            <p>Since all debts were settled, they have been automatically removed from the group.</p>
-                            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-                            <p style="color: #666; font-size: 12px;">This is an automated message from Hostel Ledger.</p>
-                          </div>
-                        `
-                      })
-                    });
-                    logger.info("Sent removal email", { memberName: member.name, email: user.email });
-                  } catch (mailError: any) {
-                    logger.error("Failed to send removal email", { memberName: member.name, error: mailError.message });
-                  }
-                }
-              }
-            } catch (e) {
-              console.error("Failed to auto-remove member", e);
-            }
-          }
-        }
-      }
-    };
-
-    const intervalId = setInterval(checkExpiredMembers, 60000); // Check every minute
-    checkExpiredMembers(); // Run immediately
-
-    return () => clearInterval(intervalId);
-  }, [user, groups]); // Re-run when groups change
 
   const createGroup = async (data: {
     name: string;
@@ -533,14 +461,21 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       transaction.addOperation({
         execute: async () => {
           const userGroupRef = ref(database, `userGroups/${user.uid}/${groupId}`);
-          await retryOperation(() => set(userGroupRef, true));
+          const groupMetadata = {
+            name: newGroup.name,
+            emoji: newGroup.emoji,
+            coverPhoto: newGroup.coverPhoto || null,
+            createdBy: user.uid,
+            createdAt: newGroup.createdAt
+          };
+          await retryOperation(() => set(userGroupRef, groupMetadata));
           return true;
         },
         rollback: async () => {
           const userGroupRef = ref(database, `userGroups/${user.uid}/${groupId}`);
           await retryOperation(() => remove(userGroupRef));
         },
-        description: "Add group to user's groups"
+        description: "Add group metadata to user's groups index"
       });
 
       const result = await transaction.execute();
@@ -634,39 +569,39 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return { success: false, error: "User not authenticated" };
 
     try {
-      const group = groups.find(g => g.id === groupId);
-      if (!group) return { success: false, error: "Group not found" };
+      // 1. Get Group Data
+      const groupRef = ref(database, `groups/${groupId}`);
+      const snapshot = await get(groupRef);
+      if (!snapshot.exists()) return { success: false, error: "Group not found" };
+
+      const groupData = snapshot.val();
+      if (groupData.createdBy !== user.uid) {
+        return { success: false, error: "Only the group creator can remove members" };
+      }
+
+      // 2. Logic Fix: Check per-group settlements instead of global aggregate
+      const settlements = getSettlements(groupId);
+      const memberSettlement = settlements[memberId] || { toReceive: 0, toPay: 0 };
+
+      const hasDebt = memberSettlement.toReceive > 0 || memberSettlement.toPay > 0;
+      if (hasDebt) {
+        return { success: false, error: "Cannot remove a member with unsettled debts in this group" };
+      }
 
       // Don't allow removing the current user
       if (memberId === user.uid) {
         return { success: false, error: "Cannot remove yourself from the group" };
       }
 
-      const memberToRemove = group.members.find(m => m.id === memberId);
+      const memberToRemove = groupData.members.find((m: GroupMember) => m.id === memberId);
       if (!memberToRemove) {
         return { success: false, error: "Member not found" };
       }
 
-      // Check if member has pending settlements in any group
-      const settlements = getSettlements();
-      let hasPendingSettlements = false;
+      const updatedMembers = groupData.members.filter((m: GroupMember) => m.id !== memberId);
+      const groupMembersRef = ref(database, `groups/${groupId}/members`);
 
-      // Check all groups for this member
-      Object.values(settlements).forEach((groupSettlements: any) => {
-        const memberSettlement = groupSettlements[memberId];
-        if (memberSettlement && (memberSettlement.toReceive > 0 || memberSettlement.toPay > 0)) {
-          hasPendingSettlements = true;
-        }
-      });
-
-      if (hasPendingSettlements) {
-        return { success: false, error: "Cannot remove member with pending settlements. Please settle all debts first." };
-      }
-
-      const updatedMembers = group.members.filter(m => m.id !== memberId);
-      const groupRef = ref(database, `groups/${groupId}/members`);
-
-      await retryOperation(() => set(groupRef, updatedMembers));
+      await retryOperation(() => set(groupMembersRef, updatedMembers));
 
       return { success: true };
     } catch (error: any) {
@@ -714,307 +649,58 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   }): Promise<{ success: boolean; error?: string; transaction?: Transaction }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
-    // Validate input
-    const validation = validateExpenseData(data);
-    if (!validation.isValid) {
-      return { success: false, error: validation.errors.join(", ") };
-    }
-
-    const transaction = new TransactionManager();
-
     try {
-      const group = groups.find((g) => g.id === data.groupId);
-      if (!group) return { success: false, error: "Group not found" };
-
-      const sanitizedAmount = sanitizeAmount(data.amount);
-      const sanitizedNote = sanitizeString(data.note);
-      const sanitizedPlace = sanitizeString(data.place);
-
-      const payer = group.members.find((m) => m.id === data.paidBy);
-      const participantMembers = group.members.filter((m) => data.participants.includes(m.id));
-
-      if (!payer) {
-        return { success: false, error: "Invalid payer ID" };
-      }
-
-      if (participantMembers.length === 0) {
-        return { success: false, error: "No valid participants found" };
-      }
-
-      // CORRECTED: Use proper expense splitting logic
-      const splits = calculateExpenseSplit(
-        sanitizedAmount,
-        participantMembers.map(m => ({ id: m.id, name: m.name })),
-        data.paidBy
-      );
-
-      logger.info("Expense split calculated", {
-        amount: sanitizedAmount,
-        participants: participantMembers.length,
-        splits: splits.map(s => ({ id: s.participantId, amount: s.amount }))
-      });
-
-      // CORRECTED: Calculate proper settlement updates with group context
-      const settlementUpdates = calculateExpenseSettlements(
-        splits,
-        data.paidBy,
-        user.uid,
-        data.groupId
-      );
-
-      const isCurrentUserPayer = payer.isCurrentUser;
-      const currentUserSplit = splits.find(s => s.participantId === user.uid);
-
-      if (isCurrentUserPayer) {
-        // CORRECTED: User pays expense - deduct full amount from wallet
-        transaction.addOperation({
-          execute: async () => {
-            const result = await deductMoneyFromWallet(sanitizedAmount);
-            if (!result.success) {
-              throw new Error(result.error || "Insufficient wallet balance");
-            }
-            logger.logTransaction("expense_payment", sanitizedAmount, true);
-            return result;
-          },
-          rollback: async () => {
-            await addToAuthWallet(sanitizedAmount);
-            logger.warn("Rolled back expense payment", { amount: sanitizedAmount });
-          },
-          description: "Deduct expense amount from wallet"
+      // Check online status
+      if (!navigator.onLine) {
+        logger.info("Device offline, saving expense to IndexedDB", { groupId: data.groupId });
+        const offlineId = await saveOfflineExpense({
+          groupId: data.groupId,
+          amount: data.amount,
+          paidBy: data.paidBy,
+          participants: data.participants,
+          note: data.note,
+          place: data.place
         });
-
-        // CORRECTED: Create proper receivables for others' shares only
-        for (const update of settlementUpdates) {
-          if (update.toReceiveChange > 0) {
-            transaction.addOperation({
-              execute: async () => {
-                const result = await addToReceivable(update.groupId, update.personId, update.toReceiveChange);
-                logger.info("Added receivable", {
-                  personId: update.personId,
-                  amount: update.toReceiveChange,
-                  groupId: update.groupId
-                });
-                return result;
-              },
-              rollback: async () => {
-                // CORRECTED: Proper rollback implementation
-                try {
-                  const settlements = getSettlements(update.groupId);
-                  const currentSettlement = settlements[update.personId] || { toReceive: 0, toPay: 0 };
-                  await updateSettlement(
-                    update.groupId,
-                    update.personId,
-                    Math.max(0, currentSettlement.toReceive - update.toReceiveChange),
-                    currentSettlement.toPay
-                  );
-                  logger.info("Rolled back receivable", {
-                    personId: update.personId,
-                    amount: update.toReceiveChange
-                  });
-                } catch (error) {
-                  logger.error("Failed to rollback receivable", {
-                    personId: update.personId,
-                    amount: update.toReceiveChange,
-                    error
-                  });
-                }
-              },
-              description: `Add receivable from ${update.personId}: Rs ${update.toReceiveChange}`
-            });
-          }
-        }
-      } else {
-        // CORRECTED: Someone else pays - create debt to payer for user's share only
-        for (const update of settlementUpdates) {
-          if (update.toPayChange > 0) {
-            transaction.addOperation({
-              execute: async () => {
-                const result = await addToPayable(update.groupId, update.personId, update.toPayChange);
-                logger.info("Added payable", {
-                  personId: update.personId,
-                  amount: update.toPayChange,
-                  groupId: update.groupId
-                });
-                return result;
-              },
-              rollback: async () => {
-                // CORRECTED: Proper rollback implementation
-                try {
-                  const settlements = getSettlements(update.groupId);
-                  const currentSettlement = settlements[update.personId] || { toReceive: 0, toPay: 0 };
-                  await updateSettlement(
-                    update.groupId,
-                    update.personId,
-                    currentSettlement.toReceive,
-                    Math.max(0, currentSettlement.toPay - update.toPayChange)
-                  );
-                  logger.info("Rolled back payable", {
-                    personId: update.personId,
-                    amount: update.toPayChange
-                  });
-                } catch (error) {
-                  logger.error("Failed to rollback payable", {
-                    personId: update.personId,
-                    amount: update.toPayChange,
-                    error
-                  });
-                }
-              },
-              description: `Add debt to ${update.personId}: Rs ${update.toPayChange}`
-            });
-          }
-        }
+        return { success: true, error: "Offline: saved to sync later" };
       }
 
-      // CORRECTED: Calculate proper wallet balance after transaction
-      const walletBalanceAfter = isCurrentUserPayer
-        ? calculateWalletBalanceAfter(user.walletBalance, 'deduct', sanitizedAmount)
-        : user.walletBalance;
+      logger.info("Adding expense via secure API", { groupId: data.groupId, amount: data.amount });
 
-      // Create transaction record
-      const transactionsRef = ref(database, 'transactions');
-      const newTransactionRef = push(transactionsRef);
-      const transactionId = newTransactionRef.key!;
-
-      const newTransaction: Transaction = {
-        id: transactionId,
+      const result = await callSecureApi('/api/add-expense', {
         groupId: data.groupId,
-        type: "expense",
-        title: sanitizedNote || "Expense",
-        amount: sanitizedAmount,
-        date: new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric"
-        }),
-        timestamp: Date.now(), // Store numeric timestamp for time display
+        amount: data.amount,
         paidBy: data.paidBy,
-        paidByName: payer.name,
-        paidByIsTemporary: !!payer.isTemporary,
-        participants: splits.map((split) => ({
-          id: split.participantId,
-          name: split.participantName,
-          amount: split.amount,
-          isTemporary: !!participantMembers.find(m => m.id === split.participantId)?.isTemporary
-        })),
-        place: sanitizedPlace || null,
-        note: sanitizedNote || null,
-        walletBalanceAfter: walletBalanceAfter, // CORRECTED: Proper balance calculation
-        createdAt: new Date().toISOString(),
-      };
-
-      transaction.addOperation({
-        execute: async () => {
-          await retryOperation(() => set(newTransactionRef, newTransaction));
-          logger.info("Created expense transaction", {
-            transactionId,
-            amount: sanitizedAmount,
-            participants: splits.length
-          });
-          return newTransaction;
-        },
-        rollback: async () => {
-          await retryOperation(() => remove(newTransactionRef));
-          logger.info("Rolled back expense transaction", { transactionId });
-        },
-        description: "Create transaction record"
+        participants: data.participants,
+        note: data.note,
+        place: data.place
       });
-
-      // Add transaction to all group members' transaction lists
-      transaction.addOperation({
-        execute: async () => {
-          const memberPromises = group.members.map(async (member) => {
-            if (member.userId) {
-              const userTransactionRef = ref(database, `userTransactions/${member.userId}/${transactionId}`);
-              await retryOperation(() => set(userTransactionRef, true));
-            }
-          });
-          await Promise.all(memberPromises);
-          logger.info("Added transaction to member lists", {
-            transactionId,
-            memberCount: group.members.length
-          });
-          return true;
-        },
-        rollback: async () => {
-          const memberPromises = group.members.map(async (member) => {
-            if (member.userId) {
-              const userTransactionRef = ref(database, `userTransactions/${member.userId}/${transactionId}`);
-              await retryOperation(() => remove(userTransactionRef));
-            }
-          });
-          await Promise.all(memberPromises);
-          logger.info("Rolled back transaction from member lists", { transactionId });
-        },
-        description: "Add transaction to member lists"
-      });
-
-      const result = await transaction.execute();
 
       if (result.success) {
-        logger.logTransaction("expense_created", sanitizedAmount, true);
-
-        // Send transaction notification emails and push notifications (async, non-blocking)
-        setTimeout(async () => {
-          try {
-            logger.info('Sending transaction notifications for expense', { transactionId });
-
-            // 1. Prepare and send email to current user
-            const transactionData: TransactionData = {
-              id: transactionId,
-              type: 'expense',
-              title: sanitizedNote || "Expense",
-              amount: sanitizedAmount,
-              groupId: data.groupId,
-              groupName: group.name,
-              paidBy: data.paidBy,
-              paidByName: payer.name,
-              participants: data.participants,
-              date: new Date().toISOString(),
-              description: sanitizedNote || "Expense",
-              method: 'cash'
-            };
-
-            const currentUserData: UserData = {
-              uid: user.uid,
-              email: user.email,
-              name: user.name
-            };
-
-            await sendTransactionNotifications(transactionData, [currentUserData]);
-
-            // 2. Send push notifications to others in the group
-            const membersWithUserId = group.members.filter(member => member.userId && member.userId !== user.uid);
-
-            if (membersWithUserId.length > 0) {
-              const userIds = membersWithUserId.map(m => m.userId!);
-              await triggerPushNotification({
-                userIds,
-                title: `New Expense in ${group.name}`,
-                body: `${payer.name} paid Rs ${sanitizedAmount.toLocaleString()} for "${sanitizedNote || 'Expense'}"`,
-                data: {
-                  type: 'expense',
-                  transactionId,
-                  groupId: data.groupId,
-                  amount: sanitizedAmount
-                }
-              });
-            }
-          } catch (error: any) {
-            logger.error('Failed to send expense notifications', { transactionId, error: error.message });
-          }
-        }, 0); // Use setTimeout with 0ms delay for better async behavior
-      } else {
-        logger.logTransaction("expense_failed", sanitizedAmount, false);
+        logger.info("Expense added successfully via server", { transactionId: result.transactionId });
+        return { success: true, transaction: result.transaction };
       }
 
-      return { success: result.success, error: result.error, transaction: result.success ? newTransaction : undefined };
+      return { success: false, error: result.error || "Failed to add expense" };
     } catch (error: any) {
       logger.error("Add expense error", {
         groupId: data.groupId,
         amount: data.amount,
         error: error.message
       });
+
+      // Fallback to offline if API call fails due to network
+      if (!navigator.onLine || error.message.includes('fetch') || error.message.includes('Network')) {
+        const offlineId = await saveOfflineExpense({
+          groupId: data.groupId,
+          amount: data.amount,
+          paidBy: data.paidBy,
+          participants: data.participants,
+          note: data.note,
+          place: data.place
+        });
+        return { success: true, error: "Network error: saved to sync later" };
+      }
+
       return { success: false, error: error.message || "Failed to add expense" };
     }
   };
@@ -1029,266 +715,32 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   }): Promise<{ success: boolean; error?: string; transaction?: Transaction }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
-    // Validate input
-    const validation = validatePaymentData(data);
-    if (!validation.isValid) {
-      return { success: false, error: validation.errors.join(", ") };
-    }
-
-    const transaction = new TransactionManager();
-
     try {
-      const group = groups.find((g) => g.id === data.groupId);
-      if (!group) return { success: false, error: "Group not found" };
-
-      const sanitizedAmount = sanitizeAmount(data.amount);
-      const sanitizedNote = data.note ? sanitizeString(data.note) : null;
-
-      const fromPerson = group.members.find((m) => m.id === data.fromMember);
-      const toPerson = group.members.find((m) => m.id === data.toMember);
-
-      if (!fromPerson || !toPerson) {
-        return { success: false, error: "Invalid member IDs" };
+      // Check online status - currently offline payments aren't in offlineDB schema but we can add them or use app-data
+      if (!navigator.onLine) {
+        return { success: false, error: "Payments require internet connection to verify balances" };
       }
 
-      // CORRECTED: Validate payment amount against actual debt with group context
-      const settlements = getSettlements(data.groupId);
+      logger.info("Recording payment via secure API", { groupId: data.groupId, amount: data.amount });
 
-      let actualDebt = 0;
-      if (data.fromMember === user.uid) {
-        // Current user is paying - check how much they owe to toPerson in this group
-        const settlement = settlements[data.toMember] || { toReceive: 0, toPay: 0 };
-        actualDebt = settlement.toPay;
-      } else if (data.toMember === user.uid) {
-        // Current user is receiving - check how much fromPerson owes them in this group
-        const settlement = settlements[data.fromMember] || { toReceive: 0, toPay: 0 };
-        actualDebt = settlement.toReceive;
-      }
-
-      const paymentValidation = validatePaymentAmount(sanitizedAmount, actualDebt, true); // Allow overpayment
-      if (!paymentValidation.isValid) {
-        logger.warn("Invalid payment amount", {
-          requestedAmount: sanitizedAmount,
-          actualDebt,
-          error: paymentValidation.error
-        });
-        // Allow the payment but log the warning - user might know something we don't
-      }
-
-      // Create transaction record first
-      const transactionsRef = ref(database, 'transactions');
-      const newTransactionRef = push(transactionsRef);
-      const transactionId = newTransactionRef.key!;
-
-      // FIXED: Calculate proper wallet balance after payment
-      // If current user is receiving money, balance increases
-      // If current user is paying, balance decreases
-      const isReceiving = data.toMember === user.uid;
-      const walletBalanceBefore = user.walletBalance || 0;
-      const walletBalanceAfter = isReceiving
-        ? walletBalanceBefore + sanitizedAmount
-        : walletBalanceBefore - sanitizedAmount;
-
-      const newTransaction: Transaction = {
-        id: transactionId,
-        groupId: data.groupId,
-        type: "payment",
-        title: "Payment",
-        amount: sanitizedAmount,
-        date: new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric"
-        }),
-        timestamp: Date.now(), // Store numeric timestamp for time display
-        paidBy: data.fromMember,
-        paidByName: fromPerson.name,
-        paidByIsTemporary: !!fromPerson.isTemporary,
-        from: data.fromMember,
-        fromName: fromPerson.name,
-        fromIsTemporary: !!fromPerson.isTemporary,
-        to: data.toMember,
-        toName: toPerson.name,
-        toIsTemporary: !!toPerson.isTemporary,
-        method: data.method,
-        note: sanitizedNote,
-        walletBalanceBefore: walletBalanceBefore,
-        walletBalanceAfter: walletBalanceAfter,
-        createdAt: new Date().toISOString(),
-      };
-
-      transaction.addOperation({
-        execute: async () => {
-          await retryOperation(() => set(newTransactionRef, newTransaction));
-          logger.info("Created payment transaction", {
-            transactionId,
-            from: data.fromMember,
-            to: data.toMember,
-            amount: sanitizedAmount
-          });
-          return newTransaction;
-        },
-        rollback: async () => {
-          await retryOperation(() => remove(newTransactionRef));
-          logger.info("Rolled back payment transaction", { transactionId });
-        },
-        description: "Create payment transaction"
-      });
-
-      // Add transaction to relevant members' transaction lists
-      transaction.addOperation({
-        execute: async () => {
-          const memberPromises = group.members
-            .filter(member => member.userId && (member.id === data.fromMember || member.id === data.toMember))
-            .map(async (member) => {
-              const userTransactionRef = ref(database, `userTransactions/${member.userId}/${transactionId}`);
-              await retryOperation(() => set(userTransactionRef, true));
-            });
-          await Promise.all(memberPromises);
-          logger.info("Added payment to member transaction lists", {
-            transactionId,
-            fromMember: data.fromMember,
-            toMember: data.toMember
-          });
-          return true;
-        },
-        rollback: async () => {
-          const memberPromises = group.members
-            .filter(member => member.userId && (member.id === data.fromMember || member.id === data.toMember))
-            .map(async (member) => {
-              const userTransactionRef = ref(database, `userTransactions/${member.userId}/${transactionId}`);
-              await retryOperation(() => remove(userTransactionRef));
-            });
-          await Promise.all(memberPromises);
-          logger.info("Rolled back payment from member transaction lists", { transactionId });
-        },
-        description: "Add payment to member transaction lists"
-      });
-
-      const result = await transaction.execute();
-
-      if (result.success) {
-        // CRITICAL FIX: Update settlements and wallet after transaction is created
-        if (data.toMember === user.uid) {
-          // Current user is receiving payment - add money to wallet and update settlements
-          try {
-            // Step 1: Add money to wallet
-            const walletResult = await addToAuthWallet(sanitizedAmount);
-            if (walletResult.success) {
-              // Step 2: Update settlements (reduce receivable)
-              const settlements = getSettlements(data.groupId);
-              const currentSettlement = settlements[data.fromMember] || { toReceive: 0, toPay: 0 };
-              await updateSettlement(
-                data.groupId,
-                data.fromMember,
-                Math.max(0, currentSettlement.toReceive - sanitizedAmount),
-                currentSettlement.toPay
-              );
-              logger.info("Updated wallet and settlements for payment received", {
-                amount: sanitizedAmount,
-                fromMember: data.fromMember
-              });
-            } else {
-              logger.error("Failed to add money to wallet", { error: walletResult.error });
-            }
-          } catch (error: any) {
-            logger.error("Failed to update wallet/settlements after payment", { transactionId, error: error.message });
-          }
-        } else if (data.fromMember === user.uid) {
-          // Current user is making payment - deduct from wallet and update settlements
-          try {
-            // Step 1: Deduct money from wallet
-            const walletResult = await deductMoneyFromWallet(sanitizedAmount);
-            if (walletResult.success) {
-              // Step 2: Update settlements (reduce payable)
-              const settlements = getSettlements(data.groupId);
-              const currentSettlement = settlements[data.toMember] || { toReceive: 0, toPay: 0 };
-              await updateSettlement(
-                data.groupId,
-                data.toMember,
-                currentSettlement.toReceive,
-                Math.max(0, currentSettlement.toPay - sanitizedAmount)
-              );
-              logger.info("Updated wallet and settlements for payment made", {
-                transactionId,
-                amount: sanitizedAmount,
-                toMember: data.toMember
-              });
-            } else {
-              logger.error("Failed to deduct money from wallet", { transactionId, error: walletResult.error });
-            }
-          } catch (error: any) {
-            logger.error("Failed to update wallet/settlements after debt payment", { transactionId, error: error.message });
-          }
-        }
-
-        logger.logTransaction("payment_recorded", sanitizedAmount, true);
-
-        // Send transaction notification emails (async, non-blocking)
-        setTimeout(async () => {
-          try {
-            logger.info('Sending transaction notification emails for payment', { transactionId });
-
-            // Prepare transaction data for email
-            const transactionData: TransactionData = {
-              id: transactionId,
-              type: 'payment',
-              title: "Payment Made",
-              amount: sanitizedAmount,
-              groupId: data.groupId,
-              groupName: group.name,
-              paidBy: data.fromMember,
-              paidByName: fromPerson.name,
-              participants: [data.fromMember, data.toMember],
-              date: new Date().toISOString(),
-              description: sanitizedNote || "Payment",
-              method: data.method
-            };
-
-            // Send notification email to current user regardless of their role in the payment
-            const currentUserData: UserData = {
-              uid: user.uid,
-              email: user.email,
-              name: user.name
-            };
-
-            const emailResult = await sendTransactionNotifications(transactionData, [currentUserData]);
-            if (emailResult.success) {
-              logger.info('Payment notification email sent successfully', { transactionId });
-            } else {
-              logger.warn('Payment notification email failed', { transactionId, errors: emailResult.errors });
-            }
-
-            // Push notification for payment
-            if (toPerson.userId && toPerson.userId !== user.uid) {
-              await triggerPushNotification({
-                userIds: [toPerson.userId],
-                title: `Payment Received! 💰`,
-                body: `${fromPerson.name} sent you Rs ${sanitizedAmount.toLocaleString()}`,
-                data: {
-                  type: 'payment',
-                  transactionId,
-                  groupId: data.groupId,
-                  amount: sanitizedAmount
-                }
-              });
-            }
-
-          } catch (emailError: any) {
-            logger.error('Failed to send payment notification email', { transactionId, error: emailError.message });
-            // Email failure doesn't affect transaction success
-          }
-        }, 0); // Use setTimeout with 0ms delay for better async behavior
-      } else {
-        logger.logTransaction("payment_failed", sanitizedAmount, false);
-      }
-
-      return { success: result.success, error: result.error, transaction: result.success ? newTransaction : undefined };
-    } catch (error: any) {
-      logger.error("Record payment error", {
+      const result = await callSecureApi('/api/record-payment', {
         groupId: data.groupId,
         fromMember: data.fromMember,
         toMember: data.toMember,
+        amount: data.amount,
+        method: data.method,
+        note: data.note
+      });
+
+      if (result.success) {
+        logger.info("Payment recorded successfully via server", { transactionId: result.transactionId });
+        return { success: true, transaction: result.transaction };
+      }
+
+      return { success: false, error: "Failed to record payment" };
+    } catch (error: any) {
+      logger.error("Record payment API error", {
+        groupId: data.groupId,
         amount: data.amount,
         error: error.message
       });
@@ -1344,77 +796,12 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, error: validation.error || "Invalid amount" };
     }
 
-    const transaction = new TransactionManager();
-
     try {
       const sanitizedAmount = sanitizeAmount(amount);
-      const sanitizedNote = note ? sanitizeString(note) : null;
+      const sanitizedNote = note ? sanitizeString(note) : undefined;
 
-      transaction.addOperation({
-        execute: async () => {
-          const result = await addToAuthWallet(sanitizedAmount);
-          if (!result.success) {
-            throw new Error(result.error || "Failed to add money to wallet");
-          }
-          return result;
-        },
-        rollback: async () => {
-          await deductMoneyFromWallet(sanitizedAmount);
-        },
-        description: "Add money to wallet"
-      });
-
-      // Create wallet transaction record
-      const transactionsRef = ref(database, 'transactions');
-      const newTransactionRef = push(transactionsRef);
-      const transactionId = newTransactionRef.key!;
-
-      const walletTransaction: Transaction = {
-        id: transactionId,
-        groupId: "wallet",
-        type: "wallet_add",
-        title: "Money Added to Wallet",
-        amount: sanitizedAmount,
-        date: new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric"
-        }),
-        timestamp: Date.now(), // Store numeric timestamp for time display
-        paidBy: user.uid,
-        paidByName: user.name,
-        note: sanitizedNote,
-        walletBalanceBefore: user.walletBalance,
-        walletBalanceAfter: user.walletBalance + sanitizedAmount,
-        createdAt: new Date().toISOString(),
-      };
-
-      transaction.addOperation({
-        execute: async () => {
-          await retryOperation(() => set(newTransactionRef, walletTransaction));
-          return walletTransaction;
-        },
-        rollback: async () => {
-          await retryOperation(() => remove(newTransactionRef));
-        },
-        description: "Create wallet transaction record"
-      });
-
-      transaction.addOperation({
-        execute: async () => {
-          const userTransactionRef = ref(database, `userTransactions/${user.uid}/${transactionId}`);
-          await retryOperation(() => set(userTransactionRef, true));
-          return true;
-        },
-        rollback: async () => {
-          const userTransactionRef = ref(database, `userTransactions/${user.uid}/${transactionId}`);
-          await retryOperation(() => remove(userTransactionRef));
-        },
-        description: "Add wallet transaction to user's list"
-      });
-
-      const result = await transaction.execute();
-      return { success: result.success, error: result.error };
+      // Use the secured auth context method which calls the backend
+      return await authAddMoneyToWallet(sanitizedAmount, sanitizedNote);
     } catch (error: any) {
       console.error("Add money to wallet error:", error);
       return { success: false, error: error.message || "Failed to add money to wallet" };
@@ -1440,6 +827,10 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
       const groupRef = ref(database, `groups/${groupId}`);
       await retryOperation(() => update(groupRef, sanitizedData));
+
+      // Also update the denormalized metadata in userGroups
+      const userGroupMetadataRef = ref(database, `userGroups/${user.uid}/${groupId}`);
+      await retryOperation(() => update(userGroupMetadataRef, sanitizedData));
 
       return { success: true };
     } catch (error: any) {
@@ -1511,6 +902,46 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     return groups.find((g) => g.id === groupId);
   };
 
+  const fetchGroupDetail = async (groupId: string): Promise<Group | null> => {
+    try {
+      if (navigator.onLine) {
+        const groupRef = ref(database, `groups/${groupId}`);
+        const snapshot = await get(groupRef);
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          return { id: groupId, ...data };
+        }
+      }
+
+      // Offline or network fail fallback
+      try {
+        const { getCachedGroups } = await import('@/lib/offlineDB');
+        const cachedGroups = await getCachedGroups();
+        const cachedGroup = cachedGroups.find((g: any) => g.id === groupId);
+
+        if (cachedGroup) {
+          logger.info("Retrieved group from offline cache", { groupId });
+          return cachedGroup;
+        }
+      } catch (cacheError) {
+        console.error("Cache retrieval error:", cacheError);
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error fetching group detail:", error);
+
+      // Secondary fallback check even on error
+      try {
+        const { getCachedGroups } = await import('@/lib/offlineDB');
+        const cachedGroups = await getCachedGroups();
+        return cachedGroups.find((g: any) => g.id === groupId) || null;
+      } catch (e) {
+        return null;
+      }
+    }
+  };
+
   const getTransactionsByGroup = (groupId: string): Transaction[] => {
     return transactions.filter((t) => t.groupId === groupId);
   };
@@ -1549,6 +980,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         markPaymentAsPaid,
         addMoneyToWallet,
         getGroupById,
+        fetchGroupDetail,
         getTransactionsByGroup,
         getTransactionsByMember,
         getAllTransactions,

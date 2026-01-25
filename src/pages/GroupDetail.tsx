@@ -25,7 +25,7 @@ import {
 const GroupDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { getGroupById, getTransactionsByGroup, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup } = useFirebaseData();
+  const { getGroupById, fetchGroupDetail, getTransactionsByGroup, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup } = useFirebaseData();
   const { getSettlements, user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
 
@@ -38,6 +38,8 @@ const GroupDetail = () => {
   const [showMemberSettlement, setShowMemberSettlement] = useState(false);
   const [settlementMember, setSettlementMember] = useState<{ id: string; name: string; avatar?: string; isTemporary?: boolean } | null>(null);
   const [showGroupGuide, setShowGroupGuide] = useState(false);
+  const [fullGroup, setFullGroup] = useState<any>(null);
+  const [isGroupLoading, setIsGroupLoading] = useState(true);
 
   // Success Sheet states
   const [showSuccessSheet, setShowSuccessSheet] = useState(false);
@@ -56,7 +58,21 @@ const GroupDetail = () => {
     markPageGuideShown('group-detail');
   };
 
-  const group = id ? getGroupById(id) : undefined;
+  useEffect(() => {
+    const loadGroupData = async () => {
+      if (id) {
+        setIsGroupLoading(true);
+        const data = await fetchGroupDetail(id);
+        setFullGroup(data);
+        setIsGroupLoading(false);
+      }
+    };
+    loadGroupData();
+  }, [id, fetchGroupDetail]);
+
+  // Sync partial group from context if it exists (for immediate name/emoji display)
+  const partialGroup = id ? getGroupById(id) : undefined;
+  const group = fullGroup || partialGroup;
   const transactions = id ? getTransactionsByGroup(id) : [];
   const settlements = id ? getSettlements(id) : {};
 
@@ -149,17 +165,27 @@ const GroupDetail = () => {
       });
   }, [group, selectedMember, transactions]);
 
-  if (!group) {
+  if (!group && !isGroupLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         {/* iPhone-style top accent border */}
         <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
 
-        <div className="text-center">
+        <div className="text-center px-6">
           <div className="text-6xl mb-4">🔍</div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Group not found</h2>
           <Button onClick={() => navigate("/")} className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">Go Back</Button>
         </div>
+      </div>
+    );
+  }
+
+  if (isGroupLoading && !partialGroup) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
+        <div className="w-16 h-16 border-4 border-emerald-100 border-t-emerald-500 rounded-full animate-spin mb-6"></div>
+        <h2 className="text-xl font-bold text-gray-800">Loading Group Details</h2>
+        <p className="text-gray-500 mt-2">Getting the latest balances for you...</p>
       </div>
     );
   }

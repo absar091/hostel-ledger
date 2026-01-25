@@ -6,6 +6,12 @@
       "$uid": {
         ".read": "$uid === auth.uid",
         ".write": "$uid === auth.uid && auth != null",
+        "walletBalance": {
+          ".write": false
+        },
+        "settlements": {
+          ".write": false
+        },
         ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt']) && newData.child('uid').val() === auth.uid"
       }
     },
@@ -25,7 +31,7 @@
     "transactions": {
       "$transactionId": {
         ".read": "auth != null && root.child('userTransactions').child(auth.uid).child($transactionId).exists()",
-        ".write": "auth != null && (root.child('userTransactions').child(auth.uid).child($transactionId).exists() || !data.exists())",
+        ".write": false,
         ".validate": "newData.hasChildren(['groupId', 'type', 'amount', 'createdAt']) && newData.child('amount').isNumber() && newData.child('amount').val() > 0"
       }
     },

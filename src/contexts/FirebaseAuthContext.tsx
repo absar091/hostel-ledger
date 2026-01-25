@@ -23,6 +23,7 @@ import {
   validateAmount
 } from "@/lib/security";
 import { triggerPushNotification } from "@/lib/transactionNotifications";
+import { callSecureApi } from "@/lib/api";
 
 export interface PaymentDetails {
   jazzCash?: string;
@@ -71,16 +72,13 @@ interface FirebaseAuthContextType {
   updateUserProfile: (data: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>;
   uploadProfilePicture: (file: File) => Promise<{ success: boolean; url?: string; error?: string }>;
   removeProfilePicture: () => Promise<{ success: boolean; error?: string }>;
-  addMoneyToWallet: (amount: number) => Promise<{ success: boolean; error?: string }>;
-  deductMoneyFromWallet: (amount: number) => Promise<{ success: boolean; error?: string }>;
+  addMoneyToWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string }>;
+  deductMoneyFromWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string }>;
   getWalletBalance: () => number;
   getSettlements: (groupId?: string) => { [personId: string]: { toReceive: number; toPay: number } };
   getTotalToReceive: (groupId?: string) => number;
   getTotalToPay: (groupId?: string) => number;
   getSettlementDelta: (groupId?: string) => number;
-  updateSettlement: (groupId: string, personId: string, toReceive: number, toPay: number) => Promise<{ success: boolean; error?: string }>;
-  addToReceivable: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
-  addToPayable: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   markPaymentReceived: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   markDebtPaid: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   // New debt tracking methods
@@ -702,60 +700,55 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addMoneyToWallet = async (amount: number): Promise<{ success: boolean; error?: string }> => {
+  const addMoneyToWallet = async (amount: number, note?: string): Promise<{ success: boolean; error?: string }> => {
     if (!user) {
       return { success: false, error: "User not authenticated" };
     }
 
-    // const validation = validateAmount(amount);
-    // if (!validation.isValid) {
-    //   return { success: false, error: validation.error || "Invalid amount" };
-    // }
-
     try {
-      // const sanitizedAmount = sanitizeAmount(amount);
-      const sanitizedAmount = Math.max(0, Math.min(amount, 1000000));
-      const newWalletBalance = user.walletBalance + sanitizedAmount;
+      logger.info("Adding money to wallet via secure API", { amount, note });
 
-      const userRef = ref(database, `users/${user.uid}`);
-      await retryOperation(() => update(userRef, {
-        walletBalance: newWalletBalance
-      }));
+      const result = await callSecureApi('/api/update-wallet', {
+        amount,
+        type: 'add',
+        note: note || 'Manual deposit'
+      });
 
-      // Update local state
-      setUser(prev => prev ? {
-        ...prev,
-        walletBalance: newWalletBalance
-      } : null);
+      if (result.success) {
+        logger.info("Wallet updated successfully via server");
+        // No need to manually update local state as the onValue listener will sync it
+        return { success: true };
+      }
 
-      logger.logTransaction("wallet_add", sanitizedAmount, true);
-      return { success: true };
+      return { success: false, error: "Failed to add money" };
     } catch (error: any) {
-      logger.error("Add money to wallet failed", { amount, error: error.message });
+      logger.error("Add money API error", { amount, error: error.message });
       return { success: false, error: error.message || "Failed to add money" };
     }
   };
 
-  const deductMoneyFromWallet = async (amount: number): Promise<{ success: boolean; error?: string }> => {
-    if (!user || amount <= 0) {
-      return { success: false, error: "Invalid amount or user not authenticated" };
-    }
-
-    if (user.walletBalance < amount) {
-      return { success: false, error: "Insufficient wallet balance" };
+  const deductMoneyFromWallet = async (amount: number, note?: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user) {
+      return { success: false, error: "User not authenticated" };
     }
 
     try {
-      const newBalance = user.walletBalance - amount;
-      const userRef = ref(database, `users/${user.uid}/walletBalance`);
-      await set(userRef, newBalance);
+      logger.info("Deducting money from wallet via secure API", { amount, note });
 
-      // Update local state
-      setUser(prev => prev ? { ...prev, walletBalance: newBalance } : null);
+      const result = await callSecureApi('/api/update-wallet', {
+        amount,
+        type: 'deduct',
+        note: note || 'Manual withdrawal'
+      });
 
-      return { success: true };
+      if (result.success) {
+        logger.info("Wallet deducted successfully via server");
+        return { success: true };
+      }
+
+      return { success: false, error: "Failed to deduct money" };
     } catch (error: any) {
-      logger.error("Deduct money error", { uid: user.uid, amount, error: error.message });
+      logger.error("Deduct money API error", { amount, error: error.message });
       return { success: false, error: error.message || "Failed to deduct money" };
     }
   };
@@ -818,149 +811,33 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     return toReceive - toPay;
   };
 
-  const updateSettlement = async (groupId: string, personId: string, toReceive: number, toPay: number): Promise<{ success: boolean; error?: string }> => {
-    if (!user) {
-      return { success: false, error: "User not authenticated" };
-    }
 
-    try {
-      const userRef = ref(database, `users/${user.uid}/settlements/${groupId}/${personId}`);
-      const settlement = { toReceive: Math.max(0, toReceive), toPay: Math.max(0, toPay) };
-
-      await set(userRef, settlement);
-
-      // Update local state
-      setUser(prev => {
-        if (!prev) return null;
-
-        const newSettlements = { ...prev.settlements };
-        // Valid immutable update: copy the group level object too
-        if (!newSettlements[groupId]) {
-          newSettlements[groupId] = {};
-        } else {
-          newSettlements[groupId] = { ...newSettlements[groupId] };
-        }
-
-        newSettlements[groupId][personId] = settlement;
-
-        return {
-          ...prev,
-          settlements: newSettlements
-        };
-      });
-
-      return { success: true };
-    } catch (error: any) {
-      logger.error("Update settlement error", { uid: user.uid, groupId, personId, error: error.message });
-      return { success: false, error: error.message || "Failed to update settlement" };
-    }
-  };
-
-  const addToReceivable = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
-    if (!user || amount <= 0) {
-      return { success: false, error: "Invalid amount or user not authenticated" };
-    }
-
-    const groupSettlements = user.settlements[groupId] || {};
-    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
-
-    const result = await updateSettlement(groupId, personId, currentSettlement.toReceive + amount, currentSettlement.toPay);
-
-    return result;
-  };
-
-  const addToPayable = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
-    if (!user || amount <= 0) {
-      return { success: false, error: "Invalid amount or user not authenticated" };
-    }
-
-    const groupSettlements = user.settlements[groupId] || {};
-    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
-    return await updateSettlement(groupId, personId, currentSettlement.toReceive, currentSettlement.toPay + amount);
-  };
 
   const markPaymentReceived = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
     if (!user || amount <= 0) {
       return { success: false, error: "Invalid amount or user not authenticated" };
     }
 
-    const groupSettlements = user.settlements[groupId] || {};
-    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
-
-    // Allow partial payments - don't require exact amount
-    if (currentSettlement.toReceive <= 0) {
-      return { success: false, error: "No pending receivables from this person in this group" };
-    }
-
-    // Allow paying more than owed (in case of overpayment)
-    const actualAmount = Math.min(amount, currentSettlement.toReceive);
-
     try {
-      // Step 1: Add real money to wallet
-      const addResult = await addMoneyToWallet(actualAmount);
-      if (!addResult.success) {
-        return addResult;
+      logger.info("Marking payment received via secure API", { groupId, personId, amount });
+
+      const result = await callSecureApi('/api/record-payment', {
+        groupId,
+        fromMember: personId,
+        toMember: user.uid,
+        amount,
+        method: "cash",
+        note: `Payment received from settlement`
+      });
+
+      if (result.success) {
+        logger.info("Payment marked received successfully via server", { transactionId: result.transactionId });
+        return { success: true };
       }
 
-      // Step 2: Reduce receivable amount
-      await updateSettlement(groupId, personId, currentSettlement.toReceive - actualAmount, currentSettlement.toPay);
-
-      // Step 3: Create transaction record
-      const transactionsRef = ref(database, 'transactions');
-      const newTransactionRef = push(transactionsRef);
-      const transactionId = newTransactionRef.key!;
-
-      const paymentTransaction = {
-        id: transactionId,
-        groupId: groupId, // CORRECTED: Use actual group ID instead of "settlement"
-        type: "payment" as const,
-        title: "Payment Received",
-        amount: actualAmount,
-        date: new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric"
-        }),
-        paidBy: personId,
-        paidByName: "Member", // We don't have their name in settlements
-        from: personId,
-        fromName: "Member",
-        to: user.uid,
-        toName: user.name,
-        method: "cash" as const,
-        note: `Payment received from settlement`,
-        walletBalanceBefore: user.walletBalance,
-        walletBalanceAfter: user.walletBalance + actualAmount,
-        createdAt: new Date().toISOString(),
-      };
-
-      await set(newTransactionRef, paymentTransaction);
-
-      // Add to user's transactions
-      const userTransactionRef = ref(database, `userTransactions/${user.uid}/${transactionId}`);
-      await set(userTransactionRef, true);
-
-      // Async: Send push notification to the person who paid
-      setTimeout(async () => {
-        try {
-          await triggerPushNotification({
-            userIds: [personId],
-            title: "Payment Confirmed! ✅",
-            body: `${user.name} marked your payment of Rs ${actualAmount.toLocaleString()} as received.`,
-            data: {
-              type: 'payment_received',
-              groupId: groupId,
-              amount: actualAmount
-            }
-          });
-        } catch (e) {
-          console.error("Failed to send settlement push notification", e);
-        }
-      }, 0);
-
-      return { success: true };
+      return { success: false, error: "Failed to mark payment as received" };
     } catch (error: any) {
-      logger.error("Mark payment received error", { uid: user.uid, groupId, personId, amount, error: error.message });
+      logger.error("Mark payment received API error", { uid: user.uid, groupId, personId, amount, error: error.message });
       return { success: false, error: error.message || "Failed to mark payment as received" };
     }
   };
@@ -970,83 +847,26 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, error: "Invalid amount or user not authenticated" };
     }
 
-    const groupSettlements = user.settlements[groupId] || {};
-    const currentSettlement = groupSettlements[personId] || { toReceive: 0, toPay: 0 };
-
-    // Allow partial payments - don't require exact amount
-    if (currentSettlement.toPay <= 0) {
-      return { success: false, error: "No pending debts to this person in this group" };
-    }
-
-    // Allow paying more than owed (in case of overpayment)
-    const actualAmount = Math.min(amount, currentSettlement.toPay);
-
     try {
-      // Step 1: Deduct real money from wallet
-      const deductResult = await deductMoneyFromWallet(actualAmount);
-      if (!deductResult.success) {
-        return deductResult;
+      logger.info("Marking debt paid via secure API", { groupId, personId, amount });
+
+      const result = await callSecureApi('/api/record-payment', {
+        groupId,
+        fromMember: user.uid,
+        toMember: personId,
+        amount,
+        method: "online",
+        note: `Debt payment from wallet`
+      });
+
+      if (result.success) {
+        logger.info("Debt marked paid successfully via server", { transactionId: result.transactionId });
+        return { success: true };
       }
 
-      // Step 2: Reduce payable amount
-      await updateSettlement(groupId, personId, currentSettlement.toReceive, currentSettlement.toPay - actualAmount);
-
-      // Step 3: Create transaction record
-      const transactionsRef = ref(database, 'transactions');
-      const newTransactionRef = push(transactionsRef);
-      const transactionId = newTransactionRef.key!;
-
-      const paymentTransaction = {
-        id: transactionId,
-        groupId: groupId, // CORRECTED: Use actual group ID instead of "settlement"
-        type: "payment" as const,
-        title: "Debt Payment",
-        amount: actualAmount,
-        date: new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric"
-        }),
-        paidBy: user.uid,
-        paidByName: user.name,
-        from: user.uid,
-        fromName: user.name,
-        to: personId,
-        toName: "Member",
-        method: "online" as const,
-        note: `Debt payment from wallet`,
-        walletBalanceBefore: user.walletBalance,
-        walletBalanceAfter: user.walletBalance - actualAmount,
-        createdAt: new Date().toISOString(),
-      };
-
-      await set(newTransactionRef, paymentTransaction);
-
-      // Add to user's transactions
-      const userTransactionRef = ref(database, `userTransactions/${user.uid}/${transactionId}`);
-      await set(userTransactionRef, true);
-
-      // Async: Send push notification to the person who was paid
-      setTimeout(async () => {
-        try {
-          await triggerPushNotification({
-            userIds: [personId],
-            title: "Money Received! 💸",
-            body: `${user.name} paid you Rs ${actualAmount.toLocaleString()}.`,
-            data: {
-              type: 'payment_made',
-              groupId: groupId,
-              amount: actualAmount
-            }
-          });
-        } catch (e) {
-          console.error("Failed to send debt payment push notification", e);
-        }
-      }, 0);
-
-      return { success: true };
+      return { success: false, error: "Failed to mark debt as paid" };
     } catch (error: any) {
-      logger.error("Mark debt paid error", { uid: user.uid, groupId, personId, amount, error: error.message });
+      logger.error("Mark debt paid API error", { uid: user.uid, groupId, personId, amount, error: error.message });
       return { success: false, error: error.message || "Failed to mark debt as paid" };
     }
   };
@@ -1118,9 +938,6 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       getTotalToReceive,
       getTotalToPay,
       getSettlementDelta,
-      updateSettlement,
-      addToReceivable,
-      addToPayable,
       markPaymentReceived,
       markDebtPaid,
       getIndividualDebts,
