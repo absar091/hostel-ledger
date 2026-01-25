@@ -61,11 +61,25 @@ app.use(cors({
   origin: (origin, callback) => {
     // allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+
+    // Check for allowed specific origins
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
     }
-    return callback(null, true);
+
+    // Dynamic checks
+    // Allow any localhost origin (dev environments on different ports)
+    if (origin.match(/^http:\/\/localhost:[0-9]+$/)) {
+      return callback(null, true);
+    }
+
+    // Allow any Vercel preview deployment
+    if (origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+
+    const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+    return callback(new Error(msg), false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -217,7 +231,30 @@ const createLimiter = rateLimit({
  * Verifies Firebase ID Token in Authorization header
  */
 const authenticate = async (req, res, next) => {
-  // ... existing code ...
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.warn('⚠️ Missing or malformed Authorization header');
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized: Missing or malformed token'
+    });
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    req.user = decodedToken;
+    console.log(`👤 Authenticated user: ${decodedToken.email} (${decodedToken.uid})`);
+    next();
+  } catch (error) {
+    console.error('❌ Token verification failed:', error.message);
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized: Invalid or expired token'
+    });
+  }
 };
 
 /**
@@ -277,13 +314,6 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
     // 4. Handle Invited Usernames (send invitations)
     if (invitedUsernames && invitedUsernames.length > 0) {
-      // Logic similar to send-invitation loop
-      // For now we assume the client might call send-invitation separately 
-      // OR we process them here. 
-      // Given the detailed previous logic for invitations, let's keep it simple here 
-      // and assume the client handles individual invites or we add a TODO.
-      // Actually, let's just create pending invitations for them.
-
       for (const username of invitedUsernames) {
         // Check username exists
         const usernameRef = admin.database().ref(`usernames/${username.toLowerCase()}`);
@@ -311,8 +341,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
       }
     }
 
-    // 5. Handle Emails (Optional - relying on separate endpoint usually, but can do here)
-    // If client passes emails, we could email them.
+    // 5. Handle Emails (Optional)
 
     res.json({ success: true, groupId, message: 'Group created successfully' });
 
@@ -321,31 +350,6 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     res.status(500).json({ success: false, error: 'Failed to create group' });
   }
 });
-const authHeader = req.headers.authorization;
-
-if (!authHeader || !authHeader.startsWith('Bearer ')) {
-  console.warn('⚠️ Missing or malformed Authorization header');
-  return res.status(401).json({
-    success: false,
-    error: 'Unauthorized: Missing or malformed token'
-  });
-}
-
-const idToken = authHeader.split('Bearer ')[1];
-
-try {
-  const decodedToken = await admin.auth().verifyIdToken(idToken);
-  req.user = decodedToken;
-  console.log(`👤 Authenticated user: ${decodedToken.email} (${decodedToken.uid})`);
-  next();
-} catch (error) {
-  console.error('❌ Token verification failed:', error.message);
-  return res.status(401).json({
-    success: false,
-    error: 'Unauthorized: Invalid or expired token'
-  });
-}
-};
 
 /**
  * Financial Logic Helpers
