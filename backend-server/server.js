@@ -328,12 +328,27 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     // 4. Handle Invited Usernames (send invitations)
     if (invitedUsernames && invitedUsernames.length > 0) {
       for (const username of invitedUsernames) {
-        // ... (existing username invite logic) ...
         const usernameRef = admin.database().ref(`usernames/${username.toLowerCase()}`);
         const s = await usernameRef.get();
         if (s.exists()) {
-          // ... existing logic ...
-          // (This part is fine, just need to make sure I don't break the brace structure)
+          const inviteeUid = s.val();
+          // Create invitation
+          const invRef = admin.database().ref('invitations').push();
+          // Fetch sender name
+          const senderSnap = await admin.database().ref(`users/${userId}/name`).get();
+          const senderName = senderSnap.exists() ? senderSnap.val() : "Someone";
+
+          await invRef.set({
+            id: invRef.key,
+            groupId,
+            groupName: newGroup.name,
+            groupEmoji: newGroup.emoji,
+            senderId: userId,
+            senderName,
+            receiverId: inviteeUid,
+            status: 'pending',
+            createdAt: new Date().toISOString()
+          });
         }
       }
     }
@@ -372,50 +387,28 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
           console.log(`✅ Email sent to ${member.email}`);
         } catch (emailErr) {
           console.error(`❌ Failed to send email to ${member.email}:`, emailErr);
-          // Don't fail the request, just log it
         }
       }));
-    }
-    const inviteeUid = s.val();
-    // Create invitation
-    const invRef = admin.database().ref('invitations').push();
-    // Fetch sender name
-    const senderSnap = await admin.database().ref(`users/${userId}/name`).get();
-    const senderName = senderSnap.exists() ? senderSnap.val() : "Someone";
-
-    await invRef.set({
-      id: invRef.key,
-      groupId,
-      groupName: newGroup.name,
-      groupEmoji: newGroup.emoji,
-      senderId: userId,
-      senderName,
-      receiverId: inviteeUid,
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    });
-  }
-      }
     }
 
     // 5. Handle Email Invites (Manual members with emails)
     const emailMembers = newGroup.members.filter(m => m.email && m.type === 'manual');
 
-if (emailMembers.length > 0) {
-  console.log(`📧 Sending ${emailMembers.length} email invites...`);
-  const senderSnap = await admin.database().ref(`users/${userId}/name`).get();
-  const senderName = senderSnap.exists() ? senderSnap.val() : "A friend";
+    if (emailMembers.length > 0) {
+      console.log(`📧 Sending ${emailMembers.length} email invites...`);
+      const senderSnap = await admin.database().ref(`users/${userId}/name`).get();
+      const senderName = senderSnap.exists() ? senderSnap.val() : "A friend";
 
-  // Send emails in parallel
-  await Promise.all(emailMembers.map(async (member) => {
-    try {
-      const inviteLink = `https://app.hostelledger.aarx.online/join/${groupId}?email=${encodeURIComponent(member.email)}`;
+      // Send emails in parallel
+      await Promise.all(emailMembers.map(async (member) => {
+        try {
+          const inviteLink = `https://app.hostelledger.aarx.online/join/${groupId}?email=${encodeURIComponent(member.email)}`;
 
-      const mailOptions = {
-        from: '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
-        to: member.email,
-        subject: `${senderName} invited you to join "${newGroup.name}"`,
-        html: `
+          const mailOptions = {
+            from: '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
+            to: member.email,
+            subject: `${senderName} invited you to join "${newGroup.name}"`,
+            html: `
               <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #4a6850;">You're invited! 🎉</h2>
                 <p>Hello <strong>${member.name}</strong>,</p>
@@ -426,22 +419,22 @@ if (emailMembers.length > 0) {
                 <p style="color: #666; font-size: 12px; margin-top: 24px;">If you don't accept within 7 days, your pending access may expire.</p>
               </div>
             `
-      };
+          };
 
-      await transporter.sendMail(mailOptions);
-      console.log(`✅ Email sent to ${member.email}`);
-    } catch (emailErr) {
-      console.error(`❌ Failed to send email to ${member.email}:`, emailErr);
+          await transporter.sendMail(mailOptions);
+          console.log(`✅ Email sent to ${member.email}`);
+        } catch (emailErr) {
+          console.error(`❌ Failed to send email to ${member.email}:`, emailErr);
+        }
+      }));
     }
-  }));
-}
 
-res.json({ success: true, groupId, message: 'Group created successfully' });
+    res.json({ success: true, groupId, message: 'Group created successfully' });
 
   } catch (error) {
-  console.error('Error creating group:', error);
-  res.status(500).json({ success: false, error: 'Failed to create group' });
-}
+    console.error('Error creating group:', error);
+    res.status(500).json({ success: false, error: 'Failed to create group' });
+  }
 });
 
 /**
