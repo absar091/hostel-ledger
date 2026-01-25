@@ -66,7 +66,10 @@ app.set('trust proxy', 1);
 // Middleware - Restricted CORS for production
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:8080',
   'https://hostel-ledger.aarx.online',
+  'https://app.hostelledger.aarx.online',
+  'https://hostel-ledger.vercel.app',
   'https://hostel-ledger-absar.vercel.app'
 ];
 
