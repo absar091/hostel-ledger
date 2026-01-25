@@ -29,10 +29,10 @@ export const sendTransactionNotifications = async (
   users: UserData[]
 ): Promise<{ success: boolean; errors: string[] }> => {
   const errors: string[] = [];
-  
+
   try {
     console.log('📧 Sending transaction notifications for:', transaction.title);
-    
+
     // Format transaction details
     const transactionType = getTransactionTypeDisplay(transaction.type);
     const amount = `Rs ${transaction.amount.toLocaleString()}`;
@@ -44,7 +44,7 @@ export const sendTransactionNotifications = async (
       minute: '2-digit'
     });
     const description = transaction.description || transaction.title;
-    
+
     // Send emails to all users (including the person who created the transaction)
     const emailPromises = users
       .map(async (user) => {
@@ -65,23 +65,60 @@ export const sendTransactionNotifications = async (
           errors.push(errorMsg);
         }
       });
-    
+
     // Wait for all emails to complete
     await Promise.allSettled(emailPromises);
-    
+
     const success = errors.length === 0;
     if (success) {
       console.log('✅ All transaction notifications sent successfully');
     } else {
       console.warn(`⚠️ Transaction notifications completed with ${errors.length} errors`);
     }
-    
+
     return { success, errors };
-    
+
   } catch (error: any) {
     console.error('❌ Transaction notification system error:', error);
     errors.push(`System error: ${error.message}`);
     return { success: false, errors };
+  }
+};
+
+/**
+ * Trigger push notifications via OneSignal backend
+ * Updated: 2026-01-25 - Using more reliable multi-notify endpoint
+ */
+export const triggerPushNotification = async (payload: {
+  userIds: string[];
+  title: string;
+  body: string;
+  data?: any;
+}): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const apiUrl = `${import.meta.env.VITE_API_URL}/api/push-notify-multiple?t=${Date.now()}`;
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      },
+      body: JSON.stringify({
+        userIds: payload.userIds,
+        title: payload.title,
+        body: payload.body,
+        data: payload.data,
+        icon: '/only-logo.png',
+        badge: '/only-logo.png'
+      })
+    });
+
+    const result = await response.json();
+    console.log('🔔 Push notification result:', result);
+    return { success: response.ok };
+  } catch (error: any) {
+    console.error('❌ Failed to trigger push notification:', error);
+    return { success: false, error: error.message };
   }
 };
 
@@ -94,7 +131,7 @@ export const sendTransactionNotificationToUser = async (
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     console.log(`📧 Sending transaction notification to ${user.email}`);
-    
+
     const transactionType = getTransactionTypeDisplay(transaction.type);
     const amount = `Rs ${transaction.amount.toLocaleString()}`;
     const date = new Date(transaction.date).toLocaleDateString('en-US', {
@@ -105,7 +142,7 @@ export const sendTransactionNotificationToUser = async (
       minute: '2-digit'
     });
     const description = transaction.description || transaction.title;
-    
+
     await sendTransactionAlertEmail(
       user.email,
       user.name,
@@ -115,10 +152,10 @@ export const sendTransactionNotificationToUser = async (
       date,
       description
     );
-    
+
     console.log(`✅ Transaction alert sent to ${user.email}`);
     return { success: true };
-    
+
   } catch (error: any) {
     const errorMsg = `Failed to send transaction alert to ${user.email}: ${error.message}`;
     console.error('❌', errorMsg);

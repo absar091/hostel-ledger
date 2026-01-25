@@ -22,6 +22,7 @@ import {
   validatePhone,
   validateAmount
 } from "@/lib/security";
+import { triggerPushNotification } from "@/lib/transactionNotifications";
 
 export interface PaymentDetails {
   jazzCash?: string;
@@ -120,12 +121,12 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Shorter timeout when offline (2s), longer when online (5s)
     const timeoutDuration = navigator.onLine ? 5000 : 2000;
-    
+
     // Set a timeout to force loading to complete
     // This prevents infinite loading when offline
     const loadingTimeout = setTimeout(() => {
       console.warn(`⚠️ Auth loading timeout (${timeoutDuration}ms) - checking localStorage cache`);
-      
+
       // Try to load cached user from localStorage
       try {
         const cachedUser = localStorage.getItem('cachedUser');
@@ -138,13 +139,13 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         console.error('Failed to load cached user:', error);
       }
-      
+
       setIsLoading(false);
     }, timeoutDuration);
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       clearTimeout(loadingTimeout); // Clear timeout if auth completes normally
-      
+
       if (firebaseUser) {
         setFirebaseUser(firebaseUser);
         await fetchUserProfile(firebaseUser.uid);
@@ -158,7 +159,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }, (error) => {
       clearTimeout(loadingTimeout);
       logger.error("Auth state change error", { error: error.message });
-      
+
       // Try to load cached user from localStorage on error
       try {
         const cachedUser = localStorage.getItem('cachedUser');
@@ -170,7 +171,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (cacheError) {
         console.error('Failed to load cached user:', cacheError);
       }
-      
+
       setIsLoading(false);
     });
 
@@ -213,7 +214,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
         setUser(userProfile);
         logger.setUserId(uid);
-        
+
         // Cache user profile to localStorage for offline access
         try {
           localStorage.setItem('cachedUser', JSON.stringify(userProfile));
@@ -939,6 +940,24 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       const userTransactionRef = ref(database, `userTransactions/${user.uid}/${transactionId}`);
       await set(userTransactionRef, true);
 
+      // Async: Send push notification to the person who paid
+      setTimeout(async () => {
+        try {
+          await triggerPushNotification({
+            userIds: [personId],
+            title: "Payment Confirmed! ✅",
+            body: `${user.name} marked your payment of Rs ${actualAmount.toLocaleString()} as received.`,
+            data: {
+              type: 'payment_received',
+              groupId: groupId,
+              amount: actualAmount
+            }
+          });
+        } catch (e) {
+          console.error("Failed to send settlement push notification", e);
+        }
+      }, 0);
+
       return { success: true };
     } catch (error: any) {
       logger.error("Mark payment received error", { uid: user.uid, groupId, personId, amount, error: error.message });
@@ -1006,6 +1025,24 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       // Add to user's transactions
       const userTransactionRef = ref(database, `userTransactions/${user.uid}/${transactionId}`);
       await set(userTransactionRef, true);
+
+      // Async: Send push notification to the person who was paid
+      setTimeout(async () => {
+        try {
+          await triggerPushNotification({
+            userIds: [personId],
+            title: "Money Received! 💸",
+            body: `${user.name} paid you Rs ${actualAmount.toLocaleString()}.`,
+            data: {
+              type: 'payment_made',
+              groupId: groupId,
+              amount: actualAmount
+            }
+          });
+        } catch (e) {
+          console.error("Failed to send debt payment push notification", e);
+        }
+      }, 0);
 
       return { success: true };
     } catch (error: any) {

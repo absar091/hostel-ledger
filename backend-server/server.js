@@ -28,7 +28,7 @@ try {
     credential: admin.credential.cert(serviceAccount),
     databaseURL: process.env.FIREBASE_DATABASE_URL || "https://hostel-ledger-default-rtdb.firebaseio.com"
   });
-  
+
   console.log('✅ Firebase Admin SDK initialized successfully');
 } catch (error) {
   console.error('❌ Firebase Admin SDK initialization failed:', error.message);
@@ -44,7 +44,7 @@ try {
     process.env.VAPID_PRIVATE_KEY
   );
   console.log('✅ Web Push configured with VAPID keys');
-  
+
   // For FCM endpoints, we also need to set GCM API key
   // FCM uses the Firebase Server Key for authorization
   if (process.env.FCM_SERVER_KEY) {
@@ -105,13 +105,13 @@ const loadEmailTemplate = (templateName, variables = {}) => {
   try {
     const templatePath = path.join(__dirname, 'email-templates', `${templateName}.html`);
     let template = fs.readFileSync(templatePath, 'utf8');
-    
+
     // Replace variables in template
     Object.keys(variables).forEach(key => {
       const regex = new RegExp(`{{${key}}}`, 'g');
       template = template.replace(regex, variables[key]);
     });
-    
+
     return template;
   } catch (error) {
     console.error(`❌ Error loading template ${templateName}:`, error);
@@ -144,8 +144,8 @@ transporter.verify((error, success) => {
 // Root endpoint
 app.get('/', (req, res) => {
   console.log('📍 Root endpoint accessed from:', req.get('origin') || 'direct');
-  res.json({ 
-    success: true, 
+  res.json({
+    success: true,
     message: 'Hostel Ledger Email API',
     version: '4.0.0-onesignal',
     pushProvider: 'OneSignal',
@@ -168,8 +168,8 @@ app.get('/', (req, res) => {
 // Health check endpoint (no rate limiting)
 app.get('/health', (req, res) => {
   console.log('🏥 Health check accessed from:', req.get('origin') || 'direct');
-  res.json({ 
-    success: true, 
+  res.json({
+    success: true,
     message: 'Hostel Ledger Email API is running',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
@@ -633,17 +633,17 @@ app.use((err, req, res, next) => {
 // Email existence check endpoint
 app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
   console.log('🔍 Email existence check requested from:', req.get('origin') || 'direct');
-  
+
   try {
     const { email } = req.body;
-    
+
     if (!email) {
       return res.status(400).json({
         success: false,
         error: 'Email is required'
       });
     }
-    
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -652,9 +652,9 @@ app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
         error: 'Invalid email format'
       });
     }
-    
+
     console.log('📧 Checking email existence for:', email);
-    
+
     try {
       // Check Firebase Auth first
       let existsInAuth = false;
@@ -671,17 +671,17 @@ app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
           console.warn('⚠️ Firebase Auth check error:', authError.message);
         }
       }
-      
+
       // Check Realtime Database
       let existsInDatabase = false;
       try {
         const usersRef = admin.database().ref('users');
         const snapshot = await usersRef.once('value');
-        
+
         if (snapshot.exists()) {
           const users = snapshot.val();
           console.log('📊 Found', Object.keys(users).length, 'users in database');
-          
+
           // Search through all users to find matching email
           for (const uid in users) {
             if (users[uid].email === email) {
@@ -702,21 +702,21 @@ app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
       } catch (dbError) {
         console.error('❌ Database check error:', dbError.message);
       }
-      
+
       const exists = existsInAuth || existsInDatabase;
-      
+
       console.log(`📊 Email existence result for ${email}:`, {
         existsInAuth,
         existsInDatabase,
         finalResult: exists
       });
-      
+
       res.json({
         success: true,
         exists: exists,
         message: exists ? 'Email already exists' : 'Email is available'
       });
-      
+
     } catch (error) {
       console.error('❌ Email existence check error:', error);
       res.status(500).json({
@@ -724,7 +724,7 @@ app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
         error: 'Failed to check email existence'
       });
     }
-    
+
   } catch (error) {
     console.error('❌ Email existence check error:', error);
     res.status(500).json({
@@ -746,7 +746,7 @@ app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
 app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
   try {
     console.log('ℹ️ Push subscribe endpoint called (OneSignal handles subscriptions automatically)');
-    
+
     res.json({
       success: true,
       message: 'OneSignal handles subscriptions automatically - no action needed'
@@ -793,16 +793,13 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
       const playerRef = admin.database().ref(`oneSignalPlayers/${userId}`);
       const snapshot = await playerRef.once('value');
       const playerData = snapshot.val();
-      
+
       if (playerData && playerData.playerId) {
         playerId = playerData.playerId;
         console.log('✅ Found Player ID for user:', playerId);
       } else {
-        console.warn('⚠️ No Player ID found for user:', userId);
-        return res.status(404).json({
-          success: false,
-          error: 'User has not enabled push notifications'
-        });
+        console.warn('⚠️ No Player ID found for user (will try external_id only):', userId);
+        // We continue because we can still try sending by external_id (userId)
       }
     } catch (error) {
       console.error('❌ Failed to get Player ID:', error);
@@ -812,10 +809,12 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
       });
     }
 
-    // Send notification via OneSignal REST API using Player ID
+    // Send notification via OneSignal REST API
+    // Updated: 2026-01-25 - Using include_external_user_ids for better reliability
     const notificationData = {
       app_id: oneSignalAppId,
-      include_player_ids: [playerId], // Send to specific player
+      include_external_user_ids: [userId], // Primary: send via Firebase UID
+      include_player_ids: playerId ? [playerId] : undefined, // Fallback: send via Player ID if we have it
       headings: { en: title },
       contents: { en: body },
       web_url: data?.url || undefined,
@@ -824,9 +823,10 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
       data: data || {}
     };
 
-    console.log('📤 Sending to OneSignal API (Player ID)...');
-    console.log('📝 Target Player ID:', playerId);
-    
+    console.log('📤 Sending to OneSignal API (External ID + Player ID)...');
+    console.log('📝 Target User UID:', userId);
+    if (playerId) console.log('📝 Target Player ID:', playerId);
+
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
       headers: {
@@ -847,7 +847,11 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
     }
 
     console.log('✅ Push notification sent successfully via OneSignal');
-    console.log('📊 Recipients:', responseData.recipients);
+    console.log('📊 Stats:', {
+      id: responseData.id,
+      recipients: responseData.recipients,
+      external_id_recipients: responseData.external_id_recipients || 'N/A'
+    });
 
     res.json({
       success: true,
@@ -905,31 +909,24 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
         const playerRef = admin.database().ref(`oneSignalPlayers/${userId}`);
         const snapshot = await playerRef.once('value');
         const playerData = snapshot.val();
-        
+
         if (playerData && playerData.playerId) {
           playerIds.push(playerData.playerId);
           console.log('✅ Found Player ID for user:', userId);
         } else {
-          console.warn('⚠️ No Player ID found for user:', userId);
+          console.warn('⚠️ No Player ID found for user (will try external_id only):', userId);
         }
       } catch (error) {
         console.error('❌ Failed to get Player ID for user:', userId, error);
       }
     }
 
-    if (playerIds.length === 0) {
-      console.warn('⚠️ No Player IDs found for any users');
-      return res.json({
-        success: true,
-        message: 'No users have enabled push notifications',
-        recipients: 0
-      });
-    }
-
-    // Send notification via OneSignal REST API to multiple players
+    // Send notification via OneSignal REST API to multiple players/users
+    // Updated: 2026-01-25 - Using include_external_user_ids for better reliability
     const notificationData = {
       app_id: oneSignalAppId,
-      include_player_ids: playerIds, // Send to specific players only
+      include_external_user_ids: userIds, // Bulk send via Firebase UIDs
+      include_player_ids: playerIds.length > 0 ? playerIds : undefined, // Fallback: Player IDs
       headings: { en: title },
       contents: { en: body },
       web_url: data?.url || undefined,
@@ -938,9 +935,10 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
       data: data || {}
     };
 
-    console.log('📤 Sending to OneSignal API (Player IDs)...');
-    console.log('📝 Target Player IDs:', playerIds);
-    
+    console.log('📤 Sending to OneSignal API (External IDs + Player IDs)...');
+    console.log('📝 Target User UIDs:', userIds);
+    if (playerIds.length > 0) console.log('📝 Target Player IDs:', playerIds);
+
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
       headers: {
@@ -961,7 +959,11 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
     }
 
     console.log('✅ Push notifications sent successfully via OneSignal');
-    console.log('📊 Recipients:', responseData.recipients);
+    console.log('📊 Stats:', {
+      id: responseData.id,
+      recipients: responseData.recipients,
+      external_id_recipients: responseData.external_id_recipients || 'N/A'
+    });
 
     res.json({
       success: true,
@@ -983,7 +985,7 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
 app.get('/api/push-subscription/:userId', generalLimiter, async (req, res) => {
   try {
     console.log('ℹ️ Push subscription status endpoint called (OneSignal handles this)');
-    
+
     res.json({
       success: true,
       message: 'OneSignal handles subscription status - check OneSignal dashboard'
@@ -1002,7 +1004,7 @@ app.get('/api/push-subscription/:userId', generalLimiter, async (req, res) => {
 app.delete('/api/push-unsubscribe/:userId', generalLimiter, async (req, res) => {
   try {
     console.log('ℹ️ Push unsubscribe endpoint called (OneSignal handles this)');
-    
+
     res.json({
       success: true,
       message: 'OneSignal handles unsubscription automatically'

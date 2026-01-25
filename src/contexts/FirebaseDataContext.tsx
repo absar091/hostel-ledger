@@ -14,6 +14,7 @@ const sanitizeAmount = (amount: string | number): number => {
   return isNaN(num) ? 0 : Math.max(0, Math.min(num, 1000000));
 };
 
+
 const validateAmount = (amount: number): { isValid: boolean; error?: string } => {
   if (isNaN(amount) || amount <= 0) {
     return { isValid: false, error: 'Amount must be a positive number' };
@@ -102,7 +103,7 @@ import {
   validatePaymentAmount
 } from "@/lib/expenseLogic";
 import { logger } from "@/lib/logger";
-import { sendTransactionNotifications, TransactionData, UserData } from "@/lib/transactionNotifications";
+import { sendTransactionNotifications, triggerPushNotification, TransactionData, UserData } from "@/lib/transactionNotifications";
 
 export interface GroupMember {
   id: string;
@@ -215,7 +216,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             getCachedGroups(),
             getCachedTransactions()
           ]);
-          
+
           if (cachedGroups.length > 0 || cachedTransactions.length > 0) {
             console.log('✅ Loaded cached data:', cachedGroups.length, 'groups,', cachedTransactions.length, 'transactions');
             setGroups(cachedGroups);
@@ -235,13 +236,13 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       try {
         // Try to load cached data first if offline
         const cachedDataLoaded = await loadCachedDataIfOffline();
-        
+
         // If offline and cached data loaded, don't set up Firebase listeners
         if (cachedDataLoaded) {
           console.log('✅ Offline mode - using cached data only, skipping Firebase listeners');
-          return () => {}; // Return empty cleanup function
+          return () => { }; // Return empty cleanup function
         }
-        
+
         // Wait a bit for auth to be fully established (only if online)
         await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -260,7 +261,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               const groupsData = await Promise.all(groupPromises);
               const filteredGroups = groupsData.filter(Boolean) as Group[];
               setGroups(filteredGroups);
-              
+
               // Cache groups to IndexedDB for offline access
               try {
                 const { cacheGroups } = await import('@/lib/offlineDB');
@@ -273,7 +274,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             }
           } catch (error: any) {
             logger.error("Error loading groups", { uid: user.uid, error: error.message });
-            
+
             // Try to load cached groups on error
             try {
               const { getCachedGroups } = await import('@/lib/offlineDB');
@@ -314,7 +315,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                 .filter(Boolean)
                 .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
               setTransactions(sortedTransactions as Transaction[]);
-              
+
               // Cache transactions to IndexedDB for offline access
               try {
                 const { cacheTransactions } = await import('@/lib/offlineDB');
@@ -327,7 +328,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             }
           } catch (error: any) {
             logger.error("Error loading transactions", { uid: user.uid, error: error.message });
-            
+
             // Try to load cached transactions on error
             try {
               const { getCachedTransactions } = await import('@/lib/offlineDB');
@@ -511,7 +512,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         createdBy: user.uid,
         createdAt: new Date().toISOString(),
       };
-      
+
       // Only add coverPhoto if it exists (Firebase doesn't allow undefined)
       if (data.coverPhoto) {
         newGroup.coverPhoto = data.coverPhoto;
@@ -953,13 +954,12 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       if (result.success) {
         logger.logTransaction("expense_created", sanitizedAmount, true);
 
-        // Send transaction notification emails (async, non-blocking)
-        // Use setTimeout instead of setImmediate for better async behavior
+        // Send transaction notification emails and push notifications (async, non-blocking)
         setTimeout(async () => {
           try {
-            logger.info('Sending transaction notification emails for expense', { transactionId });
+            logger.info('Sending transaction notifications for expense', { transactionId });
 
-            // Prepare transaction data for email
+            // 1. Prepare and send email to current user
             const transactionData: TransactionData = {
               id: transactionId,
               type: 'expense',
@@ -975,85 +975,33 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               method: 'cash'
             };
 
-            // Send notification email to current user regardless of whether they're payer or participant
             const currentUserData: UserData = {
               uid: user.uid,
               email: user.email,
               name: user.name
             };
 
-            const emailResult = await sendTransactionNotifications(transactionData, [currentUserData]);
-            if (emailResult.success) {
-              logger.info('Transaction notification email sent successfully', { transactionId });
-            } else {
-              logger.warn('Transaction notification email failed', { transactionId, errors: emailResult.errors });
-            }
+            await sendTransactionNotifications(transactionData, [currentUserData]);
 
-            // Send push notifications to all group members (including payer for testing)
-            try {
-              logger.info('Sending push notifications for expense', { transactionId, groupId: data.groupId });
+            // 2. Send push notifications to others in the group
+            const membersWithUserId = group.members.filter(member => member.userId && member.userId !== user.uid);
 
-              const membersWithUserId = group.members.filter(member => member.userId);
-              console.log('📊 Members with userId:', membersWithUserId.map(m => ({ name: m.name, userId: m.userId })));
-
-              const notificationPromises = membersWithUserId.map(async (member) => {
-                try {
-                  console.log(`📤 Sending push notification to ${member.name} (${member.userId})...`);
-
-                  const requestBody = {
-                    userId: member.userId,
-                    title: `New Expense in ${group.name}`,
-                    body: `${payer.name} paid Rs ${sanitizedAmount.toLocaleString()} for "${sanitizedNote || 'Expense'}"`,
-                    icon: '/only-logo.png',
-                    badge: '/only-logo.png',
-                    tag: `expense-${transactionId}`,
-                    data: {
-                      type: 'expense',
-                      transactionId,
-                      groupId: data.groupId,
-                      amount: sanitizedAmount
-                    }
-                  };
-
-                  console.log('📤 Request body:', requestBody);
-
-                  // Add cache-busting timestamp to URL
-                  const apiUrl = `${import.meta.env.VITE_API_URL}/api/push-notify?t=${Date.now()}`;
-                  console.log('📤 API URL:', apiUrl);
-
-                  const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Cache-Control': 'no-cache'
-                    },
-                    body: JSON.stringify(requestBody)
-                  });
-
-                  const responseData = await response.json();
-                  console.log(`📥 Response for ${member.name}:`, responseData);
-
-                  if (response.ok) {
-                    console.log(`✅ Push notification sent to ${member.name}`);
-                  } else {
-                    console.warn(`⚠️ Push notification failed for ${member.name}:`, responseData);
-                  }
-                } catch (error) {
-                  console.error(`❌ Failed to send push notification to ${member.name}:`, error);
+            if (membersWithUserId.length > 0) {
+              const userIds = membersWithUserId.map(m => m.userId!);
+              await triggerPushNotification({
+                userIds,
+                title: `New Expense in ${group.name}`,
+                body: `${payer.name} paid Rs ${sanitizedAmount.toLocaleString()} for "${sanitizedNote || 'Expense'}"`,
+                data: {
+                  type: 'expense',
+                  transactionId,
+                  groupId: data.groupId,
+                  amount: sanitizedAmount
                 }
               });
-
-              await Promise.allSettled(notificationPromises);
-              logger.info('Push notifications sent to all members', { transactionId });
-
-            } catch (pushError: any) {
-              logger.error('Failed to send push notifications', { transactionId, error: pushError.message });
-              // Push notification failure doesn't affect transaction success
             }
-
-          } catch (emailError: any) {
-            logger.error('Failed to send transaction notification emails', { transactionId, error: emailError.message });
-            // Email failure doesn't affect transaction success
+          } catch (error: any) {
+            logger.error('Failed to send expense notifications', { transactionId, error: error.message });
           }
         }, 0); // Use setTimeout with 0ms delay for better async behavior
       } else {
@@ -1309,6 +1257,21 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               logger.info('Payment notification email sent successfully', { transactionId });
             } else {
               logger.warn('Payment notification email failed', { transactionId, errors: emailResult.errors });
+            }
+
+            // Push notification for payment
+            if (toPerson.userId && toPerson.userId !== user.uid) {
+              await triggerPushNotification({
+                userIds: [toPerson.userId],
+                title: `Payment Received! 💰`,
+                body: `${fromPerson.name} sent you Rs ${sanitizedAmount.toLocaleString()}`,
+                data: {
+                  type: 'payment',
+                  transactionId,
+                  groupId: data.groupId,
+                  amount: sanitizedAmount
+                }
+              });
             }
 
           } catch (emailError: any) {
