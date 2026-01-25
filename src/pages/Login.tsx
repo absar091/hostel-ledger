@@ -31,7 +31,7 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast.error("Please fill in all fields");
       return;
@@ -43,11 +43,8 @@ const Login = () => {
 
     if (result.success) {
       toast.success("Welcome back!");
-      console.log(" LOGIN SUCCESS - Login result:", result);
-      console.log(" LOGIN SUCCESS - Should redirect now...");
     } else {
       toast.error(result.error || "Login failed");
-      console.log(" LOGIN FAILED - Error:", result.error);
     }
   };
 
@@ -55,7 +52,7 @@ const Login = () => {
     <div className="min-h-screen bg-white flex flex-col">
       {/* Top Accent Border - iPhone Style */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
-      
+
       {/* App Header - iPhone Style Enhanced with #4a6850 */}
       <div className="bg-white border-b border-[#4a6850]/10 pt-4 pb-5 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
         <div className="flex items-center justify-center">
@@ -75,7 +72,7 @@ const Login = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Page Guide */}
       <PageGuide
         title="Welcome Back! 👋"
@@ -137,9 +134,9 @@ const Login = () => {
             </div>
           </div>
 
-          <Button 
-            type="submit" 
-            className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50" 
+          <Button
+            type="submit"
+            className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
             disabled={isLoading}
           >
             {isLoading ? "Signing in..." : "Sign In"}
