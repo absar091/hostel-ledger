@@ -38,9 +38,8 @@ interface AddExpenseSheetProps {
     participants: string[];
     note: string;
     place: string;
-    stagedMembers?: Member[];
   }) => void;
-  onAddMember?: (groupId: string, data: { name: string; isTemporary: boolean; deletionCondition: 'SETTLED' | 'TIME_LIMIT' }) => void;
+  onAddMember?: (groupId: string, data: { name: string; isTemporary: boolean; deletionCondition: 'SETTLED' | 'TIME_LIMIT' }) => Promise<{ success: boolean; memberId?: string }>;
 }
 
 import {
@@ -73,20 +72,14 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
   const [tempMemberName, setTempMemberName] = useState("");
   const [tempMemberCondition, setTempMemberCondition] = useState<'SETTLED' | 'TIME_LIMIT'>('TIME_LIMIT');
   // Optimistic update state
-  const [localTempMembers, setLocalTempMembers] = useState<Member[]>([]);
 
   // Get members from selected group
   // Get members from selected group + local temp members
+  // Get members from selected group
   const members = useMemo(() => {
     const group = groups.find((g) => g.id === selectedGroup);
-    const groupMembers = group?.members || [];
-
-    // Filter out local members that might have been synced already (by name checking or ID if available)
-    const syncedMemberNames = new Set(groupMembers.map(m => m.name.toLowerCase()));
-    const uniqueLocalMembers = localTempMembers.filter(m => !syncedMemberNames.has(m.name.toLowerCase()));
-
-    return [...groupMembers, ...uniqueLocalMembers];
-  }, [groups, selectedGroup, localTempMembers]);
+    return group?.members || [];
+  }, [groups, selectedGroup]);
 
   // Auto-select group if only one exists
   useEffect(() => {
@@ -241,10 +234,8 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
       participants,
       note: note.trim().substring(0, 200),
       place: place.trim().substring(0, 100),
-      stagedMembers: localTempMembers.length > 0 ? localTempMembers : undefined,
+      // No longer need stagedMembers here
     });
-    // Clear local state after submission
-    setLocalTempMembers([]);
     handleClose();
   };
 
@@ -265,7 +256,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
     return true;
   };
 
-  const handleAddTempMember = () => {
+  const handleAddTempMember = async () => {
     if (!tempMemberName.trim()) {
       toast.error("Please enter a name");
       return;
@@ -276,21 +267,33 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
       return;
     }
 
-    // Generate ID for consistency (temp ID for staged member)
-    const tempId = `staged_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    if (!onAddMember) return;
 
-    // staged members are only added to group on submission
-    const tempMember: Member = {
-      id: tempId,
-      name: tempMemberName.trim(),
-      isTemporary: true,
-      deletionCondition: tempMemberCondition
-    };
+    // Show loading toast
+    const loadingToast = toast.loading(`Adding ${tempMemberName.trim()}...`);
 
-    setLocalTempMembers(prev => [...prev, tempMember]);
-    setTempMemberName("");
-    setShowTempMemberInput(false);
-    toast.success("Member added to split selection");
+    try {
+      const result = await onAddMember(selectedGroup, {
+        name: tempMemberName.trim(),
+        isTemporary: true,
+        deletionCondition: tempMemberCondition
+      });
+
+      if (result.success && result.memberId) {
+        // Automatically add the new member to participants
+        setParticipants(prev => [...prev, result.memberId!]);
+        setTempMemberName("");
+        setShowTempMemberInput(false);
+        toast.dismiss(loadingToast);
+        toast.success(`${tempMemberName.trim()} added and selected for split`);
+      } else {
+        toast.dismiss(loadingToast);
+        toast.error("Failed to add member to group. Please try again.");
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error("An error occurred while adding the member.");
+    }
   };
 
   const paidByName = members.find((m) => m.id === paidBy)?.name;
