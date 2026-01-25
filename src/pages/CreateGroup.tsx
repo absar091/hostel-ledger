@@ -30,6 +30,7 @@ interface ManualMember {
     type: 'manual';
     name: string;
     photoURL?: string;
+    email?: string; // Optional: link manual member to an email invite
 }
 
 interface InviteMember {
@@ -113,11 +114,25 @@ export default function CreateGroupPage() {
             toast.error("Invalid email");
             return;
         }
-        if (members.some(m => m.type === 'invite' && m.email === inviteEmail)) {
-            toast.error("Email already added");
+        if (members.some(m => (m.type === 'invite' && m.email === inviteEmail) || (m.type === 'manual' && m.email === inviteEmail))) {
+            toast.error("Member already added");
             return;
         }
-        setMembers([...members, { type: 'invite', email: inviteEmail }]);
+
+        // Auto-create a manual member for immediate use
+        const derivedName = inviteEmail.split('@')[0];
+        const formattedName = derivedName.charAt(0).toUpperCase() + derivedName.slice(1);
+
+        setMembers([
+            ...members,
+            { type: 'invite', email: inviteEmail },
+            { type: 'manual', name: formattedName, email: inviteEmail }
+        ]);
+
+        toast.success(`Added ${formattedName} to group!`, {
+            description: "They are added as a manual member so you can split bills immediately."
+        });
+
         setInviteEmail("");
         setSearchQuery(""); // clear search that failed
         setSearchError(false);
