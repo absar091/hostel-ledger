@@ -43,7 +43,7 @@ const EMOJI_OPTIONS = ["🏠", "🍽️", "✈️", "🎉", "🛒", "☕", "🎬
 
 export default function CreateGroupPage() {
     const navigate = useNavigate();
-    const { createGroup } = useFirebaseAuth();
+    const { createGroup, user } = useFirebaseAuth();
 
     // Steps: 1 = Details, 2 = Members, 3 = Review
     const [step, setStep] = useState(1);
@@ -92,6 +92,12 @@ export default function CreateGroupPage() {
 
     const addRealMember = () => {
         if (searchResult) {
+            // Validate: Prevent adding self
+            if (user && searchResult.uid === user.uid) {
+                toast.error("You are already the admin! 👑");
+                return;
+            }
+
             if (members.some(m => m.type === 'real' && m.uid === searchResult.uid)) {
                 toast.error("User already added");
                 return;
@@ -124,12 +130,18 @@ export default function CreateGroupPage() {
     };
 
     const handleCreate = async () => {
-        // Transform members to format expected by Context
-        // Real members -> invitedUsernames
-        // Invite members -> invitedEmails
-        // Manual members -> members array
+        // Validation
+        if (!name.trim()) {
+            toast.error("Please give your group a name");
+            return;
+        }
+        if (members.length === 0) {
+            toast.error("Add at least one member (beside you)");
+            return;
+        }
 
-        const manualList = members.filter(m => m.type === 'manual').map(m => ({ name: (m as ManualMember).name })); // Simple mapping
+        // Transform members
+        const manualList = members.filter(m => m.type === 'manual').map(m => ({ name: (m as ManualMember).name }));
         const usernamesList = members.filter(m => m.type === 'real').map(m => (m as RealMember).username);
         const emailsList = members.filter(m => m.type === 'invite').map(m => (m as InviteMember).email);
 
@@ -142,19 +154,30 @@ export default function CreateGroupPage() {
             invitedEmails: emailsList
         };
 
-        const result = await createGroup(groupPayload);
-        if (result.success) {
-            toast.success("Group created successfully! 🚀");
-            navigate('/dashboard');
-            // Emails are handled in context now (ideally) or we call API here.
-            // Wait, previous step we put email logic in Dashboard.tsx handleGroupSubmit.
-            // Since this is a new page, we must implement email sending here too.
-            if (emailsList.length > 0 && result.groupId) {
-                // We need to import sendExternalInvitation here too
-                // But wait, I'll add the import later.
+        try {
+            const result = await createGroup(groupPayload);
+            if (result.success) {
+                toast.success("Group created successfully! 🚀");
+                navigate('/dashboard');
+
+                // Handle email invites
+                if (emailsList.length > 0 && result.groupId) {
+                    // We'd import sendExternalInvitation here if needed, 
+                    // but usually the backend/context handles it or we do it here.
+                    // For now, let's assume Context handles invitedUsernames and we need to handle emails manually if context doesn't.
+                    // Actually context's createGroup takes invitedUsernames but invitedEmails logic was in Dashboard.
+                    // Let's rely on backend or add the call if needed.
+                    // Re-checking FirebaseDataContext... it handles invitedUsernames but NOT emails for external invites in `createGroup`, 
+                    // it returns `groupId` so we can do it here.
+
+                    // For this task, user just asked for validation. I'll stick to validation.
+                }
+            } else {
+                toast.error(result.error || "Failed to create group");
             }
-        } else {
-            toast.error("Failed to create group");
+        } catch (error) {
+            console.error("Create group error:", error);
+            toast.error("Something went wrong");
         }
     };
 
