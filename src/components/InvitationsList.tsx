@@ -46,14 +46,20 @@ const InvitationsList = () => {
         return () => off(invitationsRef, 'value', handleSnapshot);
     }, [user]);
 
-    const handleRespond = async (invitationId: string, accept: boolean) => {
+    const handleRespond = async (invitationId: string, accept: boolean, groupId: string) => {
         try {
             setProcessingId(invitationId);
             const result = await respondInvitation(invitationId, accept);
 
             if (result.success) {
                 toast.success(accept ? "Invitation accepted! 🎉" : "Invitation declined");
-                // Optimistic update handled by real-time listener
+
+                // Navigate to the group after accepting
+                if (accept && result.groupId) {
+                    setTimeout(() => {
+                        window.location.href = `/group/${result.groupId}`;
+                    }, 1000);
+                }
             } else {
                 toast.error(result.error || "Failed to respond");
             }
