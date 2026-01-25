@@ -195,7 +195,9 @@ const GroupDetail = () => {
     name: m.name,
     isTemporary: m.isTemporary,
     deletionCondition: m.deletionCondition,
-    expiresAt: m.expiresAt
+    expiresAt: m.expiresAt,
+    email: (m as any).email,
+    isPending: (m as any).isPending
   }));
   const currentUser = group.members.find((m) => m.isCurrentUser);
 
@@ -450,6 +452,9 @@ const GroupDetail = () => {
                         {member.isTemporary && (
                           <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
                         )}
+                        {member.isPending && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-600 text-[10px] font-black uppercase tracking-wider">Pending</span>
+                        )}
                       </div>
                       <div className="text-xs mt-1">
                         {isYou ? (
@@ -473,7 +478,7 @@ const GroupDetail = () => {
                       </div>
                     </div>
 
-                    {!isYou && !isSettled && (
+                    {!isYou && !isSettled && !member.isPending && (
                       <div className="flex flex-col gap-2">
                         <Button
                           onClick={handleSettlementClick}

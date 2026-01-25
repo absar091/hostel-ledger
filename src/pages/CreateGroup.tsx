@@ -156,7 +156,10 @@ export default function CreateGroupPage() {
         }
 
         // Transform members
-        const manualList = members.filter(m => m.type === 'manual').map(m => ({ name: (m as ManualMember).name }));
+        const manualList = members.filter(m => m.type === 'manual').map(m => ({
+            name: (m as ManualMember).name,
+            email: (m as ManualMember).email
+        }));
         const usernamesList = members.filter(m => m.type === 'real').map(m => (m as RealMember).username);
         const emailsList = members.filter(m => m.type === 'invite').map(m => (m as InviteMember).email);
 
