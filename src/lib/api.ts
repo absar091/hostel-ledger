@@ -51,3 +51,7 @@ export const sendExternalInvitation = async (groupId: string, email: string) => 
 export const getValidUserDetails = async (username: string) => {
     return await callSecureApi('/api/get-valid-user-details', { username });
 };
+
+export const claimEmailInvite = async (groupId: string) => {
+    return await callSecureApi('/api/claim-email-invite', { groupId });
+};
