@@ -28,6 +28,7 @@ import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useSync } from "@/hooks/useSync";
 import { useOneSignalPush } from "@/hooks/useOneSignalPush";
+import { usePendingGroupJoin } from "@/hooks/usePendingGroupJoin";
 import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
@@ -48,6 +49,9 @@ const Dashboard = () => {
     markOnboardingComplete,
     markPageGuideShown
   } = useUserPreferences(user?.uid);
+
+  // Check for pending group join from email invite
+  usePendingGroupJoin(user?.uid);
 
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("home");
   const [showAddExpense, setShowAddExpense] = useState(false);
