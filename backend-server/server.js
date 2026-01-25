@@ -409,16 +409,21 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
           const mailOptions = {
             from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
             to: member.email,
-            subject: `${senderName} invited you to join "${newGroup.name}"`,
+            subject: `${senderName} wants to split expenses with you on Hostel Ledger!`,
             html: `
               <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #4a6850;">You're invited! 🎉</h2>
+                <h2 style="color: #4a6850;">You're invited to Hostel Ledger! 🎉</h2>
                 <p>Hello <strong>${member.name}</strong>,</p>
-                <p><strong>${senderName}</strong> has added you to the group <strong>"${newGroup.name}"</strong> on Hostel Ledger.</p>
-                <p>They have already added you as a member so they can start splitting expenses with you immediately.</p>
-                <p>To view the group and track your expenses, please join the app:</p>
-                <a href="${inviteLink}" style="display: inline-block; background-color: #4a6850; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 16px 0;">Join Group</a>
-                <p style="color: #666; font-size: 12px; margin-top: 24px;">If you don't accept within 7 days, your pending access may expire.</p>
+                <p><strong>${senderName}</strong> has invited you to the group <strong>"${newGroup.name}"</strong> on Hostel Ledger - an app to easily split and track shared expenses.</p>
+                <p>They've already added you as a member so you can start tracking expenses together immediately.</p>
+                <p><strong>Sign up now to:</strong></p>
+                <ul style="margin: 16px 0;">
+                  <li>See who owes what</li>
+                  <li>Track all shared expenses</li>
+                  <li>Settle debts easily</li>
+                </ul>
+                <a href="${inviteLink}" style="display: inline-block; background-color: #4a6850; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 16px 0;">Sign Up & Join Group</a>
+                <p style="color: #666; font-size: 12px; margin-top: 24px;">If you don't sign up within 7 days, your pending access may expire.</p>
               </div>
             `
           };
