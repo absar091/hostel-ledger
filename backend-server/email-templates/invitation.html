@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>You're Invited!</title>
+    <style>
+        /* Mobile-first responsive styles */
+        @media only screen and (max-width: 600px) {
+            .container {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .content {
+                padding: 16px !important;
+            }
+            .card {
+                margin: 0 8px !important;
+                border-radius: 24px !important;
+            }
+            .logo {
+                width: 140px !important;
+            }
+            .title {
+                font-size: 20px !important;
+                padding: 20px 24px 0 !important;
+            }
+            .text {
+                padding: 12px 24px 0 !important;
+                font-size: 14px !important;
+            }
+            .cta {
+                padding: 24px 24px !important;
+            }
+            .button {
+                padding: 12px 28px !important;
+                font-size: 14px !important;
+                display: inline-block !important;
+                width: auto !important;
+                min-width: 140px !important;
+            }
+            .tips {
+                padding: 0 24px !important;
+                font-size: 13px !important;
+            }
+            .legal {
+                padding: 16px 24px 0 !important;
+                font-size: 11px !important;
+            }
+            .footer {
+                padding: 24px 24px 24px !important;
+                font-size: 11px !important;
+            }
+        }
+    </style>
+</head>
+<body style="margin:0;padding:0;background:#F8F9FA;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" class="container">
+        <tr>
+            <td align="center" class="content" style="padding:40px 16px;">
+                <table width="600" cellpadding="0" cellspacing="0" class="card" style="max-width:600px;width:100%;background:#ffffff;border-radius:32px;box-shadow:0 25px 70px rgba(74,104,80,0.15);overflow:hidden;border:1px solid rgba(74,104,80,0.1);">
+                    <!-- Top accent border -->
+                    <tr>
+                        <td style="height:4px;background:linear-gradient(90deg,#2f4336,#4a6850,#2f4336);"></td>
+                    </tr>
+                    <!-- Logo -->
+                    <tr>
+                        <td align="center" style="padding:40px 24px 20px;">
+                            <img src="https://hostel-ledger.vercel.app/only-logo.png" alt="Hostel Ledger" class="logo" width="170" style="max-width:100%;height:auto;"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:0 32px;">
+                            <div style="height:1px;background:rgba(74,104,80,0.1);"></div>
+                        </td>
+                    </tr>
+                    <!-- Title -->
+                    <tr>
+                        <td class="title" style="padding:28px 32px 0;font-size:22px;font-weight:700;color:#1f2937;letter-spacing:-0.02em;">
+                            You've been invited! 🏠
+                        </td>
+                    </tr>
+                    <!-- Message -->
+                    <tr>
+                        <td class="text" style="padding:14px 32px 0;font-size:15px;color:#4b5563;line-height:1.7;">
+                            Hello {{INVITEE_NAME}},<br><br>
+                            <strong>{{SENDER_NAME}}</strong> has invited you to join the group <strong>"{{GROUP_NAME}}"</strong> on Hostel Ledger.<br><br>
+                            Join now to start tracking shared expenses and settling balances easily.
+                        </td>
+                    </tr>
+                    <!-- CTA with iPhone-style button -->
+                    <tr>
+                        <td align="center" class="cta" style="padding:32px 32px;">
+                            <a href="https://hostel-ledger.vercel.app" class="button" style="background:linear-gradient(135deg,#4a6850,#3d5643);color:#ffffff;padding:16px 40px;border-radius:24px;text-decoration:none;font-weight:700;display:inline-block;text-align:center;min-width:160px;box-shadow:0 8px 32px rgba(74,104,80,0.3);letter-spacing:-0.01em;">
+                                Accept Invitation
+                            </a>
+                        </td>
+                    </tr>
+                    <!-- Tips with iPhone-style card -->
+                    <tr>
+                        <td class="tips" style="padding:0 32px;">
+                            <div style="background:linear-gradient(135deg,rgba(74,104,80,0.08),rgba(61,86,67,0.08));border-left:3px solid #4a6850;padding:16px 18px;border-radius:16px;font-size:14px;color:#4b5563;line-height:1.6;">
+                                <span style="font-size:18px;margin-right:8px;">💡</span>
+                                <strong style="color:#1f2937;">Tip:</strong> The group will appear in your Dashboard once you accept.
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Legal -->
+                    <tr>
+                        <td class="legal" style="padding:24px 32px 0;font-size:12px;color:#6b7280;">
+                            By using Hostel Ledger, you agree to our 
+                            <a href="https://hostel-ledger.vercel.app/terms" style="color:#4a6850;font-weight:600;text-decoration:none;">Terms</a> 
+                            and 
+                            <a href="https://hostel-ledger.vercel.app/privacy" style="color:#4a6850;font-weight:600;text-decoration:none;">Privacy Policy</a>.
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td class="footer" style="padding:32px 32px 36px;border-top:1px solid rgba(74,104,80,0.1);font-size:12px;color:#9ca3af;text-align:center;">
+                            <div style="margin-bottom:16px;">
+                                <a href="https://aarx.online" target="_blank" style="display:inline-block;">
+                                    <img src="https://hostel-ledger.vercel.app/aarx-logo.webp" alt="AARX Labs" style="height:32px;width:auto;display:inline-block;opacity:0.8;"/>
+                                </a>
+                            </div>
+                            <div style="color:#6b7280;font-weight:500;">© 2026 Hostel Ledger. All rights reserved.</div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

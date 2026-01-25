@@ -19,6 +19,8 @@ export const callSecureApi = async (endpoint: string, body: any) => {
         body: JSON.stringify(body)
     });
 
+
+
     if (!response.ok) {
         let errorMsg = `API call failed: ${response.statusText}`;
         try {
@@ -31,4 +33,21 @@ export const callSecureApi = async (endpoint: string, body: any) => {
     }
 
     return await response.json();
+};
+
+// Invitation Wrapper Functions
+export const sendInvitation = async (groupId: string, inviteeUsername: string) => {
+    return await callSecureApi('/api/send-invitation', { groupId, inviteeUsername });
+};
+
+export const respondInvitation = async (invitationId: string, accept: boolean) => {
+    return await callSecureApi('/api/respond-invitation', { invitationId, accept });
+};
+
+export const sendExternalInvitation = async (groupId: string, email: string) => {
+    return await callSecureApi('/api/send-external-invitation', { groupId, email });
+};
+
+export const getValidUserDetails = async (username: string) => {
+    return await callSecureApi('/api/get-valid-user-details', { username });
 };

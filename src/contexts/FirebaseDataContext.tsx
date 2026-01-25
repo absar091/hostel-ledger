@@ -104,7 +104,7 @@ import {
 } from "@/lib/expenseLogic";
 import { logger } from "@/lib/logger";
 import { sendTransactionNotifications, triggerPushNotification, TransactionData, UserData } from "@/lib/transactionNotifications";
-import { callSecureApi } from "@/lib/api";
+import { callSecureApi, sendInvitation } from "@/lib/api";
 import { saveOfflineExpense } from "@/lib/offlineDB";
 
 export interface GroupMember {
@@ -167,7 +167,7 @@ interface FirebaseDataContextType {
   groups: Group[];
   transactions: Transaction[];
   isLoading: boolean;
-  createGroup: (data: { name: string; emoji: string; members: { name: string; paymentDetails?: PaymentDetails; phone?: string }[]; coverPhoto?: string }) => Promise<{ success: boolean; error?: string }>;
+  createGroup: (data: { name: string; emoji: string; members: { name: string; paymentDetails?: PaymentDetails; phone?: string }[]; coverPhoto?: string; invitedUsernames?: string[] }) => Promise<{ success: boolean; groupId?: string; error?: string }>;
   updateGroup: (groupId: string, data: Partial<Group>) => Promise<{ success: boolean; error?: string }>;
   deleteGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>;
   addMemberToGroup: (groupId: string, member: { id?: string; name: string; paymentDetails?: PaymentDetails; phone?: string; isTemporary?: boolean; deletionCondition?: 'SETTLED' | 'TIME_LIMIT' | null }) => Promise<{ success: boolean; error?: string; memberId?: string }>;
@@ -449,8 +449,9 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     name: string;
     emoji: string;
     members: { name: string; paymentDetails?: PaymentDetails; phone?: string }[];
+    invitedUsernames?: string[]; // New: List of usernames to invite
     coverPhoto?: string;
-  }): Promise<{ success: boolean; error?: string }> => {
+  }): Promise<{ success: boolean; groupId?: string; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
     // Validate input - basic validation for now
@@ -543,7 +544,22 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       });
 
       const result = await transaction.execute();
-      return { success: result.success, error: result.error };
+
+      // Send invitations if group creation was successful
+      if (result.success && data.invitedUsernames && data.invitedUsernames.length > 0) {
+        // We process invitations asynchronously but don't block success if one fails
+        (async () => {
+          for (const username of data.invitedUsernames!) {
+            try {
+              await sendInvitation(groupId, username);
+            } catch (invError) {
+              console.error(`Failed to invite ${username}:`, invError);
+            }
+          }
+        })();
+      }
+
+      return { success: result.success, groupId: groupId, error: result.error };
     } catch (error: any) {
       console.error("Create group error:", error);
       return { success: false, error: error.message || "Failed to create group" };

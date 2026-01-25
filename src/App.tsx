@@ -16,6 +16,7 @@ import { UpdateNotification } from "@/components/UpdateNotification";
 // Direct imports for better reliability in production
 import Index from "./pages/Index";
 import Groups from "./pages/Groups";
+import CreateGroup from "./pages/CreateGroup";
 import GroupDetail from "./pages/GroupDetail";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -189,6 +190,7 @@ const AppRoutes = () => (
     <Route path="/install-app" element={<InstallApp />} />
     <Route path="/install-guide" element={<InstallGuide />} />
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+    <Route path="/create-group" element={<ProtectedRoute><CreateGroup /></ProtectedRoute>} />
     <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
     <Route path="/group/:id" element={<ProtectedRoute><GroupDetail /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

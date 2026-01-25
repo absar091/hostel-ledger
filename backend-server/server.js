@@ -297,7 +297,7 @@ const calculateExpenseSettlements = (splits, payerId, currentUserId, groupId) =>
 // Apply authentication middleware to ALL /api routes EXCEPT public ones
 app.use('/api', (req, res, next) => {
   // Public endpoints that don't need auth
-  const publicEndpoints = ['/push-test']; // Example: /api/push-test is public
+  const publicEndpoints = ['/push-test', '/check-email-exists']; // Example: /api/push-test is public
   if (publicEndpoints.includes(req.path)) {
     return next();
   }
@@ -1594,6 +1594,408 @@ app.post('/api/cleanup-temp-members', generalLimiter, async (req, res) => {
   }
 });
 
+
+
+// ============================================
+// INVITATION SYSTEM ENDPOINTS
+// ============================================
+
+// Get Public User Details (for Group Creation)
+app.post('/api/get-valid-user-details', generalLimiter, async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    if (!username) {
+      return res.status(400).json({ success: false, error: 'Username is required' });
+    }
+
+    const db = admin.database();
+    const normalizedUsername = username.toLowerCase().replace(/[^a-z0-9._]/g, '');
+
+    // 1. Resolve username
+    const usernameSnap = await db.ref(`usernames/${normalizedUsername}`).get();
+    if (!usernameSnap.exists()) {
+      return res.json({ success: true, exists: false });
+    }
+
+    const uid = usernameSnap.val().uid;
+    const userSnap = await db.ref(`users/${uid}`).get();
+
+    if (!userSnap.exists()) {
+      return res.json({ success: true, exists: false }); // Should technically exist if username does
+    }
+
+    const userData = userSnap.val();
+
+    // 2. Extract Public Info
+    const publicProfile = {
+      name: userData.name || "Unknown",
+      username: userData.username,
+      photoURL: userData.photoURL || null,
+      uid: uid,
+      paymentMethods: {
+        jazzCash: !!userData.paymentDetails?.jazzCash,
+        easypaisa: !!userData.paymentDetails?.easypaisa,
+        bankName: !!userData.paymentDetails?.bankName,
+        raastId: !!userData.paymentDetails?.raastId
+      }
+    };
+
+    res.json({ success: true, exists: true, user: publicProfile });
+
+  } catch (error) {
+    console.error('❌ Get user details error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+app.post('/api/send-invitation', generalLimiter, async (req, res) => {
+  try {
+    const { groupId, inviteeUsername } = req.body;
+    const senderUid = req.user.uid;
+
+    if (!groupId || !inviteeUsername) {
+      return res.status(400).json({ success: false, error: 'Group ID and username are required' });
+    }
+
+    const db = admin.database();
+
+    // 1. Resolve invitee username to UID
+    // Using the 'usernames' index we created in Phase 1
+    const normalizedUsername = inviteeUsername.toLowerCase().replace(/[^a-z0-9._]/g, '');
+    const usernameSnap = await db.ref(`usernames/${normalizedUsername}`).get();
+
+    if (!usernameSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Username not found' });
+    }
+
+    const inviteeUid = usernameSnap.val().uid;
+
+    if (inviteeUid === senderUid) {
+      return res.status(400).json({ success: false, error: 'You cannot invite yourself' });
+    }
+
+    // 2. Verify Group Exists and Sender is Member
+    const groupRef = db.ref(`groups/${groupId}`);
+    const groupSnap = await groupRef.get();
+
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const group = groupSnap.val();
+    const isSenderMember = (group.members || []).some(m => m.userId === senderUid || (m.isTemporary && m.createdBy === senderUid)); // Ideally real members only
+
+    // Actually, only real members should invite. We check if sender is in the group.
+    // For now, simpler check: check if userGroups has it
+    const senderGroupCheck = await db.ref(`userGroups/${senderUid}/${groupId}`).get();
+    if (!senderGroupCheck.exists()) {
+      return res.status(403).json({ success: false, error: 'You must be a member of the group to invite others' });
+    }
+
+    // 3. Check if Invitee is already in group
+    const isInviteeAlreadyMember = (group.members || []).some(m => m.userId === inviteeUid);
+    if (isInviteeAlreadyMember) {
+      return res.status(400).json({ success: false, error: 'User is already a member of this group' });
+    }
+
+    // 4. Create Invitation
+    const invitationId = db.ref('invitations').push().key;
+    const now = new Date().toISOString();
+
+    // Get sender info for the notification
+    const senderSnap = await db.ref(`users/${senderUid}`).get();
+    const senderName = senderSnap.exists() ? senderSnap.val().name : "A friend";
+    const senderUsername = senderSnap.exists() ? (senderSnap.val().username || "") : "";
+
+    const invitationData = {
+      id: invitationId,
+      groupId,
+      groupName: group.name,
+      invitedBy: {
+        uid: senderUid,
+        name: senderName,
+        username: senderUsername
+      },
+      invitee: {
+        uid: inviteeUid,
+        username: normalizedUsername
+      },
+      status: 'pending',
+      createdAt: now,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+    };
+
+    const updates = {};
+    updates[`invitations/${invitationId}`] = invitationData;
+    updates[`userInvitations/${inviteeUid}/${invitationId}`] = {
+      invitationId,
+      groupId,
+      groupName: group.name,
+      invitedBy: senderName,
+      createdAt: now,
+      status: 'pending'
+    };
+
+    await db.ref().update(updates);
+
+    // 5. Send Notification (Async)
+    setImmediate(async () => {
+      try {
+        // Send Push Notification
+        await sendOneSignalNotificationInternal({
+          userIds: [inviteeUid],
+          title: "New Group Invitation! 🏠",
+          body: `${senderName} invited you to join "${group.name}"`,
+          data: { type: 'invitation', invitationId, groupId }
+        });
+      } catch (err) {
+        console.error("Failed to send invitation notification", err);
+      }
+
+      // Send Email Invitation
+      try {
+        const userRecord = await admin.auth().getUser(inviteeUid);
+        const inviteeEmail = userRecord.email;
+
+        if (inviteeEmail) {
+          const templatePath = path.join(__dirname, 'email-templates', 'invitation.html');
+          if (fs.existsSync(templatePath)) {
+            let html = fs.readFileSync(templatePath, 'utf8');
+
+            // Replace placeholders
+            html = html.replace(/{{INVITEE_NAME}}/g, userRecord.displayName || normalizedUsername);
+            html = html.replace(/{{SENDER_NAME}}/g, senderName);
+            html = html.replace(/{{GROUP_NAME}}/g, group.name);
+
+            await transporter.sendMail({
+              from: `"Hostel Ledger" <${process.env.SMTP_USER}>`,
+              to: inviteeEmail,
+              subject: `${senderName} invited you to join "${group.name}" 🏠`,
+              html: html
+            });
+            console.log(`📧 Invitation email sent to ${inviteeEmail}`);
+          } else {
+            console.warn("Invitation template not found at", templatePath);
+          }
+        }
+      } catch (emailError) {
+        console.error("Failed to send invitation email:", emailError);
+      }
+    });
+
+    res.json({ success: true, message: 'Invitation sent successfully' });
+
+  } catch (error) {
+    console.error('❌ Send invitation error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+
+// Send External Invitation (to email)
+app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
+  try {
+    const { email, groupId } = req.body;
+    const senderUid = req.user.uid;
+
+    if (!email || !groupId) {
+      return res.status(400).json({ success: false, error: 'Email and Group ID are required' });
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ success: false, error: 'Invalid email address' });
+    }
+
+    const db = admin.database();
+
+    // 1. Verify Sender and Group
+    const groupRef = db.ref(`groups/${groupId}`);
+    const groupSnap = await groupRef.get();
+
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const group = groupSnap.val();
+
+    // Check sender membership
+    const isSenderMember = (group.members || []).some(m => m.userId === senderUid || (m.isTemporary && m.createdBy === senderUid));
+    if (!isSenderMember) {
+      // Also check userGroups as backup
+      const senderGroupCheck = await db.ref(`userGroups/${senderUid}/${groupId}`).get();
+      if (!senderGroupCheck.exists()) {
+        return res.status(403).json({ success: false, error: 'You must be a member of the group to invite others' });
+      }
+    }
+
+    // 2. Get Sender Info
+    const senderSnap = await db.ref(`users/${senderUid}`).get();
+    const senderName = senderSnap.exists() ? senderSnap.val().name : "A friend";
+
+    // 3. Send Email
+    const templatePath = path.join(__dirname, 'email-templates', 'external-invitation.html');
+    if (fs.existsSync(templatePath)) {
+      let html = fs.readFileSync(templatePath, 'utf8');
+
+      // Replace placeholders
+      html = html.replace(/{{SENDER_NAME}}/g, senderName);
+      html = html.replace(/{{GROUP_NAME}}/g, group.name);
+
+      await transporter.sendMail({
+        from: `"Hostel Ledger" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: `${senderName} invited you to join "${group.name}" 🚀`,
+        html: html
+      });
+      console.log(`📧 External invitation email sent to ${email}`);
+
+      res.json({ success: true, message: 'Invitation email sent successfully' });
+    } else {
+      console.error("External invitation template not found");
+      res.status(500).json({ success: false, error: 'Email template error' });
+    }
+
+  } catch (error) {
+    console.error('❌ Send external invitation error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// Respond to Invitation
+app.post('/api/respond-invitation', generalLimiter, async (req, res) => {
+  try {
+    const { invitationId, accept } = req.body;
+    const uid = req.user.uid;
+
+    if (!invitationId) {
+      return res.status(400).json({ success: false, error: 'Invitation ID is required' });
+    }
+
+    const db = admin.database();
+
+    // 1. Get Invitation
+    const invitationRef = db.ref(`invitations/${invitationId}`);
+    const invitationSnap = await invitationRef.get();
+
+    if (!invitationSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Invitation not found' });
+    }
+
+    const invitation = invitationSnap.val();
+
+    // 2. Verify Ownership
+    if (invitation.invitee.uid !== uid) {
+      return res.status(403).json({ success: false, error: 'This invitation is not for you' });
+    }
+
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({ success: false, error: `Invitation is already ${invitation.status}` });
+    }
+
+    const updates = {};
+    const now = new Date().toISOString();
+
+    if (accept) {
+      // 3. Accept Logic
+
+      // Add to Group Members
+      const groupRef = db.ref(`groups/${invitation.groupId}`);
+      const groupSnap = await groupRef.get();
+
+      if (!groupSnap.exists()) {
+        updates[`invitations/${invitationId}/status`] = 'expired'; // Group deleted?
+        updates[`userInvitations/${uid}/${invitationId}/status`] = 'expired';
+        await db.ref().update(updates);
+        return res.status(404).json({ success: false, error: 'Group no longer exists' });
+      }
+
+      const group = groupSnap.val();
+      const currentMembers = group.members || [];
+
+      // Check again if already member
+      if (currentMembers.some(m => m.userId === uid)) {
+        // Already member, just mark invite complete
+        updates[`invitations/${invitationId}/status`] = 'accepted';
+        updates[`userInvitations/${uid}/${invitationId}/status`] = 'accepted';
+        await db.ref().update(updates);
+        return res.json({ success: true, message: 'You are already in this group' });
+      }
+
+      // Get user profile for member details
+      const userSnap = await db.ref(`users/${uid}`).get();
+      const userData = userSnap.exists() ? userSnap.val() : {};
+
+      const newMember = {
+        id: `mem_${uid}_${Date.now()}`, // Consistent ID format? Or reuse UID? usually random ID
+        userId: uid,
+        name: userData.name || "Member",
+        username: userData.username || "",
+        joinedAt: now,
+        isTemporary: false,
+        role: 'member'
+      };
+
+      // Add member to group
+      // Note: This is an array. We need to find the next index or push.
+      // Firebase arrays can be tricky if using numerical keys.
+      // Usually better to read, modify, write for arrays or use an object map for members.
+      // Current implementation seems to use array for members?
+      // "members": [ { ... }, { ... } ]
+      // We will read-modify-write as we have the snapshot.
+
+      const updatedMembers = [...currentMembers, newMember];
+      updates[`groups/${invitation.groupId}/members`] = updatedMembers;
+
+      // Add group to user's list
+      updates[`userGroups/${uid}/${invitation.groupId}`] = {
+        name: group.name,
+        emoji: group.emoji || '🏠',
+        joinedAt: now,
+        role: 'member'
+      };
+
+      // Mark invitation accepted
+      updates[`invitations/${invitationId}/status`] = 'accepted';
+      updates[`invitations/${invitationId}/respondedAt`] = now;
+      updates[`userInvitations/${uid}/${invitationId}/status`] = 'accepted';
+
+      // Initialize settlements for this user in the group...
+      // Actually, standard logic initializes settlements lazily or 0s. 
+      // But we should probably ensure keys exist.
+      // Let's rely on addExpense to create keys if they don't exist.
+
+      // Notify Inviter
+      setImmediate(async () => {
+        try {
+          await sendOneSignalNotificationInternal({
+            userIds: [invitation.invitedBy.uid],
+            title: "Invitation Accepted! ✅",
+            body: `${userData.name} joined "${group.name}"`,
+            data: { type: 'invitation_response', invitationId, groupId: invitation.groupId }
+          });
+        } catch (e) {
+          console.error("Failed notification", e);
+        }
+      });
+
+    } else {
+      // 4. Decline Logic
+      updates[`invitations/${invitationId}/status`] = 'declined';
+      updates[`invitations/${invitationId}/respondedAt`] = now;
+      updates[`userInvitations/${uid}/${invitationId}/status`] = 'declined';
+    }
+
+    await db.ref().update(updates);
+
+    res.json({ success: true, message: accept ? 'Invitation accepted' : 'Invitation declined' });
+
+  } catch (error) {
+    console.error('❌ Respond invitation error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+  }
+});
 
 // 404 handler - MUST BE LAST
 app.use('*', (req, res) => {

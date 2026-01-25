@@ -9,6 +9,8 @@ const EMAIL_CONFIG = {
   user: import.meta.env.VITE_SMTP_USER || 'ahmadraoabsar@gmail.com',
 };
 
+import { callSecureApi } from './api';
+
 const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM || 'Hostel Ledger<noreply@quizzicallabz.qzz.io>';
 
 // Check if backend API is available
@@ -38,20 +40,9 @@ const sendEmailWithAPI = async (emailData: {
 }) => {
   try {
     console.log('📧 Sending email via backend API to:', emailData.to);
-    
-    const response = await fetch(`${EMAIL_CONFIG.apiUrl}/api/send-email`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(emailData),
-    });
 
-    const result = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to send email');
-    }
+    // Use secure API call which attaches the auth token
+    const result = await callSecureApi('/api/send-email', emailData);
 
     console.log('✅ Email sent successfully via API:', result.messageId);
     return { success: true, messageId: result.messageId };
@@ -65,7 +56,7 @@ const sendEmailWithAPI = async (emailData: {
 const sendVerificationEmailAPI = async (email: string, code: string, name: string) => {
   try {
     console.log('📧 Sending verification email via backend API to:', email);
-    
+
     const response = await fetch(`${EMAIL_CONFIG.apiUrl}/api/send-verification`, {
       method: 'POST',
       headers: {
@@ -79,7 +70,7 @@ const sendVerificationEmailAPI = async (email: string, code: string, name: strin
     });
 
     const result = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(result.error || 'Failed to send verification email');
     }
@@ -96,7 +87,7 @@ const sendVerificationEmailAPI = async (email: string, code: string, name: strin
 const sendWelcomeEmailAPI = async (email: string, name: string) => {
   try {
     console.log('📧 Sending welcome email via backend API to:', email);
-    
+
     const response = await fetch(`${EMAIL_CONFIG.apiUrl}/api/send-welcome`, {
       method: 'POST',
       headers: {
@@ -109,7 +100,7 @@ const sendWelcomeEmailAPI = async (email: string, name: string) => {
     });
 
     const result = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(result.error || 'Failed to send welcome email');
     }
@@ -124,38 +115,27 @@ const sendWelcomeEmailAPI = async (email: string, name: string) => {
 
 // Send transaction alert email using backend API
 const sendTransactionAlertAPI = async (
-  email: string, 
-  name: string, 
-  transactionType: string, 
-  amount: string, 
-  groupName: string, 
-  date: string, 
+  email: string,
+  name: string,
+  transactionType: string,
+  amount: string,
+  groupName: string,
+  date: string,
   description: string
 ) => {
   try {
     console.log('📧 Sending transaction alert via backend API to:', email);
-    
-    const response = await fetch(`${EMAIL_CONFIG.apiUrl}/api/send-transaction-alert`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email,
-        name,
-        transactionType,
-        amount,
-        groupName,
-        date,
-        description
-      }),
-    });
 
-    const result = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to send transaction alert email');
-    }
+    // Use secure API call which attaches the auth token
+    const result = await callSecureApi('/api/send-transaction-alert', {
+      email,
+      name,
+      transactionType,
+      amount,
+      groupName,
+      date,
+      description
+    });
 
     console.log('✅ Transaction alert email sent successfully:', result.messageId);
     return { success: true, messageId: result.messageId };
@@ -169,24 +149,13 @@ const sendTransactionAlertAPI = async (
 const sendVerificationEmailNewAPI = async (email: string, code: string, name: string) => {
   try {
     console.log('📧 Sending verification email (new template) via backend API to:', email);
-    
-    const response = await fetch(`${EMAIL_CONFIG.apiUrl}/api/send-verification-new`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email,
-        code,
-        name
-      }),
-    });
 
-    const result = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to send verification email');
-    }
+    // Use secure API call which attaches the auth token
+    const result = await callSecureApi('/api/send-verification-new', {
+      email,
+      code,
+      name
+    });
 
     console.log('✅ Verification email (new template) sent successfully:', result.messageId);
     return { success: true, messageId: result.messageId };
@@ -198,7 +167,7 @@ const sendVerificationEmailNewAPI = async (email: string, code: string, name: st
 const sendPasswordResetEmailAPI = async (email: string, resetLink: string, name: string) => {
   try {
     console.log('📧 Sending password reset email via backend API to:', email);
-    
+
     const response = await fetch(`${EMAIL_CONFIG.apiUrl}/api/send-password-reset`, {
       method: 'POST',
       headers: {
@@ -212,7 +181,7 @@ const sendPasswordResetEmailAPI = async (email: string, resetLink: string, name:
     });
 
     const result = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(result.error || 'Failed to send password reset email');
     }
@@ -367,7 +336,7 @@ export const sendVerificationEmail = async (email: string, code: string, name: s
   try {
     console.log('📧 Sending verification email to:', email);
     console.log('📧 Using API URL:', EMAIL_CONFIG.apiUrl);
-    
+
     // Use new template
     const result = await sendVerificationEmailNewAPI(email, code, name);
     console.log('✅ Verification email sent via backend API');
@@ -382,7 +351,7 @@ export const sendWelcomeEmail = async (email: string, name: string) => {
   try {
     console.log('📧 Sending welcome email to:', email);
     console.log('📧 Using API URL:', EMAIL_CONFIG.apiUrl);
-    
+
     const result = await sendWelcomeEmailAPI(email, name);
     console.log('✅ Welcome email sent via backend API');
     return result;
@@ -393,18 +362,18 @@ export const sendWelcomeEmail = async (email: string, name: string) => {
 };
 
 export const sendTransactionAlertEmail = async (
-  email: string, 
-  name: string, 
-  transactionType: string, 
-  amount: string, 
-  groupName: string, 
-  date: string, 
+  email: string,
+  name: string,
+  transactionType: string,
+  amount: string,
+  groupName: string,
+  date: string,
   description: string
 ) => {
   try {
     console.log('📧 Sending transaction alert email to:', email);
     console.log('📧 Using API URL:', EMAIL_CONFIG.apiUrl);
-    
+
     const result = await sendTransactionAlertAPI(email, name, transactionType, amount, groupName, date, description);
     console.log('✅ Transaction alert email sent via backend API');
     return result;
@@ -418,7 +387,7 @@ export const sendPasswordResetEmail = async (email: string, resetLink: string, n
   try {
     console.log('📧 Sending password reset email to:', email);
     console.log('📧 Using API URL:', EMAIL_CONFIG.apiUrl);
-    
+
     const result = await sendPasswordResetEmailAPI(email, resetLink, name);
     console.log('✅ Password reset email sent via backend API');
     return result;
@@ -429,14 +398,14 @@ export const sendPasswordResetEmail = async (email: string, resetLink: string, n
 };
 
 export const sendTransactionEmail = async (
-  email: string, 
-  transaction: any, 
+  email: string,
+  transaction: any,
   userType: 'payer' | 'participant'
 ) => {
   try {
     console.log('📧 Sending transaction notification to:', email);
     console.log('📧 Using API URL:', EMAIL_CONFIG.apiUrl);
-    
+
     const emailData = {
       to: email,
       subject: `💰 ${userType === 'payer' ? 'Expense Added' : 'New Expense'} - ${transaction.title}`,
@@ -448,7 +417,7 @@ export const sendTransactionEmail = async (
         <p><strong>Group:</strong> ${transaction.groupName}</p>
       `
     };
-    
+
     const result = await sendEmailWithAPI(emailData);
     console.log('✅ Transaction email sent via backend API');
     return result;

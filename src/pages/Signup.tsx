@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { 
-  Eye, 
-  EyeOff, 
-  User, 
-  Mail, 
-  Lock, 
-  GraduationCap, 
+import {
+  Eye,
+  EyeOff,
+  User,
+  Mail,
+  Lock,
+  GraduationCap,
   Loader2,
   ArrowRight,
   Check,
@@ -25,18 +25,19 @@ import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { signup, checkEmailExists, user } = useFirebaseAuth();
+  const { signup, checkEmailExists, checkUsernameAvailable, user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   const [currentView, setCurrentView] = useState<'basic' | 'password'>('basic');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPageGuide, setShowPageGuide] = useState(false);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
+    username: "",
     email: "",
     university: "",
     password: "",
@@ -44,6 +45,8 @@ const Signup = () => {
     termsAccepted: false,
     privacyAccepted: false
   });
+
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -70,7 +73,7 @@ const Signup = () => {
     };
 
     Object.values(checks).forEach(check => check && score++);
-    
+
     return {
       score,
       checks,
@@ -94,6 +97,16 @@ const Signup = () => {
 
     if (!formData.email || !formData.email.includes('@')) {
       newErrors.email = "Please enter a valid email address";
+    }
+
+    // Username validation
+    const normalizedUsername = formData.username.toLowerCase().replace(/[^a-z0-9._]/g, '');
+    if (!normalizedUsername || normalizedUsername.length < 3) {
+      newErrors.username = "Username must be at least 3 characters";
+    } else if (normalizedUsername.length > 20) {
+      newErrors.username = "Username cannot exceed 20 characters";
+    } else if (usernameStatus === 'taken') {
+      newErrors.username = "This username is already taken";
     }
 
     if (!formData.university || formData.university.length < 2) {
@@ -133,6 +146,22 @@ const Signup = () => {
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
+
+    // Check username availability with debounce
+    if (field === 'username' && typeof value === 'string') {
+      const normalizedUsername = value.toLowerCase().replace(/[^a-z0-9._]/g, '');
+      if (normalizedUsername.length >= 3) {
+        setUsernameStatus('checking');
+        // Debounce the check
+        const timeoutId = setTimeout(async () => {
+          const isAvailable = await checkUsernameAvailable(normalizedUsername);
+          setUsernameStatus(isAvailable ? 'available' : 'taken');
+        }, 500);
+        return () => clearTimeout(timeoutId);
+      } else {
+        setUsernameStatus('idle');
+      }
+    }
   };
 
   const handleContinue = async () => {
@@ -147,13 +176,24 @@ const Signup = () => {
       // Check if email already exists
       console.log('🔍 Checking email availability for:', formData.email);
       toast.loading("Checking email availability...", { id: "email-check" });
-      
+
       const emailExists = await checkEmailExists(formData.email);
       toast.dismiss("email-check");
-      
+
       if (emailExists) {
         console.log('❌ Email already exists:', formData.email);
-        toast.error("An account with this email already exists. Please use a different email or try logging in.");
+        toast.error("Account already exists!", {
+          description: "This email is registered. Try logging in.",
+          action: {
+            label: "Log In",
+            onClick: () => {
+              // Reset form and switch to login mode if possible, or just notify
+              // Ideally navigate or change parent state. 
+              // Since we are inside Signup page which is usually separate, we might need navigation.
+              // Assuming this component is used where navigation is accessible.
+            }
+          }
+        });
         setErrors(prev => ({ ...prev, email: 'This email is already registered' }));
         setIsLoading(false);
         return;
@@ -161,10 +201,10 @@ const Signup = () => {
 
       console.log('✅ Email is available, proceeding to password step');
       toast.success("Email is available! Please set your password.");
-      
+
       // Move to password step
       setCurrentView('password');
-      
+
     } catch (error: any) {
       console.error("❌ Email check error:", error);
       toast.dismiss("email-check");
@@ -188,6 +228,7 @@ const Signup = () => {
       const signupResult = await signup({
         email: formData.email,
         password: formData.password,
+        username: formData.username.toLowerCase().replace(/[^a-z0-9._]/g, ''),
         firstName: formData.firstName,
         lastName: formData.lastName,
         university: formData.university,
@@ -201,12 +242,12 @@ const Signup = () => {
       // Step 2: Generate and store verification code
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
       await storeVerificationCode(formData.email, verificationCode, 'signup');
-      
+
       // Step 3: Send verification email
       toast.loading("Sending verification code...", { id: "sending-code" });
       const emailResult = await sendVerificationEmail(
-        formData.email, 
-        verificationCode, 
+        formData.email,
+        verificationCode,
         `${formData.firstName} ${formData.lastName}`
       );
 
@@ -216,7 +257,7 @@ const Signup = () => {
       }
 
       toast.dismiss("sending-code");
-      
+
       // Step 4: Store minimal user data for verification page (NO PASSWORD!)
       sessionStorage.setItem('pendingSignup', JSON.stringify({
         email: formData.email,
@@ -226,13 +267,13 @@ const Signup = () => {
         isNewUser: true // Mark as new user for download page
         // NEVER store password in browser storage - it's already in Firebase Auth
       }));
-      
+
       toast.success("Account created! Please check your email for verification code.");
       navigate("/verify-email", { state: { email: formData.email, type: 'signup' } });
 
     } catch (error: any) {
       console.error("Signup error:", error);
-      
+
       if (error.message?.includes('email-already-in-use') || error.message?.includes('already exists')) {
         toast.error("An account with this email already exists. Please try logging in instead.");
       } else if (error.message?.includes('admin-restricted-operation')) {
@@ -249,7 +290,7 @@ const Signup = () => {
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
       {/* Top Accent Border - iPhone Style */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
-      
+
       {/* App Header - iPhone Style Enhanced with #4a6850 */}
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-4 pb-5 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
         <div className="flex items-center justify-center">
@@ -269,7 +310,7 @@ const Signup = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Page Guide */}
       <PageGuide
         title="Create Your Account 🚀"
@@ -348,6 +389,44 @@ const Signup = () => {
               </p>
             </div>
 
+            {/* Username Field - Collaborative Feature */}
+            <div>
+              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Choose Username</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#4a6850]/60 font-bold">@</span>
+                <Input
+                  value={formData.username}
+                  onChange={(e) => handleInputChange('username', e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))}
+                  placeholder="john_doe"
+                  className="h-14 pl-10 pr-12 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl bg-white transition-all"
+                />
+                {/* Status indicator */}
+                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                  {usernameStatus === 'checking' && (
+                    <Loader2 className="w-5 h-5 text-[#4a6850] animate-spin" />
+                  )}
+                  {usernameStatus === 'available' && (
+                    <Check className="w-5 h-5 text-green-500" />
+                  )}
+                  {usernameStatus === 'taken' && (
+                    <X className="w-5 h-5 text-red-500" />
+                  )}
+                </div>
+              </div>
+              {errors.username && (
+                <p className="text-red-500 text-sm mt-2 font-bold">{errors.username}</p>
+              )}
+              {usernameStatus === 'available' && (
+                <p className="text-green-500 text-sm mt-2 font-bold">✓ Username is available!</p>
+              )}
+              {usernameStatus === 'taken' && (
+                <p className="text-red-500 text-sm mt-2 font-bold">✗ Username is already taken</p>
+              )}
+              <p className="text-xs text-[#4a6850]/80 mt-2 font-bold">
+                Friends will find you with this username (3-20 chars, letters, numbers, dots, underscore)
+              </p>
+            </div>
+
             <div>
               <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">University</label>
               <div className="relative">
@@ -421,14 +500,13 @@ const Signup = () => {
               <div className="bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl p-5 border border-[#4a6850]/20 shadow-lg">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="text-sm font-black text-[#4a6850]/80 uppercase tracking-wide">Password Strength:</span>
-                  <span className={`text-sm font-black px-3 py-1 rounded-2xl ${
-                    passwordStrength.strength === 'weak' ? 'bg-red-100 text-red-600' :
+                  <span className={`text-sm font-black px-3 py-1 rounded-2xl ${passwordStrength.strength === 'weak' ? 'bg-red-100 text-red-600' :
                     passwordStrength.strength === 'medium' ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600'
-                  }`}>
+                    }`}>
                     {passwordStrength.strength.charAt(0).toUpperCase() + passwordStrength.strength.slice(1)}
                   </span>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className={`flex items-center gap-2 ${passwordStrength.checks.length ? 'text-green-600' : 'text-gray-400'}`}>
                     {passwordStrength.checks.length ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
@@ -477,7 +555,7 @@ const Signup = () => {
             {/* Terms and Conditions - iPhone Style */}
             <div>
               <div className="flex items-center space-x-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                <Checkbox 
+                <Checkbox
                   checked={formData.termsAccepted && formData.privacyAccepted}
                   onCheckedChange={(checked) => {
                     handleInputChange('termsAccepted', checked);
@@ -509,7 +587,7 @@ const Signup = () => {
               >
                 Back
               </Button>
-              
+
               <Button
                 onClick={handleCreateAccount}
                 disabled={isLoading || !formData.termsAccepted || !formData.privacyAccepted}

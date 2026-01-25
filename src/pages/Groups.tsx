@@ -52,7 +52,7 @@ const Groups = () => {
     if (tab === "home") navigate("/");
     else if (tab === "profile") navigate("/profile");
     else if (tab === "activity") navigate("/activity");
-    else if (tab === "add") setShowCreateGroup(true);
+    else if (tab === "add") navigate("/create-group");
     else setActiveTab(tab);
   };
 
@@ -162,7 +162,7 @@ const Groups = () => {
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 lg:mb-6 gap-4">
             <h2 className="text-2xl lg:text-4xl font-black text-gray-900 tracking-tight">Your Groups</h2>
             <button
-              onClick={() => setShowCreateGroup(true)}
+              onClick={() => navigate('/create-group')}
               className="bg-[#4a6850] hover:bg-[#3d5643] text-white px-4 lg:px-6 py-2 lg:py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-[#4a6850]/25 text-sm lg:text-base w-full lg:w-auto justify-center"
             >
               <Plus className="w-4 lg:w-5 h-4 lg:h-5" />
@@ -379,7 +379,7 @@ const Groups = () => {
 
             {/* Create New Group Card */}
             <div
-              onClick={() => setShowCreateGroup(true)}
+              onClick={() => navigate('/create-group')}
               className="border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-6 lg:p-8 group hover:border-[#4a6850] transition-colors cursor-pointer bg-white/50 min-h-[200px]"
             >
               <div className="w-10 lg:w-12 h-10 lg:h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-[#4a6850]/10 group-hover:text-[#4a6850] transition-all mb-3">
@@ -430,7 +430,7 @@ const Groups = () => {
                 Create your first group to start tracking shared expenses with friends, roommates, or colleagues.
               </p>
               <button
-                onClick={() => setShowCreateGroup(true)}
+                onClick={() => navigate('/create-group')}
                 className="bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white px-6 lg:px-8 py-3 lg:py-4 rounded-2xl font-black hover:from-[#3d5643] hover:to-[#2f4336] hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-2 lg:gap-3 shadow-lg hover:shadow-xl text-sm lg:text-base"
               >
                 <Plus className="w-4 lg:w-5 h-4 lg:h-5 font-bold" />
@@ -457,12 +457,7 @@ const Groups = () => {
           onClose={handleGroupsGuideClose}
         />
 
-        {/* Create Group Sheet */}
-        <CreateGroupSheet
-          open={showCreateGroup}
-          onClose={() => setShowCreateGroup(false)}
-          onSubmit={handleGroupSubmit}
-        />
+
 
         {/* Member Settlement Sheet */}
         {selectedSettlement && (

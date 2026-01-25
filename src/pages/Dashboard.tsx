@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowUpRight, ArrowDownLeft, Plus, User, CreditCard, Users, Wallet, Send, X, WifiOff, RefreshCw, Share2 } from "@/lib/icons";
+import { sendExternalInvitation } from "@/lib/api";
 import TransactionSuccessSheet from "@/components/TransactionSuccessSheet";
 import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
@@ -11,6 +12,7 @@ import Logo from "@/components/Logo";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
 import RecordPaymentSheet from "@/components/RecordPaymentSheet";
 import CreateGroupSheet from "@/components/CreateGroupSheet";
+import InvitationsList from "@/components/InvitationsList";
 import AddMoneySheet from "@/components/AddMoneySheet";
 import PaymentConfirmationSheet from "@/components/PaymentConfirmationSheet";
 import PWAInstallButton from "@/components/PWAInstallButton";
@@ -435,6 +437,8 @@ const Dashboard = () => {
     emoji: string;
     members: { name: string; phone?: string; paymentDetails?: { jazzCash?: string; easypaisa?: string; bankName?: string; accountNumber?: string; raastId?: string } }[];
     coverPhoto?: string;
+    invitedUsernames?: string[];
+    invitedEmails?: string[];
   }) => {
     const groupData: any = {
       name: data.name,
@@ -444,6 +448,7 @@ const Dashboard = () => {
         phone: m.phone,
         paymentDetails: m.paymentDetails,
       })),
+      invitedUsernames: data.invitedUsernames || [], // Pass the invites!
     };
 
     // Only add coverPhoto if it exists (Firebase doesn't allow undefined)
@@ -455,6 +460,16 @@ const Dashboard = () => {
 
     if (result.success) {
       toast.success(`Created group "${data.name}"`);
+
+      // Handle Email Invites (External)
+      if (data.invitedEmails && data.invitedEmails.length > 0 && result.groupId) {
+        data.invitedEmails.forEach(email => {
+          sendExternalInvitation(result.groupId!, email)
+            .then(() => toast.success(`Invitation sent to ${email}`))
+            .catch(err => console.error("Failed to send email invite", err));
+        });
+      }
+
     } else {
       toast.error(result.error || "Failed to create group");
     }
@@ -573,6 +588,11 @@ const Dashboard = () => {
         </header>
 
         <main className="px-6 lg:px-8 space-y-8 lg:max-w-7xl lg:mx-auto pb-24">
+          {/* Invitations List - Shows only when there are pending invitations */}
+          <div className="mt-20 lg:mt-24 mb-[-2rem]">
+            <InvitationsList />
+          </div>
+
           {/* Greeting Section - Moved further down with more spacing */}
           <section className="mt-16 lg:mt-20 mb-10 lg:mb-12">
             <p className="text-gray-500 font-semibold text-sm">Welcome back,</p>
@@ -1590,11 +1610,7 @@ const Dashboard = () => {
           />
         )}
 
-        <CreateGroupSheet
-          open={showCreateGroup}
-          onClose={() => setShowCreateGroup(false)}
-          onSubmit={handleGroupSubmit}
-        />
+
 
         <AddMoneySheet
           open={showAddMoney}

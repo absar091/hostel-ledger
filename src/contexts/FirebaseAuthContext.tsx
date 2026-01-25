@@ -36,6 +36,7 @@ export interface PaymentDetails {
 export interface UserProfile {
   uid: string;
   email: string;
+  username: string; // Unique username for friend invitations (e.g., @john_doe)
   name: string;
   phone?: string | null;
   avatar?: string | null;
@@ -56,6 +57,7 @@ interface FirebaseAuthContextType {
   signup: (data: {
     email: string;
     password: string;
+    username?: string; // Optional - will generate from name if not provided
     firstName?: string;
     lastName?: string;
     name?: string;
@@ -63,6 +65,8 @@ interface FirebaseAuthContextType {
     university?: string;
     emailVerified?: boolean;
   }) => Promise<{ success: boolean; error?: string }>;
+  createGroup: (groupData: any) => Promise<{ success: boolean; groupId?: string; error?: string }>;
+  checkUsernameAvailable: (username: string) => Promise<boolean>; // Check if username is available
   logout: () => Promise<void>;
   resetPassword: (email: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   sendPasswordResetEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
@@ -199,6 +203,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         const userProfile: UserProfile = {
           uid,
           email: userData.email,
+          username: userData.username || '', // Username for friend invitations
           name: userData.name,
           phone: userData.phone,
           avatar: userData.avatar,
@@ -228,6 +233,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           const newUserProfile: UserProfile = {
             uid,
             email: firebaseUser.email || "",
+            username: '', // Will prompt user to set username on first login
             name: firebaseUser.displayName || "User",
             phone: null,
             avatar: null,
@@ -308,6 +314,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (data: {
     email: string;
     password: string;
+    username?: string; // Optional - will generate from name if not provided
     firstName?: string;
     lastName?: string;
     name?: string;
@@ -364,9 +371,15 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         });
 
         // Create user profile in Realtime Database
+        // Generate username from data or create from name
+        const sanitizedUsername = data.username
+          ? data.username.toLowerCase().replace(/[^a-z0-9._]/g, '')
+          : sanitizedName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9._]/g, '');
+
         const userProfile: UserProfile = {
           uid: firebaseUser.uid,
           email: sanitizedEmail,
+          username: sanitizedUsername,
           name: sanitizedName,
           phone: sanitizedPhone,
           paymentDetails: {},
@@ -377,6 +390,13 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
         const userRef = ref(database, `users/${firebaseUser.uid}`);
         await set(userRef, userProfile);
+
+        // Create username index for lookups
+        const usernameRef = ref(database, `usernames/${sanitizedUsername}`);
+        await set(usernameRef, {
+          uid: firebaseUser.uid,
+          createdAt: new Date().toISOString()
+        });
 
         // Store email verification status and creation time for cleanup
         const verificationRef = ref(database, `emailVerification/${firebaseUser.uid}`);
@@ -915,6 +935,41 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     return user?.favoriteGroups || [];
   };
 
+  const createGroup = async (groupData: any): Promise<{ success: boolean; groupId?: string; error?: string }> => {
+    try {
+      const result = await callSecureApi('/api/create-group', groupData);
+      if (result.success && result.groupId) {
+        // Optionally refresh user profile or groups here if needed
+        // But existing listeners should handle it
+        return { success: true, groupId: result.groupId };
+      }
+      return { success: false, error: result.error || "Failed to create group" };
+    } catch (e: any) {
+      console.error("Create Group Error", e);
+      return { success: false, error: e.message };
+    }
+  };
+
+  // Check if a username is available
+  const checkUsernameAvailable = async (username: string): Promise<boolean> => {
+    try {
+      // Normalize username: lowercase, alphanumeric + underscore only
+      const normalizedUsername = username.toLowerCase().replace(/[^a-z0-9._]/g, '');
+
+      if (normalizedUsername.length < 3 || normalizedUsername.length > 20) {
+        return false; // Invalid length
+      }
+
+      const usernameRef = ref(database, `usernames/${normalizedUsername}`);
+      const snapshot = await get(usernameRef);
+
+      return !snapshot.exists(); // Available if doesn't exist
+    } catch (error) {
+      console.error('Error checking username availability:', error);
+      return false; // Assume not available on error
+    }
+  };
+
   return (
     <FirebaseAuthContext.Provider value={{
       user,
@@ -927,6 +982,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       sendPasswordResetEmail: sendPasswordResetEmailFirebase,
       confirmPasswordReset: confirmPasswordResetFirebase,
       checkEmailExists,
+      checkUsernameAvailable,
       markEmailAsVerified,
       updateUserProfile,
       uploadProfilePicture,
@@ -945,7 +1001,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       settleIndividualDebt,
       settleNetAmount,
       toggleFavoriteGroup,
-      getFavoriteGroups
+      getFavoriteGroups,
+      createGroup
     }}>
       {children}
     </FirebaseAuthContext.Provider>

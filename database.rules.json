@@ -68,6 +68,26 @@
         ".write": "$uid === auth.uid && auth != null",
         ".validate": "newData.hasChildren(['playerId', 'updatedAt']) && newData.child('playerId').isString()"
       }
+    },
+    "usernames": {
+      ".read": true,
+      "$username": {
+        ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid)",
+        ".validate": "newData.hasChildren(['uid', 'createdAt']) && newData.child('uid').isString()"
+      }
+    },
+    "invitations": {
+      "$invitationId": {
+        ".read": "auth != null && (data.child('invitedBy/uid').val() === auth.uid || data.child('invitee/uid').val() === auth.uid)",
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['groupId', 'invitedBy', 'invitee', 'status', 'createdAt'])"
+      }
+    },
+    "userInvitations": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid && auth != null"
+      }
     }
   }
 }
