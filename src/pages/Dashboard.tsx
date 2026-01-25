@@ -572,18 +572,7 @@ const Dashboard = () => {
             ) : (
               <PWAInstallButton />
             )}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate('/create-group');
-              }}
-              className="flex flex-col items-center gap-1 group active:scale-95 transition-transform cursor-pointer"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center shadow-lg shadow-[#4a6850]/20 group-hover:scale-105 transition-all">
-                <Plus className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-[10px] font-bold text-gray-600">New Group</span>
-            </button>
+
             <button
               onClick={() => navigate("/profile")}
               className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden"

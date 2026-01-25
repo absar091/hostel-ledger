@@ -200,35 +200,151 @@ app.get('/api/push-test', (req, res) => {
 // Apply general rate limiting to API endpoints only
 app.use('/api', generalLimiter);
 
+// Stricter rate limiting for creation endpoints
+const createLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20, // limit each IP to 20 group creations per hour
+  message: {
+    success: false,
+    error: 'Too many groups created, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 /**
  * Authentication Middleware
  * Verifies Firebase ID Token in Authorization header
  */
 const authenticate = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
+  // ... existing code ...
+};
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.warn('⚠️ Missing or malformed Authorization header');
-    return res.status(401).json({
-      success: false,
-      error: 'Unauthorized: Missing or malformed token'
-    });
-  }
+/**
+ * Create Group Endpoint
+ */
+app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
+  const { name, emoji, members, invitedUsernames, invitedEmails, coverPhoto } = req.body;
+  const userId = req.user.uid;
 
-  const idToken = authHeader.split('Bearer ')[1];
+  if (!name) return res.status(400).json({ success: false, error: 'Group name is required' });
+  if (!members || members.length === 0) return res.status(400).json({ success: false, error: 'Members are required' });
 
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    req.user = decodedToken;
-    console.log(`👤 Authenticated user: ${decodedToken.email} (${decodedToken.uid})`);
-    next();
-  } catch (error) {
-    console.error('❌ Token verification failed:', error.message);
-    return res.status(401).json({
-      success: false,
-      error: 'Unauthorized: Invalid or expired token'
+    const groupsRef = admin.database().ref('groups');
+    const newGroupRef = groupsRef.push();
+    const groupId = newGroupRef.key;
+
+    // 1. Create Group Object
+    const newGroup = {
+      id: groupId,
+      name: name.trim().substring(0, 50),
+      emoji: emoji || "📁",
+      coverPhoto: coverPhoto || null,
+      members: [
+        {
+          id: userId,
+          name: "You",
+          isCurrentUser: true,
+          userId: userId,
+          paymentDetails: {}, // Should fetch from user profile ideally
+          isAdmin: true
+        },
+        ...members.map(m => ({
+          id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          name: m.name,
+          userId: m.uid || null, // If real user
+          username: m.username || null,
+          type: m.type || 'manual'
+        }))
+      ],
+      createdBy: userId,
+      createdAt: new Date().toISOString()
+    };
+
+    // 2. Save Group
+    await newGroupRef.set(newGroup);
+
+    // 3. Add to User's Group Index
+    await admin.database().ref(`userGroups/${userId}/${groupId}`).set({
+      name: newGroup.name,
+      emoji: newGroup.emoji,
+      coverPhoto: newGroup.coverPhoto,
+      memberCount: newGroup.members.length,
+      role: 'admin',
+      createdAt: newGroup.createdAt
     });
+
+    // 4. Handle Invited Usernames (send invitations)
+    if (invitedUsernames && invitedUsernames.length > 0) {
+      // Logic similar to send-invitation loop
+      // For now we assume the client might call send-invitation separately 
+      // OR we process them here. 
+      // Given the detailed previous logic for invitations, let's keep it simple here 
+      // and assume the client handles individual invites or we add a TODO.
+      // Actually, let's just create pending invitations for them.
+
+      for (const username of invitedUsernames) {
+        // Check username exists
+        const usernameRef = admin.database().ref(`usernames/${username.toLowerCase()}`);
+        const s = await usernameRef.get();
+        if (s.exists()) {
+          const inviteeUid = s.val();
+          // Create invitation
+          const invRef = admin.database().ref('invitations').push();
+          // Fetch sender name
+          const senderSnap = await admin.database().ref(`users/${userId}/name`).get();
+          const senderName = senderSnap.exists() ? senderSnap.val() : "Someone";
+
+          await invRef.set({
+            id: invRef.key,
+            groupId,
+            groupName: newGroup.name,
+            groupEmoji: newGroup.emoji,
+            senderId: userId,
+            senderName,
+            receiverId: inviteeUid,
+            status: 'pending',
+            createdAt: new Date().toISOString()
+          });
+        }
+      }
+    }
+
+    // 5. Handle Emails (Optional - relying on separate endpoint usually, but can do here)
+    // If client passes emails, we could email them.
+
+    res.json({ success: true, groupId, message: 'Group created successfully' });
+
+  } catch (error) {
+    console.error('Error creating group:', error);
+    res.status(500).json({ success: false, error: 'Failed to create group' });
   }
+});
+const authHeader = req.headers.authorization;
+
+if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  console.warn('⚠️ Missing or malformed Authorization header');
+  return res.status(401).json({
+    success: false,
+    error: 'Unauthorized: Missing or malformed token'
+  });
+}
+
+const idToken = authHeader.split('Bearer ')[1];
+
+try {
+  const decodedToken = await admin.auth().verifyIdToken(idToken);
+  req.user = decodedToken;
+  console.log(`👤 Authenticated user: ${decodedToken.email} (${decodedToken.uid})`);
+  next();
+} catch (error) {
+  console.error('❌ Token verification failed:', error.message);
+  return res.status(401).json({
+    success: false,
+    error: 'Unauthorized: Invalid or expired token'
+  });
+}
 };
 
 /**
