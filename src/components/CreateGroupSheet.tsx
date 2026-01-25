@@ -215,6 +215,14 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
     setInvitedEmails(invitedEmails.filter(e => e !== email));
   };
 
+  const handleRemoveInvite = (username: string) => {
+    setInvitedUsernames(invitedUsernames.filter(u => u !== username));
+  };
+
+  const handleRemoveMember = (memberName: string) => {
+    setGroupMembers(groupMembers.filter(m => m.name !== memberName));
+  };
+
   // Update handleSubmit to include invitedEmails
   const handleSubmit = () => {
     const groupData: any = {
