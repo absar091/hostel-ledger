@@ -81,7 +81,7 @@ export const useSync = () => {
         }
     }, [isSyncing, isOnline, user, addExpense, updatePendingCount]);
 
-    // Monitor online status
+    // Monitor online status and AUTO-SYNC on startup
     useEffect(() => {
         const handleOnline = () => {
             setIsOnline(true);
@@ -92,14 +92,21 @@ export const useSync = () => {
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
 
-        // Initial check
-        updatePendingCount();
+        // Initial check and AUTO-SYNC if online with pending items
+        const initSync = async () => {
+            await updatePendingCount();
+            // Auto-sync on startup if online
+            if (navigator.onLine && user) {
+                setTimeout(() => syncData(), 1000); // Slight delay for auth to stabilize
+            }
+        };
+        initSync();
 
         return () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
         };
-    }, [syncData, updatePendingCount]);
+    }, [syncData, updatePendingCount, user]);
 
     return {
         isOnline,
