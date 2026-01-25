@@ -57,23 +57,12 @@ const sendVerificationEmailAPI = async (email: string, code: string, name: strin
   try {
     console.log('📧 Sending verification email via backend API to:', email);
 
-    const response = await fetch(`${EMAIL_CONFIG.apiUrl}/api/send-verification`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email,
-        code,
-        name
-      }),
+    // Use secure API call which attaches the auth token
+    const result = await callSecureApi('/api/send-verification', {
+      email,
+      code,
+      name
     });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to send verification email');
-    }
 
     console.log('✅ Verification email sent successfully:', result.messageId);
     return { success: true, messageId: result.messageId };
@@ -88,22 +77,11 @@ const sendWelcomeEmailAPI = async (email: string, name: string) => {
   try {
     console.log('📧 Sending welcome email via backend API to:', email);
 
-    const response = await fetch(`${EMAIL_CONFIG.apiUrl}/api/send-welcome`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email,
-        name
-      }),
+    // Use secure API call which attaches the auth token
+    const result = await callSecureApi('/api/send-welcome', {
+      email,
+      name
     });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to send welcome email');
-    }
 
     console.log('✅ Welcome email sent successfully:', result.messageId);
     return { success: true, messageId: result.messageId };
@@ -168,23 +146,12 @@ const sendPasswordResetEmailAPI = async (email: string, resetLink: string, name:
   try {
     console.log('📧 Sending password reset email via backend API to:', email);
 
-    const response = await fetch(`${EMAIL_CONFIG.apiUrl}/api/send-password-reset`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email,
-        resetLink,
-        name
-      }),
+    // Use secure API call which attaches the auth token
+    const result = await callSecureApi('/api/send-password-reset', {
+      email,
+      resetLink,
+      name
     });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to send password reset email');
-    }
 
     console.log('✅ Password reset email sent successfully:', result.messageId);
     return { success: true, messageId: result.messageId };
