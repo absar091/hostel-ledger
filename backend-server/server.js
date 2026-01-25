@@ -367,7 +367,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
           const inviteLink = `https://app.hostelledger.aarx.online/join/${groupId}?email=${encodeURIComponent(member.email)}`;
 
           const mailOptions = {
-            from: '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
+            from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
             to: member.email,
             subject: `${senderName} invited you to join "${newGroup.name}"`,
             html: `
