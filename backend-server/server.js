@@ -474,6 +474,7 @@ const calculateExpenseSplit = (totalAmount, participants, payerId) => {
 };
 
 const calculateExpenseSettlements = (splits, payerId, currentUserId, groupId) => {
+  // ... (implementation hidden for brevity, no changes needed here but including context)
   const updates = [];
   const payerSplit = splits.find(s => s.participantId === payerId);
 
@@ -506,6 +507,56 @@ const calculateExpenseSettlements = (splits, payerId, currentUserId, groupId) =>
 
   return updates;
 };
+
+// --- New Endpoint: Get Valid User Details ---
+app.post('/api/get-valid-user-details', authenticate, async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    if (!username) {
+      return res.status(400).json({ success: false, error: 'Username is required' });
+    }
+
+    const cleanUsername = username.toLowerCase().trim().replace('@', '');
+    const usernameRef = admin.database().ref(`usernames/${cleanUsername}`);
+    const snapshot = await usernameRef.get();
+
+    if (!snapshot.exists()) {
+      return res.json({ success: true, exists: false });
+    }
+
+    const uid = snapshot.val();
+    const userRef = admin.database().ref(`users/${uid}`);
+    const userSnap = await userRef.get();
+
+    if (!userSnap.exists()) {
+      return res.json({ success: true, exists: false });
+    }
+
+    const userData = userSnap.val();
+
+    // Sanitize return data (public info only)
+    const publicProfile = {
+      uid,
+      username: userData.username,
+      name: userData.name,
+      photoURL: userData.photoURL || null,
+      paymentMethods: {
+        jazzCash: !!userData.paymentDetails?.jazzCash,
+        easypaisa: !!userData.paymentDetails?.easypaisa,
+        bankName: !!userData.paymentDetails?.bankName,
+        raastId: !!userData.paymentDetails?.raastId
+      }
+    };
+
+    res.json({ success: true, exists: true, user: publicProfile });
+
+  } catch (error) {
+    console.error('Error fetching user details:', error);
+    res.status(500).json({ success: false, error: 'Failed to search user' });
+  }
+});
+
 
 // Apply authentication middleware to ALL /api routes EXCEPT public ones
 app.use('/api', (req, res, next) => {
