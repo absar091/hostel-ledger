@@ -482,7 +482,15 @@ app.post('/api/get-valid-user-details', authenticate, async (req, res) => {
       return res.json({ success: true, exists: false });
     }
 
-    const uid = snapshot.val();
+    const uidData = snapshot.val();
+    // Handle both formats: direct UID string or object like { uid: '...' }
+    const uid = typeof uidData === 'string' ? uidData : (uidData?.uid || uidData?.userId || null);
+
+    if (!uid || typeof uid !== 'string') {
+      console.error('Invalid UID format in usernames lookup:', uidData);
+      return res.json({ success: true, exists: false });
+    }
+
     const userRef = admin.database().ref(`users/${uid}`);
     const userSnap = await userRef.get();
 
