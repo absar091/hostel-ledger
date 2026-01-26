@@ -257,6 +257,58 @@ const authenticate = async (req, res, next) => {
   }
 };
 
+// ============================================
+// CONCURRENCY CONTROL HELPERS
+// ============================================
+
+const acquireLock = async (lockPath, maxAge = 5000) => {
+  const db = admin.database();
+  const ref = db.ref(lockPath);
+
+  try {
+    const result = await ref.transaction((currentLock) => {
+      const now = Date.now();
+      if (currentLock && currentLock.expiresAt > now) {
+        return; // Lock exists and valid, abort
+      }
+      // Acquire lock
+      return {
+        expiresAt: now + maxAge,
+        holder: 'server'
+      };
+    });
+    return result.committed;
+  } catch (e) {
+    console.warn(`Lock acquisition error on ${lockPath}:`, e.message);
+    return false;
+  }
+};
+
+const releaseLock = async (lockPath) => {
+  const db = admin.database();
+  try {
+    await db.ref(lockPath).remove();
+  } catch (e) {
+    console.warn(`Lock release error on ${lockPath}:`, e.message);
+  }
+};
+
+const withLock = async (lockPath, operation, maxRetries = 10, retryDelay = 200) => {
+  for (let i = 0; i < maxRetries; i++) {
+    if (await acquireLock(lockPath)) {
+      try {
+        return await operation();
+      } finally {
+        await releaseLock(lockPath);
+      }
+    }
+    // Wait before retry
+    const delay = retryDelay + Math.random() * 100;
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+  throw new Error(`System busy, please try again (Lock timeout: ${lockPath})`);
+};
+
 /**
  * Create Group Endpoint
  */
@@ -1546,6 +1598,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
   }
 
   try {
+    await withLock(`locks/groups/${groupId}`, async () => {
     const db = admin.database();
 
     // 1. Get Group Data & User Data in parallel
@@ -1719,6 +1772,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       }
     });
 
+    });
   } catch (error) {
     console.error('❌ Add expense error:', error);
     res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
@@ -1735,6 +1789,7 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
   }
 
   try {
+    await withLock(`locks/groups/${groupId}`, async () => {
     const db = admin.database();
 
     // 1. Get Group Data & User Data in parallel
@@ -1904,6 +1959,7 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
       }
     });
 
+    });
   } catch (error) {
     console.error('❌ Record payment error:', error);
     res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
@@ -1921,6 +1977,7 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
   }
 
   try {
+    await withLock(`locks/users/${currentUserId}`, async () => {
     const db = admin.database();
     const userRef = db.ref(`users/${currentUserId}`);
     const userSnap = await userRef.get();
@@ -1984,6 +2041,7 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
       transactionId
     });
 
+    });
   } catch (error) {
     console.error('❌ Update wallet error:', error);
     res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
@@ -2006,47 +2064,50 @@ app.post('/api/cleanup-temp-members', generalLimiter, async (req, res) => {
     let removedCount = 0;
     const updates = {};
 
-    for (const groupId in groups) {
-      const group = groups[groupId];
-      if (!group.members) continue;
+    await Promise.all(Object.entries(groups).map(async ([groupId, group]) => {
+      if (!group.members) return;
 
       const members = group.members;
-      let hasCleanup = false;
+      const memberIdsToRemove = [];
 
-      const newMembers = members.filter(member => {
-        // Only consider temporary members for cleanup
-        if (!member.isTemporary) return true;
+      for (const member of members) {
+        if (!member.isTemporary) continue;
 
-        // Check if member has any settlements
-        // We need to check all users' settlements to be absolutely sure
-        // But for efficiency, we can assume if the group creator sees no debt, it's safe (or we can skip this check if the condition is purely TIME_LIMIT)
-        // However, the rule is: no debt.
-
-        // This is a complex check because settlements are stored under users.
-        // For a simple version, we can check if the member is expired.
         const isExpired = member.deletionCondition === 'TIME_LIMIT' && member.expiresAt && member.expiresAt < now;
-        const isSettledCheckRequired = member.deletionCondition === 'SETTLED' || member.deletionCondition === 'TIME_LIMIT';
+        const shouldDelete = isExpired || member.deletionCondition === 'SETTLED';
 
-        if (isExpired || member.deletionCondition === 'SETTLED') {
-          // We'll mark it for cleanup, but in a real-world scenario, we'd verify settlements first
-          // For this implementation, we'll assume the client-side settlement state was the trigger
-          // or we'd perform a deeper scan if this were a production cron.
-          hasCleanup = true;
-          removedCount++;
-          return false;
+        if (shouldDelete) {
+          // Verify settlements before deleting
+          const settlementsSnap = await db.ref(`users/${member.id}/settlements/${groupId}`).get();
+          let hasDebt = false;
+
+          if (settlementsSnap.exists()) {
+            const settlements = settlementsSnap.val();
+            // Check if any peer has non-zero balance
+            Object.values(settlements).forEach(s => {
+              if ((s.toReceive || 0) > 0.01 || (s.toPay || 0) > 0.01) { // Use small epsilon for float safety
+                hasDebt = true;
+              }
+            });
+          }
+
+          if (!hasDebt) {
+            memberIdsToRemove.push(member.id);
+            removedCount++;
+          }
         }
-
-        return true;
-      });
-
-      if (hasCleanup) {
-        updates[`groups/${groupId}/members`] = newMembers;
       }
-    }
 
-    if (Object.keys(updates).length > 0) {
-      await db.ref().update(updates);
-    }
+      if (memberIdsToRemove.length > 0) {
+        // Use transaction to safely remove members
+        const groupMembersRef = db.ref(`groups/${groupId}/members`);
+        await groupMembersRef.transaction((currentMembers) => {
+          if (!currentMembers) return currentMembers;
+          // Filter out members that are in our remove list
+          return currentMembers.filter(m => !memberIdsToRemove.includes(m.id));
+        });
+      }
+    }));
 
     res.json({
       success: true,
