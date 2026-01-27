@@ -1590,7 +1590,14 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     const timestamp = Date.now();
     const serverTime = admin.database.ServerValue.TIMESTAMP;
 
-    const isCurrentUserPayer = paidBy === currentUserId;
+    // Helper to check if member matches current user
+    const isMemberCurrentUser = (memberId) => {
+      if (memberId === currentUserId) return true;
+      const member = group.members.find(m => m.id === memberId);
+      return member && member.userId === currentUserId;
+    };
+
+    const isCurrentUserPayer = isMemberCurrentUser(paidBy);
 
     // A. Update Wallet Balance if current user is payer
     let walletBalanceAfter = user.walletBalance || 0;
@@ -1769,8 +1776,15 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     const timestamp = Date.now();
     const serverTime = admin.database.ServerValue.TIMESTAMP;
 
-    const isReceiving = toMember === currentUserId;
-    const isPaying = fromMember === currentUserId;
+    // Helper to check if member matches current user
+    const isMemberCurrentUser = (memberId) => {
+      if (memberId === currentUserId) return true;
+      const member = group.members.find(m => m.id === memberId);
+      return member && member.userId === currentUserId;
+    };
+
+    const isReceiving = isMemberCurrentUser(toMember);
+    const isPaying = isMemberCurrentUser(fromMember);
 
     if (!isReceiving && !isPaying) {
       return res.status(403).json({ success: false, error: 'You must be either the payer or the receiver' });
@@ -1845,6 +1859,15 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
 
     // D. Update Bidirectional Settlements
     const otherPersonId = isPaying ? toMember : fromMember;
+
+    // Helper to resolve storage key
+    const getStorageKey = (memberId) => {
+      const member = group.members.find(m => m.id === memberId);
+      return member && member.userId ? member.userId : memberId;
+    };
+
+    const otherPersonStorageKey = getStorageKey(otherPersonId);
+
     const currentSettlement = (user.settlements?.[groupId]?.[otherPersonId] || { toReceive: 0, toPay: 0 });
 
     let newToReceive = currentSettlement.toReceive;
@@ -1863,7 +1886,11 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     };
 
     // Update other user's view (Mirror)
-    updates[`users/${otherPersonId}/settlements/${groupId}/${currentUserId}`] = {
+    // Fix: Use CurrentUser's MemberID as the key, not UID
+    const currentUserMember = group.members.find(m => m.userId === currentUserId || m.id === currentUserId);
+    const currentUserMemberId = currentUserMember ? currentUserMember.id : currentUserId;
+
+    updates[`users/${otherPersonStorageKey}/settlements/${groupId}/${currentUserMemberId}`] = {
       toReceive: newToPay,
       toPay: newToReceive
     };
