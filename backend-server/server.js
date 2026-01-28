@@ -484,39 +484,20 @@ const calculateExpenseSplit = (totalAmount, participants, payerId) => {
   });
 };
 
-const calculateExpenseSettlements = (splits, payerId, currentUserId, groupId) => {
-  // ... (implementation hidden for brevity, no changes needed here but including context)
-  const updates = [];
-  const payerSplit = splits.find(s => s.participantId === payerId);
+const calculateExpenseSettlements = (splits, payerId) => {
+  const debts = [];
 
-  if (!payerSplit) {
-    throw new Error("Payer must be a participant");
-  }
-
-  if (payerId === currentUserId) {
-    splits.forEach(split => {
-      if (split.participantId !== currentUserId) {
-        updates.push({
-          personId: split.participantId,
-          groupId,
-          toReceiveChange: split.amount,
-          toPayChange: 0
-        });
-      }
-    });
-  } else {
-    const currentUserSplit = splits.find(s => s.participantId === currentUserId);
-    if (currentUserSplit) {
-      updates.push({
-        personId: payerId,
-        groupId,
-        toReceiveChange: 0,
-        toPayChange: currentUserSplit.amount
+  splits.forEach(split => {
+    // If the person is NOT the payer, they owe the payer their split amount
+    if (split.participantId !== payerId) {
+      debts.push({
+        debtorId: split.participantId,
+        amount: split.amount
       });
     }
-  }
+  });
 
-  return updates;
+  return debts;
 };
 
 // --- New Endpoint: Get Valid User Details ---
@@ -1549,10 +1530,19 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     const db = admin.database();
 
     // 1. Get Group Data & User Data in parallel
-    const [groupSnap, userSnap] = await Promise.all([
+    const fetchPromises = [
       db.ref(`groups/${groupId}`).get(),
       db.ref(`users/${currentUserId}`).get()
-    ]);
+    ];
+    // If payer is different from current user, fetch their data too
+    if (paidBy !== currentUserId) {
+      fetchPromises.push(db.ref(`users/${paidBy}`).get());
+    }
+
+    const snapshots = await Promise.all(fetchPromises);
+    const groupSnap = snapshots[0];
+    const userSnap = snapshots[1];
+    const payerSnap = (paidBy === currentUserId) ? userSnap : snapshots[2];
 
     if (!groupSnap.exists()) {
       return res.status(404).json({ success: false, error: 'Group not found' });
@@ -1560,6 +1550,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
     const group = groupSnap.val();
     const user = userSnap.val();
+    const payerData = payerSnap && payerSnap.exists() ? payerSnap.val() : {};
 
     // 2. Verify current user is in the group
     const member = group.members.find(m => m.userId === currentUserId || m.id === currentUserId);
@@ -1579,10 +1570,9 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     }
 
     // 4. Calculate Split and Settlements
-    // These functions (calculateExpenseSplit, calculateExpenseSettlements) are assumed to be defined elsewhere or imported.
-    // For the purpose of this edit, we'll assume they exist.
     const splits = calculateExpenseSplit(amount, participantMembers.map(m => ({ id: m.id, name: m.name })), paidBy);
-    const settlementUpdates = calculateExpenseSettlements(splits, paidBy, currentUserId, groupId);
+    // New Logic: returns debts list [{ debtorId, amount }]
+    const debts = calculateExpenseSettlements(splits, paidBy);
 
     // 5. Build multi-path update object
     const updates = {};
@@ -1657,16 +1647,20 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       }
     });
 
-    // D. Apply Bidirectional Settlement Updates
-    for (const update of settlementUpdates) {
-      // 1. Update Current User's Settlements (Local view)
-      const currentToReceive = (user.settlements?.[groupId]?.[update.personId]?.toReceive || 0);
-      const currentToPay = (user.settlements?.[groupId]?.[update.personId]?.toPay || 0);
+    // D. Apply Bidirectional Settlement Updates (New Logic)
+    for (const debt of debts) {
+      // debt.debtorId owes debt.amount to paidBy
+      const debtorId = debt.debtorId;
+      const debtAmount = debt.amount;
 
-      let newToReceive = currentToReceive + update.toReceiveChange;
-      let newToPay = currentToPay + update.toPayChange;
+      // Get existing settlement from Payer's perspective
+      // Note: We use payerData (which might be user if payer is current user, or fetched separately)
+      const currentSettlement = (payerData.settlements?.[groupId]?.[debtorId] || { toReceive: 0, toPay: 0 });
 
-      // Netting logic if both are positive
+      let newToReceive = (currentSettlement.toReceive || 0) + debtAmount;
+      let newToPay = (currentSettlement.toPay || 0);
+
+      // Netting logic
       if (newToReceive > 0 && newToPay > 0) {
         if (newToReceive > newToPay) {
           newToReceive -= newToPay;
@@ -1677,14 +1671,14 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
         }
       }
 
-      updates[`users/${currentUserId}/settlements/${groupId}/${update.personId}`] = {
+      // Update Payer's View (paidBy)
+      updates[`users/${paidBy}/settlements/${groupId}/${debtorId}`] = {
         toReceive: Math.max(0, newToReceive),
         toPay: Math.max(0, newToPay)
       };
 
-      // 2. Update Other Member's Settlements (Mirrored view)
-      // Mirror: If I see person A owes me, person A must see they owe me.
-      updates[`users/${update.personId}/settlements/${groupId}/${currentUserId}`] = {
+      // Update Debtor's View (Mirror)
+      updates[`users/${debtorId}/settlements/${groupId}/${paidBy}`] = {
         toReceive: Math.max(0, newToPay),
         toPay: Math.max(0, newToReceive)
       };
