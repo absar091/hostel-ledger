@@ -249,9 +249,10 @@ export const validateExpenseData = (data: {
 export const validatePaymentData = (data: {
   groupId: string;
   fromMember: string;
+  toMember: string;
   amount: number;
   method: string;
-  note: string;
+  note?: string;
 }): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
@@ -260,7 +261,11 @@ export const validatePaymentData = (data: {
   }
 
   if (!data.fromMember || data.fromMember.trim() === '') {
-    errors.push('Please select who paid you');
+    errors.push('Please select who paid');
+  }
+
+  if (!data.toMember || data.toMember.trim() === '') {
+    errors.push('Please select who received payment');
   }
 
   const amountValidation = validateAmount(data.amount);

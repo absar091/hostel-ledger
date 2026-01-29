@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { calculateExpenseSplit, validatePaymentAmount } from '../expenseLogic';
+import {
+    calculateExpenseSplit,
+    validatePaymentAmount,
+    calculateExpenseSettlements,
+    validateSettlementConsistency,
+    netSettlements,
+    calculateWalletBalanceAfter
+} from '../expenseLogic';
+import { validatePaymentData } from '../validation';
 
 describe('expenseLogic', () => {
     describe('calculateExpenseSplit', () => {
@@ -64,6 +72,76 @@ describe('expenseLogic', () => {
         });
     });
 
+    describe('calculateExpenseSettlements', () => {
+        it('should create settlements where others owe payer', () => {
+            const splits = [
+                { participantId: '1', participantName: 'Payer', amount: 10, isRemainder: false },
+                { participantId: '2', participantName: 'Debtor', amount: 10, isRemainder: false },
+            ];
+            // Current user is payer (1)
+            const updates = calculateExpenseSettlements(splits, '1', '1', 'g1');
+
+            expect(updates).toHaveLength(1);
+            expect(updates[0].personId).toBe('2');
+            expect(updates[0].toReceiveChange).toBe(10);
+        });
+
+        it('should create debt when current user is not payer', () => {
+             const splits = [
+                { participantId: '1', participantName: 'Payer', amount: 10, isRemainder: false },
+                { participantId: '2', participantName: 'Me', amount: 10, isRemainder: false },
+            ];
+            // Current user is '2', payer is '1'
+            const updates = calculateExpenseSettlements(splits, '1', '2', 'g1');
+
+            expect(updates).toHaveLength(1);
+            expect(updates[0].personId).toBe('1');
+            expect(updates[0].toPayChange).toBe(10);
+        });
+    });
+
+    describe('validateSettlementConsistency', () => {
+        it('should reject self-settlements', () => {
+            const settlements = {
+                '1': { toReceive: 10, toPay: 0 }
+            };
+            const result = validateSettlementConsistency(settlements, '1');
+            expect(result.isValid).toBe(false);
+            expect(result.errors[0]).toContain('cannot have settlements with themselves');
+        });
+
+        it('should reject simultaneous positive receive and pay', () => {
+             const settlements = {
+                '2': { toReceive: 10, toPay: 5 }
+            };
+            const result = validateSettlementConsistency(settlements, '1');
+            expect(result.isValid).toBe(false);
+            expect(result.errors[0]).toContain('both receivable and payable');
+        });
+    });
+
+    describe('netSettlements', () => {
+        it('should net mutually offsetting amounts', () => {
+            const input = {
+                'g1': {
+                    'p1': { toReceive: 100, toPay: 40 }
+                }
+            };
+            const result = netSettlements(input);
+            expect(result['g1']['p1'].toReceive).toBe(60);
+            expect(result['g1']['p1'].toPay).toBe(0);
+        });
+    });
+
+    describe('calculateWalletBalanceAfter', () => {
+        it('should add amount correctly', () => {
+            expect(calculateWalletBalanceAfter(100, 'add', 50)).toBe(150);
+        });
+        it('should deduct amount correctly', () => {
+            expect(calculateWalletBalanceAfter(100, 'deduct', 50)).toBe(50);
+        });
+    });
+
     describe('validatePaymentAmount', () => {
         it('should validate positive amounts against debt', () => {
             const result = validatePaymentAmount(50, 100);
@@ -85,6 +163,33 @@ describe('expenseLogic', () => {
         it('should reject non-positive amounts', () => {
             expect(validatePaymentAmount(0, 100).isValid).toBe(false);
             expect(validatePaymentAmount(-10, 100).isValid).toBe(false);
+        });
+    });
+
+    describe('validatePaymentData', () => {
+        it('should validate valid payment data', () => {
+            const data = {
+                groupId: 'g1',
+                fromMember: 'm1',
+                toMember: 'm2',
+                amount: 100,
+                method: 'cash'
+            };
+            const result = validatePaymentData(data);
+            expect(result.isValid).toBe(true);
+        });
+
+        it('should require toMember', () => {
+            const data = {
+                groupId: 'g1',
+                fromMember: 'm1',
+                toMember: '',
+                amount: 100,
+                method: 'cash'
+            };
+            const result = validatePaymentData(data);
+            expect(result.isValid).toBe(false);
+            expect(result.errors).toContain('Please select who received payment');
         });
     });
 });
