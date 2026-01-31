@@ -3,98 +3,13 @@ import { ref, push, set, update, remove, onValue, off, get } from "firebase/data
 import { database } from "@/lib/firebase";
 import { useFirebaseAuth, PaymentDetails } from "./FirebaseAuthContext";
 import { TransactionManager, retryOperation } from "@/lib/transaction";
-
-// Utility functions - defined locally to avoid import issues
-const sanitizeString = (input: string): string => {
-  return input.trim().replace(/[<>\"'&]/g, '').substring(0, 200);
-};
-
-const sanitizeAmount = (amount: string | number): number => {
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-  return isNaN(num) ? 0 : Math.max(0, Math.min(num, 1000000));
-};
-
-
-const validateAmount = (amount: number): { isValid: boolean; error?: string } => {
-  if (isNaN(amount) || amount <= 0) {
-    return { isValid: false, error: 'Amount must be a positive number' };
-  }
-  if (amount > 1000000) {
-    return { isValid: false, error: 'Amount cannot exceed 1,000,000' };
-  }
-  return { isValid: true };
-};
-
-const validateExpenseData = (data: {
-  groupId: string;
-  amount: number;
-  paidBy: string;
-  participants: string[];
-  note: string;
-  place: string;
-}): { isValid: boolean; errors: string[] } => {
-  const errors: string[] = [];
-
-  if (!data.groupId || data.groupId.trim() === '') {
-    errors.push('Group is required');
-  }
-
-  const amountValidation = validateAmount(data.amount);
-  if (!amountValidation.isValid) {
-    errors.push(amountValidation.error || 'Invalid amount');
-  }
-
-  if (!data.paidBy || data.paidBy.trim() === '') {
-    errors.push('Please select who paid');
-  }
-
-  if (!data.participants || data.participants.length === 0) {
-    errors.push('Please select at least one participant');
-  }
-
-  if (data.note && data.note.length > 200) {
-    errors.push('Note must be less than 200 characters');
-  }
-
-  if (data.place && data.place.length > 100) {
-    errors.push('Place must be less than 100 characters');
-  }
-
-  return { isValid: errors.length === 0, errors };
-};
-
-const validatePaymentData = (data: {
-  groupId: string;
-  fromMember: string;
-  amount: number;
-  method: string;
-  note?: string;
-}): { isValid: boolean; errors: string[] } => {
-  const errors: string[] = [];
-
-  if (!data.groupId || data.groupId.trim() === '') {
-    errors.push('Group is required');
-  }
-
-  if (!data.fromMember || data.fromMember.trim() === '') {
-    errors.push('Please select who paid you');
-  }
-
-  const amountValidation = validateAmount(data.amount);
-  if (!amountValidation.isValid) {
-    errors.push(amountValidation.error || 'Invalid amount');
-  }
-
-  if (!data.method || !['cash', 'online'].includes(data.method)) {
-    errors.push('Please select a payment method');
-  }
-
-  if (data.note && data.note.length > 200) {
-    errors.push('Note must be less than 200 characters');
-  }
-
-  return { isValid: errors.length === 0, errors };
-};
+import {
+  validateExpenseData,
+  validatePaymentData,
+  validateAmount,
+  sanitizeString,
+  sanitizeAmount
+} from "@/lib/validation";
 import {
   calculateExpenseSplit,
   calculateExpenseSettlements,
@@ -737,6 +652,11 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   }): Promise<{ success: boolean; error?: string; transaction?: Transaction }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
+    const validation = validateExpenseData(data);
+    if (!validation.isValid) {
+      return { success: false, error: validation.errors[0] };
+    }
+
     try {
       // Check online status
       if (!navigator.onLine) {
@@ -802,6 +722,15 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     note?: string
   }): Promise<{ success: boolean; error?: string; transaction?: Transaction }> => {
     if (!user) return { success: false, error: "User not authenticated" };
+
+    const validation = validatePaymentData({
+      ...data,
+      note: data.note || '' // Ensure note is string for validation
+    });
+
+    if (!validation.isValid) {
+      return { success: false, error: validation.errors[0] };
+    }
 
     try {
       // Check online status - currently offline payments aren't in offlineDB schema but we can add them or use app-data

@@ -11,7 +11,7 @@ import { useSync } from "@/hooks/useSync";
 import { toast } from "sonner";
 import { calculateExpenseSplit } from "@/lib/expenseLogic";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
-// import { validateExpenseData, sanitizeString, sanitizeAmount } from "@/lib/validation";
+import { validateExpenseData } from "@/lib/validation";
 
 interface Member {
   id: string;
@@ -193,15 +193,10 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
       place: place.trim().substring(0, 100),
     };
 
-    // Basic validation
-    const errors: string[] = [];
-    if (!selectedGroup) errors.push('Group is required');
-    if (isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) errors.push('Amount must be a positive number');
-    if (!paidBy) errors.push('Please select who paid');
-    if (participants.length === 0) errors.push('Please select at least one participant');
-
-    if (errors.length > 0) {
-      setValidationErrors(errors);
+    // Shared validation
+    const validation = validateExpenseData(expenseData);
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
       return;
     }
 
