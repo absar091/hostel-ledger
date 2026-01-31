@@ -185,7 +185,7 @@ export const resetPasswordSchema = z.object({
 
 // Security utilities
 export const sanitizeInput = (input: string): string => {
-  return input.trim().replace(/[<>\"']/g, '');
+  return input.trim().replace(/[<>"']/g, '');
 };
 
 // Additional validation utilities for expense tracking
@@ -200,7 +200,7 @@ export const validateAmount = (amount: number): { isValid: boolean; error?: stri
 };
 
 export const sanitizeString = (input: string): string => {
-  return input.trim().replace(/[<>\"'&]/g, '').substring(0, 200);
+  return input.trim().replace(/[<>"'&]/g, '').substring(0, 200);
 };
 
 export const sanitizeAmount = (amount: string | number): number => {
