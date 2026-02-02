@@ -8,10 +8,10 @@ export interface ExpenseSplit {
 }
 
 export interface SettlementUpdate {
-  personId: string;
+  debtorId: string;
+  creditorId: string;
+  amount: number;
   groupId: string;
-  toReceiveChange: number; // Positive = increase receivable
-  toPayChange: number;     // Positive = increase payable
 }
 
 /**
@@ -54,43 +54,21 @@ export const calculateExpenseSplit = (
 export const calculateExpenseSettlements = (
   splits: ExpenseSplit[],
   payerId: string,
-  currentUserId: string,
   groupId: string
 ): SettlementUpdate[] => {
   const updates: SettlementUpdate[] = [];
 
-  const payerSplit = splits.find(s => s.participantId === payerId);
-  const currentUserSplit = splits.find(s => s.participantId === currentUserId);
-
-  if (!payerSplit) {
-    throw new Error("Payer must be a participant");
-  }
-
-  if (payerId === currentUserId) {
-    // Current user paid the expense
-    // Create receivables for all other participants
-    splits.forEach(split => {
-      if (split.participantId !== currentUserId) {
-        updates.push({
-          personId: split.participantId,
-          groupId,
-          toReceiveChange: split.amount, // Others owe current user
-          toPayChange: 0
-        });
-      }
-    });
-  } else {
-    // Someone else paid the expense
-    if (currentUserSplit) {
-      // Current user participated - owes their share to payer
+  splits.forEach(split => {
+    if (split.participantId !== payerId) {
+      // split.participantId owes payerId
       updates.push({
-        personId: payerId,
-        groupId,
-        toReceiveChange: 0,
-        toPayChange: currentUserSplit.amount // Current user owes payer
+        debtorId: split.participantId,
+        creditorId: payerId,
+        amount: split.amount,
+        groupId
       });
     }
-  }
+  });
 
   return updates;
 };
