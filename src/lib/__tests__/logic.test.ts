@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateExpenseSplit, validatePaymentAmount } from '../expenseLogic';
+import { calculateExpenseSplit, calculateExpenseSettlements, validatePaymentAmount } from '../expenseLogic';
 
 describe('expenseLogic', () => {
     describe('calculateExpenseSplit', () => {
@@ -61,6 +61,33 @@ describe('expenseLogic', () => {
             expect(splits.find(s => s.participantId === '3')?.amount).toBe(0.02);
             expect(splits.find(s => s.participantId === '1')?.amount).toBe(0.01);
             expect(splits.reduce((sum, s) => sum + s.amount, 0)).toBe(0.05);
+        });
+    });
+
+    describe('calculateExpenseSettlements', () => {
+        it('should generate correct settlements for payer and participants', () => {
+            const splits = [
+                { participantId: '1', participantName: 'User 1', amount: 33.33, isRemainder: false },
+                { participantId: '2', participantName: 'User 2', amount: 33.33, isRemainder: false },
+                { participantId: '3', participantName: 'User 3', amount: 33.34, isRemainder: true },
+            ];
+            const payerId = '1';
+            const groupId = 'group1';
+
+            const settlements = calculateExpenseSettlements(splits, payerId, groupId);
+
+            // User 1 paid. User 2 and 3 should owe User 1.
+            expect(settlements).toHaveLength(2);
+
+            const settlement2 = settlements.find(s => s.debtorId === '2');
+            expect(settlement2).toBeDefined();
+            expect(settlement2?.creditorId).toBe('1');
+            expect(settlement2?.amount).toBe(33.33);
+
+            const settlement3 = settlements.find(s => s.debtorId === '3');
+            expect(settlement3).toBeDefined();
+            expect(settlement3?.creditorId).toBe('1');
+            expect(settlement3?.amount).toBe(33.34);
         });
     });
 

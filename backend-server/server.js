@@ -484,37 +484,20 @@ const calculateExpenseSplit = (totalAmount, participants, payerId) => {
   });
 };
 
-const calculateExpenseSettlements = (splits, payerId, currentUserId, groupId) => {
-  // ... (implementation hidden for brevity, no changes needed here but including context)
+const calculateExpenseSettlements = (splits, payerId, groupId) => {
   const updates = [];
-  const payerSplit = splits.find(s => s.participantId === payerId);
 
-  if (!payerSplit) {
-    throw new Error("Payer must be a participant");
-  }
-
-  if (payerId === currentUserId) {
-    splits.forEach(split => {
-      if (split.participantId !== currentUserId) {
-        updates.push({
-          personId: split.participantId,
-          groupId,
-          toReceiveChange: split.amount,
-          toPayChange: 0
-        });
-      }
-    });
-  } else {
-    const currentUserSplit = splits.find(s => s.participantId === currentUserId);
-    if (currentUserSplit) {
+  splits.forEach(split => {
+    if (split.participantId !== payerId) {
+      // split.participantId owes payerId
       updates.push({
-        personId: payerId,
-        groupId,
-        toReceiveChange: 0,
-        toPayChange: currentUserSplit.amount
+        debtorId: split.participantId,
+        creditorId: payerId,
+        amount: split.amount,
+        groupId
       });
     }
-  }
+  });
 
   return updates;
 };
@@ -1579,10 +1562,23 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     }
 
     // 4. Calculate Split and Settlements
-    // These functions (calculateExpenseSplit, calculateExpenseSettlements) are assumed to be defined elsewhere or imported.
-    // For the purpose of this edit, we'll assume they exist.
     const splits = calculateExpenseSplit(amount, participantMembers.map(m => ({ id: m.id, name: m.name })), paidBy);
-    const settlementUpdates = calculateExpenseSettlements(splits, paidBy, currentUserId, groupId);
+    const settlementUpdates = calculateExpenseSettlements(splits, paidBy, groupId);
+
+    // Fetch existing settlements for involved users
+    const userIdsToUpdate = new Set();
+    settlementUpdates.forEach(u => {
+      userIdsToUpdate.add(u.debtorId);
+      userIdsToUpdate.add(u.creditorId);
+    });
+
+    const settlementFetches = Array.from(userIdsToUpdate).map(uid =>
+      db.ref(`users/${uid}/settlements/${groupId}`).get().then(snap => ({ uid, settlements: snap.val() || {} }))
+    );
+
+    const existingSettlements = await Promise.all(settlementFetches);
+    const settlementsMap = {};
+    existingSettlements.forEach(item => settlementsMap[item.uid] = item.settlements);
 
     // 5. Build multi-path update object
     const updates = {};
@@ -1659,34 +1655,35 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
     // D. Apply Bidirectional Settlement Updates
     for (const update of settlementUpdates) {
-      // 1. Update Current User's Settlements (Local view)
-      const currentToReceive = (user.settlements?.[groupId]?.[update.personId]?.toReceive || 0);
-      const currentToPay = (user.settlements?.[groupId]?.[update.personId]?.toPay || 0);
+      const { debtorId, creditorId, amount } = update;
 
-      let newToReceive = currentToReceive + update.toReceiveChange;
-      let newToPay = currentToPay + update.toPayChange;
+      // Update Debtor View (Debtor -> Creditor)
+      const debtorToCreditor = settlementsMap[debtorId]?.[creditorId] || { toReceive: 0, toPay: 0 };
 
-      // Netting logic if both are positive
-      if (newToReceive > 0 && newToPay > 0) {
-        if (newToReceive > newToPay) {
-          newToReceive -= newToPay;
-          newToPay = 0;
+      // Debtor owes Creditor: Increase toPay
+      let d_toPay = debtorToCreditor.toPay + amount;
+      let d_toReceive = debtorToCreditor.toReceive;
+
+      // Netting
+      if (d_toPay > 0 && d_toReceive > 0) {
+        if (d_toPay > d_toReceive) {
+          d_toPay -= d_toReceive;
+          d_toReceive = 0;
         } else {
-          newToPay -= newToReceive;
-          newToReceive = 0;
+          d_toReceive -= d_toPay;
+          d_toPay = 0;
         }
       }
 
-      updates[`users/${currentUserId}/settlements/${groupId}/${update.personId}`] = {
-        toReceive: Math.max(0, newToReceive),
-        toPay: Math.max(0, newToPay)
+      updates[`users/${debtorId}/settlements/${groupId}/${creditorId}`] = {
+        toReceive: d_toReceive,
+        toPay: d_toPay
       };
 
-      // 2. Update Other Member's Settlements (Mirrored view)
-      // Mirror: If I see person A owes me, person A must see they owe me.
-      updates[`users/${update.personId}/settlements/${groupId}/${currentUserId}`] = {
-        toReceive: Math.max(0, newToPay),
-        toPay: Math.max(0, newToReceive)
+      // Update Creditor View (Creditor -> Debtor) - Mirror of Debtor View
+      updates[`users/${creditorId}/settlements/${groupId}/${debtorId}`] = {
+        toReceive: d_toPay,
+        toPay: d_toReceive
       };
     }
 
