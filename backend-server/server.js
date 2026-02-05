@@ -456,6 +456,76 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 });
 
 /**
+ * Distributed Locking Helpers
+ */
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+const withLock = async (lockName, operation, maxRetries = 20, retryDelay = 200) => {
+  const db = admin.database();
+  const lockRef = db.ref(`locks/${lockName}`);
+  const myLockId = Date.now() + "_" + Math.random().toString(36).substring(2);
+
+  // 1. Acquire Lock
+  let locked = false;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const result = await lockRef.transaction((currentValue) => {
+        const now = Date.now();
+        if (currentValue && currentValue.expiresAt > now) {
+          return; // Already locked
+        }
+        return { expiresAt: now + 30000, holder: myLockId }; // Lock for 30s
+      });
+
+      if (result.committed) {
+        locked = true;
+        break;
+      }
+    } catch (error) {
+      console.warn(`Lock attempt ${attempt + 1} failed for ${lockName}:`, error.message);
+    }
+
+    // Wait before retry
+    await wait(retryDelay + Math.random() * 100);
+  }
+
+  if (!locked) {
+    throw new Error(`System busy: Could not acquire lock for ${lockName}. Please try again.`);
+  }
+
+  // 2. Execute Operation
+  try {
+    return await operation();
+  } finally {
+    // 3. Release Lock
+    try {
+      await lockRef.transaction((currentValue) => {
+        if (currentValue && currentValue.holder === myLockId) {
+          return null;
+        }
+        return;
+      });
+    } catch (e) {
+      console.error(`Failed to release lock ${lockName}:`, e);
+    }
+  }
+};
+
+const withLocks = async (lockNames, operation) => {
+  // Sort locks to prevent deadlocks
+  const sortedLocks = [...new Set(lockNames)].sort();
+
+  const acquireRecursive = async (index) => {
+    if (index >= sortedLocks.length) {
+      return await operation();
+    }
+    return withLock(sortedLocks[index], () => acquireRecursive(index + 1));
+  };
+
+  return acquireRecursive(0);
+};
+
+/**
  * Financial Logic Helpers
  */
 
@@ -1546,182 +1616,190 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
   }
 
   try {
-    const db = admin.database();
+    const lockKeys = [`group_${groupId}`, `user_${paidBy}`];
+    await withLocks(lockKeys, async () => {
+      const db = admin.database();
 
-    // 1. Get Group Data & User Data in parallel
-    const [groupSnap, userSnap] = await Promise.all([
-      db.ref(`groups/${groupId}`).get(),
-      db.ref(`users/${currentUserId}`).get()
-    ]);
+      // 1. Get Group Data & User Data in parallel
+      const [groupSnap, userSnap] = await Promise.all([
+        db.ref(`groups/${groupId}`).get(),
+        db.ref(`users/${currentUserId}`).get()
+      ]);
 
-    if (!groupSnap.exists()) {
-      return res.status(404).json({ success: false, error: 'Group not found' });
-    }
-
-    const group = groupSnap.val();
-    const user = userSnap.val();
-
-    // 2. Verify current user is in the group
-    const member = group.members.find(m => m.userId === currentUserId || m.id === currentUserId);
-    if (!member) {
-      return res.status(403).json({ success: false, error: 'You are not a member of this group' });
-    }
-
-    // 3. Verify payer and participants exist in group
-    const payer = group.members.find(m => m.id === paidBy);
-    if (!payer) {
-      return res.status(400).json({ success: false, error: 'Invalid payer' });
-    }
-
-    const participantMembers = group.members.filter(m => participants.includes(m.id));
-    if (participantMembers.length === 0) {
-      return res.status(400).json({ success: false, error: 'No valid participants' });
-    }
-
-    // 4. Calculate Split and Settlements
-    // These functions (calculateExpenseSplit, calculateExpenseSettlements) are assumed to be defined elsewhere or imported.
-    // For the purpose of this edit, we'll assume they exist.
-    const splits = calculateExpenseSplit(amount, participantMembers.map(m => ({ id: m.id, name: m.name })), paidBy);
-    const settlementUpdates = calculateExpenseSettlements(splits, paidBy, currentUserId, groupId);
-
-    // 5. Build multi-path update object
-    const updates = {};
-    const transactionId = db.ref('transactions').push().key;
-    const timestamp = Date.now();
-    const serverTime = admin.database.ServerValue.TIMESTAMP;
-
-    const isCurrentUserPayer = paidBy === currentUserId;
-
-    // A. Update Wallet Balance if current user is payer
-    let walletBalanceAfter = user.walletBalance || 0;
-    if (isCurrentUserPayer) {
-      if ((user.walletBalance || 0) < amount) {
-        return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
+      if (!groupSnap.exists()) {
+        throw new Error('Group not found');
       }
-      walletBalanceAfter -= amount;
-      updates[`users/${currentUserId}/walletBalance`] = walletBalanceAfter;
-    }
 
-    // B. Create Transaction Record
-    const newTransaction = {
-      id: transactionId,
-      groupId,
-      type: "expense",
-      title: note || "Expense",
-      amount,
-      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-      timestamp,
-      paidBy,
-      paidByName: payer.name,
-      paidByIsTemporary: !!payer.isTemporary,
-      participants: splits.map(s => ({
-        id: s.participantId,
-        name: s.participantName,
-        amount: s.amount,
-        isTemporary: !!group.members.find(m => m.id === s.participantId)?.isTemporary
-      })),
-      place: place || null,
-      note: note || null,
-      walletBalanceAfter,
-      createdAt: new Date().toISOString(),
-      serverTimestamp: serverTime
-    };
+      const group = groupSnap.val();
+      const user = userSnap.val();
 
-    updates[`transactions/${transactionId}`] = newTransaction;
-
-    // C. Add to userTransaction lists for all group members (Denormalized)
-    const transactionSummaryBase = {
-      type: "expense",
-      title: newTransaction.title || "Expense",
-      amount,
-      createdAt: newTransaction.createdAt,
-      groupId,
-      timestamp,
-      paidBy,
-      paidByName: payer.name,
-      paidByIsTemporary: !!payer.isTemporary,
-      memberCount: group.members.length,
-      participantsCount: participants.length
-    };
-
-    group.members.forEach(m => {
-      if (m.userId) {
-        const userSummary = { ...transactionSummaryBase };
-        const split = splits.find(s => s.participantId === m.id);
-
-        userSummary.userIsPayer = (m.id === paidBy);
-        userSummary.userIsParticipant = !!split;
-        userSummary.userShare = split ? split.amount : 0;
-
-        updates[`userTransactions/${m.userId}/${transactionId}`] = userSummary;
+      // 2. Verify current user is in the group
+      const member = group.members.find(m => m.userId === currentUserId || m.id === currentUserId);
+      if (!member) {
+        throw new Error('You are not a member of this group');
       }
-    });
 
-    // D. Apply Bidirectional Settlement Updates
-    for (const update of settlementUpdates) {
-      // 1. Update Current User's Settlements (Local view)
-      const currentToReceive = (user.settlements?.[groupId]?.[update.personId]?.toReceive || 0);
-      const currentToPay = (user.settlements?.[groupId]?.[update.personId]?.toPay || 0);
+      // 3. Verify payer and participants exist in group
+      const payer = group.members.find(m => m.id === paidBy);
+      if (!payer) {
+        throw new Error('Invalid payer');
+      }
 
-      let newToReceive = currentToReceive + update.toReceiveChange;
-      let newToPay = currentToPay + update.toPayChange;
+      const participantMembers = group.members.filter(m => participants.includes(m.id));
+      if (participantMembers.length === 0) {
+        throw new Error('No valid participants');
+      }
 
-      // Netting logic if both are positive
-      if (newToReceive > 0 && newToPay > 0) {
-        if (newToReceive > newToPay) {
-          newToReceive -= newToPay;
-          newToPay = 0;
-        } else {
-          newToPay -= newToReceive;
-          newToReceive = 0;
+      // 4. Calculate Split and Settlements
+      const splits = calculateExpenseSplit(amount, participantMembers.map(m => ({ id: m.id, name: m.name })), paidBy);
+      const settlementUpdates = calculateExpenseSettlements(splits, paidBy, currentUserId, groupId);
+
+      // 5. Build multi-path update object
+      const updates = {};
+      const transactionId = db.ref('transactions').push().key;
+      const timestamp = Date.now();
+      const serverTime = admin.database.ServerValue.TIMESTAMP;
+
+      const isCurrentUserPayer = paidBy === currentUserId;
+
+      // A. Update Wallet Balance if current user is payer
+      let walletBalanceAfter = user.walletBalance || 0;
+      if (isCurrentUserPayer) {
+        if ((user.walletBalance || 0) < amount) {
+          throw new Error('Insufficient wallet balance');
         }
+        walletBalanceAfter -= amount;
+        updates[`users/${currentUserId}/walletBalance`] = walletBalanceAfter;
       }
 
-      updates[`users/${currentUserId}/settlements/${groupId}/${update.personId}`] = {
-        toReceive: Math.max(0, newToReceive),
-        toPay: Math.max(0, newToPay)
+      // B. Create Transaction Record
+      const newTransaction = {
+        id: transactionId,
+        groupId,
+        type: "expense",
+        title: note || "Expense",
+        amount,
+        date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+        timestamp,
+        paidBy,
+        paidByName: payer.name,
+        paidByIsTemporary: !!payer.isTemporary,
+        participants: splits.map(s => ({
+          id: s.participantId,
+          name: s.participantName,
+          amount: s.amount,
+          isTemporary: !!group.members.find(m => m.id === s.participantId)?.isTemporary
+        })),
+        place: place || null,
+        note: note || null,
+        walletBalanceAfter,
+        createdAt: new Date().toISOString(),
+        serverTimestamp: serverTime
       };
 
-      // 2. Update Other Member's Settlements (Mirrored view)
-      // Mirror: If I see person A owes me, person A must see they owe me.
-      updates[`users/${update.personId}/settlements/${groupId}/${currentUserId}`] = {
-        toReceive: Math.max(0, newToPay),
-        toPay: Math.max(0, newToReceive)
+      updates[`transactions/${transactionId}`] = newTransaction;
+
+      // C. Add to userTransaction lists for all group members (Denormalized)
+      const transactionSummaryBase = {
+        type: "expense",
+        title: newTransaction.title || "Expense",
+        amount,
+        createdAt: newTransaction.createdAt,
+        groupId,
+        timestamp,
+        paidBy,
+        paidByName: payer.name,
+        paidByIsTemporary: !!payer.isTemporary,
+        memberCount: group.members.length,
+        participantsCount: participants.length
       };
-    }
 
-    // 6. Execute Atomic Update
-    await db.ref().update(updates);
+      group.members.forEach(m => {
+        if (m.userId) {
+          const userSummary = { ...transactionSummaryBase };
+          const split = splits.find(s => s.participantId === m.id);
 
-    // 7. Success Response
-    res.json({
-      success: true,
-      transactionId,
-      transaction: newTransaction
-    });
+          userSummary.userIsPayer = (m.id === paidBy);
+          userSummary.userIsParticipant = !!split;
+          userSummary.userShare = split ? split.amount : 0;
 
-    // 8. Notifications (Async - Call helper directly)
-    setImmediate(async () => {
-      try {
-        // Send to ALL members including the user who added the expense
-        const membersWithUserId = group.members.filter(m => m.userId);
-        if (membersWithUserId.length > 0) {
-          const userIds = membersWithUserId.map(m => m.userId);
-          await sendOneSignalNotificationInternal({
-            userIds,
-            title: `New Expense in ${group.name}`,
-            body: `${payer.name} paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`,
-            data: { type: 'expense', transactionId, groupId, amount }
-          });
+          updates[`userTransactions/${m.userId}/${transactionId}`] = userSummary;
         }
-      } catch (notifyError) {
-        console.error('⚠️ Async notification failed:', notifyError);
+      });
+
+      // D. Apply Bidirectional Settlement Updates
+      for (const update of settlementUpdates) {
+        // 1. Update Current User's Settlements (Local view)
+        const currentToReceive = (user.settlements?.[groupId]?.[update.personId]?.toReceive || 0);
+        const currentToPay = (user.settlements?.[groupId]?.[update.personId]?.toPay || 0);
+
+        let newToReceive = currentToReceive + update.toReceiveChange;
+        let newToPay = currentToPay + update.toPayChange;
+
+        // Netting logic if both are positive
+        if (newToReceive > 0 && newToPay > 0) {
+          if (newToReceive > newToPay) {
+            newToReceive -= newToPay;
+            newToPay = 0;
+          } else {
+            newToPay -= newToReceive;
+            newToReceive = 0;
+          }
+        }
+
+        updates[`users/${currentUserId}/settlements/${groupId}/${update.personId}`] = {
+          toReceive: Math.max(0, newToReceive),
+          toPay: Math.max(0, newToPay)
+        };
+
+        // 2. Update Other Member's Settlements (Mirrored view)
+        // Mirror: If I see person A owes me, person A must see they owe me.
+        updates[`users/${update.personId}/settlements/${groupId}/${currentUserId}`] = {
+          toReceive: Math.max(0, newToPay),
+          toPay: Math.max(0, newToReceive)
+        };
       }
+
+      // 6. Execute Atomic Update
+      await db.ref().update(updates);
+
+      // 7. Success Response
+      res.json({
+        success: true,
+        transactionId,
+        transaction: newTransaction
+      });
+
+      // 8. Notifications (Async - Call helper directly)
+      setImmediate(async () => {
+        try {
+          // Send to ALL members including the user who added the expense
+          const membersWithUserId = group.members.filter(m => m.userId);
+          if (membersWithUserId.length > 0) {
+            const userIds = membersWithUserId.map(m => m.userId);
+            await sendOneSignalNotificationInternal({
+              userIds,
+              title: `New Expense in ${group.name}`,
+              body: `${payer.name} paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`,
+              data: { type: 'expense', transactionId, groupId, amount }
+            });
+          }
+        } catch (notifyError) {
+          console.error('⚠️ Async notification failed:', notifyError);
+        }
+      });
     });
 
   } catch (error) {
     console.error('❌ Add expense error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+    const isValidationError = error.message && (
+      error.message.includes('not found') ||
+      error.message.includes('Insufficient') ||
+      error.message.includes('Invalid') ||
+      error.message.includes('member')
+    );
+    const statusCode = isValidationError ? 400 : 500;
+    res.status(statusCode).json({ success: false, error: error.message || 'Internal server error' });
   }
 });
 
@@ -1735,178 +1813,189 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
   }
 
   try {
-    const db = admin.database();
+    const lockKeys = [`group_${groupId}`, `user_${fromMember}`, `user_${toMember}`];
+    await withLocks(lockKeys, async () => {
+      const db = admin.database();
 
-    // 1. Get Group Data & User Data in parallel
-    const [groupSnap, userSnap] = await Promise.all([
-      db.ref(`groups/${groupId}`).get(),
-      db.ref(`users/${currentUserId}`).get()
-    ]);
+      // 1. Get Group Data & User Data in parallel
+      const [groupSnap, userSnap] = await Promise.all([
+        db.ref(`groups/${groupId}`).get(),
+        db.ref(`users/${currentUserId}`).get()
+      ]);
 
-    if (!groupSnap.exists()) {
-      return res.status(404).json({ success: false, error: 'Group not found' });
-    }
-
-    const group = groupSnap.val();
-    const user = userSnap.val();
-
-    // 2. Verify current user is in the group
-    const member = group.members.find(m => m.userId === currentUserId || m.id === currentUserId);
-    if (!member) {
-      return res.status(403).json({ success: false, error: 'You are not a member of this group' });
-    }
-
-    // 3. Verify members exist in group
-    const fromPerson = group.members.find(m => m.id === fromMember);
-    const toPerson = group.members.find(m => m.id === toMember);
-    if (!fromPerson || !toPerson) {
-      return res.status(400).json({ success: false, error: 'Invalid members' });
-    }
-
-    // 4. Build multi-path update object
-    const updates = {};
-    const transactionId = db.ref('transactions').push().key;
-    const timestamp = Date.now();
-    const serverTime = admin.database.ServerValue.TIMESTAMP;
-
-    const isReceiving = toMember === currentUserId;
-    const isPaying = fromMember === currentUserId;
-
-    if (!isReceiving && !isPaying) {
-      return res.status(403).json({ success: false, error: 'You must be either the payer or the receiver' });
-    }
-
-    // A. Update Wallet Balance
-    let walletBalanceAfter = user.walletBalance || 0;
-    if (isPaying) {
-      if ((user.walletBalance || 0) < amount) {
-        return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
+      if (!groupSnap.exists()) {
+        throw new Error('Group not found');
       }
-      walletBalanceAfter -= amount;
-    } else if (isReceiving) {
-      walletBalanceAfter += amount;
-    }
-    updates[`users/${currentUserId}/walletBalance`] = walletBalanceAfter;
 
-    // B. Create Transaction Record
-    const newTransaction = {
-      id: transactionId,
-      groupId,
-      type: "payment",
-      title: "Payment",
-      amount,
-      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-      timestamp,
-      paidBy: fromMember,
-      paidByName: fromPerson.name,
-      paidByIsTemporary: !!fromPerson.isTemporary,
-      from: fromMember,
-      fromName: fromPerson.name,
-      fromIsTemporary: !!fromPerson.isTemporary,
-      to: toMember,
-      toName: toPerson.name,
-      toIsTemporary: !!toPerson.isTemporary,
-      method,
-      note: note || null,
-      walletBalanceBefore: user.walletBalance || 0,
-      walletBalanceAfter,
-      createdAt: new Date().toISOString(),
-      serverTimestamp: serverTime
-    };
+      const group = groupSnap.val();
+      const user = userSnap.val();
 
-    updates[`transactions/${transactionId}`] = newTransaction;
+      // 2. Verify current user is in the group
+      const member = group.members.find(m => m.userId === currentUserId || m.id === currentUserId);
+      if (!member) {
+        throw new Error('You are not a member of this group');
+      }
 
-    // C. Add to userTransaction lists for relevant members (Denormalized)
-    const transactionSummaryBase = {
-      type: "payment",
-      title: newTransaction.title || "Payment",
-      amount,
-      createdAt: newTransaction.createdAt,
-      groupId,
-      timestamp,
-      paidBy: fromMember,
-      paidByName: fromPerson.name,
-      fromName: fromPerson.name,
-      toName: toPerson.name,
-      method,
-      memberCount: group.members.length
-    };
+      // 3. Verify members exist in group
+      const fromPerson = group.members.find(m => m.id === fromMember);
+      const toPerson = group.members.find(m => m.id === toMember);
+      if (!fromPerson || !toPerson) {
+        throw new Error('Invalid members');
+      }
 
-    if (fromPerson.userId) {
-      const userTxUpdate = { ...transactionSummaryBase };
-      userTxUpdate.userRole = 'payer';
-      updates[`userTransactions/${fromPerson.userId}/${transactionId}`] = userTxUpdate;
-    }
-    if (toPerson.userId) {
-      const userTxUpdate = { ...transactionSummaryBase };
-      userTxUpdate.userRole = 'receiver';
-      updates[`userTransactions/${toPerson.userId}/${transactionId}`] = userTxUpdate;
-    }
+      // 4. Build multi-path update object
+      const updates = {};
+      const transactionId = db.ref('transactions').push().key;
+      const timestamp = Date.now();
+      const serverTime = admin.database.ServerValue.TIMESTAMP;
 
-    // D. Update Bidirectional Settlements
-    const otherPersonId = isPaying ? toMember : fromMember;
-    const currentSettlement = (user.settlements?.[groupId]?.[otherPersonId] || { toReceive: 0, toPay: 0 });
+      const isReceiving = toMember === currentUserId;
+      const isPaying = fromMember === currentUserId;
 
-    let newToReceive = currentSettlement.toReceive;
-    let newToPay = currentSettlement.toPay;
+      if (!isReceiving && !isPaying) {
+        throw new Error('You must be either the payer or the receiver');
+      }
 
-    if (isPaying) {
-      newToPay = Math.max(0, newToPay - amount);
-    } else if (isReceiving) {
-      newToReceive = Math.max(0, newToReceive - amount);
-    }
-
-    // Update current user's view
-    updates[`users/${currentUserId}/settlements/${groupId}/${otherPersonId}`] = {
-      toReceive: newToReceive,
-      toPay: newToPay
-    };
-
-    // Update other user's view (Mirror)
-    updates[`users/${otherPersonId}/settlements/${groupId}/${currentUserId}`] = {
-      toReceive: newToPay,
-      toPay: newToReceive
-    };
-
-    // 5. Execute Atomic Update
-    await db.ref().update(updates);
-
-    // 6. Success Response
-    res.json({
-      success: true,
-      transactionId,
-      transaction: newTransaction
-    });
-
-    // 7. Notifications (Async - Send to ALL group members)
-    setImmediate(async () => {
-      try {
-        // Send to ALL members including the user who recorded the payment
-        const membersWithUserId = group.members.filter(m => m.userId);
-        if (membersWithUserId.length > 0) {
-          const userIds = membersWithUserId.map(m => m.userId);
-          await sendOneSignalNotificationInternal({
-            userIds,
-            title: `Payment Recorded in ${group.name}`,
-            body: isPaying
-              ? `${user.name} paid Rs ${amount.toLocaleString()} to ${toPerson.name}`
-              : `${fromPerson.name} paid Rs ${amount.toLocaleString()} to ${user.name}`,
-            data: {
-              type: 'payment',
-              transactionId,
-              groupId,
-              amount
-            }
-          });
+      // A. Update Wallet Balance
+      let walletBalanceAfter = user.walletBalance || 0;
+      if (isPaying) {
+        if ((user.walletBalance || 0) < amount) {
+          throw new Error('Insufficient wallet balance');
         }
-      } catch (notifyError) {
-        console.error('⚠️ Async notification failed:', notifyError);
+        walletBalanceAfter -= amount;
+      } else if (isReceiving) {
+        walletBalanceAfter += amount;
       }
+      updates[`users/${currentUserId}/walletBalance`] = walletBalanceAfter;
+
+      // B. Create Transaction Record
+      const newTransaction = {
+        id: transactionId,
+        groupId,
+        type: "payment",
+        title: "Payment",
+        amount,
+        date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+        timestamp,
+        paidBy: fromMember,
+        paidByName: fromPerson.name,
+        paidByIsTemporary: !!fromPerson.isTemporary,
+        from: fromMember,
+        fromName: fromPerson.name,
+        fromIsTemporary: !!fromPerson.isTemporary,
+        to: toMember,
+        toName: toPerson.name,
+        toIsTemporary: !!toPerson.isTemporary,
+        method,
+        note: note || null,
+        walletBalanceBefore: user.walletBalance || 0,
+        walletBalanceAfter,
+        createdAt: new Date().toISOString(),
+        serverTimestamp: serverTime
+      };
+
+      updates[`transactions/${transactionId}`] = newTransaction;
+
+      // C. Add to userTransaction lists for relevant members (Denormalized)
+      const transactionSummaryBase = {
+        type: "payment",
+        title: newTransaction.title || "Payment",
+        amount,
+        createdAt: newTransaction.createdAt,
+        groupId,
+        timestamp,
+        paidBy: fromMember,
+        paidByName: fromPerson.name,
+        fromName: fromPerson.name,
+        toName: toPerson.name,
+        method,
+        memberCount: group.members.length
+      };
+
+      if (fromPerson.userId) {
+        const userTxUpdate = { ...transactionSummaryBase };
+        userTxUpdate.userRole = 'payer';
+        updates[`userTransactions/${fromPerson.userId}/${transactionId}`] = userTxUpdate;
+      }
+      if (toPerson.userId) {
+        const userTxUpdate = { ...transactionSummaryBase };
+        userTxUpdate.userRole = 'receiver';
+        updates[`userTransactions/${toPerson.userId}/${transactionId}`] = userTxUpdate;
+      }
+
+      // D. Update Bidirectional Settlements
+      const otherPersonId = isPaying ? toMember : fromMember;
+      const currentSettlement = (user.settlements?.[groupId]?.[otherPersonId] || { toReceive: 0, toPay: 0 });
+
+      let newToReceive = currentSettlement.toReceive;
+      let newToPay = currentSettlement.toPay;
+
+      if (isPaying) {
+        newToPay = Math.max(0, newToPay - amount);
+      } else if (isReceiving) {
+        newToReceive = Math.max(0, newToReceive - amount);
+      }
+
+      // Update current user's view
+      updates[`users/${currentUserId}/settlements/${groupId}/${otherPersonId}`] = {
+        toReceive: newToReceive,
+        toPay: newToPay
+      };
+
+      // Update other user's view (Mirror)
+      updates[`users/${otherPersonId}/settlements/${groupId}/${currentUserId}`] = {
+        toReceive: newToPay,
+        toPay: newToReceive
+      };
+
+      // 5. Execute Atomic Update
+      await db.ref().update(updates);
+
+      // 6. Success Response
+      res.json({
+        success: true,
+        transactionId,
+        transaction: newTransaction
+      });
+
+      // 7. Notifications (Async - Send to ALL group members)
+      setImmediate(async () => {
+        try {
+          // Send to ALL members including the user who recorded the payment
+          const membersWithUserId = group.members.filter(m => m.userId);
+          if (membersWithUserId.length > 0) {
+            const userIds = membersWithUserId.map(m => m.userId);
+            await sendOneSignalNotificationInternal({
+              userIds,
+              title: `Payment Recorded in ${group.name}`,
+              body: isPaying
+                ? `${user.name} paid Rs ${amount.toLocaleString()} to ${toPerson.name}`
+                : `${fromPerson.name} paid Rs ${amount.toLocaleString()} to ${user.name}`,
+              data: {
+                type: 'payment',
+                transactionId,
+                groupId,
+                amount
+              }
+            });
+          }
+        } catch (notifyError) {
+          console.error('⚠️ Async notification failed:', notifyError);
+        }
+      });
     });
 
   } catch (error) {
     console.error('❌ Record payment error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+    const isValidationError = error.message && (
+      error.message.includes('not found') ||
+      error.message.includes('Insufficient') ||
+      error.message.includes('Invalid') ||
+      error.message.includes('payer') ||
+      error.message.includes('receiver')
+    );
+    const statusCode = isValidationError ? 400 : 500;
+    res.status(statusCode).json({ success: false, error: error.message || 'Internal server error' });
   }
 });
 
@@ -1921,72 +2010,80 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
   }
 
   try {
-    const db = admin.database();
-    const userRef = db.ref(`users/${currentUserId}`);
-    const userSnap = await userRef.get();
+    await withLock(`user_${currentUserId}`, async () => {
+      const db = admin.database();
+      const userRef = db.ref(`users/${currentUserId}`);
+      const userSnap = await userRef.get();
 
-    if (!userSnap.exists()) {
-      return res.status(404).json({ success: false, error: 'User not found' });
-    }
-
-    const user = userSnap.val();
-    const currentBalance = user.walletBalance || 0;
-
-    let newBalance = currentBalance;
-    if (type === 'add') {
-      newBalance += amount;
-    } else {
-      if (currentBalance < amount) {
-        return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
+      if (!userSnap.exists()) {
+        throw new Error('User not found');
       }
-      newBalance -= amount;
-    }
 
-    const transactionId = db.ref('transactions').push().key;
-    const serverTime = admin.database.ServerValue.TIMESTAMP;
+      const user = userSnap.val();
+      const currentBalance = user.walletBalance || 0;
 
-    const updates = {};
-    updates[`users/${currentUserId}/walletBalance`] = newBalance;
+      let newBalance = currentBalance;
+      if (type === 'add') {
+        newBalance += amount;
+      } else {
+        if (currentBalance < amount) {
+          throw new Error('Insufficient wallet balance');
+        }
+        newBalance -= amount;
+      }
 
-    // Record internal wallet transaction
-    const walletTransaction = {
-      id: transactionId,
-      type: type === 'add' ? 'wallet_add' : 'wallet_deduct',
-      title: type === 'add' ? 'Manual Deposit' : 'Manual Withdrawal',
-      amount,
-      note: note || `Manual wallet ${type}`,
-      timestamp: Date.now(),
-      serverTimestamp: serverTime,
-      walletBalanceBefore: currentBalance,
-      walletBalanceAfter: newBalance,
-      userId: currentUserId,
-      createdAt: new Date().toISOString()
-    };
+      const transactionId = db.ref('transactions').push().key;
+      const serverTime = admin.database.ServerValue.TIMESTAMP;
 
-    const transactionSummary = {
-      type: walletTransaction.type,
-      title: walletTransaction.title,
-      amount,
-      createdAt: walletTransaction.createdAt,
-      groupId: "wallet",
-      timestamp: walletTransaction.timestamp,
-      note: walletTransaction.note
-    };
+      const updates = {};
+      updates[`users/${currentUserId}/walletBalance`] = newBalance;
 
-    updates[`transactions/${transactionId}`] = walletTransaction;
-    updates[`userTransactions/${currentUserId}/${transactionId}`] = transactionSummary;
+      // Record internal wallet transaction
+      const walletTransaction = {
+        id: transactionId,
+        type: type === 'add' ? 'wallet_add' : 'wallet_deduct',
+        title: type === 'add' ? 'Manual Deposit' : 'Manual Withdrawal',
+        amount,
+        note: note || `Manual wallet ${type}`,
+        timestamp: Date.now(),
+        serverTimestamp: serverTime,
+        walletBalanceBefore: currentBalance,
+        walletBalanceAfter: newBalance,
+        userId: currentUserId,
+        createdAt: new Date().toISOString()
+      };
 
-    await db.ref().update(updates);
+      const transactionSummary = {
+        type: walletTransaction.type,
+        title: walletTransaction.title,
+        amount,
+        createdAt: walletTransaction.createdAt,
+        groupId: "wallet",
+        timestamp: walletTransaction.timestamp,
+        note: walletTransaction.note
+      };
 
-    res.json({
-      success: true,
-      balance: newBalance,
-      transactionId
+      updates[`transactions/${transactionId}`] = walletTransaction;
+      updates[`userTransactions/${currentUserId}/${transactionId}`] = transactionSummary;
+
+      await db.ref().update(updates);
+
+      res.json({
+        success: true,
+        balance: newBalance,
+        transactionId
+      });
     });
 
   } catch (error) {
     console.error('❌ Update wallet error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+    const isValidationError = error.message && (
+      error.message.includes('not found') ||
+      error.message.includes('Insufficient') ||
+      error.message.includes('Invalid')
+    );
+    const statusCode = isValidationError ? 400 : 500;
+    res.status(statusCode).json({ success: false, error: error.message || 'Internal server error' });
   }
 });
 
