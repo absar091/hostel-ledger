@@ -106,6 +106,7 @@ import { logger } from "@/lib/logger";
 import { sendTransactionNotifications, triggerPushNotification, TransactionData, UserData } from "@/lib/transactionNotifications";
 import { callSecureApi, sendInvitation } from "@/lib/api";
 import { saveOfflineExpense } from "@/lib/offlineDB";
+import { syncOfflineExpenses } from "@/lib/sync";
 
 export interface GroupMember {
   id: string;
@@ -198,6 +199,25 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Sync offline expenses when coming online
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('Online detected, syncing expenses...');
+      syncOfflineExpenses();
+    };
+
+    window.addEventListener('online', handleOnline);
+
+    // Also try to sync on mount if online
+    if (navigator.onLine) {
+      syncOfflineExpenses();
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
 
   // Real-time listeners with error handling
   useEffect(() => {
