@@ -15,6 +15,19 @@ export interface LogEntry {
   sessionId?: string;
 }
 
+declare global {
+  interface Window {
+    Sentry?: {
+      captureMessage: (message: string, options?: any) => void;
+      captureException: (error: any, options?: any) => void;
+    };
+    LogRocket?: {
+      captureException: (error: any, options?: any) => void;
+      log: (message: string, options?: any) => void;
+    };
+  }
+}
+
 class Logger {
   private logLevel: LogLevel;
   private sessionId: string;
@@ -58,8 +71,33 @@ class Logger {
   private sendToExternalService(entry: LogEntry) {
     // In production, send to external logging service
     if (import.meta.env.MODE === 'production') {
-      // TODO: Integrate with logging service (e.g., LogRocket, Sentry, etc.)
-      // Example: logService.send(entry);
+      try {
+        // Sentry Integration
+        if (typeof window !== 'undefined' && window.Sentry) {
+          if (entry.level === LogLevel.ERROR) {
+            window.Sentry.captureException(new Error(entry.message), {
+              extra: { ...entry.context, ...entry }
+            });
+          } else {
+            window.Sentry.captureMessage(entry.message, {
+              level: LogLevel[entry.level].toLowerCase(),
+              extra: entry.context
+            });
+          }
+        }
+
+        // LogRocket Integration
+        if (typeof window !== 'undefined' && window.LogRocket) {
+          if (entry.level === LogLevel.ERROR) {
+            window.LogRocket.captureException(new Error(entry.message), {
+              extra: entry.context
+            });
+          }
+        }
+      } catch (e) {
+        // Prevent logging errors from crashing the app
+        console.error('Failed to send log to external service', e);
+      }
     }
   }
 
