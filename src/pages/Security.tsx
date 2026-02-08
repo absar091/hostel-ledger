@@ -9,11 +9,13 @@ import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
 import AppContainer from "@/components/AppContainer";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { toast } from "sonner";
 
 const Security = () => {
   const navigate = useNavigate();
   const { user, logout } = useFirebaseAuth();
+  const { groups, transactions, isLoading: isDataLoading } = useFirebaseData();
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("profile");
   
   // Change Password Sheet
@@ -61,12 +63,47 @@ const Security = () => {
   };
 
   const handleExportData = async () => {
+    if (isDataLoading) {
+      toast.error("Still loading data, please wait...");
+      return;
+    }
+
     toast.loading("Preparing your data...", { id: "export" });
-    
-    // TODO: Implement data export
-    setTimeout(() => {
-      toast.success("Data export coming soon!", { id: "export" });
-    }, 1000);
+
+    try {
+      const exportData = {
+        user: user ? {
+          uid: user.uid,
+          email: user.email,
+          name: user.name,
+          username: user.username,
+          phone: user.phone,
+          paymentDetails: user.paymentDetails,
+          walletBalance: user.walletBalance,
+          createdAt: user.createdAt,
+          emailVerified: user.emailVerified
+        } : null,
+        groups,
+        transactions,
+        exportedAt: new Date().toISOString()
+      };
+
+      const jsonString = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `hostel-ledger-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success("Data export complete!", { id: "export" });
+    } catch (error) {
+      console.error("Export failed:", error);
+      toast.error("Failed to export data", { id: "export" });
+    }
   };
 
   const handleDeleteAccount = async () => {
