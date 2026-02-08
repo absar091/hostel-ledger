@@ -103,13 +103,13 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
     loadFullGroup();
   }, [selectedGroup, fetchGroupDetail]);
 
-  // Auto-select group if only one exists
+  // Auto-select group if only one exists (only on initial open, not on subsequent updates)
   useEffect(() => {
-    if (open && groups.length === 1) {
+    if (open && groups.length === 1 && step === 1 && !selectedGroup) {
       setSelectedGroup(groups[0].id);
       setStep(2);
     }
-  }, [open, groups]);
+  }, [open, groups, step, selectedGroup]);
 
   // Calculate split details using the shared logic engine to ensure cent-precision
   const splitDetails = useMemo(() => {
