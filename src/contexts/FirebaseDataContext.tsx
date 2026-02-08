@@ -14,6 +14,14 @@ const sanitizeAmount = (amount: string | number): number => {
   return isNaN(num) ? 0 : Math.max(0, Math.min(num, 1000000));
 };
 
+// Normalize members: Firebase may return object {0: {}, 1: {}} instead of array
+const normalizeMembers = (members: any): any[] => {
+  if (!members) return [];
+  if (Array.isArray(members)) return members;
+  // Convert object to array
+  return Object.values(members);
+};
+
 
 const validateAmount = (amount: number): { isValid: boolean; error?: string } => {
   if (isNaN(amount) || amount <= 0) {
@@ -997,7 +1005,12 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         const snapshot = await get(groupRef);
         if (snapshot.exists()) {
           const data = snapshot.val();
-          const fullGroup = { id: groupId, ...data };
+          // Normalize members: Firebase may return object instead of array
+          const fullGroup = {
+            id: groupId,
+            ...data,
+            members: normalizeMembers(data.members)
+          };
 
           // Update global state with full details to fix "0 members" issue
           setGroups(prev => prev.map(g => {
