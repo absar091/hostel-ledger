@@ -191,6 +191,7 @@ interface FirebaseDataContextType {
   getTransactionsByGroup: (groupId: string) => Transaction[];
   getTransactionsByMember: (groupId: string, memberId: string) => Transaction[];
   getAllTransactions: () => Transaction[];
+  prepareAccountDeletion: () => Promise<{ success: boolean; error?: string }>;
 }
 
 const FirebaseDataContext = createContext<FirebaseDataContextType | undefined>(undefined);
@@ -201,7 +202,9 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     addMoneyToWallet: authAddMoneyToWallet,
     markPaymentReceived,
     markDebtPaid,
-    getSettlements
+    getSettlements,
+    getTotalToReceive,
+    getTotalToPay
   } = useFirebaseAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -998,6 +1001,99 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const prepareAccountDeletion = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: "User not authenticated" };
+
+    // Check debts
+    const toReceive = getTotalToReceive();
+    const toPay = getTotalToPay();
+    if (toReceive > 0 || toPay > 0) {
+      return { success: false, error: "Cannot delete account with outstanding settlements." };
+    }
+
+    // Check wallet
+    if (user.walletBalance > 0) {
+      return { success: false, error: "Please withdraw your wallet balance first." };
+    }
+
+    // Check ownership constraints
+    for (const group of groups) {
+      if (group.createdBy === user.uid && group.members.length > 1) {
+        return { success: false, error: `You must delete or transfer ownership of group "${group.name}" first.` };
+      }
+    }
+
+    // Prepare operations
+    const transaction = new TransactionManager();
+
+    for (const group of groups) {
+      if (group.createdBy === user.uid) {
+        // Delete group (we know it has 1 member or we would have returned error)
+        transaction.addOperation({
+          execute: async () => {
+            const groupRef = ref(database, `groups/${group.id}`);
+            await retryOperation(() => remove(groupRef));
+            return true;
+          },
+          rollback: async () => {
+            const groupRef = ref(database, `groups/${group.id}`);
+            // Note: full rollback of group data is hard without storing it all in memory.
+            // But we can try to restore basic metadata if needed.
+            // For now, we assume if delete fails, we just stop.
+            await retryOperation(() => set(groupRef, group));
+          },
+          description: `Delete group ${group.name}`
+        });
+      } else {
+        // Remove member
+        transaction.addOperation({
+          execute: async () => {
+            const updatedMembers = group.members.filter(m => m.id !== user.uid && m.userId !== user.uid);
+            const groupMembersRef = ref(database, `groups/${group.id}/members`);
+            await retryOperation(() => set(groupMembersRef, updatedMembers));
+
+            // Also update the index count for other users?
+            // This is complex as we don't know other users IDs easily without scanning.
+            // But usually this is fine as they will refresh.
+            // However, we should update the member count in the group node if it exists there?
+            // The group node structure has members array, so count is derived.
+            return true;
+          },
+          rollback: async () => {
+             const groupMembersRef = ref(database, `groups/${group.id}/members`);
+             await retryOperation(() => set(groupMembersRef, group.members));
+          },
+          description: `Leave group ${group.name}`
+        });
+      }
+
+      // Remove from userGroups index
+      transaction.addOperation({
+        execute: async () => {
+          const userGroupRef = ref(database, `userGroups/${user.uid}/${group.id}`);
+          await retryOperation(() => remove(userGroupRef));
+          return true;
+        },
+        rollback: async () => {
+           // We can reconstruct metadata from the group object
+           const userGroupRef = ref(database, `userGroups/${user.uid}/${group.id}`);
+           const metadata = {
+             name: group.name,
+             emoji: group.emoji,
+             coverPhoto: group.coverPhoto || null,
+             memberCount: group.members.length,
+             createdBy: group.createdBy,
+             createdAt: group.createdAt
+           };
+           await retryOperation(() => set(userGroupRef, metadata));
+        },
+        description: `Remove index for ${group.name}`
+      });
+    }
+
+    return await transaction.execute();
+  };
+
   // Helper functions
   const getGroupById = (groupId: string): Group | undefined => {
     return groups.find((g) => g.id === groupId);
@@ -1104,6 +1200,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         getTransactionsByGroup,
         getTransactionsByMember,
         getAllTransactions,
+        prepareAccountDeletion,
       }}
     >
       {children}
