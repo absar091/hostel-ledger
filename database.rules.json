@@ -77,10 +77,11 @@
       }
     },
     "invitations": {
+      ".read": "auth != null",
       "$invitationId": {
-        ".read": "auth != null && (data.child('invitedBy/uid').val() === auth.uid || data.child('invitee/uid').val() === auth.uid)",
+        ".read": "auth != null && (data.child('senderId').val() === auth.uid || data.child('receiverId').val() === auth.uid)",
         ".write": "auth != null",
-        ".validate": "newData.hasChildren(['groupId', 'invitedBy', 'invitee', 'status', 'createdAt'])"
+        ".validate": "newData.hasChildren(['groupId', 'senderId', 'receiverId', 'status', 'createdAt'])"
       }
     },
     "userInvitations": {

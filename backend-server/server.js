@@ -356,6 +356,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
             senderName,
             invitedBy: senderName, // Alias for frontend
             receiverId: inviteeUid,
+            receiverName: username, // Username of the invited user
             status: 'pending',
             createdAt: new Date().toISOString()
           };
@@ -645,6 +646,18 @@ app.post('/api/respond-invitation', authenticate, async (req, res) => {
       const groupData = groupSnap.val();
 
       if (groupData) {
+        // Add to userGroups (REQUIRED for Firebase rules to grant access)
+        await admin.database().ref(`userGroups/${userId}/${groupId}`).set({
+          name: groupData.name,
+          emoji: groupData.emoji || '👥',
+          coverPhoto: groupData.coverPhoto || null,
+          memberCount: (groupData.memberCount || 0) + 1,
+          createdBy: groupData.createdBy || '',
+          createdAt: groupData.createdAt || now,
+          joinedAt: now
+        });
+
+        // Also add to users/{uid}/groups for backwards compatibility
         await admin.database().ref(`users/${userId}/groups/${groupId}`).set({
           name: groupData.name,
           emoji: groupData.emoji || '👥',
@@ -734,14 +747,26 @@ app.post('/api/claim-email-invite', authenticate, async (req, res) => {
       claimedAt: new Date().toISOString()
     });
 
-    // Add group to user's groups list
+    // Add to userGroups (REQUIRED for Firebase rules to grant access)
+    const now = new Date().toISOString();
+    await admin.database().ref(`userGroups/${userId}/${groupId}`).set({
+      name: groupData.name,
+      emoji: groupData.emoji || '👥',
+      coverPhoto: groupData.coverPhoto || null,
+      memberCount: groupData.memberCount || 0,
+      createdBy: groupData.createdBy || '',
+      createdAt: groupData.createdAt || now,
+      joinedAt: now
+    });
+
+    // Also add to users/{uid}/groups for backwards compatibility
     await admin.database().ref(`users/${userId}/groups/${groupId}`).set({
       name: groupData.name,
       emoji: groupData.emoji || '👥',
       coverPhoto: groupData.coverPhoto || null,
       memberCount: groupData.memberCount || 0,
       role: 'member',
-      joinedAt: new Date().toISOString()
+      joinedAt: now
     });
 
     console.log(`✅ User ${userId} claimed email invite for group ${groupId}`);
