@@ -272,7 +272,12 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                   const groupSnapshot = await get(groupRef);
                   if (groupSnapshot.exists()) {
                     const fullData = groupSnapshot.val();
-                    const group = { id, ...fullData };
+                    // Normalize members: Firebase may return object instead of array
+                    const group = {
+                      id,
+                      ...fullData,
+                      members: normalizeMembers(fullData.members)
+                    };
 
                     // Update the index if needed (for quick name display during next load)
                     if (typeof metadata !== 'object' || !metadata.name) {
