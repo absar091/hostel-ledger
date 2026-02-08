@@ -310,7 +310,11 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
     // 4. Handle Invited Usernames (send invitations to existing users)
     if (invitedUsernames && invitedUsernames.length > 0) {
-      for (const username of invitedUsernames) {
+      // Optimization: Fetch sender name once
+      const senderSnap = await admin.database().ref(`users/${userId}/name`).get();
+      const senderName = senderSnap.exists() ? senderSnap.val() : "Someone";
+
+      await Promise.all(invitedUsernames.map(async (username) => {
         const usernameRef = admin.database().ref(`usernames/${username.toLowerCase()}`);
         const s = await usernameRef.get();
         if (s.exists()) {
@@ -320,14 +324,11 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
           if (!inviteeUid) {
             console.error(`Invalid UID format for username ${username}:`, uidData);
-            continue;
+            return;
           }
 
           // Create invitation
           const invRef = admin.database().ref('invitations').push();
-          // Fetch sender name
-          const senderSnap = await admin.database().ref(`users/${userId}/name`).get();
-          const senderName = senderSnap.exists() ? senderSnap.val() : "Someone";
 
           const invitationData = {
             id: invRef.key,
@@ -383,7 +384,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
             // Don't fail the group creation, just log the error
           }
         }
-      }
+      }));
     }
 
     // 5. Handle Email Invites (Manual members with emails)
