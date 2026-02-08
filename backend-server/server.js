@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
+const { loadEmailTemplate } = require('./utils/email');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
 
@@ -115,24 +116,6 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Helper function to load and process email templates
-const loadEmailTemplate = (templateName, variables = {}) => {
-  try {
-    const templatePath = path.join(__dirname, 'email-templates', `${templateName}.html`);
-    let template = fs.readFileSync(templatePath, 'utf8');
-
-    // Replace variables in template
-    Object.keys(variables).forEach(key => {
-      const regex = new RegExp(`{{${key}}}`, 'g');
-      template = template.replace(regex, variables[key]);
-    });
-
-    return template;
-  } catch (error) {
-    console.error(`❌ Error loading template ${templateName}:`, error);
-    return null;
-  }
-};
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT),
@@ -1056,7 +1039,7 @@ app.post('/api/send-welcome', emailLimiter, async (req, res) => {
     }
 
     // Load and process welcome template
-    const html = loadEmailTemplate('welcome', {
+    const html = await loadEmailTemplate('welcome', {
       USER_NAME: name
     });
 
@@ -1115,7 +1098,7 @@ app.post('/api/send-transaction-alert', emailLimiter, async (req, res) => {
     }
 
     // Load and process transaction alert template
-    const html = loadEmailTemplate('transaction-alert', {
+    const html = await loadEmailTemplate('transaction-alert', {
       USER_NAME: name,
       TRANSACTION_TYPE: transactionType,
       AMOUNT: amount,
@@ -1179,7 +1162,7 @@ app.post('/api/send-verification-new', emailLimiter, async (req, res) => {
     }
 
     // Load and process verification template
-    const html = loadEmailTemplate('verification', {
+    const html = await loadEmailTemplate('verification', {
       USER_NAME: name,
       CODE: code
     });
@@ -2249,15 +2232,13 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
         const inviteeEmail = userRecord.email;
 
         if (inviteeEmail) {
-          const templatePath = path.join(__dirname, 'email-templates', 'invitation.html');
-          if (fs.existsSync(templatePath)) {
-            let html = fs.readFileSync(templatePath, 'utf8');
+          const html = await loadEmailTemplate('invitation', {
+            INVITEE_NAME: userRecord.displayName || normalizedUsername,
+            SENDER_NAME: senderName,
+            GROUP_NAME: group.name
+          });
 
-            // Replace placeholders
-            html = html.replace(/{{INVITEE_NAME}}/g, userRecord.displayName || normalizedUsername);
-            html = html.replace(/{{SENDER_NAME}}/g, senderName);
-            html = html.replace(/{{GROUP_NAME}}/g, group.name);
-
+          if (html) {
             await transporter.sendMail({
               from: `"Hostel Ledger" <${process.env.SMTP_USER}>`,
               to: inviteeEmail,
@@ -2266,7 +2247,7 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
             });
             console.log(`📧 Invitation email sent to ${inviteeEmail}`);
           } else {
-            console.warn("Invitation template not found at", templatePath);
+            console.warn("Invitation template not found or failed to load");
           }
         }
       } catch (emailError) {
@@ -2326,14 +2307,12 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
     const senderName = senderSnap.exists() ? senderSnap.val().name : "A friend";
 
     // 3. Send Email
-    const templatePath = path.join(__dirname, 'email-templates', 'external-invitation.html');
-    if (fs.existsSync(templatePath)) {
-      let html = fs.readFileSync(templatePath, 'utf8');
+    const html = await loadEmailTemplate('external-invitation', {
+      SENDER_NAME: senderName,
+      GROUP_NAME: group.name
+    });
 
-      // Replace placeholders
-      html = html.replace(/{{SENDER_NAME}}/g, senderName);
-      html = html.replace(/{{GROUP_NAME}}/g, group.name);
-
+    if (html) {
       await transporter.sendMail({
         from: `"Hostel Ledger" <${process.env.SMTP_USER}>`,
         to: email,
@@ -2344,7 +2323,7 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
 
       res.json({ success: true, message: 'Invitation email sent successfully' });
     } else {
-      console.error("External invitation template not found");
+      console.error("External invitation template not found or failed to load");
       res.status(500).json({ success: false, error: 'Email template error' });
     }
 
