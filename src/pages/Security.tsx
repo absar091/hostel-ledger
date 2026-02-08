@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 const Security = () => {
   const navigate = useNavigate();
-  const { user, logout } = useFirebaseAuth();
+  const { user, logout, updateUserPassword } = useFirebaseAuth();
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("profile");
   
   // Change Password Sheet
@@ -52,12 +52,22 @@ const Security = () => {
       return;
     }
 
-    // TODO: Implement password change with Firebase
-    toast.info("Password change coming soon!");
-    setShowChangePasswordSheet(false);
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    const toastId = toast.loading("Updating password...");
+    try {
+      const result = await updateUserPassword(currentPassword, newPassword);
+
+      if (result.success) {
+        toast.success("Password changed successfully", { id: toastId });
+        setShowChangePasswordSheet(false);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        toast.error(result.error || "Failed to change password", { id: toastId });
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred", { id: toastId });
+    }
   };
 
   const handleExportData = async () => {
