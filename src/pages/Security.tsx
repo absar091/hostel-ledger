@@ -9,11 +9,13 @@ import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
 import AppContainer from "@/components/AppContainer";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { toast } from "sonner";
 
 const Security = () => {
   const navigate = useNavigate();
-  const { user, logout } = useFirebaseAuth();
+  const { user, deleteAccount } = useFirebaseAuth();
+  const { prepareAccountDeletion } = useFirebaseData();
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("profile");
   
   // Change Password Sheet
@@ -75,10 +77,32 @@ const Security = () => {
       return;
     }
 
-    // TODO: Implement account deletion
-    toast.error("Account deletion coming soon!");
-    setShowDeleteAccountSheet(false);
-    setDeleteConfirmation("");
+    const toastId = toast.loading("Processing account deletion...");
+
+    try {
+      // 1. Validate and prepare (leave groups, check debts)
+      const prepResult = await prepareAccountDeletion();
+
+      if (!prepResult.success) {
+        toast.error(prepResult.error || "Failed to prepare account deletion", { id: toastId });
+        return;
+      }
+
+      // 2. Delete user account
+      const deleteResult = await deleteAccount();
+
+      if (!deleteResult.success) {
+        toast.error(deleteResult.error || "Failed to delete account", { id: toastId });
+        return;
+      }
+
+      toast.success("Account deleted successfully", { id: toastId });
+      setShowDeleteAccountSheet(false);
+      setDeleteConfirmation("");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(error.message || "An unexpected error occurred", { id: toastId });
+    }
   };
 
   return (

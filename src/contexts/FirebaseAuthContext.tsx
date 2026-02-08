@@ -93,6 +93,7 @@ interface FirebaseAuthContextType {
   // Favorite groups
   toggleFavoriteGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>;
   getFavoriteGroups: () => string[];
+  deleteAccount: () => Promise<{ success: boolean; error?: string }>;
 }
 
 const FirebaseAuthContext = createContext<FirebaseAuthContextType | undefined>(undefined);
@@ -970,6 +971,58 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const deleteAccount = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!user || !firebaseUser) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    // Check for recent login (e.g. within 5 minutes) to minimize risk of auth failure after data deletion
+    if (firebaseUser.metadata.lastSignInTime) {
+      const lastSignInTime = new Date(firebaseUser.metadata.lastSignInTime).getTime();
+      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+
+      if (lastSignInTime < fiveMinutesAgo) {
+        return { success: false, error: "Security check: Please log out and log in again before deleting your account." };
+      }
+    }
+
+    try {
+      logger.info("Starting account deletion", { uid: user.uid });
+
+      // 1. Delete User Data from Realtime Database
+      const updates: { [key: string]: null } = {};
+      updates[`users/${user.uid}`] = null;
+      updates[`emailVerification/${user.uid}`] = null;
+      updates[`userTransactions/${user.uid}`] = null;
+      updates[`userGroups/${user.uid}`] = null; // Should be empty but clean up anyway
+
+      if (user.username) {
+        updates[`usernames/${user.username}`] = null;
+      }
+
+      await update(ref(database), updates);
+      logger.info("User data deleted from database");
+
+      // 2. Delete Firebase Auth User
+      await firebaseUser.delete();
+      logger.info("Firebase Auth user deleted");
+
+      setUser(null);
+      setFirebaseUser(null);
+      localStorage.removeItem('cachedUser');
+
+      return { success: true };
+    } catch (error: any) {
+      logger.error("Delete account error", { error: error.message });
+
+      if (error.code === 'auth/requires-recent-login') {
+        return { success: false, error: "Security check: Please log out and log in again before deleting your account." };
+      }
+
+      return { success: false, error: error.message || "Failed to delete account" };
+    }
+  };
+
   return (
     <FirebaseAuthContext.Provider value={{
       user,
@@ -1002,7 +1055,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       settleNetAmount,
       toggleFavoriteGroup,
       getFavoriteGroups,
-      createGroup
+      createGroup,
+      deleteAccount
     }}>
       {children}
     </FirebaseAuthContext.Provider>
