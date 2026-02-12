@@ -118,18 +118,7 @@ async function checkForNewExpenses() {
 
 // Message handler for manual sync / UI interaction
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SYNC_EXPENSES') {
-    event.waitUntil(
-      (async () => {
-        try {
-          await self.registration.sync.register('expense-queue');
-          if (event.ports[0]) event.ports[0].postMessage({ success: true });
-        } catch (error) {
-          if (event.ports[0]) event.ports[0].postMessage({ success: false, error });
-        }
-      })()
-    );
-  }
+
 
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();

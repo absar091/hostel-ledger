@@ -17,8 +17,8 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       strategies: "injectManifest",
       srcDir: "src",
-      filename: "sw-custom.ts",
-      includeAssets: ["only-logo.png", "aarx-logo.webp", "hostel-ledger-logo.webp", "firebase-messaging-sw.js", "OneSignalSDK.sw.js", "OneSignalSDKWorker.js"],
+      filename: "OneSignalSDKWorker.ts",
+      includeAssets: ["only-logo.png", "aarx-logo.webp", "hostel-ledger-logo.webp", "firebase-messaging-sw.js", "OneSignalSDK.sw.js"],
       manifest: {
         id: "/",
         name: "Hostel Ledger",
