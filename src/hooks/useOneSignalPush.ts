@@ -49,7 +49,7 @@ export const useOneSignalPush = () => {
               appId: appId,
               safari_web_id: 'web.onesignal.auto.521cdcf4-43b8-4659-a2e2-fd037f95e0d5',
               allowLocalhostAsSecureOrigin: true,
-              serviceWorkerPath: `${window.location.origin}/OneSignalSDKWorker.js`,
+              serviceWorkerPath: '/OneSignalSDKWorker.js',
               autoResubscribe: true,
             });
             oneSignalInitialized = true;

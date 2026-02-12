@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       strategies: "injectManifest",
       srcDir: "src",
-      filename: "OneSignalSDKWorker.ts",
+      filename: "OneSignalSDKWorker.js",
       includeAssets: ["only-logo.png", "aarx-logo.webp", "hostel-ledger-logo.webp", "firebase-messaging-sw.js", "OneSignalSDK.sw.js"],
       manifest: {
         id: "/",
@@ -134,8 +134,9 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       devOptions: {
-        enabled: false,
-        type: "module"
+        enabled: true,
+        /* when using generateSW the PWA plugin will switch to classic */
+        type: 'classic',
       }
     })
   ].filter(Boolean),
