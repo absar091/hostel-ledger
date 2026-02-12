@@ -5,13 +5,20 @@ import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
-export const useSync = () => {
+let startupSyncedUserId: string | null = null;
+
+export const useSync = ({ enableAutoSync = false }: { enableAutoSync?: boolean } = {}) => {
     const { addExpense } = useFirebaseData();
     const { user } = useFirebaseAuth();
     const [isSyncingState, setIsSyncingState] = useState(false);
     const isSyncingRef = useRef(false); // Ref to track status without triggering re-renders/dependency changes
     const [pendingCount, setPendingCount] = useState(0);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const addExpenseRef = useRef(addExpense);
+
+    useEffect(() => {
+        addExpenseRef.current = addExpense;
+    }, [addExpense]);
 
     // Update pending count
     const updatePendingCount = useCallback(async () => {
@@ -65,7 +72,7 @@ export const useSync = () => {
             await updateOfflineExpense(expense);
 
             try {
-                const result = await addExpense({
+                const result = await addExpenseRef.current({
                     groupId: expense.groupId,
                     amount: expense.amount,
                     paidBy: expense.paidBy,
@@ -107,7 +114,7 @@ export const useSync = () => {
         } else {
             toast.dismiss('sync-status');
         }
-    }, [user, addExpense, updatePendingCount]);
+    }, [user, updatePendingCount]);
 
     // Monitor online status and AUTO-SYNC on startup
     useEffect(() => {
@@ -124,7 +131,8 @@ export const useSync = () => {
         const initSync = async () => {
             await updatePendingCount();
             // Auto-sync on startup if online
-            if (navigator.onLine && user) {
+            if (enableAutoSync && navigator.onLine && user && startupSyncedUserId !== user.uid) {
+                startupSyncedUserId = user.uid;
                 setTimeout(() => syncData(), 1000); // Slight delay for auth to stabilize
             }
         };
@@ -134,7 +142,7 @@ export const useSync = () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
         };
-    }, [syncData, updatePendingCount, user]);
+    }, [enableAutoSync, syncData, updatePendingCount, user]);
 
     return {
         isOnline,

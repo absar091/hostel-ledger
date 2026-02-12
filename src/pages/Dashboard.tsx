@@ -36,7 +36,7 @@ const Dashboard = () => {
   const { user, getWalletBalance, getTotalToReceive, getTotalToPay, getSettlementDelta } = useFirebaseAuth();
   const { groups, createGroup, addExpense, recordPayment, addMoneyToWallet, payMyDebt, getAllTransactions, addMemberToGroup } = useFirebaseData();
   const { isInstalled } = usePWAInstall();
-  const { isOnline, pendingCount, isSyncing, syncData: syncNow } = useSync();
+  const { isOnline, pendingCount, isSyncing, syncData: syncNow } = useSync({ enableAutoSync: true });
   const offline = !isOnline;
   const {
     isSupported: notificationsSupported,
