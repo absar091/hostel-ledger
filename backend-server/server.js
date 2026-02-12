@@ -1758,6 +1758,26 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     const group = groupSnap.val();
     const user = userSnap.val();
 
+    // Check for duplicate payment (same from/to/amount/group within 30 seconds)
+    const recentPaymentsSnap = await db.ref('transactions')
+      .orderByChild('timestamp')
+      .startAt(Date.now() - 30000)
+      .get();
+
+    if (recentPaymentsSnap.exists()) {
+      const recentPayments = recentPaymentsSnap.val();
+      const isDuplicate = Object.values(recentPayments).some((tx) =>
+        tx.type === 'payment' &&
+        tx.from === fromMember &&
+        tx.to === toMember &&
+        tx.amount === amount &&
+        tx.groupId === groupId
+      );
+      if (isDuplicate) {
+        return res.status(409).json({ success: false, error: 'Duplicate payment detected. This payment was already recorded within the last 30 seconds.' });
+      }
+    }
+
     // 2. Verify current user is in the group
     const member = group.members.find(m => m.userId === currentUserId || m.id === currentUserId);
     if (!member) {

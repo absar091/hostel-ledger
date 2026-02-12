@@ -1119,7 +1119,7 @@ const Dashboard = () => {
                         const typeLabel = transaction.type === 'expense'
                           ? (isPayer ? 'You paid' : isParticipant ? 'You owe' : 'Group expense')
                           : transaction.type === 'payment'
-                            ? 'Payment received'
+                            ? (transaction.paidBy === user?.uid || transaction.from === user?.uid ? 'Payment sent' : 'Payment received')
                             : 'Wallet';
 
                         const displayAmount = transaction.type === 'expense'
@@ -1182,7 +1182,7 @@ const Dashboard = () => {
                         const typeLabel = transaction.type === 'expense'
                           ? (isPayer ? 'You paid' : isParticipant ? 'You owe' : 'Group expense')
                           : transaction.type === 'payment'
-                            ? 'Payment received'
+                            ? (transaction.paidBy === user?.uid || transaction.from === user?.uid ? 'Payment sent' : 'Payment received')
                             : 'Wallet';
 
                         const displayAmount = transaction.type === 'expense'
@@ -1245,7 +1245,7 @@ const Dashboard = () => {
                         const typeLabel = transaction.type === 'expense'
                           ? (isPayer ? 'You paid' : isParticipant ? 'You owe' : 'Group expense')
                           : transaction.type === 'payment'
-                            ? 'Payment received'
+                            ? (transaction.paidBy === user?.uid || transaction.from === user?.uid ? 'Payment sent' : 'Payment received')
                             : 'Wallet';
 
                         const displayAmount = transaction.type === 'expense'
@@ -1343,7 +1343,7 @@ const Dashboard = () => {
                         const typeLabel = transaction.type === 'expense'
                           ? (isPayer ? 'You paid' : isParticipant ? 'You owe' : 'Group expense')
                           : transaction.type === 'payment'
-                            ? 'Payment received'
+                            ? (transaction.paidBy === user?.uid || transaction.from === user?.uid ? 'Payment sent' : 'Payment received')
                             : 'Wallet';
 
                         const displayAmount = transaction.type === 'expense'
@@ -1387,7 +1387,7 @@ const Dashboard = () => {
                               <p className="text-xs text-slate-400">
                                 {transaction.type === 'expense'
                                   ? (isPayer ? 'Paid by you' : isParticipant ? 'You owe' : 'Not involved')
-                                  : 'Received'}
+                                  : (transaction.paidBy === user?.uid || transaction.from === user?.uid ? 'Sent' : 'Received')}
                               </p>
                             </div>
                           </button>
@@ -1411,7 +1411,7 @@ const Dashboard = () => {
                         const typeLabel = transaction.type === 'expense'
                           ? (isPayer ? 'You paid' : isParticipant ? 'You owe' : 'Group expense')
                           : transaction.type === 'payment'
-                            ? 'Payment received'
+                            ? (transaction.paidBy === user?.uid || transaction.from === user?.uid ? 'Payment sent' : 'Payment received')
                             : 'Wallet';
 
                         const displayAmount = transaction.type === 'expense'
@@ -1455,7 +1455,7 @@ const Dashboard = () => {
                               <p className="text-xs text-slate-400">
                                 {transaction.type === 'expense'
                                   ? (isPayer ? 'Paid by you' : isParticipant ? 'You owe' : 'Not involved')
-                                  : 'Received'}
+                                  : (transaction.paidBy === user?.uid || transaction.from === user?.uid ? 'Sent' : 'Received')}
                               </p>
                             </div>
                           </button>
@@ -1479,7 +1479,7 @@ const Dashboard = () => {
                         const typeLabel = transaction.type === 'expense'
                           ? (isPayer ? 'You paid' : isParticipant ? 'You owe' : 'Group expense')
                           : transaction.type === 'payment'
-                            ? 'Payment received'
+                            ? (transaction.paidBy === user?.uid || transaction.from === user?.uid ? 'Payment sent' : 'Payment received')
                             : 'Wallet';
 
                         const displayAmount = transaction.type === 'expense'
@@ -1523,7 +1523,7 @@ const Dashboard = () => {
                               <p className="text-xs text-slate-400">
                                 {transaction.type === 'expense'
                                   ? (isPayer ? 'Paid by you' : isParticipant ? 'You owe' : 'Not involved')
-                                  : 'Received'}
+                                  : (transaction.paidBy === user?.uid || transaction.from === user?.uid ? 'Sent' : 'Received')}
                               </p>
                             </div>
                           </button>
