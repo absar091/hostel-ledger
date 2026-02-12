@@ -27,14 +27,19 @@ export const useSync = () => {
     const syncData = useCallback(async () => {
         if (isSyncingRef.current || !navigator.onLine || !user) return;
 
+        // Set immediately (synchronously) to prevent race conditions
+        // from multiple triggers (online event, initSync, useEffect)
+        isSyncingRef.current = true;
+        setIsSyncingState(true);
+
         const expenses = await getOfflineExpenses();
         if (expenses.length === 0) {
             setPendingCount(0);
+            isSyncingRef.current = false;
+            setIsSyncingState(false);
             return;
         }
 
-        isSyncingRef.current = true;
-        setIsSyncingState(true); // For UI updates only
         let successCount = 0;
         let failCount = 0;
 
