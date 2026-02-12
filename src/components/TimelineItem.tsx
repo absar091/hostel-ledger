@@ -18,6 +18,7 @@ interface TimelineItemProps {
   to?: string;
   method?: string;
   category?: "food" | "shopping" | "transport" | "coffee" | "other";
+  userRole?: "payer" | "receiver";
   onClick?: () => void;
 }
 
@@ -40,6 +41,7 @@ const TimelineItem = ({
   to,
   method,
   category = "other",
+  userRole,
   onClick,
 }: TimelineItemProps) => {
   const Icon = type === "payment" ? HandCoins :
@@ -99,29 +101,40 @@ const TimelineItem = ({
   }
 
   if (type === "payment") {
+    const isPayer = userRole === 'payer';
     return (
       <button
         onClick={onClick}
-        className="w-full bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/50 rounded-3xl p-5 text-left hover:bg-gradient-to-br hover:from-emerald-100/50 hover:to-teal-100/50 hover:border-emerald-300/50 transition-all shadow-lg hover:shadow-xl"
+        className={`w-full rounded-3xl p-5 text-left transition-all shadow-lg hover:shadow-xl ${isPayer
+            ? 'bg-gradient-to-br from-red-50 to-orange-50 border border-red-200/50 hover:from-red-100/50 hover:to-orange-100/50 hover:border-red-300/50'
+            : 'bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/50 hover:from-emerald-100/50 hover:to-teal-100/50 hover:border-emerald-300/50'
+          }`}
       >
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shrink-0 shadow-lg">
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${isPayer
+              ? 'bg-gradient-to-br from-red-500 to-orange-500'
+              : 'bg-gradient-to-br from-emerald-500 to-teal-500'
+            }`}>
             <HandCoins className="w-6 h-6 text-white font-bold" />
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="font-black text-gray-900 tracking-tight text-lg truncate">Payment Received</div>
-            <div className="text-sm text-emerald-600/80 font-bold truncate">
+            <div className="font-black text-gray-900 tracking-tight text-lg truncate">
+              {isPayer ? 'Payment Sent' : 'Payment Received'}
+            </div>
+            <div className={`text-sm font-bold truncate ${isPayer ? 'text-red-600/80' : 'text-emerald-600/80'}`}>
               {from} → {to}
             </div>
             {method && (
-              <div className="text-xs text-emerald-500/60 mt-1 capitalize font-bold">{method}</div>
+              <div className={`text-xs mt-1 capitalize font-bold ${isPayer ? 'text-red-500/60' : 'text-emerald-500/60'}`}>{method}</div>
             )}
           </div>
 
           <div className="text-right shrink-0">
-            <div className="font-black text-emerald-600 text-xl tracking-tight tabular-nums">+Rs {amount.toLocaleString()}</div>
-            <div className="text-xs text-emerald-500/60 font-bold">{date}</div>
+            <div className={`font-black text-xl tracking-tight tabular-nums ${isPayer ? 'text-red-600' : 'text-emerald-600'}`}>
+              {isPayer ? '-' : '+'}Rs {amount.toLocaleString()}
+            </div>
+            <div className={`text-xs font-bold ${isPayer ? 'text-red-500/60' : 'text-emerald-500/60'}`}>{date}</div>
           </div>
         </div>
       </button>

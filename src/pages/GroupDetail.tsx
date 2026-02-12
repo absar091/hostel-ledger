@@ -73,7 +73,16 @@ const GroupDetail = () => {
 
   // Sync partial group from context if it exists (for immediate name/emoji display)
   const partialGroup = id ? getGroupById(id) : undefined;
-  const group = fullGroup || partialGroup;
+  const rawGroup = fullGroup || partialGroup;
+
+  // Defensive: Ensure members is always an array (Firebase may return object)
+  const group = rawGroup ? {
+    ...rawGroup,
+    members: Array.isArray(rawGroup.members)
+      ? rawGroup.members
+      : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
+  } : null;
+
   const transactions = id ? getTransactionsByGroup(id) : [];
   const settlements = id ? getSettlements(id) : {};
 
@@ -394,6 +403,7 @@ const GroupDetail = () => {
                       from={item.type === "payment" ? item.fromName : undefined}
                       to={item.type === "payment" ? item.toName : undefined}
                       method={item.type === "payment" ? item.method : undefined}
+                      userRole={item.type === "payment" ? (item.from === user?.uid || item.paidBy === user?.uid ? 'payer' : 'receiver') : undefined}
                     />
                   </div>
                 ))}

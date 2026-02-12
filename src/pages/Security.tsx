@@ -17,7 +17,7 @@ const Security = () => {
   const { user, logout, updateUserPassword } = useFirebaseAuth();
   const { groups, transactions, isLoading: isDataLoading } = useFirebaseData();
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("profile");
-  
+
   // Change Password Sheet
   const [showChangePasswordSheet, setShowChangePasswordSheet] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -26,7 +26,7 @@ const Security = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   // Delete Account Sheet
   const [showDeleteAccountSheet, setShowDeleteAccountSheet] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
@@ -54,21 +54,21 @@ const Security = () => {
       return;
     }
 
-    if (updateUserPassword) {
-      toast.loading("Updating password...", { id: "password-update" });
-      const result = await updateUserPassword(newPassword);
+    const toastId = toast.loading("Updating password...");
+    try {
+      const result = await updateUserPassword(currentPassword, newPassword);
 
       if (result.success) {
-        toast.success("Password updated successfully!", { id: "password-update" });
+        toast.success("Password changed successfully", { id: toastId });
         setShowChangePasswordSheet(false);
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
       } else {
-        toast.error(result.error || "Failed to update password", { id: "password-update" });
+        toast.error(result.error || "Failed to change password", { id: toastId });
       }
-    } else {
-      toast.error("Password update function not available");
+    } catch (error) {
+      toast.error("An unexpected error occurred", { id: toastId });
     }
   };
 
@@ -131,13 +131,13 @@ const Security = () => {
   return (
     <>
       <Sidebar />
-      
+
       <AppContainer className="bg-white pb-20">
         <DesktopHeader />
-        
+
         {/* Mobile Header */}
         <div className="lg:hidden fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
-        
+
         <div className="bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
           <div className="flex items-center gap-3">
             <button
@@ -169,7 +169,7 @@ const Security = () => {
           {/* Account Security */}
           <div className="space-y-4">
             <h3 className="text-sm font-black text-[#4a6850]/80 uppercase tracking-widest px-2">Account Security</h3>
-            
+
             <button
               onClick={() => setShowChangePasswordSheet(true)}
               className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all group"
@@ -209,7 +209,7 @@ const Security = () => {
           {/* Privacy & Data */}
           <div className="space-y-4">
             <h3 className="text-sm font-black text-[#4a6850]/80 uppercase tracking-widest px-2">Privacy & Data</h3>
-            
+
             <button
               onClick={handleExportData}
               className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all group"
@@ -240,7 +240,7 @@ const Security = () => {
           {/* Danger Zone */}
           <div className="space-y-4">
             <h3 className="text-sm font-black text-red-600/80 uppercase tracking-widest px-2">Danger Zone</h3>
-            
+
             <button
               onClick={() => setShowDeleteAccountSheet(true)}
               className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(239,68,68,0.08)] border border-red-200 hover:shadow-[0_25px_70px_rgba(239,68,68,0.15)] hover:border-red-300 transition-all group"
@@ -258,7 +258,7 @@ const Security = () => {
           {/* Info */}
           <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
             <p className="text-xs text-gray-600 leading-relaxed">
-              <strong className="text-gray-900">Security Tip:</strong> Use a strong, unique password and enable 
+              <strong className="text-gray-900">Security Tip:</strong> Use a strong, unique password and enable
               two-factor authentication to keep your account secure.
             </p>
           </div>
@@ -362,7 +362,7 @@ const Security = () => {
                 <div>
                   <p className="font-bold text-red-900 text-sm">Warning</p>
                   <p className="text-xs text-red-700 mt-1">
-                    Deleting your account will permanently remove all your data, including groups, 
+                    Deleting your account will permanently remove all your data, including groups,
                     expenses, and payment history. This action cannot be undone.
                   </p>
                 </div>

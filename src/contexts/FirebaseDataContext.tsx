@@ -14,12 +14,15 @@ const sanitizeAmount = (amount: string | number): number => {
   return isNaN(num) ? 0 : Math.max(0, Math.min(num, 1000000));
 };
 
-// Normalize members: Firebase may return object {0: {}, 1: {}} instead of array
+// Normalize members: Firebase may return object {memberId: {}, ...} instead of array
 const normalizeMembers = (members: any): any[] => {
   if (!members) return [];
   if (Array.isArray(members)) return members;
-  // Convert object to array
-  return Object.values(members);
+  // Convert object to array, preserving key as id
+  return Object.entries(members).map(([key, value]: [string, any]) => ({
+    ...value,
+    id: key // Ensure the key is used as the member id
+  }));
 };
 
 

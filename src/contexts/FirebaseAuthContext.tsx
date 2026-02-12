@@ -9,7 +9,10 @@ import {
   updatePassword,
   sendPasswordResetEmail,
   confirmPasswordReset,
-  fetchSignInMethodsForEmail
+  fetchSignInMethodsForEmail,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider
 } from "firebase/auth";
 import { ref, set, get, update, push, onValue, off } from "firebase/database";
 import { auth, database } from "@/lib/firebase";
@@ -69,6 +72,7 @@ interface FirebaseAuthContextType {
   createGroup: (groupData: any) => Promise<{ success: boolean; groupId?: string; error?: string }>;
   checkUsernameAvailable: (username: string) => Promise<boolean>; // Check if username is available
   logout: () => Promise<void>;
+  updateUserPassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   resetPassword: (email: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   sendPasswordResetEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
   confirmPasswordReset: (code: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
@@ -461,6 +465,33 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('cachedUser');
     } catch (error: any) {
       logger.error("Logout error", { error: error.message });
+    }
+  };
+
+  const updateUserPassword = async (currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    if (!auth.currentUser || !auth.currentUser.email) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    try {
+      const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+      await reauthenticateWithCredential(auth.currentUser, credential);
+      await updatePassword(auth.currentUser, newPassword);
+      logger.info("Password updated successfully", { uid: auth.currentUser.uid });
+      return { success: true };
+    } catch (error: any) {
+      logger.error("Update password error", { error: error.message });
+      let errorMessage = "Failed to update password";
+
+      if (error.code === 'auth/wrong-password') {
+        errorMessage = "Current password is incorrect";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "New password is too weak";
+      } else if (error.code === 'auth/requires-recent-login') {
+        errorMessage = "Please log in again before changing your password";
+      }
+
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -1004,6 +1035,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       login,
       signup,
       logout,
+      updateUserPassword,
       resetPassword,
       sendPasswordResetEmail: sendPasswordResetEmailFirebase,
       confirmPasswordReset: confirmPasswordResetFirebase,
