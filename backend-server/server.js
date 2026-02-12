@@ -1569,14 +1569,27 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     const splits = calculateExpenseSplit(amount, participantMembers.map(m => ({ id: m.id, name: m.name })), paidBy);
     const debts = calculateExpenseSettlements(splits, paidBy);
 
-    // Fetch Payer's settlements if needed (if payer is not current user)
-    let payerSettlements = {};
-    if (paidBy === currentUserId) {
-      payerSettlements = user.settlements?.[groupId] || {};
-    } else {
-      const payerSettlementsSnap = await db.ref(`users/${paidBy}/settlements/${groupId}`).get();
-      payerSettlements = payerSettlementsSnap.exists() ? payerSettlementsSnap.val() : {};
-    }
+    // Fetch existing settlements for all involved users to ensure accurate updates
+    // Map Member ID -> Storage Key (UID for real users, MemberID for temp)
+    const getStorageKey = (memberId) => {
+      const m = group.members.find(mem => mem.id === memberId);
+      return (m && m.userId) ? m.userId : memberId;
+    };
+
+    const involvedMemberIds = new Set([paidBy, ...participants]);
+    const settlementsMap = {}; // StorageKey -> { [PeerMemberId]: { toReceive, toPay } }
+
+    const fetchPromises = Array.from(involvedMemberIds).map(async (memberId) => {
+      const storageKey = getStorageKey(memberId);
+      const snap = await db.ref(`users/${storageKey}/settlements/${groupId}`).get();
+      if (snap.exists()) {
+        settlementsMap[storageKey] = snap.val();
+      } else {
+        settlementsMap[storageKey] = {};
+      }
+    });
+
+    await Promise.all(fetchPromises);
 
     // 5. Build multi-path update object
     const updates = {};
@@ -1653,37 +1666,51 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
     // D. Apply Bidirectional Settlement Updates
     for (const debt of debts) {
-      const { debtorId, amount } = debt;
+      const { debtorId, creditorId, amount } = debt;
 
-      // Payer's View: Payer should Receive 'amount' from Debtor
-      // We calculate everything relative to the Payer, then mirror for Debtor.
-      const currentData = payerSettlements[debtorId] || { toReceive: 0, toPay: 0 };
+      // We need to update two relationships:
+      // 1. Creditor -> Debtor (Creditor expects to receive)
+      // 2. Debtor -> Creditor (Debtor expects to pay)
 
-      let newToReceive = (currentData.toReceive || 0) + amount;
-      let newToPay = (currentData.toPay || 0);
+      const creditorStorageKey = getStorageKey(creditorId);
+      const debtorStorageKey = getStorageKey(debtorId);
 
-      // Netting
-      if (newToReceive > 0 && newToPay > 0) {
-           if (newToReceive >= newToPay) {
-               newToReceive -= newToPay;
-               newToPay = 0;
-           } else {
-               newToPay -= newToReceive;
-               newToReceive = 0;
-           }
+      // --- 1. Update Creditor's View (Creditor -> Debtor) ---
+      const creditorSettlements = settlementsMap[creditorStorageKey] || {};
+      const creditorVsDebtor = creditorSettlements[debtorId] || { toReceive: 0, toPay: 0 };
+
+      let cNewToReceive = (creditorVsDebtor.toReceive || 0) + amount;
+      let cNewToPay = (creditorVsDebtor.toPay || 0);
+
+      // Netting for Creditor
+      if (cNewToReceive > 0 && cNewToPay > 0) {
+         const min = Math.min(cNewToReceive, cNewToPay);
+         cNewToReceive -= min;
+         cNewToPay -= min;
       }
 
-      // Add to Updates (Payer's View)
-      updates[`users/${paidBy}/settlements/${groupId}/${debtorId}`] = {
-          toReceive: newToReceive,
-          toPay: newToPay
+      updates[`users/${creditorStorageKey}/settlements/${groupId}/${debtorId}`] = {
+          toReceive: cNewToReceive,
+          toPay: cNewToPay
       };
 
-      // Add to Updates (Debtor's View - Mirrored)
-      updates[`users/${debtorId}/settlements/${groupId}/${paidBy}`] = {
-          toReceive: newToPay,     // Debtor's toReceive = Payer's toPay
-          toPay: newToReceive      // Debtor's toPay = Payer's toReceive
+      // --- 2. Update Debtor's View (Debtor -> Creditor) ---
+      // We can either fetch it or just mirror the Creditor's view
+      // Mirroring is safer to ensure A->B and B->A are always perfectly opposite.
+      // Debtor's toReceive = Creditor's toPay
+      // Debtor's toPay = Creditor's toReceive
+
+      updates[`users/${debtorStorageKey}/settlements/${groupId}/${creditorId}`] = {
+          toReceive: cNewToPay,
+          toPay: cNewToReceive
       };
+
+      // Update the map in memory in case multiple debts affect the same pair in this loop
+      if (!settlementsMap[creditorStorageKey]) settlementsMap[creditorStorageKey] = {};
+      settlementsMap[creditorStorageKey][debtorId] = { toReceive: cNewToReceive, toPay: cNewToPay };
+
+      if (!settlementsMap[debtorStorageKey]) settlementsMap[debtorStorageKey] = {};
+      settlementsMap[debtorStorageKey][creditorId] = { toReceive: cNewToPay, toPay: cNewToReceive };
     }
 
     // 6. Execute Atomic Update
