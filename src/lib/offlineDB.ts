@@ -70,6 +70,10 @@ export const initDB = async (): Promise<IDBPDatabase<HostelLedgerDB>> => {
     },
   });
 
+  dbInstance.onclose = () => {
+    dbInstance = null;
+  };
+
   return dbInstance;
 };
 
