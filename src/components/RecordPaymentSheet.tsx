@@ -98,22 +98,22 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
 
   // Fetch full group details when a group is selected if members are missing
   useEffect(() => {
-    if (selectedGroup) {
+    if (selectedGroup && step > 1) {
       const group = groups.find(g => g.id === selectedGroup);
       if (group && group.members.length === 0 && (group.memberCount || 0) > 0) {
         // Trigger fetch to populate members
         fetchGroupDetail(selectedGroup);
       }
     }
-  }, [selectedGroup, groups, fetchGroupDetail]);
+  }, [selectedGroup]); // Only depend on selectedGroup, not groups (to avoid loop)
 
-  // Auto-select group if only one exists
+  // Auto-select group if only one exists (only on initial open)
   useEffect(() => {
-    if (open && groups.length === 1) {
+    if (open && groups.length === 1 && step === 1 && !selectedGroup) {
       setSelectedGroup(groups[0].id);
       setStep(2);
     }
-  }, [open, groups]);
+  }, [open, groups, step, selectedGroup]);
 
   const handleClose = () => {
     setStep(groups.length === 1 ? 2 : 1);
