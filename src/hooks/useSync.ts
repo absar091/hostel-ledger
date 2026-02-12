@@ -5,13 +5,13 @@ import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
-let startupSyncedUserId: string | null = null;
+let globalSyncInProgress = false;
 
-export const useSync = ({ enableAutoSync = false }: { enableAutoSync?: boolean } = {}) => {
+export const useSync = () => {
     const { addExpense } = useFirebaseData();
     const { user } = useFirebaseAuth();
     const [isSyncingState, setIsSyncingState] = useState(false);
-    const isSyncingRef = useRef(false); // Ref to track status without triggering re-renders/dependency changes
+    const isSyncingRef = useRef(false); // local instance state
     const [pendingCount, setPendingCount] = useState(0);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const addExpenseRef = useRef(addExpense);
@@ -20,7 +20,6 @@ export const useSync = ({ enableAutoSync = false }: { enableAutoSync?: boolean }
         addExpenseRef.current = addExpense;
     }, [addExpense]);
 
-    // Update pending count
     const updatePendingCount = useCallback(async () => {
         try {
             const count = await getOfflineExpenseCount();
@@ -30,93 +29,86 @@ export const useSync = ({ enableAutoSync = false }: { enableAutoSync?: boolean }
         }
     }, []);
 
-    // Sync function
     const syncData = useCallback(async () => {
-        if (isSyncingRef.current || !navigator.onLine || !user) return;
+        if (isSyncingRef.current || globalSyncInProgress || !navigator.onLine || !user) return;
 
-        // Set immediately (synchronously) to prevent race conditions
-        // from multiple triggers (online event, initSync, useEffect)
         isSyncingRef.current = true;
+        globalSyncInProgress = true;
         setIsSyncingState(true);
 
-        const expenses = await getOfflineExpenses();
-        if (expenses.length === 0) {
-            setPendingCount(0);
-            isSyncingRef.current = false;
-            setIsSyncingState(false);
-            return;
-        }
-
-        let successCount = 0;
-        let failCount = 0;
-
-        toast.info(`🔄 Syncing ${expenses.length} offline expenses...`, {
-            id: 'sync-status',
-            duration: Infinity
-        });
-
-        const MAX_SYNC_ATTEMPTS = 5;
-
-        for (const expense of expenses) {
-            // Poison pill check
-            if ((expense.syncAttempts || 0) >= MAX_SYNC_ATTEMPTS) {
-                logger.warn('Skipping offline expense after max retries', { id: expense.id, attempts: expense.syncAttempts });
-                continue;
+        try {
+            const expenses = await getOfflineExpenses();
+            if (expenses.length === 0) {
+                setPendingCount(0);
+                return;
             }
 
-            // Increment attempt counter
-            expense.syncAttempts = (expense.syncAttempts || 0) + 1;
-            expense.lastSyncAttempt = Date.now();
+            let successCount = 0;
+            let failCount = 0;
 
-            // We need to update the offline record with new attempt count
-            await updateOfflineExpense(expense);
+            toast.info(`🔄 Syncing ${expenses.length} offline expenses...`, {
+                id: 'sync-status',
+                duration: Infinity
+            });
 
-            try {
-                const result = await addExpenseRef.current({
-                    groupId: expense.groupId,
-                    amount: expense.amount,
-                    paidBy: expense.paidBy,
-                    participants: expense.participants,
-                    note: expense.note,
-                    place: expense.place,
-                    clientTxnId: expense.clientTxnId || expense.id,
-                });
+            const MAX_SYNC_ATTEMPTS = 5;
 
-                if (result.success) {
-                    await deleteOfflineExpense(expense.id);
-                    successCount++;
-                } else {
+            for (const expense of expenses) {
+                if ((expense.syncAttempts || 0) >= MAX_SYNC_ATTEMPTS) {
+                    logger.warn('Skipping offline expense after max retries', { id: expense.id, attempts: expense.syncAttempts });
+                    continue;
+                }
+
+                expense.syncAttempts = (expense.syncAttempts || 0) + 1;
+                expense.lastSyncAttempt = Date.now();
+                await updateOfflineExpense(expense);
+
+                try {
+                    const result = await addExpenseRef.current({
+                        groupId: expense.groupId,
+                        amount: expense.amount,
+                        paidBy: expense.paidBy,
+                        participants: expense.participants,
+                        note: expense.note,
+                        place: expense.place,
+                        clientTxnId: expense.clientTxnId || expense.id,
+                    });
+
+                    if (result.success) {
+                        await deleteOfflineExpense(expense.id);
+                        successCount++;
+                    } else {
+                        failCount++;
+                        logger.error('Failed to sync offline expense', { expenseId: expense.id, error: result.error });
+                        break;
+                    }
+                } catch (error: any) {
                     failCount++;
-                    logger.error('Failed to sync offline expense', { expenseId: expense.id, error: result.error });
-                    // Stop on first error to prevent further failures/load
+                    logger.error('Sync error', { expenseId: expense.id, error: error.message });
                     break;
                 }
-            } catch (error: any) {
-                failCount++;
-                logger.error('Sync error', { expenseId: expense.id, error: error.message });
-                // Stop on first exception
-                break;
             }
-        }
 
-        isSyncingRef.current = false;
-        setIsSyncingState(false);
-        await updatePendingCount();
+            await updatePendingCount();
 
-        if (successCount > 0) {
-            toast.success(`✅ Successfully synced ${successCount} expenses!`, {
-                id: 'sync-status'
-            });
-        } else if (failCount > 0) {
-            toast.error(`❌ Failed to sync ${failCount} expenses. Will retry later.`, {
-                id: 'sync-status'
-            });
-        } else {
-            toast.dismiss('sync-status');
+            if (successCount > 0) {
+                toast.success(`✅ Successfully synced ${successCount} expenses!`, {
+                    id: 'sync-status'
+                });
+            } else if (failCount > 0) {
+                toast.error(`❌ Failed to sync ${failCount} expenses. Will retry later.`, {
+                    id: 'sync-status'
+                });
+            } else {
+                toast.dismiss('sync-status');
+            }
+        } finally {
+            isSyncingRef.current = false;
+            globalSyncInProgress = false;
+            setIsSyncingState(false);
         }
     }, [user, updatePendingCount]);
 
-    // Monitor online status and AUTO-SYNC on startup
     useEffect(() => {
         const handleOnline = () => {
             setIsOnline(true);
@@ -127,22 +119,13 @@ export const useSync = ({ enableAutoSync = false }: { enableAutoSync?: boolean }
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
 
-        // Initial check and AUTO-SYNC if online with pending items
-        const initSync = async () => {
-            await updatePendingCount();
-            // Auto-sync on startup if online
-            if (enableAutoSync && navigator.onLine && user && startupSyncedUserId !== user.uid) {
-                startupSyncedUserId = user.uid;
-                setTimeout(() => syncData(), 1000); // Slight delay for auth to stabilize
-            }
-        };
-        initSync();
+        updatePendingCount();
 
         return () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
         };
-    }, [enableAutoSync, syncData, updatePendingCount, user]);
+    }, [syncData, updatePendingCount]);
 
     return {
         isOnline,

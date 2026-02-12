@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowUpRight, ArrowDownLeft, Plus, User, CreditCard, Users, Wallet, Send, X, WifiOff, RefreshCw, Share2 } from "@/lib/icons";
 import { sendExternalInvitation } from "@/lib/api";
@@ -36,7 +36,7 @@ const Dashboard = () => {
   const { user, getWalletBalance, getTotalToReceive, getTotalToPay, getSettlementDelta } = useFirebaseAuth();
   const { groups, createGroup, addExpense, recordPayment, addMoneyToWallet, payMyDebt, getAllTransactions, addMemberToGroup } = useFirebaseData();
   const { isInstalled } = usePWAInstall();
-  const { isOnline, pendingCount, isSyncing, syncData: syncNow } = useSync({ enableAutoSync: true });
+  const { isOnline, pendingCount, isSyncing, syncData: syncNow, updatePendingCount } = useSync();
   const offline = !isOnline;
   const {
     isSupported: notificationsSupported,
@@ -49,6 +49,21 @@ const Dashboard = () => {
     markOnboardingComplete,
     markPageGuideShown
   } = useUserPreferences(user?.uid);
+
+
+  const startupSyncedUserIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    updatePendingCount();
+
+    if (navigator.onLine && user && startupSyncedUserIdRef.current !== user.uid) {
+      startupSyncedUserIdRef.current = user.uid;
+      const timer = setTimeout(() => {
+        syncNow();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, syncNow, updatePendingCount]);
 
   // Check for pending group join from email invite
   usePendingGroupJoin(user?.uid);
