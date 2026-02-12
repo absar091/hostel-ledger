@@ -29,6 +29,10 @@
       }
     },
     "transactions": {
+      ".indexOn": [
+        "timestamp",
+        "groupId"
+      ],
       "$transactionId": {
         ".read": "auth != null && root.child('userTransactions').child(auth.uid).child($transactionId).exists()",
         ".write": false,
