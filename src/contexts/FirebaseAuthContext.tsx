@@ -108,25 +108,48 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Effect to handle Firebase Auth state changes
   useEffect(() => {
-    // If offline, try to load cached user IMMEDIATELY
-    if (!navigator.onLine) {
-      console.log('📱 Offline detected - loading cached user immediately');
+    let authResolved = false;
+
+    const loadCachedUser = (reason: string): boolean => {
       try {
         const cachedUser = localStorage.getItem('cachedUser');
         if (cachedUser) {
           const parsedUser = JSON.parse(cachedUser);
-          console.log('✅ Loaded cached user from localStorage (immediate)', parsedUser.uid);
+          console.log(`✅ Loaded cached user from localStorage (${reason})`, parsedUser.uid);
           setUser(parsedUser);
           setFirebaseUser(null);
           setIsLoading(false);
-          return; // Skip Firebase auth when offline
+          return true;
         }
       } catch (error) {
         console.error('Failed to load cached user:', error);
       }
+      return false;
+    };
+
+    // Immediate offline path
+    if (!navigator.onLine && loadCachedUser('offline immediate')) {
+      return;
     }
 
+    // Safety timeout: on some devices/networks Firebase auth callback can hang,
+    // leaving the app stuck on splash forever. Fallback to cached session.
+    const authTimeout = window.setTimeout(() => {
+      if (authResolved) return;
+
+      console.warn('⏱️ Auth initialization timeout - using cached/offline fallback');
+      authResolved = true;
+
+      if (!loadCachedUser('auth timeout fallback')) {
+        setIsLoading(false);
+      }
+    }, 5000);
+
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (authResolved) return;
+      authResolved = true;
+      clearTimeout(authTimeout);
+
       setFirebaseUser(user);
       if (!user) {
         setUser(null);
@@ -136,10 +159,20 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       // If user exists, the second useEffect will handle profile subscription
     }, (error) => {
       logger.error("Auth state change error", { error: error.message });
-      setIsLoading(false);
+
+      if (authResolved) return;
+      authResolved = true;
+      clearTimeout(authTimeout);
+
+      if (!loadCachedUser('auth error fallback')) {
+        setIsLoading(false);
+      }
     });
 
-    return () => unsubscribeAuth();
+    return () => {
+      clearTimeout(authTimeout);
+      unsubscribeAuth();
+    };
   }, []);
 
   // Effect to handle Real-time User Profile Subscription
