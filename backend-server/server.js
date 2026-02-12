@@ -2058,58 +2058,107 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
 app.post('/api/cleanup-temp-members', generalLimiter, async (req, res) => {
   try {
     const db = admin.database();
-    const groupsSnap = await db.ref('groups').get();
+    const groupsRef = db.ref('groups');
 
-    if (!groupsSnap.exists()) {
-      return res.json({ success: true, removedCount: 0 });
-    }
-
-    const groups = groupsSnap.val();
-    const now = Date.now();
+    // Optimized Pagination
+    const BATCH_SIZE = 100;
+    let lastGroupId = null;
+    let hasMore = true;
     let removedCount = 0;
-    const updates = {};
+    const now = Date.now();
+    let batchCount = 0;
 
-    for (const groupId in groups) {
-      const group = groups[groupId];
-      if (!group.members) continue;
+    console.log('🧹 Starting cleanup-temp-members job...');
 
-      const members = group.members;
-      let hasCleanup = false;
+    while (hasMore) {
+      // Use startAt because startAfter is not supported in all SDK versions for Realtime Database
+      // We limit to BATCH_SIZE + 1 when paginating to account for the inclusive start key
+      let query = groupsRef.orderByKey();
 
-      const newMembers = members.filter(member => {
-        // Only consider temporary members for cleanup
-        if (!member.isTemporary) return true;
+      if (lastGroupId) {
+        query = query.startAt(lastGroupId).limitToFirst(BATCH_SIZE + 1);
+      } else {
+        query = query.limitToFirst(BATCH_SIZE);
+      }
 
-        // Check if member has any settlements
-        // We need to check all users' settlements to be absolutely sure
-        // But for efficiency, we can assume if the group creator sees no debt, it's safe (or we can skip this check if the condition is purely TIME_LIMIT)
-        // However, the rule is: no debt.
+      const snapshot = await query.get();
 
-        // This is a complex check because settlements are stored under users.
-        // For a simple version, we can check if the member is expired.
-        const isExpired = member.deletionCondition === 'TIME_LIMIT' && member.expiresAt && member.expiresAt < now;
-        const isSettledCheckRequired = member.deletionCondition === 'SETTLED' || member.deletionCondition === 'TIME_LIMIT';
+      if (!snapshot.exists()) {
+        hasMore = false;
+        break;
+      }
 
-        if (isExpired || member.deletionCondition === 'SETTLED') {
-          // We'll mark it for cleanup, but in a real-world scenario, we'd verify settlements first
-          // For this implementation, we'll assume the client-side settlement state was the trigger
-          // or we'd perform a deeper scan if this were a production cron.
-          hasCleanup = true;
-          removedCount++;
-          return false;
+      const groups = snapshot.val();
+      const groupIds = [];
+
+      snapshot.forEach((child) => {
+        // Skip the first item if it matches the last processed ID (overlap due to startAt)
+        if (lastGroupId && child.key === lastGroupId) {
+          return;
         }
-
-        return true;
+        groupIds.push(child.key);
       });
 
-      if (hasCleanup) {
-        updates[`groups/${groupId}/members`] = newMembers;
+      if (groupIds.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      batchCount++;
+      const updates = {};
+
+      // Update lastGroupId to the last key in this batch
+      lastGroupId = groupIds[groupIds.length - 1];
+
+      for (const groupId of groupIds) {
+        const group = groups[groupId];
+        if (!group.members) continue;
+
+        const members = group.members;
+        let hasCleanup = false;
+
+        const newMembers = members.filter(member => {
+          // Only consider temporary members for cleanup
+          if (!member.isTemporary) return true;
+
+          // Check if member has any settlements
+          // We need to check all users' settlements to be absolutely sure
+          // But for efficiency, we can assume if the group creator sees no debt, it's safe (or we can skip this check if the condition is purely TIME_LIMIT)
+          // However, the rule is: no debt.
+
+          // This is a complex check because settlements are stored under users.
+          // For a simple version, we can check if the member is expired.
+          const isExpired = member.deletionCondition === 'TIME_LIMIT' && member.expiresAt && member.expiresAt < now;
+          const isSettledCheckRequired = member.deletionCondition === 'SETTLED' || member.deletionCondition === 'TIME_LIMIT';
+
+          if (isExpired || member.deletionCondition === 'SETTLED') {
+            // We'll mark it for cleanup, but in a real-world scenario, we'd verify settlements first
+            // For this implementation, we'll assume the client-side settlement state was the trigger
+            // or we'd perform a deeper scan if this were a production cron.
+            hasCleanup = true;
+            removedCount++;
+            return false;
+          }
+
+          return true;
+        });
+
+        if (hasCleanup) {
+          updates[`groups/${groupId}/members`] = newMembers;
+        }
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await db.ref().update(updates);
+      }
+
+      // Check if we reached end of data
+      if (groupIds.length < BATCH_SIZE) {
+        hasMore = false;
       }
     }
 
-    if (Object.keys(updates).length > 0) {
-      await db.ref().update(updates);
-    }
+    console.log(`✅ Cleanup complete. Processed ${batchCount} batches. Removed ${removedCount} members.`);
 
     res.json({
       success: true,
