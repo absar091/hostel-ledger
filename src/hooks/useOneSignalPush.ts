@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { logger } from "@/lib/logger";
 import { toast } from "sonner";
 import OneSignal from "react-onesignal";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 
 export interface PushNotificationState {
   isSupported: boolean;
@@ -13,6 +14,7 @@ export interface PushNotificationState {
 let oneSignalInitialized = false;
 
 export const useOneSignalPush = () => {
+  const { user } = useFirebaseAuth();
   const [state, setState] = useState<PushNotificationState>({
     isSupported: false,
     isSubscribed: false,
@@ -41,15 +43,26 @@ export const useOneSignalPush = () => {
           // Wait for PWA service worker to register first
           await new Promise(resolve => setTimeout(resolve, 1000));
 
-          await OneSignal.init({
-            appId: appId,
-            safari_web_id: 'web.onesignal.auto.521cdcf4-43b8-4659-a2e2-fd037f95e0d5',
-            allowLocalhostAsSecureOrigin: true,
-            serviceWorkerPath: `${window.location.origin}/OneSignalSDKWorker.js`,
-            autoResubscribe: true,
-          });
-          oneSignalInitialized = true;
-          console.log('✅ OneSignal initialized');
+
+          try {
+            await OneSignal.init({
+              appId: appId,
+              safari_web_id: 'web.onesignal.auto.521cdcf4-43b8-4659-a2e2-fd037f95e0d5',
+              allowLocalhostAsSecureOrigin: true,
+              serviceWorkerPath: `${window.location.origin}/OneSignalSDKWorker.js`,
+              autoResubscribe: true,
+            });
+            oneSignalInitialized = true;
+            console.log('✅ OneSignal initialized');
+          } catch (initError: any) {
+            // Check if error is "SDK already initialized"
+            if (initError?.message?.includes('SDK already initialized') || initError?.includes?.('SDK already initialized')) {
+              console.log('✅ OneSignal already initialized (recovered from error)');
+              oneSignalInitialized = true;
+            } else {
+              throw initError;
+            }
+          }
         }
 
         // Check subscription status
@@ -245,6 +258,36 @@ export const useOneSignalPush = () => {
       logger.error("Failed to show notification", { error: error.message });
     }
   }, [state.isSupported, state.permission, requestPermission]);
+
+  // Sync OneSignal login state with Firebase Auth
+  useEffect(() => {
+    if (!state.isSupported || state.isLoading) return;
+
+    const syncAuth = async () => {
+      try {
+        if (user) {
+          // User is logged in, ensure OneSignal is logged in
+          const currentExternalId = OneSignal.User.externalId;
+          if (currentExternalId !== user.uid) {
+            console.log('🔗 Syncing OneSignal User:', user.uid);
+            await OneSignal.login(user.uid);
+          }
+        } else {
+          // User is logged out, ensure OneSignal is logged out
+          // But check if we are currently logged in to OneSignal
+          const currentExternalId = OneSignal.User.externalId;
+          if (currentExternalId) {
+            console.log('🔓 Logging out from OneSignal');
+            await OneSignal.logout();
+          }
+        }
+      } catch (error) {
+        console.error('OneSignal auth sync failed:', error);
+      }
+    };
+
+    syncAuth();
+  }, [state.isSupported, state.isLoading, user]);
 
   return {
     ...state,
