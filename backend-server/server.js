@@ -116,10 +116,11 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-const transporter = nodemailer.createTransport({
+// Primary SMTP Transporter (Zoho Mail)
+const primaryTransporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT),
-  secure: true, // true for 465 (SSL), false for 587 (TLS)
+  secure: process.env.SMTP_SECURE === 'true', // true for 465 (SSL), false for 587 (TLS)
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -129,15 +130,78 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Verify email configuration on startup
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('❌ Email configuration error:', error);
-  } else {
-    console.log('✅ Email server is ready to send messages');
-    console.log('📧 SMTP User:', process.env.SMTP_USER);
+// Fallback SMTP Transporter (Gmail)
+const fallbackTransporter = nodemailer.createTransport({
+  host: process.env.FALLBACK_SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.FALLBACK_SMTP_PORT || '587'),
+  secure: false, // Gmail uses STARTTLS on 587
+  auth: {
+    user: process.env.FALLBACK_SMTP_USER,
+    pass: process.env.FALLBACK_SMTP_PASS,
+  },
+  tls: {
+    rejectUnauthorized: true
   }
 });
+
+// Keep backward compatibility alias
+const transporter = primaryTransporter;
+
+// Smart email sender with automatic fallback
+async function sendMailWithFallback(mailOptions) {
+  try {
+    const result = await primaryTransporter.sendMail(mailOptions);
+    console.log('📧 Email sent via primary (Zoho):', result.messageId);
+    return result;
+  } catch (primaryError) {
+    const code = primaryError.responseCode || primaryError.code;
+    const isQuotaError = [421, 450, 452, 550].includes(code)
+      || /quota|limit|rate|too many|exceeded|temporarily/i.test(primaryError.message);
+
+    if (isQuotaError && process.env.FALLBACK_SMTP_USER) {
+      console.warn(`⚠️ Primary SMTP failed (${code}): ${primaryError.message}. Trying Gmail fallback...`);
+      try {
+        // Override "from" to use the fallback sender if the original fails auth
+        const fallbackOptions = {
+          ...mailOptions,
+          from: process.env.FALLBACK_EMAIL_FROM || `"Hostel Ledger" <${process.env.FALLBACK_SMTP_USER}>`
+        };
+        const result = await fallbackTransporter.sendMail(fallbackOptions);
+        console.log('📧 Email sent via fallback (Gmail):', result.messageId);
+        return result;
+      } catch (fallbackError) {
+        console.error('❌ Fallback Gmail SMTP also failed:', fallbackError.message);
+        throw fallbackError; // Throw the fallback error
+      }
+    } else {
+      console.error('❌ Primary SMTP failed (non-quota error):', primaryError.message);
+      throw primaryError;
+    }
+  }
+}
+
+// Verify email configuration on startup
+primaryTransporter.verify((error, success) => {
+  if (error) {
+    console.error('❌ Primary email configuration error:', error.message);
+  } else {
+    console.log('✅ Primary email server (Zoho) is ready');
+    console.log('📧 Primary SMTP User:', process.env.SMTP_USER);
+  }
+});
+
+if (process.env.FALLBACK_SMTP_USER) {
+  fallbackTransporter.verify((error, success) => {
+    if (error) {
+      console.error('❌ Fallback email configuration error:', error.message);
+    } else {
+      console.log('✅ Fallback email server (Gmail) is ready');
+      console.log('📧 Fallback SMTP User:', process.env.FALLBACK_SMTP_USER);
+    }
+  });
+} else {
+  console.log('ℹ️ No fallback SMTP configured (FALLBACK_SMTP_USER not set)');
+}
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -375,7 +439,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
                     </div>
                   `
                 };
-                await transporter.sendMail(mailOptions);
+                await sendMailWithFallback(mailOptions);
                 console.log(`✅ Invitation email sent to existing user: ${inviteeEmail}`);
               }
             }
@@ -422,7 +486,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
             `
           };
 
-          await transporter.sendMail(mailOptions);
+          await sendMailWithFallback(mailOptions);
           console.log(`✅ Email sent to ${member.email}`);
         } catch (emailErr) {
           console.error(`❌ Failed to send email to ${member.email}:`, emailErr);
@@ -798,7 +862,7 @@ app.post('/api/send-email', emailLimiter, async (req, res) => {
     };
 
     console.log('📧 Sending email to:', to);
-    const result = await transporter.sendMail(mailOptions);
+    const result = await sendMailWithFallback(mailOptions);
     console.log('✅ Email sent successfully:', result.messageId);
 
     res.json({
@@ -898,7 +962,7 @@ app.post('/api/send-verification', emailLimiter, async (req, res) => {
     };
 
     console.log('📧 Sending verification email to:', email);
-    const result = await transporter.sendMail(mailOptions);
+    const result = await sendMailWithFallback(mailOptions);
     console.log('✅ Verification email sent:', result.messageId);
 
     res.json({
@@ -988,7 +1052,7 @@ app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
     };
 
     console.log('📧 Sending password reset email to:', email);
-    const result = await transporter.sendMail(mailOptions);
+    const result = await sendMailWithFallback(mailOptions);
     console.log('✅ Password reset email sent:', result.messageId);
 
     res.json({
@@ -1047,7 +1111,7 @@ app.post('/api/send-welcome', emailLimiter, async (req, res) => {
     };
 
     console.log('📧 Sending welcome email to:', email);
-    const result = await transporter.sendMail(mailOptions);
+    const result = await sendMailWithFallback(mailOptions);
     console.log('✅ Welcome email sent:', result.messageId);
 
     res.json({
@@ -1111,7 +1175,7 @@ app.post('/api/send-transaction-alert', emailLimiter, async (req, res) => {
     };
 
     console.log('📧 Sending transaction alert email to:', email);
-    const result = await transporter.sendMail(mailOptions);
+    const result = await sendMailWithFallback(mailOptions);
     console.log('✅ Transaction alert email sent:', result.messageId);
 
     res.json({
@@ -1171,7 +1235,7 @@ app.post('/api/send-verification-new', emailLimiter, async (req, res) => {
     };
 
     console.log('📧 Sending verification email to:', email);
-    const result = await transporter.sendMail(mailOptions);
+    const result = await sendMailWithFallback(mailOptions);
     console.log('✅ Verification email sent:', result.messageId);
 
     res.json({
@@ -2356,7 +2420,7 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
           });
 
           if (html) {
-            await transporter.sendMail({
+            await sendMailWithFallback({
               from: `"Hostel Ledger" <${process.env.SMTP_USER}>`,
               to: inviteeEmail,
               subject: `${senderName} invited you to join "${group.name}" 🏠`,
@@ -2430,7 +2494,7 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
     });
 
     if (html) {
-      await transporter.sendMail({
+      await sendMailWithFallback({
         from: `"Hostel Ledger" <${process.env.SMTP_USER}>`,
         to: email,
         subject: `${senderName} invited you to join "${group.name}" 🚀`,
@@ -2784,17 +2848,6 @@ app.post('/api/send-external-invitation', authenticate, async (req, res) => {
     const senderSnapshot = await senderRef.get();
     const senderName = senderSnapshot.exists() ? senderSnapshot.val().name : "A friend";
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: process.env.SMTP_PORT || 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-      tls: { rejectUnauthorized: false }
-    });
-
     const inviteLink = `https://hostel-ledger.aarx.online/join/${groupId}`;
 
     const mailOptions = {
@@ -2812,7 +2865,7 @@ app.post('/api/send-external-invitation', authenticate, async (req, res) => {
       `
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMailWithFallback(mailOptions);
     res.json({ success: true, message: 'Email invitation sent' });
 
   } catch (error) {
