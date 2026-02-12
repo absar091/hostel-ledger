@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import { ref, push, set, update, remove, onValue, off, get } from "firebase/database";
 import { database } from "@/lib/firebase";
 import { useFirebaseAuth, PaymentDetails } from "./FirebaseAuthContext";
@@ -210,6 +210,10 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Refs for caching to avoid N+1 queries
+  const loadedGroupsRef = useRef<Map<string, Group>>(new Map());
+  const loadedTransactionsRef = useRef<Map<string, Transaction>>(new Map());
+
   // Real-time listeners with error handling
   useEffect(() => {
     if (!user) {
@@ -221,40 +225,48 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
     setIsLoading(true);
 
-    // Try to load cached data immediately if offline
-    const loadCachedDataIfOffline = async () => {
-      if (!navigator.onLine) {
-        console.log('📱 Offline detected - loading cached data immediately...');
-        try {
-          const { getCachedGroups, getCachedTransactions } = await import('@/lib/offlineDB');
-          const [cachedGroups, cachedTransactions] = await Promise.all([
-            getCachedGroups(),
-            getCachedTransactions()
-          ]);
+    // Load cached data to warm up refs and show UI immediately
+    const loadCache = async () => {
+      try {
+        const { getCachedGroups, getCachedTransactions } = await import('@/lib/offlineDB');
+        const [cachedGroups, cachedTransactions] = await Promise.all([
+          getCachedGroups(),
+          getCachedTransactions()
+        ]);
 
-          if (cachedGroups.length > 0 || cachedTransactions.length > 0) {
-            console.log('✅ Loaded cached data:', cachedGroups.length, 'groups,', cachedTransactions.length, 'transactions');
-            setGroups(cachedGroups);
-            setTransactions(cachedTransactions);
-            setIsLoading(false);
-            return true; // Cached data loaded, skip Firebase
-          }
-        } catch (error) {
-          console.error('Failed to load cached data:', error);
+        if (cachedGroups.length > 0) {
+          setGroups(cachedGroups);
+          loadedGroupsRef.current = new Map(cachedGroups.map((g: Group) => [g.id, g]));
         }
+
+        if (cachedTransactions.length > 0) {
+          setTransactions(cachedTransactions);
+          loadedTransactionsRef.current = new Map(cachedTransactions.map((t: Transaction) => [t.id, t]));
+        }
+
+        if (cachedGroups.length > 0 || cachedTransactions.length > 0) {
+          setIsLoading(false); // Instant load!
+        }
+
+        return { cachedGroups, cachedTransactions };
+      } catch (e) {
+        console.error("Failed to load cache", e);
       }
-      return false; // No cached data or online
+      return { cachedGroups: [], cachedTransactions: [] };
     };
 
     // Add a small delay to ensure Firebase auth is fully established
     const setupListeners = async () => {
       try {
-        // Try to load cached data first if offline
-        const cachedDataLoaded = await loadCachedDataIfOffline();
+        // Load cache first (always, for warm start)
+        const { cachedGroups, cachedTransactions } = await loadCache();
 
-        // If offline and cached data loaded, don't set up Firebase listeners
-        if (cachedDataLoaded) {
-          console.log('✅ Offline mode - using cached data only, skipping Firebase listeners');
+        // If offline, stop here
+        if (!navigator.onLine) {
+          console.log('✅ Offline mode - using cached data only');
+          if (cachedGroups.length === 0 && cachedTransactions.length === 0) {
+             setIsLoading(false); // Stop loading even if empty
+          }
           return () => { }; // Return empty cleanup function
         }
 
@@ -268,6 +280,28 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             if (snapshot.exists()) {
               const userGroups = snapshot.val();
               const groupPromises = Object.entries(userGroups).map(async ([id, metadata]: [string, any]) => {
+                // Check cache first to avoid N+1 queries
+                const cachedGroup = loadedGroupsRef.current.get(id);
+
+                // Determine if we need to fetch
+                const metaName = metadata?.name;
+                const metaEmoji = metadata?.emoji;
+                // Treat undefined and null as same for comparison
+                const metaCover = metadata?.coverPhoto || null;
+                const cachedCover = cachedGroup?.coverPhoto || null;
+                const metaCount = metadata?.memberCount;
+
+                const needsUpdate = !cachedGroup ||
+                  (metaName && cachedGroup.name !== metaName) ||
+                  (metaEmoji && cachedGroup.emoji !== metaEmoji) ||
+                  cachedCover !== metaCover ||
+                  (metaCount !== undefined && (cachedGroup.members?.length || 0) !== metaCount) ||
+                  (!cachedGroup.members || cachedGroup.members.length === 0); // Always fetch if members missing
+
+                if (!needsUpdate) {
+                  return cachedGroup;
+                }
+
                 // ALWAYS fetch full group data to ensure members are loaded
                 // The metadata path had a stale closure bug causing "0 members"
                 try {
@@ -281,6 +315,9 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                       ...fullData,
                       members: normalizeMembers(fullData.members)
                     };
+
+                    // Update local cache ref
+                    loadedGroupsRef.current.set(id, group);
 
                     // Update the index if needed (for quick name display during next load)
                     if (typeof metadata !== 'object' || !metadata.name) {
@@ -302,7 +339,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
                   // Fallback to metadata if fetch fails (offline scenario)
                   if (typeof metadata === 'object' && metadata !== null && metadata.name) {
-                    return {
+                    const fallbackGroup = {
                       id,
                       name: metadata.name,
                       emoji: metadata.emoji || "📁",
@@ -312,12 +349,16 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                       createdBy: metadata.createdBy || "",
                       createdAt: metadata.createdAt || ""
                     };
+                    return fallbackGroup;
                   }
                 }
                 return null;
               });
 
               const groupsList = (await Promise.all(groupPromises)).filter(Boolean) as Group[];
+
+              // Update cache ref with full list to ensure deleted groups are removed
+              loadedGroupsRef.current = new Map(groupsList.map(g => [g.id, g]));
               setGroups(groupsList);
 
               // Cache groups to IndexedDB for offline access
@@ -363,6 +404,26 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             if (snapshot.exists()) {
               const userTransactions = snapshot.val();
               const transactionPromises = Object.entries(userTransactions).map(async ([id, data]: [string, any]) => {
+                // Check cache first
+                const cachedTx = loadedTransactionsRef.current.get(id);
+
+                // Determine if we need to fetch
+                const metaAmount = data?.amount;
+                const metaTitle = data?.title;
+                const metaType = data?.type;
+                const metaTimestamp = data?.timestamp;
+
+                const needsUpdate = !cachedTx ||
+                  (metaAmount !== undefined && cachedTx.amount !== metaAmount) ||
+                  (metaTitle && cachedTx.title !== metaTitle) ||
+                  (metaType && cachedTx.type !== metaType) ||
+                  (metaTimestamp && cachedTx.timestamp !== metaTimestamp) ||
+                  (cachedTx.type === 'expense' && (!cachedTx.participants || cachedTx.participants.length === 0));
+
+                if (!needsUpdate) {
+                  return cachedTx;
+                }
+
                 // ALWAYS fetch full transaction data to ensure participants are loaded
                 // The metadata shortcut was missing the participants array causing missing chips
                 try {
@@ -370,13 +431,18 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                   const txSnapshot = await get(txRef);
                   if (txSnapshot.exists()) {
                     const fullTx = txSnapshot.val();
-                    return { id, ...fullTx };
+                    const transaction = { id, ...fullTx };
+
+                    // Update cache ref
+                    loadedTransactionsRef.current.set(id, transaction);
+
+                    return transaction;
                   }
                 } catch (err) {
                   console.error(`Failed to fetch transaction ${id}:`, err);
                   // Fallback to metadata if fetch fails (offline scenario)
                   if (typeof data === 'object' && data !== null && data.type) {
-                    return {
+                    const fallbackTx = {
                       id,
                       groupId: data.groupId || "unknown",
                       type: data.type || "expense",
@@ -391,12 +457,16 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                       fromName: data.fromName || "",
                       toName: data.toName || ""
                     } as Transaction;
+                    return fallbackTx;
                   }
                 }
                 return null;
               });
 
               const transactionsList = (await Promise.all(transactionPromises)).filter(Boolean) as Transaction[];
+
+              // Update cache ref with full list to ensure deleted transactions are removed
+              loadedTransactionsRef.current = new Map(transactionsList.map(t => [t.id, t]));
               const sortedTransactions = transactionsList.sort((a, b) =>
                 new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
               );
