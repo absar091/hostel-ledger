@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/react";
+
 // Comprehensive logging utility
 export enum LogLevel {
   DEBUG = 0,
@@ -58,8 +60,25 @@ class Logger {
   private sendToExternalService(entry: LogEntry) {
     // In production, send to external logging service
     if (import.meta.env.MODE === 'production') {
-      // TODO: Integrate with logging service (e.g., LogRocket, Sentry, etc.)
-      // Example: logService.send(entry);
+      const extra = {
+        context: entry.context,
+        userId: entry.userId,
+        sessionId: entry.sessionId,
+      };
+
+      if (entry.level === LogLevel.ERROR) {
+        // Create an error object from the message to capture stack trace if available in context
+        const error = new Error(entry.message);
+        if (entry.context && entry.context.stack) {
+          error.stack = entry.context.stack;
+        }
+        Sentry.captureException(error, { extra });
+      } else if (entry.level === LogLevel.WARN) {
+        Sentry.captureMessage(entry.message, {
+          level: 'warning',
+          extra,
+        });
+      }
     }
   }
 

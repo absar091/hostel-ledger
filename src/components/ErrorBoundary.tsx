@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, WifiOff } from 'lucide-react';
+import * as Sentry from "@sentry/react";
 
 interface Props {
   children: ReactNode;
@@ -42,7 +43,14 @@ class ErrorBoundary extends Component<Props, State> {
     
     // Log to external service in production
     if (import.meta.env.MODE === 'production') {
-      // TODO: Send to error tracking service (Sentry, LogRocket, etc.)
+      // Send to Sentry
+      Sentry.captureException(error, {
+        extra: {
+          componentStack: errorInfo.componentStack,
+          isOffline: !navigator.onLine,
+        },
+      });
+
       console.log('Production error logged:', {
         error: error.message,
         stack: error.stack,

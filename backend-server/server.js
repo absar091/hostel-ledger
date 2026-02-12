@@ -310,7 +310,11 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
     // 4. Handle Invited Usernames (send invitations to existing users)
     if (invitedUsernames && invitedUsernames.length > 0) {
-      for (const username of invitedUsernames) {
+      // Optimization: Fetch sender name once
+      const senderSnap = await admin.database().ref(`users/${userId}/name`).get();
+      const senderName = senderSnap.exists() ? senderSnap.val() : "Someone";
+
+      await Promise.all(invitedUsernames.map(async (username) => {
         const usernameRef = admin.database().ref(`usernames/${username.toLowerCase()}`);
         const s = await usernameRef.get();
         if (s.exists()) {
@@ -320,14 +324,11 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
           if (!inviteeUid) {
             console.error(`Invalid UID format for username ${username}:`, uidData);
-            continue;
+            return;
           }
 
           // Create invitation
           const invRef = admin.database().ref('invitations').push();
-          // Fetch sender name
-          const senderSnap = await admin.database().ref(`users/${userId}/name`).get();
-          const senderName = senderSnap.exists() ? senderSnap.val() : "Someone";
 
           const invitationData = {
             id: invRef.key,
@@ -383,7 +384,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
             // Don't fail the group creation, just log the error
           }
         }
-      }
+      }));
     }
 
     // 5. Handle Email Invites (Manual members with emails)
@@ -468,39 +469,26 @@ const calculateExpenseSplit = (totalAmount, participants, payerId) => {
   });
 };
 
-const calculateExpenseSettlements = (splits, payerId, currentUserId, groupId) => {
-  // ... (implementation hidden for brevity, no changes needed here but including context)
-  const updates = [];
+const calculateExpenseSettlements = (splits, payerId) => {
+  const debts = [];
   const payerSplit = splits.find(s => s.participantId === payerId);
 
   if (!payerSplit) {
     throw new Error("Payer must be a participant");
   }
 
-  if (payerId === currentUserId) {
-    splits.forEach(split => {
-      if (split.participantId !== currentUserId) {
-        updates.push({
-          personId: split.participantId,
-          groupId,
-          toReceiveChange: split.amount,
-          toPayChange: 0
-        });
-      }
-    });
-  } else {
-    const currentUserSplit = splits.find(s => s.participantId === currentUserId);
-    if (currentUserSplit) {
-      updates.push({
-        personId: payerId,
-        groupId,
-        toReceiveChange: 0,
-        toPayChange: currentUserSplit.amount
+  splits.forEach(split => {
+    if (split.participantId !== payerId) {
+      // Participant owes Payer
+      debts.push({
+        debtorId: split.participantId,
+        creditorId: payerId,
+        amount: split.amount
       });
     }
-  }
+  });
 
-  return updates;
+  return debts;
 };
 
 // --- New Endpoint: Get Valid User Details ---
@@ -1587,10 +1575,30 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     }
 
     // 4. Calculate Split and Settlements
-    // These functions (calculateExpenseSplit, calculateExpenseSettlements) are assumed to be defined elsewhere or imported.
-    // For the purpose of this edit, we'll assume they exist.
     const splits = calculateExpenseSplit(amount, participantMembers.map(m => ({ id: m.id, name: m.name })), paidBy);
-    const settlementUpdates = calculateExpenseSettlements(splits, paidBy, currentUserId, groupId);
+    const debts = calculateExpenseSettlements(splits, paidBy);
+
+    // Fetch existing settlements for all involved users to ensure accurate updates
+    // Map Member ID -> Storage Key (UID for real users, MemberID for temp)
+    const getStorageKey = (memberId) => {
+      const m = group.members.find(mem => mem.id === memberId);
+      return (m && m.userId) ? m.userId : memberId;
+    };
+
+    const involvedMemberIds = new Set([paidBy, ...participants]);
+    const settlementsMap = {}; // StorageKey -> { [PeerMemberId]: { toReceive, toPay } }
+
+    const fetchPromises = Array.from(involvedMemberIds).map(async (memberId) => {
+      const storageKey = getStorageKey(memberId);
+      const snap = await db.ref(`users/${storageKey}/settlements/${groupId}`).get();
+      if (snap.exists()) {
+        settlementsMap[storageKey] = snap.val();
+      } else {
+        settlementsMap[storageKey] = {};
+      }
+    });
+
+    await Promise.all(fetchPromises);
 
     // 5. Build multi-path update object
     const updates = {};
@@ -1666,36 +1674,63 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     });
 
     // D. Apply Bidirectional Settlement Updates
-    for (const update of settlementUpdates) {
-      // 1. Update Current User's Settlements (Local view)
-      const currentToReceive = (user.settlements?.[groupId]?.[update.personId]?.toReceive || 0);
-      const currentToPay = (user.settlements?.[groupId]?.[update.personId]?.toPay || 0);
+    for (const debt of debts) {
+      const { debtorId, creditorId, amount } = debt;
 
-      let newToReceive = currentToReceive + update.toReceiveChange;
-      let newToPay = currentToPay + update.toPayChange;
+      const debtorStorageKey = getStorageKey(debtorId);
+      const creditorStorageKey = getStorageKey(creditorId);
 
-      // Netting logic if both are positive
-      if (newToReceive > 0 && newToPay > 0) {
-        if (newToReceive > newToPay) {
-          newToReceive -= newToPay;
-          newToPay = 0;
+      // 1. Update Debtor's Settlements (Debtor owes Creditor)
+      // Path: users/{DebtorStorageKey}/settlements/{GroupId}/{CreditorMemberId}
+      const debtorSettlements = settlementsMap[debtorStorageKey] || {};
+      const debtorToCreditor = debtorSettlements[creditorId] || { toReceive: 0, toPay: 0 };
+
+      let debtorNewToPay = (debtorToCreditor.toPay || 0) + amount;
+      let debtorNewToReceive = (debtorToCreditor.toReceive || 0);
+
+      // Netting
+      if (debtorNewToPay > 0 && debtorNewToReceive > 0) {
+        if (debtorNewToPay > debtorNewToReceive) {
+          debtorNewToPay -= debtorNewToReceive;
+          debtorNewToReceive = 0;
         } else {
-          newToPay -= newToReceive;
-          newToReceive = 0;
+          debtorNewToReceive -= debtorNewToPay;
+          debtorNewToPay = 0;
         }
       }
 
-      updates[`users/${currentUserId}/settlements/${groupId}/${update.personId}`] = {
-        toReceive: Math.max(0, newToReceive),
-        toPay: Math.max(0, newToPay)
+      updates[`users/${debtorStorageKey}/settlements/${groupId}/${creditorId}`] = {
+        toReceive: Math.max(0, debtorNewToReceive),
+        toPay: Math.max(0, debtorNewToPay)
       };
 
-      // 2. Update Other Member's Settlements (Mirrored view)
-      // Mirror: If I see person A owes me, person A must see they owe me.
-      updates[`users/${update.personId}/settlements/${groupId}/${currentUserId}`] = {
-        toReceive: Math.max(0, newToPay),
-        toPay: Math.max(0, newToReceive)
+      // 2. Update Creditor's Settlements (Creditor receives from Debtor)
+      // Path: users/{CreditorStorageKey}/settlements/{GroupId}/{DebtorMemberId}
+      const creditorSettlements = settlementsMap[creditorStorageKey] || {};
+      const creditorFromDebtor = creditorSettlements[debtorId] || { toReceive: 0, toPay: 0 };
+
+      let creditorNewToReceive = (creditorFromDebtor.toReceive || 0) + amount;
+      let creditorNewToPay = (creditorFromDebtor.toPay || 0);
+
+      // Netting
+      if (creditorNewToReceive > 0 && creditorNewToPay > 0) {
+        if (creditorNewToReceive > creditorNewToPay) {
+          creditorNewToReceive -= creditorNewToPay;
+          creditorNewToPay = 0;
+        } else {
+          creditorNewToPay -= creditorNewToReceive;
+          creditorNewToReceive = 0;
+        }
+      }
+
+      updates[`users/${creditorStorageKey}/settlements/${groupId}/${debtorId}`] = {
+        toReceive: Math.max(0, creditorNewToReceive),
+        toPay: Math.max(0, creditorNewToPay)
       };
+
+      // Update local map to handle multiple debts between same pair?
+      // Since Debtor->Creditor pair is unique in this loop (one split per participant),
+      // we don't need to update settlementsMap mid-loop.
     }
 
     // 6. Execute Atomic Update
