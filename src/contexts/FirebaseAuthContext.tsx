@@ -10,7 +10,6 @@ import {
   sendPasswordResetEmail,
   confirmPasswordReset,
   fetchSignInMethodsForEmail,
-  updatePassword,
   reauthenticateWithCredential,
   EmailAuthProvider
 } from "firebase/auth";
@@ -78,7 +77,6 @@ interface FirebaseAuthContextType {
   confirmPasswordReset: (code: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   checkEmailExists: (email: string) => Promise<boolean>;
   markEmailAsVerified: (uid: string) => Promise<{ success: boolean; error?: string }>;
-  updateUserPassword: (password: string) => Promise<{ success: boolean; error?: string }>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>;
   uploadProfilePicture: (file: File) => Promise<{ success: boolean; url?: string; error?: string }>;
   removeProfilePicture: () => Promise<{ success: boolean; error?: string }>;
@@ -1018,7 +1016,6 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       checkEmailExists,
       checkUsernameAvailable,
       markEmailAsVerified,
-      updateUserPassword,
       updateUserProfile,
       uploadProfilePicture,
       removeProfilePicture,
