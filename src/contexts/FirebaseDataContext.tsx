@@ -565,13 +565,13 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       if (result.success && data.invitedUsernames && data.invitedUsernames.length > 0) {
         // We process invitations asynchronously but don't block success if one fails
         (async () => {
-          for (const username of data.invitedUsernames!) {
+          await Promise.all(data.invitedUsernames!.map(async (username) => {
             try {
               await sendInvitation(groupId, username);
             } catch (invError) {
               console.error(`Failed to invite ${username}:`, invError);
             }
-          }
+          }));
         })();
       }
 
