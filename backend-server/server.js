@@ -1716,16 +1716,8 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       let debtorNewToPay = (debtorToCreditor.toPay || 0) + amount;
       let debtorNewToReceive = (debtorToCreditor.toReceive || 0);
 
-      // Netting
-      if (debtorNewToPay > 0 && debtorNewToReceive > 0) {
-        if (debtorNewToPay > debtorNewToReceive) {
-          debtorNewToPay -= debtorNewToReceive;
-          debtorNewToReceive = 0;
-        } else {
-          debtorNewToReceive -= debtorNewToPay;
-          debtorNewToPay = 0;
-        }
-      }
+      // Netting removed as per user request (Bidirectional debts allowed)
+      // if (debtorNewToPay > 0 && debtorNewToReceive > 0) { ... }
 
       updates[`users/${debtorStorageKey}/settlements/${groupId}/${creditorId}`] = {
         toReceive: Math.max(0, debtorNewToReceive),
@@ -1740,16 +1732,8 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       let creditorNewToReceive = (creditorFromDebtor.toReceive || 0) + amount;
       let creditorNewToPay = (creditorFromDebtor.toPay || 0);
 
-      // Netting
-      if (creditorNewToReceive > 0 && creditorNewToPay > 0) {
-        if (creditorNewToReceive > creditorNewToPay) {
-          creditorNewToReceive -= creditorNewToPay;
-          creditorNewToPay = 0;
-        } else {
-          creditorNewToPay -= creditorNewToReceive;
-          creditorNewToReceive = 0;
-        }
-      }
+      // Netting removed as per user request
+      // if (creditorNewToReceive > 0 && creditorNewToPay > 0) { ... }
 
       updates[`users/${creditorStorageKey}/settlements/${groupId}/${debtorId}`] = {
         toReceive: Math.max(0, creditorNewToReceive),
