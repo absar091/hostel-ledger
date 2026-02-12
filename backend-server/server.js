@@ -485,7 +485,7 @@ const calculateExpenseSplit = (totalAmount, participants, payerId) => {
 };
 
 const calculateExpenseSettlements = (splits, payerId) => {
-  const settlements = [];
+  const debts = [];
   const payerSplit = splits.find(s => s.participantId === payerId);
 
   if (!payerSplit) {
@@ -494,14 +494,16 @@ const calculateExpenseSettlements = (splits, payerId) => {
 
   splits.forEach(split => {
     if (split.participantId !== payerId) {
-      settlements.push({
+      // Participant owes Payer
+      debts.push({
         debtorId: split.participantId,
+        creditorId: payerId,
         amount: split.amount
       });
     }
   });
 
-  return settlements;
+  return debts;
 };
 
 // --- New Endpoint: Get Valid User Details ---
@@ -1565,7 +1567,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
     // 4. Calculate Split and Settlements
     const splits = calculateExpenseSplit(amount, participantMembers.map(m => ({ id: m.id, name: m.name })), paidBy);
-    const settlementPairs = calculateExpenseSettlements(splits, paidBy);
+    const debts = calculateExpenseSettlements(splits, paidBy);
 
     // Fetch Payer's settlements if needed (if payer is not current user)
     let payerSettlements = {};
@@ -1650,8 +1652,8 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     });
 
     // D. Apply Bidirectional Settlement Updates
-    for (const pair of settlementPairs) {
-      const { debtorId, amount } = pair;
+    for (const debt of debts) {
+      const { debtorId, amount } = debt;
 
       // Payer's View: Payer should Receive 'amount' from Debtor
       // We calculate everything relative to the Payer, then mirror for Debtor.
