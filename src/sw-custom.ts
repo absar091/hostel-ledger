@@ -1,9 +1,4 @@
 /// <reference lib="webworker" />
-
-// Import OneSignal SDK into this service worker so push notifications work
-// This MUST come before workbox imports to ensure OneSignal's push handler registers first
-importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
-
 import { clientsClaim } from 'workbox-core';
 import { precacheAndRoute, matchPrecache } from 'workbox-precaching';
 import { registerRoute, NavigationRoute, setCatchHandler } from 'workbox-routing';
