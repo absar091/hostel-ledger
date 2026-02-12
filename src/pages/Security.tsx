@@ -14,7 +14,7 @@ import { toast } from "sonner";
 
 const Security = () => {
   const navigate = useNavigate();
-  const { user, logout } = useFirebaseAuth();
+  const { user, logout, updateUserPassword } = useFirebaseAuth();
   const { groups, transactions, isLoading: isDataLoading } = useFirebaseData();
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("profile");
   
@@ -54,12 +54,22 @@ const Security = () => {
       return;
     }
 
-    // TODO: Implement password change with Firebase
-    toast.info("Password change coming soon!");
-    setShowChangePasswordSheet(false);
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    if (updateUserPassword) {
+      toast.loading("Updating password...", { id: "password-update" });
+      const result = await updateUserPassword(newPassword);
+
+      if (result.success) {
+        toast.success("Password updated successfully!", { id: "password-update" });
+        setShowChangePasswordSheet(false);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        toast.error(result.error || "Failed to update password", { id: "password-update" });
+      }
+    } else {
+      toast.error("Password update function not available");
+    }
   };
 
   const handleExportData = async () => {

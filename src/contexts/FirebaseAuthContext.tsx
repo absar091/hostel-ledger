@@ -6,6 +6,7 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile,
+  updatePassword,
   sendPasswordResetEmail,
   confirmPasswordReset,
   fetchSignInMethodsForEmail
@@ -73,6 +74,7 @@ interface FirebaseAuthContextType {
   confirmPasswordReset: (code: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   checkEmailExists: (email: string) => Promise<boolean>;
   markEmailAsVerified: (uid: string) => Promise<{ success: boolean; error?: string }>;
+  updateUserPassword: (password: string) => Promise<{ success: boolean; error?: string }>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>;
   uploadProfilePicture: (file: File) => Promise<{ success: boolean; url?: string; error?: string }>;
   removeProfilePicture: () => Promise<{ success: boolean; error?: string }>;
@@ -631,6 +633,30 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateUserPassword = async (password: string): Promise<{ success: boolean; error?: string }> => {
+    if (!firebaseUser) return { success: false, error: "No user logged in" };
+    try {
+      await updatePassword(firebaseUser, password);
+      return { success: true };
+    } catch (error: any) {
+      console.error("Update password error:", error);
+      let errorMessage = "Failed to update password";
+
+      switch (error.code) {
+        case 'auth/requires-recent-login':
+          errorMessage = "Please log out and log back in to update your password";
+          break;
+        case 'auth/weak-password':
+          errorMessage = "Password is too weak. Please choose a stronger password";
+          break;
+        default:
+          errorMessage = error.message || "Failed to update password";
+      }
+
+      return { success: false, error: errorMessage };
+    }
+  };
+
   const updateUserProfile = async (data: Partial<UserProfile>): Promise<{ success: boolean; error?: string }> => {
     if (!user || !firebaseUser) {
       return { success: false, error: "User not authenticated" };
@@ -984,6 +1010,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       checkEmailExists,
       checkUsernameAvailable,
       markEmailAsVerified,
+      updateUserPassword,
       updateUserProfile,
       uploadProfilePicture,
       removeProfilePicture,
