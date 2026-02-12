@@ -106,6 +106,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Effect to handle Firebase Auth state changes
   useEffect(() => {
     // If offline, try to load cached user IMMEDIATELY
     if (!navigator.onLine) {
@@ -125,143 +126,133 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    // Shorter timeout when offline (2s), longer when online (5s)
-    const timeoutDuration = navigator.onLine ? 5000 : 2000;
-
-    // Set a timeout to force loading to complete
-    // This prevents infinite loading when offline
-    const loadingTimeout = setTimeout(() => {
-      console.warn(`⚠️ Auth loading timeout (${timeoutDuration}ms) - checking localStorage cache`);
-
-      // Try to load cached user from localStorage
-      try {
-        const cachedUser = localStorage.getItem('cachedUser');
-        if (cachedUser) {
-          const parsedUser = JSON.parse(cachedUser);
-          console.log('✅ Loaded cached user from localStorage', parsedUser.uid);
-          setUser(parsedUser);
-          setFirebaseUser(null); // No Firebase user when offline
-        }
-      } catch (error) {
-        console.error('Failed to load cached user:', error);
-      }
-
-      setIsLoading(false);
-    }, timeoutDuration);
-
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      clearTimeout(loadingTimeout); // Clear timeout if auth completes normally
-
-      if (firebaseUser) {
-        setFirebaseUser(firebaseUser);
-        await fetchUserProfile(firebaseUser.uid);
-      } else {
-        setFirebaseUser(null);
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user);
+      if (!user) {
         setUser(null);
-        // Clear cached user when logging out
         localStorage.removeItem('cachedUser');
+        setIsLoading(false);
       }
-      setIsLoading(false);
+      // If user exists, the second useEffect will handle profile subscription
     }, (error) => {
-      clearTimeout(loadingTimeout);
       logger.error("Auth state change error", { error: error.message });
-
-      // Try to load cached user from localStorage on error
-      try {
-        const cachedUser = localStorage.getItem('cachedUser');
-        if (cachedUser) {
-          const parsedUser = JSON.parse(cachedUser);
-          console.log('✅ Loaded cached user from localStorage after auth error', parsedUser.uid);
-          setUser(parsedUser);
-        }
-      } catch (cacheError) {
-        console.error('Failed to load cached user:', cacheError);
-      }
-
       setIsLoading(false);
     });
 
-    return () => {
-      clearTimeout(loadingTimeout);
-      unsubscribe();
-    };
+    return () => unsubscribeAuth();
   }, []);
 
-  const fetchUserProfile = async (uid: string) => {
-    try {
-      logger.debug("Fetching user profile", { uid });
+  // Effect to handle Real-time User Profile Subscription
+  useEffect(() => {
+    let unsubscribeUser: () => void;
+    let unsubscribeVerification: () => void;
+
+    const setupSubscription = async () => {
+      if (!firebaseUser) return;
+
+      const uid = firebaseUser.uid;
       const userRef = ref(database, `users/${uid}`);
       const verificationRef = ref(database, `emailVerification/${uid}`);
 
-      const [userSnapshot, verificationSnapshot] = await Promise.all([
-        retryOperation(() => get(userRef)),
-        retryOperation(() => get(verificationRef))
-      ]);
+      logger.debug("Setting up real-time profile listener", { uid });
 
-      if (userSnapshot.exists()) {
-        const userData = userSnapshot.val();
-        const verificationData = verificationSnapshot.exists() ? verificationSnapshot.val() : {};
+      try {
+        // User Profile Listener
+        unsubscribeUser = onValue(userRef, async (snapshot) => {
+          if (snapshot.exists()) {
+            const userData = snapshot.val();
 
-        logger.debug("User profile loaded from database", { uid });
+            // Get verification status (one-time fetch or separate listener? Separate is better)
+            // But we need to combine them. We'll use a local variable or state for verification.
+            // Actually, let's just listen to verification as well.
 
-        const userProfile: UserProfile = {
-          uid,
-          email: userData.email,
-          username: userData.username || '', // Username for friend invitations
-          name: userData.name,
-          phone: userData.phone,
-          avatar: userData.avatar,
-          photoURL: userData.photoURL || null, // Load profile picture URL
-          paymentDetails: userData.paymentDetails || {},
-          walletBalance: isNaN(userData.walletBalance) ? 0 : (userData.walletBalance || 0),
-          settlements: userData.settlements || {},
-          createdAt: userData.createdAt,
-          emailVerified: verificationData.emailVerified || false
-        };
+            // We need to fetch/listen to verification status to merge it.
+            // For simplicity in this callback, we will read the LATEST verification status available in state?
+            // No, that might be stale.
+            // Let's use a nested listener approach or independent states? 
+            // Independent states are hard because `user` object combines them.
+            // We will fetch verification snapshot ONCE here for the specific update, 
+            // OR we can just rely on the separate verification listener to update the user object?
+            // "merging" updates is tricky with a single `user` state object.
 
-        setUser(userProfile);
-        logger.setUserId(uid);
+            // Simplified approach: Just fetch verification status once on profile update.
+            // Real-time verification status is less critical than profile.
 
-        // Cache user profile to localStorage for offline access
-        try {
-          localStorage.setItem('cachedUser', JSON.stringify(userProfile));
-          console.log('✅ Cached user profile to localStorage');
-        } catch (error) {
-          console.error('Failed to cache user profile:', error);
-        }
-      } else {
-        logger.info("Creating new user profile", { uid });
+            let isVerified = false;
+            try {
+              const vSnap = await get(verificationRef);
+              isVerified = vSnap.exists() && vSnap.val().emailVerified;
+            } catch (e) { console.warn("Failed to fetch verification", e); }
 
-        const firebaseUser = auth.currentUser;
-        if (firebaseUser) {
-          const newUserProfile: UserProfile = {
-            uid,
-            email: firebaseUser.email || "",
-            username: '', // Will prompt user to set username on first login
-            name: firebaseUser.displayName || "User",
-            phone: null,
-            avatar: null,
-            paymentDetails: {},
-            walletBalance: 0,
-            settlements: {},
-            createdAt: new Date().toISOString(),
-            emailVerified: false
-          };
+            const userProfile: UserProfile = {
+              uid,
+              email: userData.email,
+              username: userData.username || '',
+              name: userData.name,
+              phone: userData.phone,
+              avatar: userData.avatar,
+              photoURL: userData.photoURL || null,
+              paymentDetails: userData.paymentDetails || {},
+              walletBalance: isNaN(userData.walletBalance) ? 0 : (userData.walletBalance || 0),
+              settlements: userData.settlements || {},
+              createdAt: userData.createdAt,
+              emailVerified: isVerified,
+              favoriteGroups: userData.favoriteGroups || []
+            };
 
-          await retryOperation(() => set(userRef, newUserProfile));
-          setUser(newUserProfile);
-          logger.setUserId(uid);
-          logger.info("User profile created successfully", { uid });
-        } else {
-          logger.warn("No Firebase user found, cannot create profile");
-          setUser(null);
-        }
+            setUser(userProfile);
+            logger.setUserId(uid);
+            setIsLoading(false);
+
+            // Cache user profile
+            try {
+              localStorage.setItem('cachedUser', JSON.stringify(userProfile));
+            } catch (error) {
+              console.error('Failed to cache user profile:', error);
+            }
+          } else {
+            // Profile doesn't exist - Create it
+            logger.info("Creating new user profile", { uid });
+            const newUserProfile: UserProfile = {
+              uid,
+              email: firebaseUser.email || "",
+              username: '',
+              name: firebaseUser.displayName || "User",
+              phone: null,
+              avatar: null,
+              paymentDetails: {},
+              walletBalance: 0,
+              settlements: {},
+              createdAt: new Date().toISOString(),
+              emailVerified: false
+            };
+
+            try {
+              await set(userRef, newUserProfile);
+              // The listener will fire again with the new data
+            } catch (e: any) {
+              logger.error("Failed to create profile", e);
+              setIsLoading(false);
+            }
+          }
+        }, (error) => {
+          console.error("Profile listener error", error);
+          setIsLoading(false);
+        });
+
+      } catch (error: any) {
+        console.error("Error setting up listeners", error);
+        setIsLoading(false);
       }
-    } catch (error: any) {
-      logger.error("Error fetching/creating user profile", { uid, error: error.message });
-      setUser(null);
-    }
-  };
+    };
+
+    setupSubscription();
+
+    return () => {
+      if (unsubscribeUser) unsubscribeUser();
+      if (unsubscribeVerification) unsubscribeVerification();
+    };
+  }, [firebaseUser]);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {

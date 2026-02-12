@@ -1575,18 +1575,19 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     const user = userSnap.val();
 
     // 2. Verify current user is in the group
-    const member = group.members.find(m => m.userId === currentUserId || m.id === currentUserId);
+    const membersArray = Object.values(group.members || {});
+    const member = membersArray.find(m => m.userId === currentUserId || m.id === currentUserId);
     if (!member) {
       return res.status(403).json({ success: false, error: 'You are not a member of this group' });
     }
 
     // 3. Verify payer and participants exist in group
-    const payer = group.members.find(m => m.id === paidBy);
+    const payer = membersArray.find(m => m.id === paidBy);
     if (!payer) {
       return res.status(400).json({ success: false, error: 'Invalid payer' });
     }
 
-    const participantMembers = group.members.filter(m => participants.includes(m.id));
+    const participantMembers = membersArray.filter(m => participants.includes(m.id));
     if (participantMembers.length === 0) {
       return res.status(400).json({ success: false, error: 'No valid participants' });
     }
@@ -1598,7 +1599,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     // Fetch existing settlements for all involved users to ensure accurate updates
     // Map Member ID -> Storage Key (UID for real users, MemberID for temp)
     const getStorageKey = (memberId) => {
-      const m = group.members.find(mem => mem.id === memberId);
+      const m = membersArray.find(mem => mem.id === memberId);
       return (m && m.userId) ? m.userId : memberId;
     };
 
@@ -1651,7 +1652,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
         id: s.participantId,
         name: s.participantName,
         amount: s.amount,
-        isTemporary: !!group.members.find(m => m.id === s.participantId)?.isTemporary
+        isTemporary: !!membersArray.find(m => m.id === s.participantId)?.isTemporary
       })),
       place: place || null,
       note: note || null,
@@ -1683,11 +1684,11 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       paidBy,
       paidByName: payer.name,
       paidByIsTemporary: !!payer.isTemporary,
-      memberCount: group.members.length,
+      memberCount: membersArray.length,
       participantsCount: participants.length
     };
 
-    group.members.forEach(m => {
+    membersArray.forEach(m => {
       if (m.userId) {
         const userSummary = { ...transactionSummaryBase };
         const split = splits.find(s => s.participantId === m.id);
@@ -1774,7 +1775,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     setImmediate(async () => {
       try {
         // Send to ALL members including the user who added the expense
-        const membersWithUserId = group.members.filter(m => m.userId);
+        const membersWithUserId = membersArray.filter(m => m.userId);
         if (membersWithUserId.length > 0) {
           const userIds = membersWithUserId.map(m => m.userId);
           await sendOneSignalNotificationInternal({
@@ -1841,14 +1842,15 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     }
 
     // 2. Verify current user is in the group
-    const member = group.members.find(m => m.userId === currentUserId || m.id === currentUserId);
+    const membersArray = Object.values(group.members || {});
+    const member = membersArray.find(m => m.userId === currentUserId || m.id === currentUserId);
     if (!member) {
       return res.status(403).json({ success: false, error: 'You are not a member of this group' });
     }
 
     // 3. Verify members exist in group
-    const fromPerson = group.members.find(m => m.id === fromMember);
-    const toPerson = group.members.find(m => m.id === toMember);
+    const fromPerson = membersArray.find(m => m.id === fromMember);
+    const toPerson = membersArray.find(m => m.id === toMember);
     if (!fromPerson || !toPerson) {
       return res.status(400).json({ success: false, error: 'Invalid members' });
     }
@@ -1919,7 +1921,7 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
       fromName: fromPerson.name,
       toName: toPerson.name,
       method,
-      memberCount: group.members.length
+      memberCount: membersArray.length
     };
 
     if (fromPerson.userId) {
@@ -1972,7 +1974,7 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     setImmediate(async () => {
       try {
         // Send to ALL members including the user who recorded the payment
-        const membersWithUserId = group.members.filter(m => m.userId);
+        const membersWithUserId = membersArray.filter(m => m.userId);
         if (membersWithUserId.length > 0) {
           const userIds = membersWithUserId.map(m => m.userId);
           await sendOneSignalNotificationInternal({
