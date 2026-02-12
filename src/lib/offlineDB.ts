@@ -34,6 +34,7 @@ export interface OfflineExpense {
   createdOffline: boolean;
   syncAttempts?: number;
   lastSyncAttempt?: number;
+  clientTxnId?: string;
 }
 
 let dbInstance: IDBPDatabase<HostelLedgerDB> | null = null;
@@ -73,19 +74,25 @@ export const initDB = async (): Promise<IDBPDatabase<HostelLedgerDB>> => {
 };
 
 // Save expense offline
-export const saveOfflineExpense = async (expense: Omit<OfflineExpense, "id" | "timestamp" | "createdOffline">): Promise<string> => {
+export const saveOfflineExpense = async (expense: Omit<OfflineExpense, "id" | "timestamp" | "createdOffline"> & { clientTxnId?: string }): Promise<string> => {
   const db = await initDB();
-  
+
   const offlineExpense: OfflineExpense = {
     ...expense,
     id: `offline_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
     timestamp: Date.now(),
     createdOffline: true,
     syncAttempts: 0,
+    clientTxnId: expense.clientTxnId,
   };
 
   await db.put("offline-expenses", offlineExpense);
   return offlineExpense.id;
+};
+
+export const updateOfflineExpense = async (expense: OfflineExpense) => {
+  const db = await initDB();
+  await db.put("offline-expenses", expense);
 };
 
 // Get all offline expenses
@@ -110,7 +117,7 @@ export const deleteOfflineExpense = async (id: string): Promise<void> => {
 export const updateSyncAttempt = async (id: string): Promise<void> => {
   const db = await initDB();
   const expense = await db.get("offline-expenses", id);
-  
+
   if (expense) {
     expense.syncAttempts = (expense.syncAttempts || 0) + 1;
     expense.lastSyncAttempt = Date.now();
@@ -137,15 +144,15 @@ export const getOfflineExpenseCount = async (): Promise<number> => {
 export const cacheGroups = async (groups: any[]): Promise<void> => {
   const db = await initDB();
   const tx = db.transaction("cached-groups", "readwrite");
-  
+
   // Clear existing groups
   await tx.store.clear();
-  
+
   // Add all groups
   for (const group of groups) {
     await tx.store.put(group);
   }
-  
+
   await tx.done;
   console.log('✅ Cached', groups.length, 'groups to IndexedDB');
 };
@@ -164,15 +171,15 @@ export const getCachedGroups = async (): Promise<any[]> => {
 export const cacheTransactions = async (transactions: any[]): Promise<void> => {
   const db = await initDB();
   const tx = db.transaction("cached-transactions", "readwrite");
-  
+
   // Clear existing transactions
   await tx.store.clear();
-  
+
   // Add all transactions
   for (const transaction of transactions) {
     await tx.store.put(transaction);
   }
-  
+
   await tx.done;
   console.log('✅ Cached', transactions.length, 'transactions to IndexedDB');
 };
@@ -219,7 +226,7 @@ export const getCacheStatus = async (): Promise<{
   const groupCount = await db.count("cached-groups");
   const transactionCount = await db.count("cached-transactions");
   const cachedUser = localStorage.getItem('cachedUser');
-  
+
   return {
     hasGroups: groupCount > 0,
     hasTransactions: transactionCount > 0,

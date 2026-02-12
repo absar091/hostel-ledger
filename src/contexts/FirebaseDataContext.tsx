@@ -184,7 +184,7 @@ interface FirebaseDataContextType {
   addMemberToGroup: (groupId: string, member: { id?: string; name: string; paymentDetails?: PaymentDetails; phone?: string; isTemporary?: boolean; deletionCondition?: 'SETTLED' | 'TIME_LIMIT' | null }) => Promise<{ success: boolean; error?: string; memberId?: string }>;
   removeMemberFromGroup: (groupId: string, memberId: string) => Promise<{ success: boolean; error?: string }>;
   updateMemberPaymentDetails: (groupId: string, memberId: string, paymentDetails: PaymentDetails, phone?: string) => Promise<{ success: boolean; error?: string }>;
-  addExpense: (data: { groupId: string; amount: number; paidBy: string; participants: string[]; note: string; place: string }) => Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
+  addExpense: (data: { groupId: string; amount: number; paidBy: string; participants: string[]; note: string; place: string; clientTxnId?: string }) => Promise<{ success: boolean; error?: string; transaction?: Transaction; duplicate?: boolean }>;
   recordPayment: (data: { groupId: string; fromMember: string; toMember: string; amount: number; method: "cash" | "online"; note?: string }) => Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
   payMyDebt: (groupId: string, toMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   markPaymentAsPaid: (groupId: string, fromMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
@@ -749,9 +749,13 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     paidBy: string;
     participants: string[];
     note: string;
-    place: string
-  }): Promise<{ success: boolean; error?: string; transaction?: Transaction }> => {
+    place: string;
+    clientTxnId?: string;
+  }): Promise<{ success: boolean; error?: string; transaction?: Transaction; duplicate?: boolean }> => {
     if (!user) return { success: false, error: "User not authenticated" };
+
+    // Generate or use existing clientTxnId
+    const clientTxnId = data.clientTxnId || crypto.randomUUID();
 
     try {
       // Check online status
@@ -763,12 +767,13 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           paidBy: data.paidBy,
           participants: data.participants,
           note: data.note,
-          place: data.place
+          place: data.place,
+          clientTxnId
         });
         return { success: true, error: "Offline: saved to sync later" };
       }
 
-      logger.info("Adding expense via secure API", { groupId: data.groupId, amount: data.amount });
+      logger.info("Adding expense via secure API", { groupId: data.groupId, amount: data.amount, clientTxnId });
 
       const result = await callSecureApi('/api/add-expense', {
         groupId: data.groupId,
@@ -776,12 +781,13 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         paidBy: data.paidBy,
         participants: data.participants,
         note: data.note,
-        place: data.place
+        place: data.place,
+        clientTxnId
       });
 
       if (result.success) {
-        logger.info("Expense added successfully via server", { transactionId: result.transactionId });
-        return { success: true, transaction: result.transaction };
+        logger.info("Expense added successfully via server", { transactionId: result.transactionId, duplicate: result.duplicate });
+        return { success: true, transaction: result.transaction, duplicate: result.duplicate };
       }
 
       return { success: false, error: result.error || "Failed to add expense" };
@@ -800,7 +806,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           paidBy: data.paidBy,
           participants: data.participants,
           note: data.note,
-          place: data.place
+          place: data.place,
+          clientTxnId
         });
         return { success: true, error: "Network error: saved to sync later" };
       }

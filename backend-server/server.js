@@ -1544,6 +1544,23 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
   try {
     const db = admin.database();
 
+    // Idempotency Check
+    let clientTxnId = req.body.clientTxnId;
+    if (clientTxnId) {
+      const processedRef = db.ref(`processedTxns/${clientTxnId}`);
+      const processedSnap = await processedRef.get();
+      if (processedSnap.exists()) {
+        const data = processedSnap.val();
+        console.log(`♻️ Idempotency hit: Returning existing transaction for ${clientTxnId}`);
+        return res.json({
+          success: true,
+          transactionId: data.transactionId,
+          duplicate: true,
+          message: 'Transaction already processed'
+        });
+      }
+    }
+
     // 1. Get Group Data & User Data in parallel
     const [groupSnap, userSnap] = await Promise.all([
       db.ref(`groups/${groupId}`).get(),
@@ -1644,6 +1661,16 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     };
 
     updates[`transactions/${transactionId}`] = newTransaction;
+
+    // Record processed transaction for idempotency
+    if (clientTxnId) {
+      updates[`processedTxns/${clientTxnId}`] = {
+        transactionId,
+        uid: currentUserId,
+        timestamp: serverTime,
+        createdAt: new Date().toISOString()
+      };
+    }
 
     // C. Add to userTransaction lists for all group members (Denormalized)
     const transactionSummaryBase = {

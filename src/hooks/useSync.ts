@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getOfflineExpenses, deleteOfflineExpense, getOfflineExpenseCount } from '@/lib/offlineDB';
+import { getOfflineExpenses, deleteOfflineExpense, getOfflineExpenseCount, updateOfflineExpense } from '@/lib/offlineDB';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { toast } from 'sonner';
@@ -48,7 +48,22 @@ export const useSync = () => {
             duration: Infinity
         });
 
+        const MAX_SYNC_ATTEMPTS = 5;
+
         for (const expense of expenses) {
+            // Poison pill check
+            if ((expense.syncAttempts || 0) >= MAX_SYNC_ATTEMPTS) {
+                logger.warn('Skipping offline expense after max retries', { id: expense.id, attempts: expense.syncAttempts });
+                continue;
+            }
+
+            // Increment attempt counter
+            expense.syncAttempts = (expense.syncAttempts || 0) + 1;
+            expense.lastSyncAttempt = Date.now();
+
+            // We need to update the offline record with new attempt count
+            await updateOfflineExpense(expense);
+
             try {
                 const result = await addExpense({
                     groupId: expense.groupId,
@@ -57,6 +72,7 @@ export const useSync = () => {
                     participants: expense.participants,
                     note: expense.note,
                     place: expense.place,
+                    clientTxnId: expense.clientTxnId || expense.id,
                 });
 
                 if (result.success) {
@@ -65,10 +81,14 @@ export const useSync = () => {
                 } else {
                     failCount++;
                     logger.error('Failed to sync offline expense', { expenseId: expense.id, error: result.error });
+                    // Stop on first error to prevent further failures/load
+                    break;
                 }
             } catch (error: any) {
                 failCount++;
                 logger.error('Sync error', { expenseId: expense.id, error: error.message });
+                // Stop on first exception
+                break;
             }
         }
 
