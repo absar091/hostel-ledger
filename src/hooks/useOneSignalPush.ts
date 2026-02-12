@@ -39,15 +39,13 @@ export const useOneSignalPush = () => {
 
         if (!oneSignalInitialized) {
           // Wait for PWA service worker to register first
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1000));
 
           await OneSignal.init({
             appId: appId,
+            safari_web_id: 'web.onesignal.auto.521cdcf4-43b8-4659-a2e2-fd037f95e0d5',
             allowLocalhostAsSecureOrigin: true,
-            serviceWorkerPath: '/OneSignalSDKWorker.js',
-            serviceWorkerParam: { scope: '/' },
-            // Persist notification permission
-            persistNotification: true,
+            serviceWorkerPath: '/sw.js',
             autoResubscribe: true,
           });
           oneSignalInitialized = true;
