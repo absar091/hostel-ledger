@@ -1,4 +1,9 @@
 /// <reference lib="webworker" />
+
+// OneSignal push handler MUST be in this service worker because skipWaiting() + clientsClaim()
+// makes this the active SW for all pages. Push events route here, not to OneSignalSDKWorker.js.
+importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+
 import { clientsClaim } from 'workbox-core';
 import { precacheAndRoute, matchPrecache } from 'workbox-precaching';
 import { registerRoute, NavigationRoute, setCatchHandler } from 'workbox-routing';
