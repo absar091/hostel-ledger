@@ -363,8 +363,33 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             if (snapshot.exists()) {
               const userTransactions = snapshot.val();
               const transactionPromises = Object.entries(userTransactions).map(async ([id, data]: [string, any]) => {
-                // ALWAYS fetch full transaction data to ensure participants are loaded
-                // The metadata shortcut was missing the participants array causing missing chips
+                // OPTIMIZATION: Check if we have enough data in the summary to avoid N+1 fetch
+
+                // 1. For expenses, we need the participants array (added in recent backend update)
+                if (data && data.type === 'expense' && Array.isArray(data.participants) && data.participants.length > 0) {
+                  return { id, ...data };
+                }
+
+                // 2. For payments, fast-path only when both IDs and names are present.
+                // Some denormalized summaries only contain names, but downstream filters still
+                // rely on `from`/`to` member IDs (e.g. member-ledger views).
+                if (
+                  data &&
+                  data.type === 'payment' &&
+                  data.from &&
+                  data.to &&
+                  data.fromName &&
+                  data.toName
+                ) {
+                  return { id, ...data };
+                }
+
+                // 3. For wallet ops, summary is sufficient
+                if (data && (data.type === 'wallet_add' || data.type === 'wallet_deduct')) {
+                  return { id, ...data };
+                }
+
+                // Fallback: Fetch full transaction data if summary is incomplete (legacy data)
                 try {
                   const txRef = ref(database, `transactions/${id}`);
                   const txSnapshot = await get(txRef);
