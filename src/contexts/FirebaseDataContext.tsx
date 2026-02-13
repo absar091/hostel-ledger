@@ -1186,14 +1186,27 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       for (const group of groups) {
         if (group.createdBy === user.uid) {
           // Delete group (we know it has no other members from eligibility check)
+          let groupBackup: any = null;
           transaction.addOperation({
             execute: async () => {
               const groupRef = ref(database, `groups/${group.id}`);
+              // Fetch full group data before deletion for rollback
+              try {
+                const snapshot = await get(groupRef);
+                if (snapshot.exists()) {
+                  groupBackup = snapshot.val();
+                }
+              } catch (e) {
+                console.warn(`Failed to backup group ${group.id} before deletion`, e);
+              }
               await retryOperation(() => remove(groupRef));
               return true;
             },
             rollback: async () => {
-              // Deletion rollback is hard, skip for now
+              if (groupBackup) {
+                const groupRef = ref(database, `groups/${group.id}`);
+                await retryOperation(() => set(groupRef, groupBackup));
+              }
             },
             description: `Delete group ${group.name}`
           });
@@ -1230,59 +1243,129 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // 2. Delete User Groups Index
+      let userGroupsBackup: any = null;
       transaction.addOperation({
         execute: async () => {
           const userGroupsRef = ref(database, `userGroups/${user.uid}`);
+          try {
+            const snapshot = await get(userGroupsRef);
+            if (snapshot.exists()) {
+              userGroupsBackup = snapshot.val();
+            }
+          } catch (e) {
+            console.warn("Failed to backup userGroups before deletion", e);
+          }
           await retryOperation(() => remove(userGroupsRef));
           return true;
         },
-        rollback: async () => {},
+        rollback: async () => {
+          if (userGroupsBackup) {
+            const userGroupsRef = ref(database, `userGroups/${user.uid}`);
+            await retryOperation(() => set(userGroupsRef, userGroupsBackup));
+          }
+        },
         description: "Delete user groups index"
       });
 
       // 3. Delete User Transactions
+      let userTransactionsBackup: any = null;
       transaction.addOperation({
         execute: async () => {
           const userTransactionsRef = ref(database, `userTransactions/${user.uid}`);
+          try {
+            const snapshot = await get(userTransactionsRef);
+            if (snapshot.exists()) {
+              userTransactionsBackup = snapshot.val();
+            }
+          } catch (e) {
+            console.warn("Failed to backup userTransactions before deletion", e);
+          }
           await retryOperation(() => remove(userTransactionsRef));
           return true;
         },
-        rollback: async () => {},
+        rollback: async () => {
+          if (userTransactionsBackup) {
+            const userTransactionsRef = ref(database, `userTransactions/${user.uid}`);
+            await retryOperation(() => set(userTransactionsRef, userTransactionsBackup));
+          }
+        },
         description: "Delete user transactions"
       });
 
       // 4. Delete Username
       if (user.username) {
+        let usernameBackup: any = null;
         transaction.addOperation({
           execute: async () => {
             const usernameRef = ref(database, `usernames/${user.username}`);
+            try {
+              const snapshot = await get(usernameRef);
+              if (snapshot.exists()) {
+                usernameBackup = snapshot.val();
+              }
+            } catch (e) {
+              console.warn("Failed to backup username before deletion", e);
+            }
             await retryOperation(() => remove(usernameRef));
             return true;
           },
-          rollback: async () => {},
+          rollback: async () => {
+            if (usernameBackup) {
+              const usernameRef = ref(database, `usernames/${user.username}`);
+              await retryOperation(() => set(usernameRef, usernameBackup));
+            }
+          },
           description: "Delete username"
         });
       }
 
       // 5. Delete Email Verification
+      let emailVerificationBackup: any = null;
       transaction.addOperation({
         execute: async () => {
           const verificationRef = ref(database, `emailVerification/${user.uid}`);
+          try {
+            const snapshot = await get(verificationRef);
+            if (snapshot.exists()) {
+              emailVerificationBackup = snapshot.val();
+            }
+          } catch (e) {
+            console.warn("Failed to backup emailVerification before deletion", e);
+          }
           await retryOperation(() => remove(verificationRef));
           return true;
         },
-        rollback: async () => {},
+        rollback: async () => {
+          if (emailVerificationBackup) {
+            const verificationRef = ref(database, `emailVerification/${user.uid}`);
+            await retryOperation(() => set(verificationRef, emailVerificationBackup));
+          }
+        },
         description: "Delete email verification"
       });
 
       // 6. Delete User Profile
+      let userProfileBackup: any = null;
       transaction.addOperation({
         execute: async () => {
           const userRef = ref(database, `users/${user.uid}`);
+          try {
+            const snapshot = await get(userRef);
+            if (snapshot.exists()) {
+              userProfileBackup = snapshot.val();
+            }
+          } catch (e) {
+            console.warn("Failed to backup user profile before deletion", e);
+          }
           await retryOperation(() => remove(userRef));
           return true;
         },
-        rollback: async () => {},
+        rollback: async () => {
+          if (userProfileBackup) {
+            const userRef = ref(database, `users/${user.uid}`);
+            await retryOperation(() => set(userRef, userProfileBackup));
+          }
+        },
         description: "Delete user profile"
       });
 
