@@ -364,7 +364,8 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
           type: m.type || 'manual',
           email: m.email || null, // Persist email for pending status
           isPending: !!m.email,   // Mark as pending if email exists
-          invitedAt: m.email ? new Date().toISOString() : null
+          invitedAt: m.email ? new Date().toISOString() : null,
+          isTemporary: (!m.uid && !m.username) || m.type === 'manual' // Mark as temporary if manual
         }))
       ],
       createdBy: userId,
@@ -373,6 +374,19 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
     // 2. Save Group
     await newGroupRef.set(newGroup);
+
+    // 2a. Update Temp Members Index (Optimization)
+    const tempMembers = newGroup.members.filter(m => m.isTemporary);
+    if (tempMembers.length > 0) {
+      const updates = {};
+      tempMembers.forEach(m => {
+        updates[`tempMembers/${groupId}/${m.id}`] = {
+          createdAt: new Date().toISOString(),
+          expiresAt: null // No default expiry for now, preserving logic
+        };
+      });
+      await admin.database().ref().update(updates);
+    }
 
     // 3. Add to User's Group Index
     await admin.database().ref(`userGroups/${userId}/${groupId}`).set({
@@ -789,8 +803,12 @@ app.post('/api/claim-email-invite', authenticate, async (req, res) => {
       isRegistered: true,
       type: 'registered',
       name: userData.name || matchedMember.name,
-      claimedAt: new Date().toISOString()
+      claimedAt: new Date().toISOString(),
+      isTemporary: false // No longer temporary
     });
+
+    // Remove from tempMembers index (Optimization)
+    await admin.database().ref(`tempMembers/${groupId}/${matchedMemberId}`).remove();
 
     // Add to userGroups (REQUIRED for Firebase rules to grant access)
     const now = new Date().toISOString();
@@ -2146,22 +2164,138 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
 app.post('/api/cleanup-temp-members', generalLimiter, async (req, res) => {
   try {
     const db = admin.database();
-    const groupsRef = db.ref('groups');
+    const now = Date.now();
+    let removedCount = 0;
 
-    // Optimized Pagination
+    // Check migration status
+    const migrationRef = db.ref('system/migrations/tempMembersIndex');
+    const migrationSnap = await migrationRef.get();
+    const isMigrated = migrationSnap.exists() && migrationSnap.val() === true;
+
+    if (!isMigrated) {
+      console.log('🚧 Starting FIRST-TIME MIGRATION for tempMembers index (Full Scan)...');
+
+      const groupsRef = db.ref('groups');
+      const BATCH_SIZE = 100;
+      let lastGroupId = null;
+      let hasMore = true;
+      let migrationUpdates = {};
+      let batchCount = 0;
+
+      while (hasMore) {
+        let query = groupsRef.orderByKey();
+        if (lastGroupId) {
+          query = query.startAt(lastGroupId).limitToFirst(BATCH_SIZE + 1);
+        } else {
+          query = query.limitToFirst(BATCH_SIZE);
+        }
+
+        const snapshot = await query.get();
+        if (!snapshot.exists()) {
+          hasMore = false;
+          break;
+        }
+
+        const groups = snapshot.val();
+        const groupIds = [];
+        snapshot.forEach((child) => {
+          if (lastGroupId && child.key === lastGroupId) return;
+          groupIds.push(child.key);
+        });
+
+        if (groupIds.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        batchCount++;
+        lastGroupId = groupIds[groupIds.length - 1];
+
+        for (const groupId of groupIds) {
+          const group = groups[groupId];
+          if (!group.members) continue;
+
+          // Identify potential temporary members
+          // Note: Older members might not have isTemporary flag.
+          // We assume 'manual' type or lack of userId/username implies temporary if not set.
+          // However, we only index what we are sure about or if explicitly set.
+
+          let hasTempMembers = false;
+          const members = group.members; // Array or object
+          const memberList = Array.isArray(members) ? members : Object.values(members);
+
+          memberList.forEach(m => {
+            const isTemp = m.isTemporary || (!m.userId && m.type === 'manual');
+
+            if (isTemp) {
+              hasTempMembers = true;
+              // Add to migration updates
+              migrationUpdates[`tempMembers/${groupId}/${m.id}`] = {
+                createdAt: new Date().toISOString(),
+                migratedAt: now
+              };
+            }
+          });
+
+          // Also perform cleanup logic during migration if needed
+          let hasCleanup = false;
+          const newMembers = memberList.filter(member => {
+            const isTemp = member.isTemporary || (!member.userId && member.type === 'manual');
+            if (!isTemp) return true;
+
+            const isExpired = member.deletionCondition === 'TIME_LIMIT' && member.expiresAt && member.expiresAt < now;
+            if (isExpired || member.deletionCondition === 'SETTLED') {
+              hasCleanup = true;
+              removedCount++;
+              // Remove from index update if we just added it
+              delete migrationUpdates[`tempMembers/${groupId}/${member.id}`];
+              return false;
+            }
+            return true;
+          });
+
+          if (hasCleanup) {
+            migrationUpdates[`groups/${groupId}/members`] = newMembers;
+          }
+        }
+
+        // Commit batch if large enough
+        if (Object.keys(migrationUpdates).length > 500) {
+          await db.ref().update(migrationUpdates);
+          migrationUpdates = {};
+        }
+
+        if (groupIds.length < BATCH_SIZE) hasMore = false;
+      }
+
+      // Final commit
+      if (Object.keys(migrationUpdates).length > 0) {
+        await db.ref().update(migrationUpdates);
+      }
+
+      // Mark migration as complete
+      await migrationRef.set(true);
+      console.log(`✅ Migration complete. Scanned all groups. Removed ${removedCount} members.`);
+
+      return res.json({
+        success: true,
+        removedCount,
+        migrated: true,
+        message: `Migration complete. Cleaned up ${removedCount} members.`
+      });
+    }
+
+    // --- OPTIMIZED PATH (Index-based) ---
+    const tempMembersRef = db.ref('tempMembers');
     const BATCH_SIZE = 100;
     let lastGroupId = null;
     let hasMore = true;
-    let removedCount = 0;
-    const now = Date.now();
     let batchCount = 0;
 
-    console.log('🧹 Starting cleanup-temp-members job...');
+    console.log('🧹 Starting cleanup-temp-members job (Optimized)...');
 
     while (hasMore) {
-      // Use startAt because startAfter is not supported in all SDK versions for Realtime Database
-      // We limit to BATCH_SIZE + 1 when paginating to account for the inclusive start key
-      let query = groupsRef.orderByKey();
+      let query = tempMembersRef.orderByKey();
 
       if (lastGroupId) {
         query = query.startAt(lastGroupId).limitToFirst(BATCH_SIZE + 1);
@@ -2176,11 +2310,10 @@ app.post('/api/cleanup-temp-members', generalLimiter, async (req, res) => {
         break;
       }
 
-      const groups = snapshot.val();
+      const tempGroups = snapshot.val();
       const groupIds = [];
 
       snapshot.forEach((child) => {
-        // Skip the first item if it matches the last processed ID (overlap due to startAt)
         if (lastGroupId && child.key === lastGroupId) {
           return;
         }
@@ -2195,36 +2328,42 @@ app.post('/api/cleanup-temp-members', generalLimiter, async (req, res) => {
       batchCount++;
       const updates = {};
 
-      // Update lastGroupId to the last key in this batch
       lastGroupId = groupIds[groupIds.length - 1];
 
-      for (const groupId of groupIds) {
-        const group = groups[groupId];
-        if (!group.members) continue;
+      // Process each group found in tempMembers index
+      await Promise.all(groupIds.map(async (groupId) => {
+        // Fetch the full group data
+        const groupSnap = await db.ref(`groups/${groupId}`).get();
+        if (!groupSnap.exists()) {
+          // Group deleted, remove index
+          updates[`tempMembers/${groupId}`] = null;
+          return;
+        }
 
-        const members = group.members;
+        const group = groupSnap.val();
+        const members = group.members || [];
         let hasCleanup = false;
 
         const newMembers = members.filter(member => {
-          // Only consider temporary members for cleanup
-          if (!member.isTemporary) return true;
+          // Check if this member is indexed as temporary
+          const isIndexed = tempGroups[groupId] && tempGroups[groupId][member.id];
 
-          // Check if member has any settlements
-          // We need to check all users' settlements to be absolutely sure
-          // But for efficiency, we can assume if the group creator sees no debt, it's safe (or we can skip this check if the condition is purely TIME_LIMIT)
-          // However, the rule is: no debt.
+          if (!member.isTemporary) {
+            // Member is no longer temporary but was in index?
+            if (isIndexed) {
+              updates[`tempMembers/${groupId}/${member.id}`] = null;
+            }
+            return true;
+          }
 
-          // This is a complex check because settlements are stored under users.
-          // For a simple version, we can check if the member is expired.
+          // Check if member is expired or should be removed
           const isExpired = member.deletionCondition === 'TIME_LIMIT' && member.expiresAt && member.expiresAt < now;
-          const isSettledCheckRequired = member.deletionCondition === 'SETTLED' || member.deletionCondition === 'TIME_LIMIT';
 
           if (isExpired || member.deletionCondition === 'SETTLED') {
-            // We'll mark it for cleanup, but in a real-world scenario, we'd verify settlements first
-            // For this implementation, we'll assume the client-side settlement state was the trigger
-            // or we'd perform a deeper scan if this were a production cron.
             hasCleanup = true;
             removedCount++;
+            // Also remove from index
+            updates[`tempMembers/${groupId}/${member.id}`] = null;
             return false;
           }
 
@@ -2234,13 +2373,12 @@ app.post('/api/cleanup-temp-members', generalLimiter, async (req, res) => {
         if (hasCleanup) {
           updates[`groups/${groupId}/members`] = newMembers;
         }
-      }
+      }));
 
       if (Object.keys(updates).length > 0) {
         await db.ref().update(updates);
       }
 
-      // Check if we reached end of data
       if (groupIds.length < BATCH_SIZE) {
         hasMore = false;
       }
