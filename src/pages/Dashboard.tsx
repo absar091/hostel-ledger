@@ -315,6 +315,24 @@ const Dashboard = () => {
   const totalToReceive = getTotalToReceive();
   const totalToPay = getTotalToPay();
 
+  const pendingPaymentCounts = useMemo(() => {
+    const settlementsByGroup = user?.settlements || {};
+    const entries = Object.values(settlementsByGroup).flatMap(
+      (groupSettlements) => Object.values(groupSettlements || {}),
+    );
+
+    const toPayCount = entries.filter((item) => (item?.toPay || 0) > 0).length;
+    const toReceiveCount = entries.filter(
+      (item) => (item?.toReceive || 0) > 0,
+    ).length;
+
+    return {
+      total: toPayCount + toReceiveCount,
+      toPayCount,
+      toReceiveCount,
+    };
+  }, [user?.settlements]);
+
   // Calculate percentage change for after settlements
   const afterSettlementsBalance = walletBalance + settlementDelta;
 
