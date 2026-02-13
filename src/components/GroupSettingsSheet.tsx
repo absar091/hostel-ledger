@@ -23,6 +23,8 @@ interface Member {
   balance?: number;
   paymentDetails?: any;
   phone?: string | null;
+  userId?: string;
+  isTemporary?: boolean;
 }
 
 interface GroupSettingsSheetProps {
@@ -38,9 +40,13 @@ interface GroupSettingsSheetProps {
   onRemoveMember: (memberId: string) => void;
   onUpdateGroup: (data: { name?: string; emoji?: string }) => void;
   onDeleteGroup: () => void;
+  isOwner?: boolean;
 }
 
-const EMOJIS = ["🏠", "🍕", "🎮", "📚", "🏖️", "🎭", "⚽", "🎸", "🚗", "✈️"];
+import { toast } from "sonner";
+import { Share2 } from "lucide-react";
+
+const EMOJIS = ["🏠", "🍕", "🎮", "📚", "🏖️", "⚽", "🎸", "🚗", "✈️"];
 
 const GroupSettingsSheet = ({
   open,
@@ -50,6 +56,7 @@ const GroupSettingsSheet = ({
   onRemoveMember,
   onUpdateGroup,
   onDeleteGroup,
+  isOwner = false,
 }: GroupSettingsSheetProps) => {
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState("");
@@ -79,7 +86,13 @@ const GroupSettingsSheet = ({
     }
   };
 
-  const nonCurrentMembers = group.members.filter((m) => !m.isCurrentUser);
+  const handleInviteToClaim = (memberId: string, memberName: string) => {
+    const inviteLink = `${window.location.origin}/join/${group.id}?claimMemberId=${memberId}`;
+    navigator.clipboard.writeText(inviteLink);
+    toast.success("Invite link copied!", {
+      description: `Send this link to ${memberName} to let them claim this profile.`
+    });
+  };
 
   return (
     <>
@@ -102,7 +115,8 @@ const GroupSettingsSheet = ({
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                   onBlur={handleUpdateGroup}
-                  className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 focus:border-[#4a6850] focus:shadow-xl"
+                  disabled={!isOwner}
+                  className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 focus:border-[#4a6850] focus:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
                 />
               </div>
 
@@ -113,13 +127,16 @@ const GroupSettingsSheet = ({
                     <button
                       key={emoji}
                       onClick={() => {
-                        setSelectedEmoji(emoji);
-                        onUpdateGroup({ emoji });
+                        if (isOwner) {
+                          setSelectedEmoji(emoji);
+                          onUpdateGroup({ emoji });
+                        }
                       }}
+                      disabled={!isOwner}
                       className={`w-14 h-14 rounded-3xl text-2xl flex items-center justify-center transition-all shadow-lg hover:shadow-xl ${selectedEmoji === emoji
-                          ? "bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white scale-110 border-2 border-[#4a6850]"
-                          : "bg-white hover:bg-[#4a6850]/5 border border-[#4a6850]/10 hover:border-[#4a6850]/20"
-                        }`}
+                        ? "bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white scale-110 border-2 border-[#4a6850]"
+                        : "bg-white hover:bg-[#4a6850]/5 border border-[#4a6850]/10 hover:border-[#4a6850]/20"
+                        } ${!isOwner ? "cursor-not-allowed opacity-70" : ""}`}
                     >
                       {emoji}
                     </button>
@@ -131,7 +148,8 @@ const GroupSettingsSheet = ({
             {/* Members Section */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <Label className="text-sm font-black text-[#4a6850]/80 uppercase tracking-wide">Members ({((group as any).memberCount || group.members.length)})</Label>
+                <Label className="text-sm font-black text-[#4a6850]/80 uppercase tracking-wide">Members ({Array.isArray(group.members) ? group.members.length : Object.keys(group.members || {}).length})</Label>
+                {/* Allow Add Member for everyone? User didn't specify, but implies owner control. Lets keeping Add accessible for now to be safe, or hide it if strict. User said 'Only owner can remove member'. I will keep Add open but Remove restricted. */}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -183,46 +201,70 @@ const GroupSettingsSheet = ({
                     className="flex items-center gap-4 p-5 rounded-3xl bg-white border border-[#4a6850]/10 shadow-lg hover:shadow-xl hover:border-[#4a6850]/20 transition-all"
                   >
                     <Avatar name={member.name} size="sm" />
-                    <div className="flex-1">
-                      <p className="font-black text-gray-900 tracking-tight">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-black text-gray-900 tracking-tight truncate">
                         {member.name}
                         {member.isCurrentUser && (
                           <span className="text-[#4a6850]/80 text-sm ml-2 font-bold">(You)</span>
                         )}
+                        {!member.isCurrentUser && !member.userId && (
+                          <span className="inline-flex items-center ml-2 px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Unclaimed</span>
+                        )}
                       </p>
-                      {member.balance !== 0 && (
+                      {/* Fix NaN logic here too just in case context passes undefined */}
+                      {(member.balance !== undefined && member.balance !== 0 && !isNaN(member.balance)) && (
                         <p className={`text-sm font-bold ${member.balance > 0 ? "text-[#4a6850]" : "text-red-600"}`}>
                           {member.balance > 0 ? `Owes Rs ${member.balance.toLocaleString()}` : `Owed Rs ${Math.abs(member.balance).toLocaleString()}`}
                         </p>
                       )}
                     </div>
-                    {!member.isCurrentUser && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setMemberToRemove(member)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50 w-10 h-10 rounded-2xl shadow-lg hover:shadow-xl transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-1">
+                      {/* Invite Link for Unclaimed Members */}
+                      {!member.isCurrentUser && !member.userId && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleInviteToClaim(member.id, member.name)}
+                          className="text-[#4a6850] hover:text-[#3d5643] hover:bg-[#4a6850]/10 w-10 h-10 rounded-2xl transition-all"
+                          title="Copy invite link for this profile"
+                        >
+                          <Share2 className="w-4 h-4" />
+                        </Button>
+                      )}
+
+                      {/* RESTRICT REMOVE TO OWNER */}
+                      {isOwner && !member.isCurrentUser && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setMemberToRemove(member)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 w-10 h-10 rounded-2xl shadow-lg hover:shadow-xl transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Danger Zone */}
-            <div className="pt-6 border-t border-[#4a6850]/10">
-              <Label className="text-red-600 font-black text-sm uppercase tracking-wide">Danger Zone</Label>
-              <Button
-                variant="destructive"
-                className="w-full mt-4 h-14 rounded-3xl bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black shadow-[0_8px_32px_rgba(239,68,68,0.3)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.4)] transition-all"
-                onClick={() => setShowDeleteGroup(true)}
-              >
-                <Trash2 className="w-5 h-5 mr-2" />
-                Delete Group
-              </Button>
-            </div>
+            {/* Danger Zone - RESTRICT TO OWNER */}
+            {isOwner && (
+              <div className="pt-6 border-t border-[#4a6850]/10">
+                <Label className="text-red-600 font-black text-sm uppercase tracking-wide">Danger Zone</Label>
+                <Button
+                  variant="destructive"
+                  className="w-full mt-4 h-14 rounded-3xl bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black shadow-[0_8px_32px_rgba(239,68,68,0.3)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.4)] transition-all"
+                  onClick={() => setShowDeleteGroup(true)}
+                >
+                  <Trash2 className="w-5 h-5 mr-2" />
+                  Delete Group
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="pt-6 border-t border-[#4a6850]/10 mt-auto bg-white flex-shrink-0">

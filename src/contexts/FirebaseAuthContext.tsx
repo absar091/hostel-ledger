@@ -156,6 +156,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         localStorage.removeItem('cachedUser');
         setIsLoading(false);
+      } else {
+        // User authenticated, wait for profile data to load
+        setIsLoading(true);
       }
       // If user exists, the second useEffect will handle profile subscription
     }, (error) => {
@@ -290,7 +293,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      setIsLoading(true);
+      // setIsLoading(true);
 
       // Input validation
       if (!isValidEmail(email)) {
@@ -336,7 +339,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       return { success: false, error: errorMessage };
     } finally {
-      setIsLoading(false);
+      // setIsLoading(false);
     }
   };
 
@@ -352,7 +355,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     emailVerified?: boolean;
   }): Promise<{ success: boolean; error?: string }> => {
     try {
-      setIsLoading(true);
+      // setIsLoading(true);
 
       // Input validation
       if (!isValidEmail(data.email)) {
@@ -475,7 +478,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       logger.error("Signup error", { email: data.email, error: error.message });
       return { success: false, error: error.message || "Signup failed" };
     } finally {
-      setIsLoading(false);
+      // setIsLoading(false);
     }
   };
 

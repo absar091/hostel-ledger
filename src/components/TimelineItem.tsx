@@ -13,14 +13,7 @@ interface TimelineItemProps {
   title: string;
   amount: number;
   date: string;
-  paidBy?: string;
-  participants?: Participant[];
-  from?: string;
-  to?: string;
-  method?: string;
-  category?: "food" | "shopping" | "transport" | "coffee" | "other";
-  userRole?: "payer" | "receiver";
-  onClick?: () => void;
+  isPayerOwner?: boolean;
 }
 
 const categoryIcons = {
@@ -43,6 +36,7 @@ const TimelineItemBase = ({
   method,
   category = "other",
   userRole,
+  isPayerOwner,
   onClick,
 }: TimelineItemProps) => {
   const Icon = type === "payment" ? HandCoins :
@@ -107,14 +101,14 @@ const TimelineItemBase = ({
       <button
         onClick={onClick}
         className={`w-full rounded-3xl p-5 text-left transition-all shadow-lg hover:shadow-xl ${isPayer
-            ? 'bg-gradient-to-br from-red-50 to-orange-50 border border-red-200/50 hover:from-red-100/50 hover:to-orange-100/50 hover:border-red-300/50'
-            : 'bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/50 hover:from-emerald-100/50 hover:to-teal-100/50 hover:border-emerald-300/50'
+          ? 'bg-gradient-to-br from-red-50 to-orange-50 border border-red-200/50 hover:from-red-100/50 hover:to-orange-100/50 hover:border-red-300/50'
+          : 'bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/50 hover:from-emerald-100/50 hover:to-teal-100/50 hover:border-emerald-300/50'
           }`}
       >
         <div className="flex items-start gap-4">
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${isPayer
-              ? 'bg-gradient-to-br from-red-500 to-orange-500'
-              : 'bg-gradient-to-br from-emerald-500 to-teal-500'
+            ? 'bg-gradient-to-br from-red-500 to-orange-500'
+            : 'bg-gradient-to-br from-emerald-500 to-teal-500'
             }`}>
             <HandCoins className="w-6 h-6 text-white font-bold" />
           </div>
@@ -149,7 +143,14 @@ const TimelineItemBase = ({
     >
       <div className="flex items-start gap-4">
         {paidBy ? (
-          <Avatar name={paidBy} size="md" />
+          <div className="relative">
+            <Avatar name={paidBy} size="md" />
+            {isPayerOwner && (
+              <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-yellow-900 text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-sm border border-yellow-200">
+                OWNER
+              </div>
+            )}
+          </div>
         ) : (
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shrink-0 shadow-lg">
             <Icon className="w-6 h-6 text-gray-600 font-bold" />
@@ -158,7 +159,12 @@ const TimelineItemBase = ({
 
         <div className="flex-1 min-w-0">
           <div className="font-black text-gray-900 tracking-tight text-lg truncate">{title}</div>
-          <div className="text-sm text-gray-600 font-bold truncate">Paid by {paidBy}</div>
+          <div className="text-sm text-gray-600 font-bold truncate flex items-center gap-1">
+            Paid by {paidBy}
+            {isPayerOwner && (
+              <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
+            )}
+          </div>
 
           {participants && participants.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -205,6 +211,7 @@ const arePropsEqual = (prevProps: TimelineItemProps, nextProps: TimelineItemProp
     prevProps.amount !== nextProps.amount ||
     prevProps.date !== nextProps.date ||
     prevProps.paidBy !== nextProps.paidBy ||
+    prevProps.isPayerOwner !== nextProps.isPayerOwner || // Check optimization
     prevProps.from !== nextProps.from ||
     prevProps.to !== nextProps.to ||
     prevProps.method !== nextProps.method ||

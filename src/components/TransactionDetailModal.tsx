@@ -29,7 +29,11 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
     const isTemporaryPayer = payerMember?.isTemporary || transaction.paidByIsTemporary;
 
     // 2. Resolve Participant Names
-    const resolvedParticipants = transaction.participants?.map((p: any) => {
+    const participantsList = Array.isArray(transaction.participants)
+        ? transaction.participants
+        : transaction.participants ? Object.values(transaction.participants) : [];
+
+    const resolvedParticipants = participantsList.map((p: any) => {
         const member = transactionGroup?.members.find((m: any) => m.id === p.id);
         const name = p.id === user?.uid
             ? "You"
@@ -249,7 +253,11 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                     <div className="flex-1 min-w-0">
                                         <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Group</div>
                                         <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transactionGroup.name}</div>
-                                        <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">{transactionGroup.members.length} members</div>
+                                        <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">
+                                            {Array.isArray(transactionGroup.members)
+                                                ? transactionGroup.members.length
+                                                : Object.keys(transactionGroup.members || {}).length} members
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -257,11 +265,20 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             {/* Paid By (for expenses) - iPhone Style */}
                             {transaction.paidByName && (
                                 <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                                    <User className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
+                                    <div className="relative">
+                                        <User className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
+                                        {transactionGroup?.createdBy === transaction.paidBy && (
+                                            <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-yellow-900 text-[8px] font-black px-1 py-0.5 rounded-full shadow-sm border border-yellow-200">
+                                                OWNER
+                                            </div>
+                                        )}
+                                    </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Paid by</div>
                                         <div className="flex items-center gap-2">
-                                            <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{resolvedPaidByName}</div>
+                                            <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">
+                                                {transactionGroup?.createdBy === transaction.paidBy && transaction.paidBy !== user?.uid ? "Group Owner" : resolvedPaidByName}
+                                            </div>
                                             {isTemporaryPayer && (
                                                 <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
                                             )}
@@ -275,15 +292,33 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
                                     <ArrowUpRight className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
                                     <div className="flex-1 min-w-0">
-                                        <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Payment</div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transaction.fromName} → {transaction.toName}</div>
-                                            {(transaction.fromIsTemporary || transaction.toIsTemporary) && (
-                                                <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
-                                            )}
+                                        <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Payment From</div>
+                                        <div className="flex flex-col gap-1">
+                                            {/* FROM USER */}
+                                            <div className="flex items-center gap-2">
+                                                <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">
+                                                    {transactionGroup?.createdBy === transaction.from && transaction.from !== user?.uid ? "Group Owner" : (transaction.from === user?.uid ? "You" : transaction.fromName)}
+                                                </div>
+                                                {transactionGroup?.createdBy === transaction.from && (
+                                                    <span className="bg-yellow-100 text-yellow-700 text-[8px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
+                                                )}
+                                            </div>
+
+                                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest pl-1">TO</div>
+
+                                            {/* TO USER */}
+                                            <div className="flex items-center gap-2">
+                                                <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">
+                                                    {transactionGroup?.createdBy === transaction.to && transaction.to !== user?.uid ? "Group Owner" : (transaction.to === user?.uid ? "You" : transaction.toName)}
+                                                </div>
+                                                {transactionGroup?.createdBy === transaction.to && (
+                                                    <span className="bg-yellow-100 text-yellow-700 text-[8px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
+                                                )}
+                                            </div>
                                         </div>
+
                                         {transaction.method && (
-                                            <div className="text-xs lg:text-sm text-[#4a6850]/80 capitalize font-medium">via {transaction.method}</div>
+                                            <div className="text-xs lg:text-sm text-[#4a6850]/80 capitalize font-medium mt-2">via {transaction.method}</div>
                                         )}
                                     </div>
                                 </div>
@@ -295,17 +330,25 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                     <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-3 lg:mb-4 font-semibold uppercase tracking-wide">Participants ({transaction.participants.length})</div>
                                     <div className="space-y-2 lg:space-y-3 max-h-32 overflow-y-auto scrollbar-hide">
 
-                                        {resolvedParticipants?.map((participant: any, index: number) => (
-                                            <div key={index} className="flex justify-between items-center gap-2">
-                                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                                    <span className="font-semibold text-gray-900 truncate text-sm lg:text-base">{participant.name}</span>
-                                                    {participant.isTemporary && (
-                                                        <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
-                                                    )}
+                                        {resolvedParticipants?.map((participant: any, index: number) => {
+                                            const isOwner = transactionGroup?.createdBy === participant.id;
+                                            return (
+                                                <div key={index} className="flex justify-between items-center gap-2">
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        <span className="font-semibold text-gray-900 truncate text-sm lg:text-base">
+                                                            {isOwner && participant.id !== user?.uid ? "Group Owner" : participant.name}
+                                                        </span>
+                                                        {isOwner && (
+                                                            <span className="bg-yellow-100 text-yellow-700 text-[8px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
+                                                        )}
+                                                        {participant.isTemporary && (
+                                                            <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-xs lg:text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">Rs {participant.amount.toLocaleString()}</span>
                                                 </div>
-                                                <span className="text-xs lg:text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">Rs {participant.amount.toLocaleString()}</span>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
 
                                     </div>
                                 </div>
@@ -332,30 +375,59 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 </div>
                             )}
 
-                            {/* Wallet Balance Changes (for wallet transactions) - iPhone Style */}
-                            {(transaction.walletBalanceBefore !== undefined || transaction.walletBalanceAfter !== undefined) && (
-                                <div className="space-y-3 lg:space-y-4">
-                                    {transaction.walletBalanceBefore !== undefined && (
-                                        <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl lg:rounded-3xl border border-gray-200 shadow-lg">
-                                            <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 text-gray-500 flex-shrink-0" />
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-[10px] lg:text-xs text-gray-500 font-semibold uppercase tracking-wide">Wallet Balance Before</div>
-                                                <div className="font-bold text-gray-900 text-sm lg:text-base tracking-tight tabular-nums">Rs {transaction.walletBalanceBefore.toLocaleString()}</div>
-                                            </div>
-                                        </div>
-                                    )}
+                            {/* Wallet Balance Changes - Intelligent Display */}
+                            {/* Priority 1: Use new per-user snapshots if available */}
+                            {/* Priority 2: Fallback to legacy fields for Recorder (Payer/Sender) */}
+                            {(() => {
+                                let balanceBefore: number | undefined;
+                                let balanceAfter: number | undefined;
+                                let showBalance = false;
 
-                                    {transaction.walletBalanceAfter !== undefined && (
-                                        <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                                            <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Wallet Balance After</div>
-                                                <div className="font-bold text-gray-900 text-sm lg:text-base tracking-tight tabular-nums">Rs {transaction.walletBalanceAfter.toLocaleString()}</div>
+                                // Check for new data structure (Supports both Payer & Receiver)
+                                const userSnapshot = transaction.walletBalances?.[user?.uid];
+
+                                if (userSnapshot) {
+                                    balanceBefore = userSnapshot.before;
+                                    balanceAfter = userSnapshot.after;
+                                    showBalance = true;
+                                }
+                                // Fallback logic for older transactions (Only accurate for Recorder)
+                                else if ((transaction.type === 'expense' && transaction.paidBy === user?.uid) ||
+                                    (transaction.type === 'payment' && transaction.from === user?.uid)) {
+                                    balanceBefore = transaction.walletBalanceBefore;
+                                    balanceAfter = transaction.walletBalanceAfter;
+                                    showBalance = true;
+                                }
+
+                                if (!showBalance || (balanceBefore === undefined && balanceAfter === undefined)) return null;
+
+                                return (
+                                    <div className="space-y-3 lg:space-y-4">
+                                        {balanceBefore !== undefined && (
+                                            <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl lg:rounded-3xl border border-gray-200 shadow-lg">
+                                                <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 text-gray-500 flex-shrink-0" />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-[10px] lg:text-xs text-gray-500 font-semibold uppercase tracking-wide">Wallet Balance Before</div>
+                                                    <div className="font-bold text-gray-900 text-sm lg:text-base tracking-tight tabular-nums">Rs {balanceBefore.toLocaleString()}</div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                                        )}
+
+                                        {balanceAfter !== undefined && (
+                                            <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                                                <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Wallet Balance After</div>
+                                                    <div className={`font-bold text-sm lg:text-base tracking-tight tabular-nums ${(balanceAfter > (balanceBefore || 0)) ? 'text-green-600' : 'text-gray-900'
+                                                        }`}>
+                                                        Rs {balanceAfter.toLocaleString()}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </div>
                 </div>

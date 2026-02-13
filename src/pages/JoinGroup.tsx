@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
+import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 
 /**
  * Join Group Page
@@ -13,9 +14,11 @@ import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 const JoinGroup = () => {
     const { id: groupId } = useParams<{ id: string }>();
     const [searchParams] = useSearchParams();
+    const claimMemberId = searchParams.get('claimMemberId');
     const email = searchParams.get('email');
     const navigate = useNavigate();
     const { user, isLoading } = useFirebaseAuth();
+    const { claimMemberProfile } = useFirebaseData();
     const [status, setStatus] = useState<'loading' | 'redirect' | 'error'>('loading');
 
     useEffect(() => {
@@ -26,25 +29,35 @@ const JoinGroup = () => {
             localStorage.setItem('pendingJoinGroup', JSON.stringify({
                 groupId,
                 email,
+                claimMemberId,
                 timestamp: Date.now()
             }));
         }
 
         if (user) {
-            // User is already logged in - redirect to the group
-            // The group access will be handled by the invite system
-            setStatus('redirect');
-            setTimeout(() => {
+            // User is already logged in
+            const handleJoin = async () => {
+                if (claimMemberId && groupId) {
+                    try {
+                        await claimMemberProfile(groupId, claimMemberId);
+                        // toast.success("Profile claimed successfully!");
+                    } catch (e) {
+                        console.error("Failed to claim profile automatically", e);
+                    }
+                }
+                setStatus('redirect');
                 navigate(`/group/${groupId}`, { replace: true });
-            }, 1500);
+            };
+            handleJoin();
         } else {
             // User needs to sign up first
             setStatus('redirect');
             setTimeout(() => {
-                navigate(`/signup?invite=${groupId}&email=${encodeURIComponent(email || '')}`, { replace: true });
+                const claimParam = claimMemberId ? `&claimMemberId=${claimMemberId}` : '';
+                navigate(`/signup?invite=${groupId}&email=${encodeURIComponent(email || '')}${claimParam}`, { replace: true });
             }, 1500);
         }
-    }, [user, isLoading, groupId, email, navigate]);
+    }, [user, isLoading, groupId, email, claimMemberId, navigate, claimMemberProfile]);
 
     return (
         <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">

@@ -26,7 +26,7 @@ import {
 const GroupDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { getGroupById, fetchGroupDetail, getTransactionsByGroup, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup } = useFirebaseData();
+  const { getGroupById, fetchGroupDetail, getTransactionsByGroup, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup, mergeMembers } = useFirebaseData();
   const { getSettlements, user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
 
@@ -34,7 +34,7 @@ const GroupDetail = () => {
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<{ id: string; name: string; balance: number; paymentDetails?: any; phone?: string; isTemporary?: boolean } | null>(null);
+  const [selectedMember, setSelectedMember] = useState<{ id: string; name: string; balance: number; paymentDetails?: any; phone?: string; isTemporary?: boolean; isOwner?: boolean } | null>(null);
   const [showMemberDetail, setShowMemberDetail] = useState(false);
   const [showMemberSettlement, setShowMemberSettlement] = useState(false);
   const [settlementMember, setSettlementMember] = useState<{ id: string; name: string; avatar?: string; isTemporary?: boolean } | null>(null);
@@ -399,13 +399,28 @@ const GroupDetail = () => {
                       amount={item.amount}
                       date={item.date}
                       paidBy={item.type === "expense" ? (
-                        item.paidBy === user?.uid ? "You" : (group.members.find((m) => m.id === item.paidBy)?.name || item.paidByName)
+                        (() => {
+                          // Use consistent naming logic
+                          if (item.paidBy === user?.uid) return "You";
+                          if (item.paidBy === group.createdBy) return "Group Owner";
+                          const member = group.members.find(m => m.id === item.paidBy);
+                          return member?.name || item.paidByName;
+                        })()
                       ) : undefined}
-                      participants={item.type === "expense" ? item.participants : undefined}
+                      participants={item.type === "expense" ? item.participants?.map(p => ({
+                        ...p,
+                        name: (() => {
+                          if (p.id === user?.uid) return "You"; // Your share
+                          if (p.id === group.createdBy) return "Group Owner"; // Owner's share
+                          const member = group.members.find(m => m.id === p.id); // Valid member name
+                          return member?.name || p.name;
+                        })()
+                      })) : undefined}
                       from={item.type === "payment" ? item.fromName : undefined}
                       to={item.type === "payment" ? item.toName : undefined}
                       method={item.type === "payment" ? item.method : undefined}
                       userRole={item.type === "payment" ? (item.from === user?.uid || item.paidBy === user?.uid ? 'payer' : 'receiver') : undefined}
+                      isPayerOwner={item.paidBy === group.createdBy}
                     />
                   </div>
                 ))}
@@ -471,6 +486,9 @@ const GroupDetail = () => {
                         {member.isPending && (
                           <span className="px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-600 text-[10px] font-black uppercase tracking-wider">Pending</span>
                         )}
+                        {(member.userId === group.createdBy || member.id === group.createdBy) && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                        )}
                       </div>
                       <div className="text-xs mt-1">
                         {isYou ? (
@@ -512,7 +530,8 @@ const GroupDetail = () => {
                         size="sm"
                         onClick={() => handleMemberClick({
                           ...member,
-                          balance: member.balance || 0
+                          balance: member.balance || 0,
+                          isOwner: member.userId === group.createdBy || member.id === group.createdBy,
                         })}
                         className="p-3 hover:bg-[#4a6850]/10 rounded-2xl group-hover:scale-105 transition-all"
                       >
@@ -707,6 +726,21 @@ const GroupDetail = () => {
               setSelectedMember(null);
             }
           }}
+          onMergeWithMe={async () => {
+            if (!currentUser || !selectedMember) return;
+            if (window.confirm(`Are you sure you want to merge "${selectedMember.name}" into your profile?\n\nThis will move all their transactions to you and delete this duplicate profile.\n\nThis action cannot be undone.`)) {
+              const result = await mergeMembers(group.id, selectedMember.id, currentUser.id);
+              if (result.success) {
+                toast.success("Profiles merged successfully");
+                setShowMemberDetail(false);
+                setSelectedMember(null);
+                // Reload group to reflect changes
+                fetchGroupDetail(group.id);
+              } else {
+                toast.error(result.error || "Failed to merge profiles");
+              }
+            }
+          }}
         />
       )}
 
@@ -718,8 +752,12 @@ const GroupDetail = () => {
           id: group.id,
           name: group.name,
           emoji: group.emoji,
-          members: group.members,
+          members: group.members.map(m => ({
+            ...m,
+            balance: (settlements[m.id]?.toReceive || 0) - (settlements[m.id]?.toPay || 0)
+          })),
         }}
+        isOwner={user?.uid === group.createdBy}
         onAddMember={(name) => {
           addMemberToGroup(group.id, { name });
           toast.success(`Added ${name} to the group`);

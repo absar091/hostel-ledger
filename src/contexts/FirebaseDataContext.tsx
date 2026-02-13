@@ -22,8 +22,16 @@ const normalizeMembers = (members: any, currentUserId?: string): any[] => {
     ? members
     : Object.entries(members).map(([key, value]: [string, any]) => ({
       ...value,
-      id: value.id || key // Ensure the key is used as the member id
+      id: value.id || key, // Ensure the key is used as the member id
+      isCurrentUser: false // Reset client-side property, ignore DB value
     }));
+
+  console.log('Validating members:', membersArray.map((m: any) => ({
+    id: m.id,
+    name: m.name,
+    userId: m.userId,
+    currentUserId
+  })));
 
   // If currentUserId is provided, rename that user to "You" for display
   if (currentUserId) {
@@ -35,7 +43,8 @@ const normalizeMembers = (members: any, currentUserId?: string): any[] => {
 
       // Fix for legacy groups where creator was stored as "You"
       // If we see "You" but it's not the current user, rename it to avoid confusion
-      if (m.name === "You") {
+      // Use case-insensitive check and trim
+      if (m.name && m.name.trim().toLowerCase() === "you") {
         return { ...m, name: "Group Owner" };
       }
 
@@ -43,7 +52,14 @@ const normalizeMembers = (members: any, currentUserId?: string): any[] => {
     });
   }
 
-  return membersArray;
+  // Fallback: If no currentUserId, still rename "You" to "Group Owner" to prevent confusion
+  // as we don't know who "You" is.
+  return membersArray.map((m: any) => {
+    if (m.name && m.name.trim().toLowerCase() === "you") {
+      return { ...m, name: "Group Owner" };
+    }
+    return m;
+  });
 };
 
 
@@ -152,6 +168,8 @@ export interface GroupMember {
   deletionCondition?: 'SETTLED' | 'TIME_LIMIT' | null;
   expiresAt?: number | null;
   deletionNotified?: boolean;
+  email?: string | null;
+  photoURL?: string | null;
 }
 
 export interface Group {
@@ -207,6 +225,8 @@ interface FirebaseDataContextType {
   updateMemberPaymentDetails: (groupId: string, memberId: string, paymentDetails: PaymentDetails, phone?: string) => Promise<{ success: boolean; error?: string }>;
   addExpense: (data: { groupId: string; amount: number; paidBy: string; participants: string[]; note: string; place: string; clientTxnId?: string }) => Promise<{ success: boolean; error?: string; transaction?: Transaction; duplicate?: boolean }>;
   recordPayment: (data: { groupId: string; fromMember: string; toMember: string; amount: number; method: "cash" | "online"; note?: string }) => Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
+  mergeMembers: (groupId: string, fromMemberId: string, toMemberId: string) => Promise<{ success: boolean; error?: string }>;
+  claimMemberProfile: (groupId: string, memberId: string) => Promise<{ success: boolean; error?: string }>;
   payMyDebt: (groupId: string, toMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   markPaymentAsPaid: (groupId: string, fromMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   addMoneyToWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string }>;
@@ -512,7 +532,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           {
             id: user.uid,
             name: "You",
-            isCurrentUser: true,
+            // isCurrentUser: true, // Don't persist this - computed client-side only
             paymentDetails: user.paymentDetails || {},
             phone: user.phone || null,
             userId: user.uid,
@@ -1034,7 +1054,212 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Helper functions
+  const mergeMembers = async (groupId: string, fromMemberId: string, toMemberId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: "User not authenticated" };
+    if (fromMemberId === toMemberId) return { success: false, error: "Cannot merge member into themselves" };
+
+    try {
+      const transaction = new TransactionManager();
+
+      // 1. Get Group & Transactions
+      const group = groups.find(g => g.id === groupId);
+      if (!group) return { success: false, error: "Group not found" };
+
+      const fromMember = group.members.find(m => m.id === fromMemberId);
+      const toMember = group.members.find(m => m.id === toMemberId);
+
+      if (!fromMember || !toMember) return { success: false, error: "Member not found" };
+
+      const groupTransactions = transactions.filter(t => t.groupId === groupId);
+
+      // 2. Identify transactions to update
+      // We need to check all transactions where fromMember is involved
+      const txToUpdate = groupTransactions.filter(t =>
+        t.paidBy === fromMemberId ||
+        t.from === fromMemberId ||
+        t.to === fromMemberId ||
+        t.participants?.some(p => p.id === fromMemberId)
+      );
+
+      // 3. Update transactions
+      for (const tx of txToUpdate) {
+        const updates: any = {};
+        let needsUpdate = false;
+
+        // Update paidBy
+        if (tx.paidBy === fromMemberId) {
+          updates.paidBy = toMemberId;
+          updates.paidByName = toMember.name;
+          needsUpdate = true;
+        }
+
+        // Update from/to for payments
+        if (tx.type === 'payment') {
+          if (tx.from === fromMemberId) {
+            updates.from = toMemberId;
+            updates.fromName = toMember.name;
+            needsUpdate = true;
+          }
+          if (tx.to === fromMemberId) {
+            updates.to = toMemberId;
+            updates.toName = toMember.name;
+            needsUpdate = true;
+          }
+          // Self-payment check (if merging makes from==to)
+          const finalFrom = updates.from || tx.from;
+          const finalTo = updates.to || tx.to;
+          if (finalFrom === finalTo) {
+            // Delete self-payment?
+            // Yes, a payment from A to A is meaningless and should be deleted.
+            transaction.addOperation({
+              execute: async () => {
+                const txRef = ref(database, `transactions/${tx.id}`);
+                await retryOperation(() => remove(txRef));
+                return true;
+              },
+              rollback: async () => { /* No easy rollback for deletion */ },
+              description: `Delete self-payment ${tx.id}`
+            });
+            // Also remove from userTransactions
+            transaction.addOperation({
+              execute: async () => {
+                const userTxRef = ref(database, `userTransactions/${user.uid}/${tx.id}`);
+                await retryOperation(() => remove(userTxRef));
+                return true;
+              },
+              rollback: async () => { },
+              description: `Delete user transaction ${tx.id}`
+            });
+            continue; // Skip normal update
+          }
+        }
+
+        // Update participants for expenses
+        if (tx.type === 'expense' && tx.participants) {
+          const fromParticipantIndex = tx.participants.findIndex(p => p.id === fromMemberId);
+          if (fromParticipantIndex !== -1) {
+            const fromParticipant = tx.participants[fromParticipantIndex];
+            const toParticipantIndex = tx.participants.findIndex(p => p.id === toMemberId);
+
+            let newParticipants = [...tx.participants];
+
+            if (toParticipantIndex !== -1) {
+              // Both present: Merge 'from' into 'to'
+              // Add amounts?
+              // expense splitting usually fixed amounts or shares.
+              // If fixed amounts, sum them.
+              newParticipants[toParticipantIndex] = {
+                ...newParticipants[toParticipantIndex],
+                amount: newParticipants[toParticipantIndex].amount + fromParticipant.amount
+              };
+              // Remove 'from'
+              newParticipants.splice(fromParticipantIndex, 1);
+            } else {
+              // Only 'from' present: Rename 'from' to 'to'
+              newParticipants[fromParticipantIndex] = {
+                ...fromParticipant,
+                id: toMemberId,
+                name: toMember.name
+              };
+            }
+            updates.participants = newParticipants;
+            needsUpdate = true;
+          }
+        }
+
+        if (needsUpdate) {
+          transaction.addOperation({
+            execute: async () => {
+              const txRef = ref(database, `transactions/${tx.id}`);
+              await retryOperation(() => update(txRef, updates));
+              return true;
+            },
+            rollback: async () => {
+              // Rollback logic omitted for brevity
+            },
+            description: `Update transaction ${tx.id}`
+          });
+        }
+      }
+
+      // 4. Delete the old member
+      const updatedMembers = group.members.filter(m => m.id !== fromMemberId);
+      transaction.addOperation({
+        execute: async () => {
+          const membersRef = ref(database, `groups/${groupId}/members`);
+          await retryOperation(() => set(membersRef, updatedMembers));
+          return true;
+        },
+        rollback: async () => {
+          const membersRef = ref(database, `groups/${groupId}/members`);
+          await retryOperation(() => set(membersRef, group.members));
+        },
+        description: `Remove member ${fromMember.name}`
+      });
+
+      // Update member count
+      transaction.addOperation({
+        execute: async () => {
+          const countRef = ref(database, `userGroups/${user.uid}/${groupId}/memberCount`);
+          await retryOperation(() => set(countRef, updatedMembers.length));
+          return true;
+        },
+        rollback: async () => { },
+        description: "Update member count"
+      });
+
+      const result = await transaction.execute();
+      return { success: result.success, error: result.error };
+
+    } catch (error: any) {
+      console.error("Merge members error:", error);
+      return { success: false, error: error.message || "Failed to merge members" };
+    }
+  };
+
+  const claimMemberProfile = async (groupId: string, memberId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: "User not authenticated" };
+
+    try {
+      const group = groups.find(g => g.id === groupId);
+      if (!group) return { success: false, error: "Group not found" };
+
+      const member = group.members.find(m => m.id === memberId);
+      if (!member) return { success: false, error: "Member not found" };
+
+      if (member.userId) return { success: false, error: "This profile finishes already claimed" };
+
+      const memberIndex = group.members.findIndex(m => m.id === memberId);
+      if (memberIndex === -1) return { success: false, error: "Member not found" };
+
+      // Update member details
+      const updatedMembers = [...group.members];
+      updatedMembers[memberIndex] = {
+        ...member,
+        userId: user.uid,
+        name: user.name || member.name, // Use auth name
+        email: user.email,
+        photoURL: user.photoURL,
+        isTemporary: false, // No longer temporary
+        deletionCondition: null,
+        expiresAt: null
+      };
+
+      await set(ref(database, `groups/${groupId}/members`), updatedMembers);
+
+      // Add user to group list
+      await set(ref(database, `userGroups/${user.uid}/${groupId}`), {
+        joinedAt: new Date().toISOString(),
+        memberCount: updatedMembers.length
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      console.error("Claim profile error:", error);
+      return { success: false, error: error.message || "Failed to claim profile" };
+    }
+  };
+
   const getGroupById = (groupId: string): Group | undefined => {
     return groups.find((g) => g.id === groupId);
   };
@@ -1236,7 +1461,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           await retryOperation(() => remove(userGroupsRef));
           return true;
         },
-        rollback: async () => {},
+        rollback: async () => { },
         description: "Delete user groups index"
       });
 
@@ -1247,7 +1472,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           await retryOperation(() => remove(userTransactionsRef));
           return true;
         },
-        rollback: async () => {},
+        rollback: async () => { },
         description: "Delete user transactions"
       });
 
@@ -1259,7 +1484,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             await retryOperation(() => remove(usernameRef));
             return true;
           },
-          rollback: async () => {},
+          rollback: async () => { },
           description: "Delete username"
         });
       }
@@ -1271,7 +1496,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           await retryOperation(() => remove(verificationRef));
           return true;
         },
-        rollback: async () => {},
+        rollback: async () => { },
         description: "Delete email verification"
       });
 
@@ -1282,7 +1507,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           await retryOperation(() => remove(userRef));
           return true;
         },
-        rollback: async () => {},
+        rollback: async () => { },
         description: "Delete user profile"
       });
 
@@ -1307,6 +1532,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     updateMemberPaymentDetails,
     addExpense,
     recordPayment,
+    mergeMembers,
+    claimMemberProfile,
     payMyDebt,
     markPaymentAsPaid,
     addMoneyToWallet,

@@ -1952,17 +1952,63 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
       return res.status(403).json({ success: false, error: 'You must be either the payer or the receiver' });
     }
 
-    // A. Update Wallet Balance
-    let walletBalanceAfter = user.walletBalance || 0;
+    // Identify the Other User (Counterparty)
+    const otherMemberId = isPaying ? toMember : fromMember;
+    const otherPerson = isPaying ? toPerson : fromPerson;
+
+    // Fetch Other User's Data if they are a real user
+    let otherUser = null;
+    if (otherPerson.userId) {
+      const otherUserSnap = await db.ref(`users/${otherPerson.userId}`).get();
+      if (otherUserSnap.exists()) {
+        otherUser = otherUserSnap.val();
+      }
+    }
+
+    // A. Update Wallet Balances (For BOTH parties)
+    const walletBalancesSnapshot = {};
+
+    // 1. Update Current User (Recorder)
+    let currentUserBalanceBefore = user.walletBalance || 0;
+    let currentUserBalanceAfter = currentUserBalanceBefore;
+
     if (isPaying) {
-      if ((user.walletBalance || 0) < amount) {
+      if (currentUserBalanceBefore < amount) {
         return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
       }
-      walletBalanceAfter -= amount;
-    } else if (isReceiving) {
-      walletBalanceAfter += amount;
+      currentUserBalanceAfter -= amount;
+    } else {
+      currentUserBalanceAfter += amount;
     }
-    updates[`users/${currentUserId}/walletBalance`] = walletBalanceAfter;
+    updates[`users/${currentUserId}/walletBalance`] = currentUserBalanceAfter;
+
+    walletBalancesSnapshot[currentUserId] = {
+      before: currentUserBalanceBefore,
+      after: currentUserBalanceAfter
+    };
+
+    // 2. Update Other User (if they exist)
+    if (otherUser && otherPerson.userId) {
+      let otherUserBalanceBefore = otherUser.walletBalance || 0;
+      let otherUserBalanceAfter = otherUserBalanceBefore;
+
+      if (isPaying) {
+        // Current user paid -> Other user receives
+        otherUserBalanceAfter += amount;
+      } else {
+        // Current user received -> Other user paid
+        if (otherUserBalanceBefore < amount) {
+          return res.status(400).json({ success: false, error: 'Other user has insufficient wallet balance' });
+        }
+        otherUserBalanceAfter -= amount;
+      }
+      updates[`users/${otherPerson.userId}/walletBalance`] = otherUserBalanceAfter;
+
+      walletBalancesSnapshot[otherPerson.userId] = {
+        before: otherUserBalanceBefore,
+        after: otherUserBalanceAfter
+      };
+    }
 
     // B. Create Transaction Record
     const newTransaction = {
@@ -1984,8 +2030,9 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
       toIsTemporary: !!toPerson.isTemporary,
       method,
       note: note || null,
-      walletBalanceBefore: user.walletBalance || 0,
-      walletBalanceAfter,
+      walletBalanceBefore: currentUserBalanceBefore, // Legacy (Recorder's)
+      walletBalanceAfter: currentUserBalanceAfter,   // Legacy (Recorder's)
+      walletBalances: walletBalancesSnapshot,        // NEW: Per-user snapshots
       createdAt: new Date().toISOString(),
       serverTimestamp: serverTime
     };

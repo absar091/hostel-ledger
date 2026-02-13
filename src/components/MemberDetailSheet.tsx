@@ -39,12 +39,15 @@ interface MemberDetailSheetProps {
       raastId?: string;
     };
     phone?: string;
+    phone?: string;
     isTemporary?: boolean;
+    isOwner?: boolean;
   } | null;
   transactions: Transaction[];
   settlementInfo?: SettlementInfo;
   onRecordPayment: () => void;
   onPayToMember?: () => void; // New: Pay your debt to member
+  onMergeWithMe?: () => void; // New: Merge this member into current user
 }
 
 // Calculate running balances for ledger view - Track separate debts
@@ -117,7 +120,8 @@ const MemberDetailSheet = ({
   transactions,
   settlementInfo,
   onRecordPayment,
-  onPayToMember
+  onPayToMember,
+  onMergeWithMe
 }: MemberDetailSheetProps) => {
   if (!member) return null;
 
@@ -143,6 +147,9 @@ const MemberDetailSheet = ({
             <Avatar name={member.name} size="lg" />
             <div className="flex items-center gap-2 mt-3">
               <h2 className="text-xl font-black text-gray-900 tracking-tight">{member.name}</h2>
+              {member.isOwner && (
+                <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+              )}
               {member.isTemporary && (
                 <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
               )}
@@ -257,6 +264,20 @@ const MemberDetailSheet = ({
             )}
           </div>
 
+          {/* Merge Option - For claiming duplicate profiles */}
+          {onMergeWithMe && !member.isTemporary && (
+            <div className="mb-6 px-1">
+              <p className="text-xs text-center text-gray-500 mb-2">Is this duplicate profile actually you?</p>
+              <Button
+                onClick={onMergeWithMe}
+                variant="outline"
+                className="w-full h-12 border-dashed border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 rounded-2xl"
+              >
+                Merge this profile into Me
+              </Button>
+            </div>
+          )}
+
           {/* Balance History Ledger */}
           <div className="space-y-3">
             <h3 className="font-black text-gray-900 mb-4 text-lg tracking-tight">Balance Ledger with {member.name}</h3>
@@ -270,8 +291,8 @@ const MemberDetailSheet = ({
                   {/* Transaction Header */}
                   <div className="flex items-start gap-4 mb-4">
                     <div className={`w-12 h-12 rounded-3xl flex items-center justify-center shrink-0 shadow-lg ${transaction.direction === "received"
-                        ? "bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white"
-                        : "bg-gradient-to-br from-red-500 to-orange-500 text-white"
+                      ? "bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white"
+                      : "bg-gradient-to-br from-red-500 to-orange-500 text-white"
                       }`}>
                       {transaction.type === "payment" ? (
                         <HandCoins className={`w-6 h-6 font-bold`} />
