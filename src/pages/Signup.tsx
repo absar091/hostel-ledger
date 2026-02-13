@@ -25,7 +25,7 @@ import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { signup, checkEmailExists, checkUsernameAvailable, user } = useFirebaseAuth();
+  const { signup, checkUsernameAvailable, user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   const [currentView, setCurrentView] = useState<'basic' | 'password'>('basic');
   const [showPassword, setShowPassword] = useState(false);
@@ -170,48 +170,8 @@ const Signup = () => {
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      // Check if email already exists
-      console.log('🔍 Checking email availability for:', formData.email);
-      toast.loading("Checking email availability...", { id: "email-check" });
-
-      const emailExists = await checkEmailExists(formData.email);
-      toast.dismiss("email-check");
-
-      if (emailExists) {
-        console.log('❌ Email already exists:', formData.email);
-        toast.error("Account already exists!", {
-          description: "This email is registered. Try logging in.",
-          action: {
-            label: "Log In",
-            onClick: () => {
-              // Reset form and switch to login mode if possible, or just notify
-              // Ideally navigate or change parent state. 
-              // Since we are inside Signup page which is usually separate, we might need navigation.
-              // Assuming this component is used where navigation is accessible.
-            }
-          }
-        });
-        setErrors(prev => ({ ...prev, email: 'This email is already registered' }));
-        setIsLoading(false);
-        return;
-      }
-
-      console.log('✅ Email is available, proceeding to password step');
-      toast.success("Email is available! Please set your password.");
-
-      // Move to password step
-      setCurrentView('password');
-
-    } catch (error: any) {
-      console.error("❌ Email check error:", error);
-      toast.dismiss("email-check");
-      toast.error("Failed to verify email availability. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    // Move to password step
+    setCurrentView('password');
   };
 
   const handleCreateAccount = async () => {
