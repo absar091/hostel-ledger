@@ -13,7 +13,6 @@ import {
   WifiOff,
   RefreshCw,
   Share2,
-  CircleCheckBig,
 } from "@/lib/icons";
 import { sendExternalInvitation } from "@/lib/api";
 import TransactionSuccessSheet from "@/components/TransactionSuccessSheet";
@@ -235,25 +234,31 @@ const Dashboard = () => {
   // Get all transactions including wallet transactions
   const allTransactions = getAllTransactions();
 
-  // Last transaction timestamp
-  const getLastTransactionTime = () => {
+  // Calculate time since last transaction
+  const getTimeSinceLastTransaction = () => {
     if (allTransactions.length === 0) return "No transactions yet";
 
-    const lastTransaction = allTransactions[0];
-    const lastTransactionDate = new Date(
+    const lastTransaction = allTransactions[0]; // Most recent transaction
+    const lastTransactionTime = new Date(
       lastTransaction.timestamp || lastTransaction.date,
-    );
+    ).getTime();
+    const now = new Date().getTime();
+    const diffInMinutes = Math.floor((now - lastTransactionTime) / (1000 * 60));
 
-    return lastTransactionDate.toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+    if (diffInMinutes < 1) return "Updated just now";
+    if (diffInMinutes === 1) return "Updated 1 min ago";
+    if (diffInMinutes < 60) return `Updated ${diffInMinutes} mins ago`;
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours === 1) return "Updated 1 hour ago";
+    if (diffInHours < 24) return `Updated ${diffInHours} hours ago`;
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays === 1) return "Updated 1 day ago";
+    return `Updated ${diffInDays} days ago`;
   };
 
-  const lastTransactionTime = getLastTransactionTime();
+  const lastTransactionTime = getTimeSinceLastTransaction();
 
   // Group transactions by date (Today, Yesterday, Older)
   const groupTransactionsByDate = (transactions: Transaction[]) => {
@@ -645,38 +650,32 @@ const Dashboard = () => {
           <div className="flex items-center gap-3">
             {/* Offline/Sync Indicator - Auto-syncs in background */}
             {offline ? (
-              <div className="flex items-center gap-2 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-full px-2.5 py-1.5 shadow-sm">
-                <span className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center">
-                  <WifiOff className="w-3.5 h-3.5 text-orange-600" />
-                </span>
-                <span className="text-[11px] font-black tracking-wide text-orange-700">
-                  OFFLINE
+              <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 rounded-full px-3 py-1.5">
+                <WifiOff className="w-3.5 h-3.5 text-orange-600" />
+                <span className="text-xs font-bold text-orange-700">
+                  Offline
                 </span>
                 {pendingCount > 0 && (
-                  <span className="bg-orange-600 text-white text-[10px] font-black rounded-full min-w-5 h-5 px-1.5 flex items-center justify-center">
+                  <span className="ml-1 bg-orange-600 text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center">
                     {pendingCount}
                   </span>
                 )}
               </div>
             ) : isSyncing ? (
-              <div className="flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-full px-2.5 py-1.5 shadow-sm">
-                <span className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                  <RefreshCw className="w-3.5 h-3.5 text-blue-600 animate-spin" />
-                </span>
-                <span className="text-[11px] font-black tracking-wide text-blue-700">
-                  SYNCING
+              <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1.5">
+                <RefreshCw className="w-3.5 h-3.5 text-blue-600 animate-spin" />
+                <span className="text-xs font-bold text-blue-700">
+                  Syncing...
                 </span>
               </div>
-            ) : (
-              <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-full px-2.5 py-1.5 shadow-sm">
-                <span className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <CircleCheckBig className="w-3.5 h-3.5 text-emerald-600" />
-                </span>
-                <span className="text-[11px] font-black tracking-wide text-emerald-700">
-                  {pendingCount > 0 ? `${pendingCount} QUEUED` : "SYNCED"}
+            ) : pendingCount > 0 ? (
+              <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1.5">
+                <RefreshCw className="w-3.5 h-3.5 text-green-600" />
+                <span className="text-xs font-bold text-green-700">
+                  {pendingCount} pending
                 </span>
               </div>
-            )}
+            ) : null}
 
             {isInstalled ? (
               <button className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600">
