@@ -267,6 +267,12 @@ export const useOneSignalPush = () => {
       try {
         if (user) {
           // User is logged in, ensure OneSignal is logged in
+          // Check if OneSignal.User is available to avoid "reading 'tt'" undefined error
+          if (!OneSignal.User) {
+            console.warn('⚠️ OneSignal.User is not available yet, skipping auth sync');
+            return;
+          }
+
           const currentExternalId = OneSignal.User.externalId;
           if (currentExternalId !== user.uid) {
             console.log('🔗 Syncing OneSignal User:', user.uid);
@@ -274,9 +280,7 @@ export const useOneSignalPush = () => {
           }
         } else {
           // User is logged out, ensure OneSignal is logged out
-          // But check if we are currently logged in to OneSignal
-          const currentExternalId = OneSignal.User.externalId;
-          if (currentExternalId) {
+          if (OneSignal.User && OneSignal.User.externalId) {
             console.log('🔓 Logging out from OneSignal');
             await OneSignal.logout();
           }
