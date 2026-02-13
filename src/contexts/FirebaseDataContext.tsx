@@ -32,6 +32,13 @@ const normalizeMembers = (members: any, currentUserId?: string): any[] => {
       if (m.id === currentUserId || m.userId === currentUserId) {
         return { ...m, name: "You", isCurrentUser: true };
       }
+
+      // Fix for legacy groups where creator was stored as "You"
+      // If we see "You" but it's not the current user, rename it to avoid confusion
+      if (m.name === "You") {
+        return { ...m, name: "Group Owner" };
+      }
+
       return m;
     });
   }
