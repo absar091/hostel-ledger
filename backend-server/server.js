@@ -1749,7 +1749,8 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       paidByName: payer.name,
       paidByIsTemporary: !!payer.isTemporary,
       memberCount: membersArray.length,
-      participantsCount: participants.length
+      participantsCount: participants.length,
+      participants: newTransaction.participants // Added to avoid N+1 query
     };
 
     membersArray.forEach(m => {

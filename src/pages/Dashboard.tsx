@@ -259,6 +259,23 @@ const Dashboard = () => {
 
   const lastTransactionTime = getTimeSinceLastTransaction();
 
+  const dashboardHighlights = useMemo(() => {
+    return [
+      {
+        label: "Groups",
+        value: groups.length,
+      },
+      {
+        label: "Transactions",
+        value: allTransactions.length,
+      },
+      {
+        label: offline ? "Offline queue" : "Sync queue",
+        value: pendingCount,
+      },
+    ];
+  }, [groups.length, allTransactions.length, offline, pendingCount]);
+
   // Group transactions by date (Today, Yesterday, Older)
   const groupTransactionsByDate = (transactions: Transaction[]) => {
     const today = new Date();
