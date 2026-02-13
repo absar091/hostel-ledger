@@ -1,10 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import Avatar from "./Avatar";
 import { ArrowDownLeft, ArrowUpRight, HandCoins, Calendar, MapPin, CreditCard, Banknote, ArrowRight, CheckCircle, XCircle } from "lucide-react";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
-import { calculateDebtSummary, generateSettlementOptions, SettlementOption } from "@/lib/debtTracking";
+import { calculateDebtSummary, generateSettlementOptions, SettlementOption, DebtSummary } from "@/lib/debtTracking";
 
 interface Transaction {
   id: string;
@@ -52,9 +52,21 @@ const EnhancedMemberDetailSheet = ({
   const { getIndividualDebts } = useFirebaseAuth();
   const [activeTab, setActiveTab] = useState<"debts" | "history">("debts");
   const [showSettlementOptions, setShowSettlementOptions] = useState(false);
+  const [debtSummary, setDebtSummary] = useState<DebtSummary | null>(null);
 
   // Get individual debt summary
-  const debtSummary = member ? getIndividualDebts(groupId, member.id) : null;
+  useEffect(() => {
+    let mounted = true;
+    if (member && groupId) {
+      getIndividualDebts(groupId, member.id).then(summary => {
+        if (mounted) setDebtSummary(summary);
+      });
+    } else {
+      setDebtSummary(null);
+    }
+    return () => { mounted = false; };
+  }, [member, groupId, getIndividualDebts]);
+
   const settlementOptions = debtSummary ? generateSettlementOptions(debtSummary) : [];
 
   if (!member || !debtSummary) return null;
