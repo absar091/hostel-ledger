@@ -67,6 +67,9 @@ export default function CreateGroupPage() {
     // Manual state
     const [manualName, setManualName] = useState("");
 
+    // Terms Agreement
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
+
     const handleSearch = async () => {
         if (!searchQuery.trim()) return;
         setIsSearching(true);
@@ -221,13 +224,71 @@ export default function CreateGroupPage() {
                     {step === 1 && (
                         <div className="space-y-6 animate-fade-in">
                             {/* Icon & Cover */}
+                            {/* Icon & Cover */}
                             <div className="text-center">
-                                <div className="w-24 h-24 mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 flex items-center justify-center text-4xl mb-4 relative">
-                                    {emoji}
-                                    <div className="absolute -bottom-2 -right-2 bg-gray-900 text-white p-1.5 rounded-full cursor-pointer hover:scale-110 transition-transform">
+                                <div className="relative w-24 h-24 mx-auto mb-4 group">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        id="cover-upload"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                toast.promise(
+                                                    async () => {
+                                                        const result = await uploadToCloudinary(file);
+                                                        if (result.success && result.url) {
+                                                            setCoverPhoto(result.url);
+                                                            return "Cover photo updated!";
+                                                        } else {
+                                                            throw new Error(result.error || 'Upload failed');
+                                                        }
+                                                    },
+                                                    {
+                                                        loading: 'Uploading cover...',
+                                                        success: (msg) => msg,
+                                                        error: (err) => err.message
+                                                    }
+                                                );
+                                            }
+                                        }}
+                                    />
+
+                                    <div
+                                        className={`w-full h-full rounded-3xl shadow-sm border border-gray-100 flex items-center justify-center text-4xl overflow-hidden cursor-pointer transition-all ${coverPhoto ? 'border-0' : 'bg-white'}`}
+                                        onClick={() => document.getElementById('cover-upload')?.click()}
+                                    >
+                                        {coverPhoto ? (
+                                            <img src={coverPhoto} alt="Cover" className="w-full h-full object-cover" />
+                                        ) : (
+                                            emoji
+                                        )}
+                                    </div>
+
+                                    <div
+                                        className="absolute -bottom-2 -right-2 bg-gray-900 text-white p-1.5 rounded-full cursor-pointer hover:scale-110 transition-transform z-10"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            document.getElementById('cover-upload')?.click();
+                                        }}
+                                    >
                                         <Upload className="w-3 h-3" />
                                     </div>
+
+                                    {coverPhoto && (
+                                        <div
+                                            className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full cursor-pointer hover:scale-110 transition-transform z-10"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setCoverPhoto("");
+                                            }}
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </div>
+                                    )}
                                 </div>
+
                                 <div className="flex gap-2 justify-center flex-wrap mb-6">
                                     {EMOJI_OPTIONS.map(e => (
                                         <button key={e} onClick={() => setEmoji(e)} className={`text-xl p-2 rounded-xl transition-all ${emoji === e ? 'bg-[#4a6850] scale-110 shadow-lg' : 'bg-white hover:bg-gray-100'}`}>
@@ -408,7 +469,26 @@ export default function CreateGroupPage() {
                                 ))}
                             </div>
 
-                            <Button onClick={handleCreate} className="w-full h-14 rounded-2xl bg-[#4a6850] text-lg font-bold shadow-xl shadow-green-900/10 hover:shadow-green-900/20 transform hover:-translate-y-1 transition-all">
+                            <div className="bg-gray-50 p-4 rounded-xl flex items-start gap-3 border border-gray-200">
+                                <div className="pt-0.5">
+                                    <input
+                                        type="checkbox"
+                                        id="terms"
+                                        checked={agreedToTerms}
+                                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                                        className="w-5 h-5 rounded border-gray-300 text-[#4a6850] focus:ring-[#4a6850]"
+                                    />
+                                </div>
+                                <label htmlFor="terms" className="text-sm text-gray-600 leading-tight">
+                                    I agree to the <a href="/terms-of-service" target="_blank" className="font-bold text-[#4a6850] underline">Terms of Service</a> and <a href="/privacy-policy" target="_blank" className="font-bold text-[#4a6850] underline">Privacy Policy</a>.
+                                </label>
+                            </div>
+
+                            <Button
+                                onClick={handleCreate}
+                                disabled={!agreedToTerms}
+                                className="w-full h-14 rounded-2xl bg-[#4a6850] text-lg font-bold shadow-xl shadow-green-900/10 hover:shadow-green-900/20 transform hover:-translate-y-1 transition-all disabled:opacity-50 disabled:transform-none"
+                            >
                                 Create Group 🚀
                             </Button>
                         </div>

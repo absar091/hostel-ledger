@@ -26,7 +26,7 @@ const About = () => {
     <div className="min-h-screen bg-white pb-8">
       {/* iPhone-style top accent border */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
-      
+
       {/* Page Guide */}
       <PageGuide
         title="About Hostel Ledger ℹ️"
@@ -56,7 +56,7 @@ const About = () => {
 
       {/* Content */}
       <div className="mobile-padding py-6 max-w-4xl mx-auto space-y-4">
-        
+
         {/* App Info Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex flex-col items-center text-center mb-6">
@@ -73,8 +73,8 @@ const About = () => {
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">About the App</h3>
               <p className="text-gray-700 leading-relaxed">
-                Hostel Ledger is a comprehensive expense tracking and group payment management application designed specifically 
-                for students, roommates, and shared living communities. Track shared expenses, manage group settlements, and 
+                Hostel Ledger is a comprehensive expense tracking and group payment management application designed specifically
+                for students, roommates, and shared living communities. Track shared expenses, manage group settlements, and
                 keep your finances organized with ease.
               </p>
             </div>
@@ -97,7 +97,7 @@ const About = () => {
         {/* Developer Info Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <h3 className="font-semibold text-gray-900 mb-4">Developed By</h3>
-          
+
           <div className="flex items-center gap-4 mb-4">
             <img
               src="/aarx-logo.webp"
@@ -114,9 +114,9 @@ const About = () => {
           </div>
 
           <p className="text-gray-700 leading-relaxed mb-4">
-            AARX Labs is a technology company specializing in innovative IT solutions across all domains. 
-            From web and mobile applications to enterprise software, AI solutions, and digital transformation - 
-            we turn ideas into reality. Our mission is to innovate cutting-edge solutions, build robust products, 
+            AARX Labs is a technology company specializing in innovative IT solutions across all domains.
+            From web and mobile applications to enterprise software, AI solutions, and digital transformation -
+            we turn ideas into reality. Our mission is to innovate cutting-edge solutions, build robust products,
             and launch them to make a real impact.
           </p>
 
@@ -134,7 +134,7 @@ const About = () => {
         {/* Legal Links Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <h3 className="font-semibold text-gray-900 mb-4">Legal</h3>
-          
+
           <div className="space-y-3">
             <button
               onClick={() => navigate("/terms-of-service")}
@@ -154,42 +154,12 @@ const About = () => {
           </div>
         </div>
 
-        {/* Technology Stack Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Built With</h3>
-          
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="font-medium text-gray-900">React</p>
-              <p className="text-gray-500 text-xs">Frontend Framework</p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="font-medium text-gray-900">TypeScript</p>
-              <p className="text-gray-500 text-xs">Type Safety</p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="font-medium text-gray-900">Firebase</p>
-              <p className="text-gray-500 text-xs">Backend & Auth</p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="font-medium text-gray-900">Tailwind CSS</p>
-              <p className="text-gray-500 text-xs">Styling</p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="font-medium text-gray-900">Cloudinary</p>
-              <p className="text-gray-500 text-xs">Image Storage</p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="font-medium text-gray-900">Vercel</p>
-              <p className="text-gray-500 text-xs">Hosting</p>
-            </div>
-          </div>
-        </div>
+
 
         {/* Contact Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <h3 className="font-semibold text-gray-900 mb-4">Contact & Support</h3>
-          
+
           <div className="space-y-3">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
@@ -209,10 +179,10 @@ const About = () => {
               </div>
               <div>
                 <p className="font-medium text-gray-900">Website</p>
-                <a 
-                  href="https://aarx.online" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href="https://aarx.online"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-emerald-600 hover:text-emerald-700 text-sm"
                 >
                   aarx.online

@@ -11,6 +11,7 @@ import { useSync } from "@/hooks/useSync";
 import { toast } from "sonner";
 import { calculateExpenseSplit } from "@/lib/expenseLogic";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
+import { getDatabase, ref, get } from "firebase/database";
 // import { validateExpenseData, sanitizeString, sanitizeAmount } from "@/lib/validation";
 
 interface Member {
@@ -74,6 +75,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
   const [fullGroupData, setFullGroupData] = useState<Group | null>(null);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const { fetchGroupDetail } = useFirebaseData();
+  const [memberBalances, setMemberBalances] = useState<Record<string, number>>({});
 
   // Get members from selected group
   const members = useMemo(() => {
@@ -87,6 +89,37 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
     // Filter out pending members (invited but not joined)
     return allMembers.filter(m => !m.isPending);
   }, [groups, selectedGroup, fullGroupData]);
+
+  // Fetch wallet balances for members
+  useEffect(() => {
+    if (!members.length || offline) return;
+
+    const fetchBalances = async () => {
+      const balances: Record<string, number> = {};
+      const db = getDatabase();
+
+      await Promise.all(members.map(async (member) => {
+        // accessible userId for linked members
+        const userId = (member as any).userId || (member.id !== 'manual' ? member.id : null);
+
+        if (userId) {
+          try {
+            const balanceRef = ref(db, `users/${userId}/walletBalance`);
+            const snapshot = await get(balanceRef);
+            if (snapshot.exists()) {
+              balances[member.id] = snapshot.val();
+            }
+          } catch (err) {
+            console.error(`Failed to fetch balance for ${member.name}`, err);
+          }
+        }
+      }));
+
+      setMemberBalances(balances);
+    };
+
+    fetchBalances();
+  }, [members, offline]);
 
   useEffect(() => {
     const loadFullGroup = async () => {
@@ -457,6 +490,16 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                         <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600 mt-0.5">
                           {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
                           <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
+                        </div>
+                      )}
+
+                      {/* Wallet Balance Display */}
+                      {memberBalances[member.id] !== undefined && (
+                        <div className={cn(
+                          "text-xs font-bold mt-0.5",
+                          memberBalances[member.id] < 0 ? "text-red-500" : "text-[#4a6850]"
+                        )}>
+                          Wallet: Rs {memberBalances[member.id]}
                         </div>
                       )}
                     </div>
