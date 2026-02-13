@@ -2549,6 +2549,109 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
   }
 });
 
+// Cleanup Unverified Users Endpoint (Admin/Secure)
+app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
+  try {
+    const db = admin.database();
+    const verificationRef = db.ref('emailVerification');
+
+    // Calculate 24 hours ago
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    console.log('🧹 Starting cleanup of unverified accounts older than:', twentyFourHoursAgo);
+
+    // Query unverified accounts older than 24 hours
+    // Using startAt/endAt requires an ordered query
+    const snapshot = await verificationRef.orderByChild('createdAt').endAt(twentyFourHoursAgo).get();
+
+    if (!snapshot.exists()) {
+      return res.json({ success: true, deletedCount: 0, message: 'No unverified accounts found' });
+    }
+
+    const accounts = snapshot.val();
+    let deletedCount = 0;
+    const errors = [];
+    const firestore = admin.firestore();
+
+    for (const [uid, accountData] of Object.entries(accounts)) {
+      try {
+        // Skip if already verified (double check)
+        if (accountData.emailVerified) {
+          continue;
+        }
+
+        console.log(`🗑️ Deleting unverified account: ${accountData.email} (${uid})`);
+
+        // 1. Delete from Firebase Auth
+        try {
+          await admin.auth().deleteUser(uid);
+        } catch (authError) {
+          if (authError.code === 'auth/user-not-found') {
+            console.log(`User ${uid} not found in Auth, proceeding with DB cleanup`);
+          } else {
+            throw authError;
+          }
+        }
+
+        // 2. Delete user profile from Realtime Database
+        await db.ref(`users/${uid}`).remove();
+
+        // 3. Delete email verification record from Realtime Database
+        await db.ref(`emailVerification/${uid}`).remove();
+
+        // 4. Delete verification codes (Legacy RTDB & Firestore)
+        if (accountData.email) {
+          // RTDB (Legacy/Invalid Path Handling)
+          try {
+            // Firebase keys cannot contain '.', but if stored somehow, we try to delete
+            // If the key was sanitized (e.g. replaced . with ,), we need to match that logic
+            // Assuming direct email usage as key is problematic in RTDB, but we try anyway
+            // or just skip if it throws
+            await db.ref(`verificationCodes/${accountData.email}`).remove();
+          } catch (e) {
+            console.warn(`Could not delete RTDB verification codes for ${accountData.email}:`, e.message);
+          }
+
+          // Firestore (Current)
+          try {
+            const verificationCodesRef = firestore.collection('verificationCodes');
+            const snapshotCodes = await verificationCodesRef.where('email', '==', accountData.email).get();
+            if (!snapshotCodes.empty) {
+              const batch = firestore.batch();
+              snapshotCodes.forEach(doc => {
+                batch.delete(doc.ref);
+              });
+              await batch.commit();
+              console.log(`Deleted Firestore verification codes for ${accountData.email}`);
+            }
+          } catch (e) {
+            console.warn(`Could not delete Firestore verification codes for ${accountData.email}:`, e.message);
+          }
+        }
+
+        deletedCount++;
+
+      } catch (err) {
+        console.error(`Failed to delete user ${uid}:`, err);
+        errors.push({ uid, error: err.message });
+      }
+    }
+
+    console.log(`✅ Cleanup completed. Deleted ${deletedCount} unverified accounts`);
+
+    res.json({
+      success: true,
+      deletedCount,
+      errors: errors.length > 0 ? errors : undefined,
+      message: `Successfully deleted ${deletedCount} unverified accounts.`
+    });
+
+  } catch (error) {
+    console.error('❌ Cleanup unverified users error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+  }
+});
+
 // 404 handler - MUST BE LAST
 app.use('*', (req, res) => {
   res.status(404).json({
