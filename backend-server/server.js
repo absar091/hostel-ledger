@@ -1911,7 +1911,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     // 8. Notifications (Async - Call helper directly)
     setImmediate(async () => {
       try {
-        // Send to ALL members including the user who added the expense
+        // A. Push Notifications (OneSignal)
         const membersWithUserId = membersArray.filter(m => m.userId);
         if (membersWithUserId.length > 0) {
           const userIds = membersWithUserId.map(m => m.userId);
@@ -1921,6 +1921,43 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
             body: `${payer.name} paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`,
             data: { type: 'expense', transactionId, groupId, amount }
           });
+        }
+
+        // B. Email Notifications
+        const participantsWithEmail = membersArray.filter(m =>
+          participants.includes(m.id) &&
+          m.email &&
+          m.id !== paidBy // Don't send email to the person who paid
+        );
+
+        if (participantsWithEmail.length > 0) {
+          console.log(`📧 Sending expense emails to ${participantsWithEmail.length} participants`);
+
+          for (const recipient of participantsWithEmail) {
+            try {
+              const split = splits.find(s => s.participantId === recipient.id);
+              const shareAmount = split ? split.amount : 0;
+
+              const mailOptions = {
+                from: process.env.EMAIL_FROM,
+                to: recipient.email,
+                subject: `New Expense: ${note || 'Shared Expense'} in ${group.name}`,
+                html: await loadEmailTemplate('transaction-alert', {
+                  USER_NAME: recipient.name,
+                  TRANSACTION_TYPE: 'Expense Added',
+                  AMOUNT: `Rs ${shareAmount.toLocaleString()} (Your share of Rs ${amount.toLocaleString()})`,
+                  GROUP_NAME: group.name,
+                  DATE: newTransaction.date,
+                  DESCRIPTION: `${payer.name} paid for "${note || 'Expense'}"${place ? ` at ${place}` : ''}.`
+                }),
+                text: `Hi ${recipient.name}, a new expense for Rs ${amount.toLocaleString()} was added in ${group.name}. Your share is Rs ${shareAmount.toLocaleString()}. Paid by: ${payer.name}.`
+              };
+
+              await sendMailWithFallback(mailOptions);
+            } catch (emailErr) {
+              console.error(`❌ Failed to send expense email to ${recipient.email}:`, emailErr.message);
+            }
+          }
         }
       } catch (notifyError) {
         console.error('⚠️ Async notification failed:', notifyError);
@@ -2157,7 +2194,7 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     // 7. Notifications (Async - Send to ALL group members)
     setImmediate(async () => {
       try {
-        // Send to ALL members including the user who recorded the payment
+        // A. Push Notifications (OneSignal)
         const membersWithUserId = membersArray.filter(m => m.userId);
         if (membersWithUserId.length > 0) {
           const userIds = membersWithUserId.map(m => m.userId);
@@ -2174,6 +2211,34 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
               amount
             }
           });
+        }
+
+        // B. Email Notifications (Send to counterparty)
+        if (otherPerson && otherPerson.email) {
+          console.log(`📧 Sending payment email to counterparty: ${otherPerson.email}`);
+
+          try {
+            const mailOptions = {
+              from: process.env.EMAIL_FROM,
+              to: otherPerson.email,
+              subject: `Payment Recorded: Rs ${amount.toLocaleString()} in ${group.name}`,
+              html: await loadEmailTemplate('transaction-alert', {
+                USER_NAME: otherPerson.name,
+                TRANSACTION_TYPE: 'Payment Recorded',
+                AMOUNT: `Rs ${amount.toLocaleString()}`,
+                GROUP_NAME: group.name,
+                DATE: newTransaction.date,
+                DESCRIPTION: isPaying
+                  ? `You received Rs ${amount.toLocaleString()} from ${user.name}.`
+                  : `You paid Rs ${amount.toLocaleString()} to ${user.name}.`
+              }),
+              text: `Hi ${otherPerson.name}, a payment of Rs ${amount.toLocaleString()} has been recorded in ${group.name}. ${isPaying ? `You received this from ${user.name}.` : `You paid this to ${user.name}.`}`
+            };
+
+            await sendMailWithFallback(mailOptions);
+          } catch (emailErr) {
+            console.error(`❌ Failed to send payment email to ${otherPerson.email}:`, emailErr.message);
+          }
         }
       } catch (notifyError) {
         console.error('⚠️ Async notification failed:', notifyError);

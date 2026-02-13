@@ -122,13 +122,12 @@ export default function CreateGroupPage() {
             return;
         }
 
-        // Auto-create a manual member for immediate use
+        // Create a single manual member with the email attached
         const derivedName = inviteEmail.split('@')[0];
         const formattedName = derivedName.charAt(0).toUpperCase() + derivedName.slice(1);
 
         setMembers([
             ...members,
-            { type: 'invite', email: inviteEmail },
             { type: 'manual', name: formattedName, email: inviteEmail }
         ]);
 
@@ -164,7 +163,8 @@ export default function CreateGroupPage() {
             email: (m as ManualMember).email
         }));
         const usernamesList = members.filter(m => m.type === 'real').map(m => (m as RealMember).username);
-        const emailsList = members.filter(m => m.type === 'invite').map(m => (m as InviteMember).email);
+        // We no longer use the pure 'invite' type in the frontend list, but we can extract emails from manual entries if the backend needs them separate
+        const emailsList = (members.filter(m => m.type === 'manual' && (m as ManualMember).email) as ManualMember[]).map(m => m.email!);
 
         const groupPayload = {
             name,
@@ -407,17 +407,19 @@ export default function CreateGroupPage() {
                                 {members.map((m, i) => (
                                     <div key={i} className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
                                         <div className="flex items-center gap-3">
-                                            {m.type === 'invite' ? (
-                                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><Mail className="w-5 h-5" /></div>
+                                            {m.type === 'manual' && (m as ManualMember).email ? (
+                                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                                    <Mail className="w-5 h-5" />
+                                                </div>
                                             ) : (
-                                                <Avatar name={m.type === 'real' ? m.name : m.name} />
+                                                <Avatar name={m.name} />
                                             )}
 
                                             <div>
-                                                <p className="font-bold text-gray-900 text-sm">{m.type === 'invite' ? m.email : m.name}</p>
+                                                <p className="font-bold text-gray-900 text-sm">{m.name}</p>
                                                 {m.type === 'real' && <p className="text-[10px] text-green-600 font-bold flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Auto-Sync</p>}
-                                                {m.type === 'manual' && <p className="text-[10px] text-gray-400 font-bold">Manual Entry</p>}
-                                                {m.type === 'invite' && <p className="text-[10px] text-blue-500 font-bold">Email Invite</p>}
+                                                {m.type === 'manual' && (m as ManualMember).email && <p className="text-[10px] text-blue-500 font-bold">Email Invite Sent</p>}
+                                                {m.type === 'manual' && !(m as ManualMember).email && <p className="text-[10px] text-gray-400 font-bold">Manual Entry</p>}
                                             </div>
                                         </div>
                                         <button onClick={() => setMembers(members.filter((_, idx) => idx !== i))} className="p-2 text-gray-400 hover:text-red-500">
@@ -450,11 +452,11 @@ export default function CreateGroupPage() {
                                 {members.map((m, i) => (
                                     <div key={i} className="py-3 flex items-center justify-between">
                                         <span className="font-bold text-gray-900">
-                                            {m.type === 'invite' ? m.email : m.name}
+                                            {m.name}
                                         </span>
                                         {m.type === 'real' && <span className="text-xs font-black bg-green-100 text-green-700 px-2 py-1 rounded-lg">SYNC</span>}
-                                        {m.type === 'manual' && <span className="text-xs font-black bg-gray-100 text-gray-400 px-2 py-1 rounded-lg">MANUAL</span>}
-                                        {m.type === 'invite' && <span className="text-xs font-black bg-blue-100 text-blue-600 px-2 py-1 rounded-lg">INVITE</span>}
+                                        {m.type === 'manual' && (m as ManualMember).email && <span className="text-xs font-black bg-blue-100 text-blue-600 px-2 py-1 rounded-lg">INVITE</span>}
+                                        {m.type === 'manual' && !(m as ManualMember).email && <span className="text-xs font-black bg-gray-100 text-gray-400 px-2 py-1 rounded-lg">MANUAL</span>}
                                     </div>
                                 ))}
                             </div>

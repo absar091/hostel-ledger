@@ -19,6 +19,12 @@ const Login = () => {
   const [showPageGuide, setShowPageGuide] = useState(false);
 
   useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  useEffect(() => {
     if (shouldShowPageGuide('login')) {
       setShowPageGuide(true);
     }
@@ -43,6 +49,7 @@ const Login = () => {
 
     if (result.success) {
       toast.success("Welcome back!");
+      navigate("/", { replace: true });
     } else {
       toast.error(result.error || "Login failed");
     }
