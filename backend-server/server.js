@@ -1474,25 +1474,29 @@ const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, b
   console.log('✅ OneSignal credentials found (App ID:', oneSignalAppId.substring(0, 8) + '...)');
 
   // Get OneSignal Player IDs from Firebase Realtime Database
-  const playerIds = [];
   console.log('🔍 Looking up Player IDs in Firebase...');
 
-  for (const userId of userIds) {
+  const playerIdsPromises = userIds.map(async (userId) => {
     try {
       const playerRef = admin.database().ref(`oneSignalPlayers/${userId}`);
       const snapshot = await playerRef.once('value');
       const playerData = snapshot.val();
 
       if (playerData && playerData.playerId) {
-        playerIds.push(playerData.playerId);
         console.log(`  ✅ User ${userId}: Player ID found (${playerData.playerId.substring(0, 12)}...)`);
+        return playerData.playerId;
       } else {
         console.log(`  ⚠️ User ${userId}: NO Player ID in Firebase (user may not have subscribed)`);
+        return null;
       }
     } catch (error) {
       console.error(`  ❌ User ${userId}: Failed to get Player ID:`, error.message);
+      return null;
     }
-  }
+  });
+
+  const results = await Promise.all(playerIdsPromises);
+  const playerIds = results.filter(id => id !== null);
 
   console.log('📊 Summary: Found', playerIds.length, 'Player IDs out of', userIds.length, 'users');
 
