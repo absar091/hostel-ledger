@@ -234,65 +234,25 @@ const Dashboard = () => {
   // Get all transactions including wallet transactions
   const allTransactions = getAllTransactions();
 
-  // Calculate time since last transaction
-  const getTimeSinceLastTransaction = () => {
+  // Last transaction timestamp
+  const getLastTransactionTime = () => {
     if (allTransactions.length === 0) return "No transactions yet";
 
-    const lastTransaction = allTransactions[0]; // Most recent transaction
-    const lastTransactionTime = new Date(
+    const lastTransaction = allTransactions[0];
+    const lastTransactionDate = new Date(
       lastTransaction.timestamp || lastTransaction.date,
-    ).getTime();
-    const now = new Date().getTime();
-    const diffInMinutes = Math.floor((now - lastTransactionTime) / (1000 * 60));
+    );
 
-    if (diffInMinutes < 1) return "Updated just now";
-    if (diffInMinutes === 1) return "Updated 1 min ago";
-    if (diffInMinutes < 60) return `Updated ${diffInMinutes} mins ago`;
-
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours === 1) return "Updated 1 hour ago";
-    if (diffInHours < 24) return `Updated ${diffInHours} hours ago`;
-
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays === 1) return "Updated 1 day ago";
-    return `Updated ${diffInDays} days ago`;
-  };
-
-  const lastTransactionTime = getTimeSinceLastTransaction();
-
-  const lastTransactionClock = useMemo(() => {
-    if (allTransactions.length === 0) return "No transactions yet";
-
-    const latest = allTransactions[0];
-    const latestDate = new Date(latest.timestamp || latest.date);
-
-    return latestDate.toLocaleString("en-US", {
+    return lastTransactionDate.toLocaleString("en-US", {
       month: "short",
       day: "numeric",
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
     });
-  }, [allTransactions]);
+  };
 
-  const totalPendingPayments = getTotalToReceive() + getTotalToPay();
-
-  const dashboardHighlights = useMemo(() => {
-    return [
-      {
-        label: "Groups",
-        value: groups.length,
-      },
-      {
-        label: "Pending payments",
-        value: `Rs ${totalPendingPayments.toLocaleString()}`,
-      },
-      {
-        label: offline ? "Offline queue" : "Sync queue",
-        value: pendingCount,
-      },
-    ];
-  }, [groups.length, totalPendingPayments, offline, pendingCount]);
+  const lastTransactionTime = getLastTransactionTime();
 
   // Group transactions by date (Today, Yesterday, Older)
   const groupTransactionsByDate = (transactions: Transaction[]) => {
@@ -735,25 +695,28 @@ const Dashboard = () => {
               {user?.name || "User"}
             </h2>
             <div className="mt-4 flex flex-wrap gap-2.5">
-              {dashboardHighlights.map((item) => (
-                <div
-                  key={item.label}
-                  className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1.5 shadow-sm"
-                >
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-                    {item.label}
-                  </span>
-                  <span className="text-xs font-black text-slate-800 tabular-nums">
-                    {item.value}
-                  </span>
-                </div>
-              ))}
+              <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1.5 shadow-sm">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+                  Groups
+                </span>
+                <span className="text-xs font-black text-slate-800 tabular-nums">
+                  {groups.length}
+                </span>
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1.5 shadow-sm">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+                  Pending payments
+                </span>
+                <span className="text-xs font-black text-slate-800 tabular-nums">
+                  Rs {(totalToReceive + totalToPay).toLocaleString()}
+                </span>
+              </div>
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1.5 shadow-sm">
                 <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600">
                   Last transaction
                 </span>
                 <span className="text-xs font-black text-emerald-700">
-                  {lastTransactionClock}
+                  {lastTransactionTime}
                 </span>
               </div>
             </div>
