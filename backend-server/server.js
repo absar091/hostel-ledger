@@ -1981,6 +1981,8 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
       timestamp,
       paidBy: fromMember,
       paidByName: fromPerson.name,
+      from: fromMember,
+      to: toMember,
       fromName: fromPerson.name,
       toName: toPerson.name,
       method,

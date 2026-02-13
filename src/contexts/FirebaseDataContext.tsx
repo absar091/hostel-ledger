@@ -379,22 +379,27 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                 // OPTIMIZATION: Check if we have enough data in the summary to avoid N+1 fetch
 
                 // 1. For expenses, we need the participants array (added in recent backend update)
-                if (data && data.type === 'expense' && Array.isArray(data.participants) && data.participants.length > 0) {
-                  return { id, ...data };
+                // Normalize participants if they come as an object (sparse array)
+                const participants = Array.isArray(data.participants)
+                  ? data.participants
+                  : (data.participants ? Object.values(data.participants) : []);
+
+                if (data && data.type === 'expense' && participants.length > 0) {
+                  return { id, ...data, participants };
                 }
 
                 // 2. For payments, fast-path only when both IDs and names are present.
                 // Some denormalized summaries only contain names, but downstream filters still
                 // rely on `from`/`to` member IDs (e.g. member-ledger views).
-                if (
-                  data &&
-                  data.type === 'payment' &&
-                  data.from &&
-                  data.to &&
-                  data.fromName &&
-                  data.toName
-                ) {
-                  return { id, ...data };
+                if (data && data.type === 'payment') {
+                  // Infer IDs if missing using user role and context to avoid N+1 fetch
+                  // paidBy is reliable as it's set in backend (and equals fromMember)
+                  const fromId = data.from || data.paidBy || (data.userRole === 'payer' ? user.uid : undefined);
+                  const toId = data.to || (data.userRole === 'receiver' ? user.uid : undefined);
+
+                  if (fromId && toId && data.fromName && data.toName) {
+                    return { id, ...data, from: fromId, to: toId };
+                  }
                 }
 
                 // 3. For wallet ops, summary is sufficient
