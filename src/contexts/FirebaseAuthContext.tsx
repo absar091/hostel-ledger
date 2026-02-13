@@ -97,6 +97,7 @@ interface FirebaseAuthContextType {
   // Favorite groups
   toggleFavoriteGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>;
   getFavoriteGroups: () => string[];
+  deleteAccount: () => Promise<{ success: boolean; error?: string }>;
 }
 
 const FirebaseAuthContext = createContext<FirebaseAuthContextType | undefined>(undefined);
@@ -661,6 +662,26 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const deleteAccount = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!auth.currentUser) {
+      return { success: false, error: "User not authenticated" };
+    }
+
+    try {
+      await auth.currentUser.delete();
+      return { success: true };
+    } catch (error: any) {
+      console.error("Delete account error:", error);
+      let errorMessage = "Failed to delete account";
+
+      if (error.code === 'auth/requires-recent-login') {
+        errorMessage = "For security, please log out and log in again before deleting your account.";
+      }
+
+      return { success: false, error: errorMessage };
+    }
+  };
+
   const markEmailAsVerified = async (uid: string): Promise<{ success: boolean; error?: string }> => {
     try {
       // Update email verification status in database
@@ -1058,7 +1079,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       settleNetAmount,
       toggleFavoriteGroup,
       getFavoriteGroups,
-      createGroup
+      createGroup,
+      deleteAccount
     }}>
       {children}
     </FirebaseAuthContext.Provider>

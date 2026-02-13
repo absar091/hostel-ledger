@@ -215,6 +215,8 @@ interface FirebaseDataContextType {
   getTransactionsByGroup: (groupId: string) => Transaction[];
   getTransactionsByMember: (groupId: string, memberId: string) => Transaction[];
   getAllTransactions: () => Transaction[];
+  checkAccountDeletionEligibility: () => Promise<{ eligible: boolean; reason?: string }>;
+  deleteAccountData: () => Promise<{ success: boolean; error?: string }>;
 }
 
 const FirebaseDataContext = createContext<FirebaseDataContextType | undefined>(undefined);
@@ -222,6 +224,7 @@ const FirebaseDataContext = createContext<FirebaseDataContextType | undefined>(u
 export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   const {
     user,
+    firebaseUser,
     addMoneyToWallet: authAddMoneyToWallet,
     markPaymentReceived,
     markDebtPaid,
@@ -1148,6 +1151,183 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     return transactions;
   };
 
+  const checkAccountDeletionEligibility = async (): Promise<{ eligible: boolean; reason?: string }> => {
+    if (isLoading) return { eligible: false, reason: "Please wait for data to load..." };
+
+    if (!user) {
+      // If user profile is missing but authenticated, assume no debt/data (safe to delete auth)
+      if (firebaseUser) return { eligible: true };
+      return { eligible: false, reason: "User not authenticated" };
+    }
+
+    // 1. Check Wallet Balance
+    if (user.walletBalance > 0) {
+      return { eligible: false, reason: "You have money in your wallet. Please withdraw it before deleting your account." };
+    }
+
+    // 2. Check Outstanding Settlements (Global)
+    const settlements = getSettlements();
+    let totalToReceive = 0;
+    let totalToPay = 0;
+
+    Object.values(settlements).forEach(s => {
+      totalToReceive += s.toReceive;
+      totalToPay += s.toPay;
+    });
+
+    if (totalToReceive > 0) {
+      return { eligible: false, reason: "You have pending settlements to receive. Please collect them before deleting your account." };
+    }
+
+    if (totalToPay > 0) {
+      return { eligible: false, reason: "You have pending debts to pay. Please settle them before deleting your account." };
+    }
+
+    // 3. Check Group Ownership
+    // Iterate through groups to find ones owned by the user that have other members
+    for (const group of groups) {
+      if (group.createdBy === user.uid) {
+        // Check if there are other members (excluding current user)
+        const otherMembers = group.members.filter(m => m.userId !== user.uid && m.id !== user.uid && !m.isCurrentUser);
+        if (otherMembers.length > 0) {
+          return { eligible: false, reason: `You are the owner of group "${group.name}" with other members. Please remove them or delete the group first.` };
+        }
+      }
+    }
+
+    return { eligible: true };
+  };
+
+  const deleteAccountData = async (): Promise<{ success: boolean; error?: string }> => {
+    if (isLoading) return { success: false, error: "Please wait for data to load..." };
+
+    if (!user) {
+      // If user profile is missing but authenticated, assume data is already gone
+      if (firebaseUser) return { success: true };
+      return { success: false, error: "User not authenticated" };
+    }
+
+    const eligibility = await checkAccountDeletionEligibility();
+    if (!eligibility.eligible) {
+      return { success: false, error: eligibility.reason };
+    }
+
+    const transaction = new TransactionManager();
+
+    try {
+      // 1. Remove from groups / Delete groups
+      for (const group of groups) {
+        if (group.createdBy === user.uid) {
+          // Delete group (we know it has no other members from eligibility check)
+          transaction.addOperation({
+            execute: async () => {
+              const groupRef = ref(database, `groups/${group.id}`);
+              await retryOperation(() => remove(groupRef));
+              return true;
+            },
+            rollback: async () => {
+              // Deletion rollback is hard, skip for now
+            },
+            description: `Delete group ${group.name}`
+          });
+        } else {
+          // Remove member from group
+          // Find member entry that corresponds to current user
+          // We check userId, id (legacy), or isCurrentUser
+          const memberToRemove = group.members.find(m =>
+            m.userId === user.uid ||
+            (m.isCurrentUser) ||
+            (m.name === "You" && m.id === user.uid) // Legacy check
+          );
+
+          if (memberToRemove) {
+            const updatedMembers = group.members.filter(m => m.id !== memberToRemove.id);
+            transaction.addOperation({
+              execute: async () => {
+                const membersRef = ref(database, `groups/${group.id}/members`);
+                await retryOperation(() => set(membersRef, updatedMembers));
+                return true;
+              },
+              rollback: async () => {
+                const membersRef = ref(database, `groups/${group.id}/members`);
+                await retryOperation(() => set(membersRef, group.members));
+              },
+              description: `Remove user from group ${group.name}`
+            });
+
+            // Also decrement member count for other users in that group?
+            // The backend/listeners usually handle this, but for cleanup we might want to be thorough.
+            // Since we are deleting the user entirely, we rely on the group update to propagate.
+          }
+        }
+      }
+
+      // 2. Delete User Groups Index
+      transaction.addOperation({
+        execute: async () => {
+          const userGroupsRef = ref(database, `userGroups/${user.uid}`);
+          await retryOperation(() => remove(userGroupsRef));
+          return true;
+        },
+        rollback: async () => {},
+        description: "Delete user groups index"
+      });
+
+      // 3. Delete User Transactions
+      transaction.addOperation({
+        execute: async () => {
+          const userTransactionsRef = ref(database, `userTransactions/${user.uid}`);
+          await retryOperation(() => remove(userTransactionsRef));
+          return true;
+        },
+        rollback: async () => {},
+        description: "Delete user transactions"
+      });
+
+      // 4. Delete Username
+      if (user.username) {
+        transaction.addOperation({
+          execute: async () => {
+            const usernameRef = ref(database, `usernames/${user.username}`);
+            await retryOperation(() => remove(usernameRef));
+            return true;
+          },
+          rollback: async () => {},
+          description: "Delete username"
+        });
+      }
+
+      // 5. Delete Email Verification
+      transaction.addOperation({
+        execute: async () => {
+          const verificationRef = ref(database, `emailVerification/${user.uid}`);
+          await retryOperation(() => remove(verificationRef));
+          return true;
+        },
+        rollback: async () => {},
+        description: "Delete email verification"
+      });
+
+      // 6. Delete User Profile
+      transaction.addOperation({
+        execute: async () => {
+          const userRef = ref(database, `users/${user.uid}`);
+          await retryOperation(() => remove(userRef));
+          return true;
+        },
+        rollback: async () => {},
+        description: "Delete user profile"
+      });
+
+      const result = await transaction.execute();
+      return { success: result.success, error: result.error };
+
+    } catch (error: any) {
+      console.error("Delete account data error:", error);
+      return { success: false, error: error.message || "Failed to delete account data" };
+    }
+  };
+
   const value = useMemo(() => ({
     groups,
     transactions,
@@ -1168,6 +1348,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     getTransactionsByGroup,
     getTransactionsByMember,
     getAllTransactions,
+    checkAccountDeletionEligibility,
+    deleteAccountData,
   }), [
     groups,
     transactions,

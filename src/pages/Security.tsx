@@ -14,8 +14,8 @@ import { toast } from "sonner";
 
 const Security = () => {
   const navigate = useNavigate();
-  const { user, logout, updateUserPassword } = useFirebaseAuth();
-  const { groups, transactions, isLoading: isDataLoading } = useFirebaseData();
+  const { user, logout, updateUserPassword, deleteAccount, firebaseUser } = useFirebaseAuth();
+  const { groups, transactions, isLoading: isDataLoading, deleteAccountData } = useFirebaseData();
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("profile");
 
   // Change Password Sheet
@@ -122,10 +122,44 @@ const Security = () => {
       return;
     }
 
-    // TODO: Implement account deletion
-    toast.error("Account deletion coming soon!");
-    setShowDeleteAccountSheet(false);
-    setDeleteConfirmation("");
+    // Security Check: Require recent login (within last 5 minutes)
+    if (firebaseUser?.metadata?.lastSignInTime) {
+      const lastSignIn = new Date(firebaseUser.metadata.lastSignInTime).getTime();
+      const fiveMinutes = 5 * 60 * 1000;
+      // Also allow if lastSignInTime is not available (e.g. new session) but be safe
+      if (Date.now() - lastSignIn > fiveMinutes) {
+        toast.error("For security, please log out and log in again immediately before deleting your account.");
+        return;
+      }
+    }
+
+    const toastId = toast.loading("Deleting account...");
+
+    try {
+      // 1. Delete User Data (Checks business rules and cleans up DB)
+      const dataResult = await deleteAccountData();
+
+      if (!dataResult.success) {
+        toast.error(dataResult.error || "Failed to clean up account data", { id: toastId });
+        return;
+      }
+
+      // 2. Delete Authentication Account
+      const authResult = await deleteAccount();
+
+      if (!authResult.success) {
+        toast.error(authResult.error || "Failed to delete account", { id: toastId });
+        return;
+      }
+
+      toast.success("Account deleted successfully", { id: toastId });
+      setShowDeleteAccountSheet(false);
+      setDeleteConfirmation("");
+      navigate("/"); // Auth listener will handle the rest
+    } catch (error) {
+      console.error("Account deletion error:", error);
+      toast.error("An unexpected error occurred", { id: toastId });
+    }
   };
 
   return (
