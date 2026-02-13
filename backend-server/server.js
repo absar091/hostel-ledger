@@ -86,13 +86,20 @@ const allowedOrigins = [
   'https://hostel-ledger-absar.vercel.app'
 ];
 
+// Combine with environment-defined allowed origins
+const envAllowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : [];
+
+const allAllowedOrigins = [...allowedOrigins, ...envAllowedOrigins];
+
 app.use(cors({
   origin: (origin, callback) => {
     // allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
     // Check for allowed specific origins
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (allAllowedOrigins.indexOf(origin) !== -1) {
       return callback(null, true);
     }
 
@@ -102,10 +109,9 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // Allow any Vercel preview deployment
-    if (origin.endsWith('.vercel.app')) {
-      return callback(null, true);
-    }
+    // SECURITY FIX: Removed wildcard .vercel.app check
+    // To allow Vercel previews, add the specific URL to ALLOWED_ORIGINS env var
+    // Example: ALLOWED_ORIGINS=https://hostel-ledger-preview-xyz.vercel.app
 
     const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
     return callback(new Error(msg), false);
@@ -2709,11 +2715,15 @@ app.use('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Hostel Ledger Email API server running on port ${PORT}`);
-  console.log(`📧 SMTP configured for: ${process.env.SMTP_USER}`);
-  console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-});
+
+// Only start the server if run directly (not imported for testing)
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Hostel Ledger Email API server running on port ${PORT}`);
+    console.log(`📧 SMTP configured for: ${process.env.SMTP_USER}`);
+    console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  });
+}
 
 module.exports = app;
