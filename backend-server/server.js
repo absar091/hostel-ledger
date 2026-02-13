@@ -183,10 +183,19 @@ async function sendMailWithFallback(mailOptions) {
     return result;
   } catch (primaryError) {
     const code = primaryError.responseCode || primaryError.code;
+
+    // Check for various error types that warrant a fallback retry
     const isQuotaError = [421, 450, 452, 550].includes(code)
       || /quota|limit|rate|too many|exceeded|temporarily/i.test(primaryError.message);
 
-    if (isQuotaError && process.env.FALLBACK_SMTP_USER) {
+    const isAuthError = code === 535 || code === 'EAUTH' || /auth|login|credential/i.test(primaryError.message);
+
+    const isConnectionError = ['ETIMEDOUT', 'ECONNREFUSED', 'ESOCKET', 'ENOTFOUND', 'EHOSTUNREACH'].includes(code)
+      || /timeout|connection|network/i.test(primaryError.message);
+
+    const shouldFallback = isQuotaError || isAuthError || isConnectionError;
+
+    if (shouldFallback && process.env.FALLBACK_SMTP_USER) {
       console.warn(`⚠️ Primary SMTP failed (${code}): ${primaryError.message}. Trying Gmail fallback...`);
       try {
         // Override "from" to use the fallback sender if the original fails auth
@@ -202,7 +211,7 @@ async function sendMailWithFallback(mailOptions) {
         throw fallbackError; // Throw the fallback error
       }
     } else {
-      console.error('❌ Primary SMTP failed (non-quota error):', primaryError.message);
+      console.error('❌ Primary SMTP failed (non-recoverable error):', primaryError.message);
       throw primaryError;
     }
   }
