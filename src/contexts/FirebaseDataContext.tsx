@@ -370,8 +370,17 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                   return { id, ...data };
                 }
 
-                // 2. For payments, we need sender/receiver names which are usually in summary
-                if (data && data.type === 'payment' && data.fromName && data.toName) {
+                // 2. For payments, fast-path only when both IDs and names are present.
+                // Some denormalized summaries only contain names, but downstream filters still
+                // rely on `from`/`to` member IDs (e.g. member-ledger views).
+                if (
+                  data &&
+                  data.type === 'payment' &&
+                  data.from &&
+                  data.to &&
+                  data.fromName &&
+                  data.toName
+                ) {
                   return { id, ...data };
                 }
 
