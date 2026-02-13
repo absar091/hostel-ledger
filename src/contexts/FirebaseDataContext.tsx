@@ -288,80 +288,46 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         // Listen to user's groups with error handling
         const groupsRef = ref(database, `userGroups/${user.uid}`);
 
-        // Track active group listeners to clean them up when groups are removed
-        // or when the component unmounts
-        const groupUnsubscribes: Record<string, () => void> = {};
-
         const groupsListener = onValue(groupsRef, (snapshot) => {
           try {
             const userGroups = snapshot.exists() ? snapshot.val() : {};
-            const groupIds = Object.keys(userGroups);
 
-            // 1. Remove listeners for groups that are no longer in userGroups
-            Object.keys(groupUnsubscribes).forEach(id => {
-              if (!userGroups[id]) {
-                // Determine if we should keep it? No, if it's gone from userGroups, remove listener
-                if (groupUnsubscribes[id]) {
-                  groupUnsubscribes[id]();
-                  delete groupUnsubscribes[id];
+            setGroups(prevGroups => {
+              const newGroups = Object.entries(userGroups).map(([id, meta]: [string, any]) => {
+                const existingGroup = prevGroups.find(g => g.id === id);
+
+                // PERFORMANCE OPTIMIZATION: Lazy loading
+                // Instead of fetching full group details (N+1 query), we use metadata from userGroups list
+                // and preserve existing members if they were already loaded (e.g. by GroupDetail page or AddExpenseSheet).
+
+                // If we have full details (members > 0), preserve them
+                if (existingGroup && existingGroup.members && existingGroup.members.length > 0) {
+                  return {
+                    ...existingGroup,
+                    ...meta, // Update metadata like name, emoji, etc.
+                    id
+                  };
                 }
 
-                // Update state to remove the group
-                setGroups(prev => prev.filter(g => g.id !== id));
-              }
+                // If members are empty or we don't have existing group, use metadata with empty members
+                return {
+                  id,
+                  name: meta.name || "Unknown Group",
+                  emoji: meta.emoji || "📁",
+                  coverPhoto: meta.coverPhoto,
+                  memberCount: meta.memberCount || 0,
+                  createdBy: meta.createdBy,
+                  createdAt: meta.createdAt || new Date().toISOString(),
+                  members: [] // Empty members initially - will be lazy loaded on demand
+                } as Group;
+              });
+
+              return newGroups.sort((a, b) =>
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              );
             });
 
-            // 2. Add listeners for new groups (or ensure existing ones are active)
-            groupIds.forEach(id => {
-              if (!groupUnsubscribes[id]) {
-                const groupRef = ref(database, `groups/${id}`);
-
-                // Set up REAL-TIME listener for this specific group
-                groupUnsubscribes[id] = onValue(groupRef, (groupSnap) => {
-                  if (groupSnap.exists()) {
-                    const fullData = groupSnap.val();
-                    const groupData = {
-                      id,
-                      ...fullData,
-                      members: normalizeMembers(fullData.members, user?.uid)
-                    };
-
-                    // Update state carefully
-                    setGroups(prev => {
-                      const existingIndex = prev.findIndex(g => g.id === id);
-                      if (existingIndex >= 0) {
-                        // Check if data actually changed to avoid unnecessary re-renders
-                        // (Deep comparison is expensive, so maybe just replace?)
-                        // React keys usually handle this, but let's replace holding order
-                        const newGroups = [...prev];
-                        newGroups[existingIndex] = groupData;
-                        return newGroups;
-                      } else {
-                        // Add new group
-                        return [...prev, groupData].sort((a, b) =>
-                          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                        );
-                      }
-                    });
-
-                    // Sync metadata block removed to prevent infinite loops from stale closures
-                    // The memberCount and name are updated by typical usage anyway.
-                  } else {
-                    // Group data is missing (maybe deleted?), remove it?
-                    // Keep logic simple for now.
-                  }
-                }, (err) => {
-                  console.error(`Group listener error for ${id}:`, err);
-                });
-              }
-            });
-
-            // Handle empty state if no groups
-            if (groupIds.length === 0) {
-              setGroups([]);
-            }
-
-            setIsLoading(false); // Initial load done (or at least listeners set up)
+            setIsLoading(false);
 
           } catch (error: any) {
             logger.error("Error in groups listener", { uid: user.uid, error: error.message });
@@ -370,7 +336,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         }, (error) => {
           logger.error("Groups listener error", { uid: user.uid, error: error.message });
           setIsLoading(false);
-        });  // Don't throw error, just log it and continue
+        });
 
         // Listen to user's transactions with error handling
         const transactionsRef = ref(database, `userTransactions/${user.uid}`);
@@ -481,9 +447,6 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         return () => {
           off(groupsRef, 'value', groupsListener);
           off(transactionsRef, 'value', transactionsListener);
-
-          // Cleanup dynamic group listeners
-          Object.values(groupUnsubscribes).forEach(unsub => unsub());
         };
       } catch (error: any) {
         logger.error("Error setting up Firebase listeners", { uid: user.uid, error: error.message });
