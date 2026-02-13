@@ -1,4 +1,5 @@
 import imageCompression from 'browser-image-compression';
+import { callSecureApi } from './api';
 
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -97,13 +98,21 @@ export async function uploadToCloudinary(
 
 /**
  * Delete image from Cloudinary (requires backend with API secret)
- * For now, we'll just remove the URL from Firestore
  */
 export async function deleteFromCloudinary(publicId: string): Promise<boolean> {
-  // This would require backend API with Cloudinary API secret
-  // For now, we just remove the reference from Firestore
-  console.log('Image reference removed from profile:', publicId);
-  return true;
+  try {
+    if (!publicId) return false;
+
+    // Call secure backend endpoint to delete image
+    await callSecureApi('/api/delete-image', { publicId });
+    console.log('Image deleted from Cloudinary:', publicId);
+    return true;
+  } catch (error) {
+    console.error('Failed to delete image from Cloudinary:', error);
+    // We return false but don't throw, as the Firestore reference removal is more critical
+    // and we don't want to block profile updates if Cloudinary fails (e.g. network issue)
+    return false;
+  }
 }
 
 /**
