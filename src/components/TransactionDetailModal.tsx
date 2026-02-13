@@ -600,34 +600,62 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             </div>
                         )}
 
-                        {/* Wallet Balances */}
-                        {transaction.walletBalanceBefore !== undefined && (
-                            <div style={{
-                                display: 'flex', alignItems: 'center', gap: '12px',
-                                padding: '14px 16px', background: '#F9FAFB', borderRadius: '16px',
-                                border: '1px solid #E5E7EB'
-                            }}>
-                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>💳</div>
-                                <div>
-                                    <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Wallet Before</div>
-                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>Rs {transaction.walletBalanceBefore.toLocaleString()}</div>
-                                </div>
-                            </div>
-                        )}
+                        {/* Wallet Balances - Intelligent Display for Receipt */}
+                        {(() => {
+                            let balanceBefore: number | undefined;
+                            let balanceAfter: number | undefined;
+                            let showBalance = false;
 
-                        {transaction.walletBalanceAfter !== undefined && (
-                            <div style={{
-                                display: 'flex', alignItems: 'center', gap: '12px',
-                                padding: '14px 16px', background: '#F0FDF4', borderRadius: '16px',
-                                border: '1px solid #BBF7D0'
-                            }}>
-                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>💳</div>
-                                <div>
-                                    <div style={{ fontSize: '10px', color: '#16A34A', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Wallet After</div>
-                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>Rs {transaction.walletBalanceAfter.toLocaleString()}</div>
-                                </div>
-                            </div>
-                        )}
+                            // Check for new data structure (Supports both Payer & Receiver)
+                            const userSnapshot = transaction.walletBalances?.[user?.uid];
+
+                            if (userSnapshot) {
+                                balanceBefore = userSnapshot.before;
+                                balanceAfter = userSnapshot.after;
+                                showBalance = true;
+                            }
+                            // Fallback logic for older transactions (Only accurate for Recorder)
+                            else if ((transaction.type === 'expense' && transaction.paidBy === user?.uid) ||
+                                (transaction.type === 'payment' && transaction.from === user?.uid)) {
+                                balanceBefore = transaction.walletBalanceBefore;
+                                balanceAfter = transaction.walletBalanceAfter;
+                                showBalance = true;
+                            }
+
+                            if (!showBalance || (balanceBefore === undefined && balanceAfter === undefined)) return null;
+
+                            return (
+                                <>
+                                    {balanceBefore !== undefined && (
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: '12px',
+                                            padding: '14px 16px', background: '#F9FAFB', borderRadius: '16px',
+                                            border: '1px solid #E5E7EB', marginBottom: '12px'
+                                        }}>
+                                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>💳</div>
+                                            <div>
+                                                <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Wallet Before</div>
+                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>Rs {balanceBefore.toLocaleString()}</div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {balanceAfter !== undefined && (
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: '12px',
+                                            padding: '14px 16px', background: '#F0FDF4', borderRadius: '16px',
+                                            border: '1px solid #BBF7D0'
+                                        }}>
+                                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>💳</div>
+                                            <div>
+                                                <div style={{ fontSize: '10px', color: '#16A34A', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Wallet After</div>
+                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>Rs {balanceAfter.toLocaleString()}</div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
 

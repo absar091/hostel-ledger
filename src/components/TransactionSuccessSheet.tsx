@@ -13,7 +13,10 @@ interface TransactionSuccessSheetProps {
     type: "expense" | "payment";
 }
 
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+
 const TransactionSuccessSheet = ({ open, onClose, transaction, type }: TransactionSuccessSheetProps) => {
+    const { user: currentUser } = useFirebaseAuth();
     useEffect(() => {
         if (open) {
             // Trigger confetti
@@ -212,6 +215,57 @@ const TransactionSuccessSheet = ({ open, onClose, transaction, type }: Transacti
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Wallet Balances - Intelligent Display */}
+                                {(() => {
+                                    let balanceBefore: number | undefined;
+                                    let balanceAfter: number | undefined;
+                                    let showBalance = false;
+
+                                    // We need to get the current user ID to show relevant balance
+                                    // Since we can't use hooks inside this callback easily without refactoring,
+                                    // we'll rely on the parent component passing 'user' or use the context hook at top level.
+                                    // EDIT: I will add the hook at the top level of the component.
+
+                                    // Logic assuming 'currentUser' is available from scope (I will add it)
+                                    const userSnapshot = transaction.walletBalances?.[currentUser?.uid];
+
+                                    if (userSnapshot) {
+                                        balanceBefore = userSnapshot.before;
+                                        balanceAfter = userSnapshot.after;
+                                        showBalance = true;
+                                    }
+                                    else if ((transaction.type === 'expense' && transaction.paidBy === currentUser?.uid) ||
+                                        (transaction.type === 'payment' && transaction.from === currentUser?.uid)) {
+                                        balanceBefore = transaction.walletBalanceBefore;
+                                        balanceAfter = transaction.walletBalanceAfter;
+                                        showBalance = true;
+                                    }
+
+                                    if (!showBalance || (balanceBefore === undefined && balanceAfter === undefined)) return null;
+
+                                    return (
+                                        <div className="pt-2">
+                                            <span className="text-slate-400 font-bold text-xs uppercase tracking-widest block mb-2">Wallet Update</span>
+                                            <div className="bg-slate-50 rounded-2xl p-4 space-y-2">
+                                                {balanceBefore !== undefined && (
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="text-slate-500 font-bold">Balance Before</span>
+                                                        <span className="text-slate-900 font-bold">Rs {balanceBefore.toLocaleString()}</span>
+                                                    </div>
+                                                )}
+                                                {balanceAfter !== undefined && (
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <span className="text-slate-900 font-black">Balance After</span>
+                                                        <span className={`font-black ${balanceAfter > (balanceBefore || 0) ? 'text-emerald-600' : 'text-slate-900'}`}>
+                                                            Rs {balanceAfter.toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         </div>
                     </div>
