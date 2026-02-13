@@ -1,4 +1,5 @@
 const express = require('express');
+const helmet = require('helmet');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -55,6 +56,9 @@ if (process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY) {
 }
 
 const app = express();
+
+// Security headers
+app.use(helmet());
 
 // Trust proxy for Vercel deployment
 app.set('trust proxy', 1);
@@ -393,7 +397,9 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
       // Parallel Resolve Usernames
       const resolvedUsers = await Promise.all(invitedUsernames.map(async (username) => {
-        const usernameRef = admin.database().ref(`usernames/${username.toLowerCase()}`);
+        // Sanitize username to prevent path traversal
+        const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
+        const usernameRef = admin.database().ref(`usernames/${cleanUsername}`);
         const s = await usernameRef.get();
         if (s.exists()) {
           const uidData = s.val();
@@ -588,7 +594,8 @@ app.post('/api/get-valid-user-details', authenticate, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Username is required' });
     }
 
-    const cleanUsername = username.toLowerCase().trim().replace('@', '');
+    // Sanitize username to prevent path traversal (allow only alphanumeric and underscores)
+    const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
     const usernameRef = admin.database().ref(`usernames/${cleanUsername}`);
     const snapshot = await usernameRef.get();
 
