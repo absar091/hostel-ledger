@@ -77,6 +77,7 @@ registerRoute(
 );
 
 // ROBUST NAVIGATION FALLBACK: Serve index.html for all navigation requests
+// ROBUST NAVIGATION FALLBACK: Serve index.html for all navigation requests
 const navigationHandler = async (params: any) => {
   try {
     // Attempt network first for navigation
@@ -86,9 +87,27 @@ const navigationHandler = async (params: any) => {
     }).handle(params);
   } catch (error) {
     // Fallback to precached index.html if network fails
-    return (await matchPrecache('/index.html')) || Response.error();
+    const precached = await matchPrecache('/index.html');
+    if (precached) return precached;
+
+    // Fallback to manual cache (for Dev mode where precache might fail)
+    const manualCache = await caches.match('/index.html');
+    if (manualCache) return manualCache;
+
+    return Response.error();
   }
 };
+
+// Manually cache index.html during install (fixes Dev mode offline)
+self.addEventListener('install', (event) => {
+  const urlsToCache = ['/index.html', '/only-logo.png'];
+  event.waitUntil(
+    caches.open('pages-cache').then((cache) => {
+      // Use no-cache to ensure we get fresh version from dev server
+      return cache.addAll(urlsToCache.map(url => new Request(url, { cache: 'no-cache' })));
+    })
+  );
+});
 
 registerRoute(new NavigationRoute(navigationHandler));
 
