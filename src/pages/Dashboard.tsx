@@ -60,6 +60,7 @@ const Dashboard = () => {
     getTotalToReceive,
     getTotalToPay,
     getSettlementDelta,
+    getSettlements,
   } = useFirebaseAuth();
   const {
     groups,
@@ -292,6 +293,22 @@ const Dashboard = () => {
   const settlementDelta = getSettlementDelta();
   const totalToReceive = getTotalToReceive();
   const totalToPay = getTotalToPay();
+
+  const pendingPaymentCounts = useMemo(() => {
+    const settlements = getSettlements();
+    const entries = Object.values(settlements || {});
+
+    const toPayCount = entries.filter((item) => (item?.toPay || 0) > 0).length;
+    const toReceiveCount = entries.filter(
+      (item) => (item?.toReceive || 0) > 0,
+    ).length;
+
+    return {
+      total: toPayCount + toReceiveCount,
+      toPayCount,
+      toReceiveCount,
+    };
+  }, [getSettlements, user?.settlements]);
 
   // Calculate percentage change for after settlements
   const afterSettlementsBalance = walletBalance + settlementDelta;
@@ -708,7 +725,11 @@ const Dashboard = () => {
                   Pending payments
                 </span>
                 <span className="text-xs font-black text-slate-800 tabular-nums">
-                  Rs {(totalToReceive + totalToPay).toLocaleString()}
+                  {pendingPaymentCounts.total}
+                </span>
+                <span className="text-[10px] font-bold text-slate-500">
+                  (pay {pendingPaymentCounts.toPayCount} • receive{" "}
+                  {pendingPaymentCounts.toReceiveCount})
                 </span>
               </div>
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1.5 shadow-sm">
