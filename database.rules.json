@@ -54,8 +54,8 @@
     },
     "emailVerification": {
       "$uid": {
-        ".read": "$uid === auth.uid || auth == null",
-        ".write": "$uid === auth.uid || auth == null",
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
         ".validate": "newData.hasChildren(['email', 'emailVerified'])"
       }
     },

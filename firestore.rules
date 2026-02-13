@@ -48,10 +48,9 @@ service cloud.firestore {
       allow read, write, delete: if true; // Allow anyone to read/write/delete verification codes
     }
     
-    // Email verification - allow both authenticated and unauthenticated access
+    // Email verification
     match /emailVerification/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
-      allow read, write: if request.auth == null; // Allow unauthenticated access for verification
     }
   }
 }
