@@ -1,3 +1,4 @@
+import { memo } from "react";
 import Avatar from "./Avatar";
 import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car, Wallet, Plus } from "lucide-react";
 
@@ -30,7 +31,7 @@ const categoryIcons = {
   other: HandCoins,
 };
 
-const TimelineItem = ({
+const TimelineItemBase = ({
   type,
   title,
   amount,
@@ -196,4 +197,36 @@ const TimelineItem = ({
   );
 };
 
-export default TimelineItem;
+const arePropsEqual = (prevProps: TimelineItemProps, nextProps: TimelineItemProps) => {
+  // 1. Compare primitive props (and simple objects like category/method strings)
+  if (
+    prevProps.type !== nextProps.type ||
+    prevProps.title !== nextProps.title ||
+    prevProps.amount !== nextProps.amount ||
+    prevProps.date !== nextProps.date ||
+    prevProps.paidBy !== nextProps.paidBy ||
+    prevProps.from !== nextProps.from ||
+    prevProps.to !== nextProps.to ||
+    prevProps.method !== nextProps.method ||
+    prevProps.category !== nextProps.category ||
+    prevProps.userRole !== nextProps.userRole ||
+    prevProps.onClick !== nextProps.onClick
+  ) {
+    return false;
+  }
+
+  // 2. Compare participants array deeply
+  // Since participants arrays are small (usually < 10 items), JSON.stringify is fast enough
+  // and handles deep equality for the participant objects.
+  const prevP = prevProps.participants;
+  const nextP = nextProps.participants;
+
+  if (prevP === nextP) return true;
+  if (!prevP || !nextP) return false; // One is undefined/null but not both (checked above)
+  if (prevP.length !== nextP.length) return false;
+
+  return JSON.stringify(prevP) === JSON.stringify(nextP);
+};
+
+export { arePropsEqual };
+export default memo(TimelineItemBase, arePropsEqual);
