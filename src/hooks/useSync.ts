@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     getOfflineExpenses, deleteOfflineExpense, getOfflineExpenseCount, updateOfflineExpense,
-    getOfflinePayments, deleteOfflinePayment, getOfflinePaymentCount
+    getOfflinePayments, deleteOfflinePayment, getOfflinePaymentCount, updateOfflinePayment
 } from '@/lib/offlineDB';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
@@ -115,10 +115,10 @@ export const useSync = () => {
                 continue;
             }
 
-            // Update attempt local (we don't persist update for payments yet but we should? 
-            // schema supports it, let's skip persistence for now to save complexity or 
-            // assume it works fine. Actually we should update DB to avoid infinite loop on crash?)
-            // Let's just try to sync.
+            // Update persistent retry count
+            payment.syncAttempts = (payment.syncAttempts || 0) + 1;
+            payment.lastSyncAttempt = Date.now();
+            await updateOfflinePayment(payment);
 
             try {
                 const result = await recordPaymentRef.current({
@@ -136,8 +136,7 @@ export const useSync = () => {
                 } else {
                     failCount++;
                     logger.error('Failed to sync offline payment', { paymentId: payment.id, error: result.error });
-                    // We aren't incrementing persistent retry count in DB for payments yet
-                    // Just break to be safe
+                    // Stop on first error to prevent further failures/load
                     break;
                 }
             } catch (error: any) {
