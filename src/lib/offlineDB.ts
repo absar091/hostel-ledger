@@ -20,6 +20,11 @@ interface HostelLedgerDB extends DBSchema {
     key: string;
     value: any;
   };
+  "offline-payments": {
+    key: string;
+    value: OfflinePayment;
+    indexes: { "by-timestamp": number; "by-group": string };
+  };
 }
 
 export interface OfflineExpense {
@@ -37,14 +42,27 @@ export interface OfflineExpense {
   clientTxnId?: string;
 }
 
+export interface OfflinePayment {
+  id: string;
+  groupId: string;
+  fromMember: string;
+  toMember: string;
+  amount: number;
+  method: "cash" | "online";
+  note?: string;
+  timestamp: number;
+  createdOffline: boolean;
+  syncAttempts?: number;
+}
+
 let dbInstance: IDBPDatabase<HostelLedgerDB> | null = null;
 
 // Initialize database with enhanced schema
 export const initDB = async (): Promise<IDBPDatabase<HostelLedgerDB>> => {
   if (dbInstance) return dbInstance;
 
-  dbInstance = await openDB<HostelLedgerDB>("hostel-ledger-db", 2, {
-    upgrade(db, oldVersion) {
+  dbInstance = await openDB<HostelLedgerDB>("hostel-ledger-db", 3, {
+    upgrade(db, oldVersion, newVersion, transaction) {
       // Offline expenses store
       if (!db.objectStoreNames.contains("offline-expenses")) {
         const store = db.createObjectStore("offline-expenses", { keyPath: "id" });
@@ -66,6 +84,13 @@ export const initDB = async (): Promise<IDBPDatabase<HostelLedgerDB>> => {
       // App data store for misc cached data (NEW)
       if (!db.objectStoreNames.contains("app-data")) {
         db.createObjectStore("app-data", { keyPath: "key" });
+      }
+
+      // Offline payments store (NEW in v3)
+      if (!db.objectStoreNames.contains("offline-payments")) {
+        const pStore = db.createObjectStore("offline-payments", { keyPath: "id" });
+        pStore.createIndex("by-timestamp", "timestamp");
+        pStore.createIndex("by-group", "groupId");
       }
     },
   });
@@ -97,6 +122,35 @@ export const saveOfflineExpense = async (expense: Omit<OfflineExpense, "id" | "t
 export const updateOfflineExpense = async (expense: OfflineExpense) => {
   const db = await initDB();
   await db.put("offline-expenses", expense);
+};
+
+// Payment Helpers
+export const saveOfflinePayment = async (payment: Omit<OfflinePayment, "id" | "timestamp" | "createdOffline" | "syncAttempts">): Promise<string> => {
+  const db = await initDB();
+  const offlinePayment: OfflinePayment = {
+    ...payment,
+    id: `pay_off_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    timestamp: Date.now(),
+    createdOffline: true,
+    syncAttempts: 0
+  };
+  await db.put("offline-payments", offlinePayment);
+  return offlinePayment.id;
+};
+
+export const getOfflinePayments = async (): Promise<OfflinePayment[]> => {
+  const db = await initDB();
+  return db.getAll("offline-payments");
+};
+
+export const deleteOfflinePayment = async (id: string) => {
+  const db = await initDB();
+  await db.delete("offline-payments", id);
+};
+
+export const getOfflinePaymentCount = async (): Promise<number> => {
+  const db = await initDB();
+  return db.count("offline-payments");
 };
 
 // Get all offline expenses

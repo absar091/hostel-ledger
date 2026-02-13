@@ -19,6 +19,24 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
     // Find the group for this transaction
     const transactionGroup = groups.find(g => g.id === transaction.groupId);
 
+    // DYNAMICALLY RESOLVE NAMES (Fixes "Paid by You" bug)
+    // 1. Resolve Payer Name
+    const payerMember = transactionGroup?.members.find((m: any) => m.id === transaction.paidBy);
+    const resolvedPaidByName = transaction.paidBy === user?.uid
+        ? "You"
+        : (payerMember?.name || transaction.paidByName || "Unknown");
+
+    const isTemporaryPayer = payerMember?.isTemporary || transaction.paidByIsTemporary;
+
+    // 2. Resolve Participant Names
+    const resolvedParticipants = transaction.participants?.map((p: any) => {
+        const member = transactionGroup?.members.find((m: any) => m.id === p.id);
+        const name = p.id === user?.uid
+            ? "You"
+            : (member?.name || p.name || "Unknown");
+        return { ...p, name, isTemporary: member?.isTemporary || p.isTemporary };
+    });
+
     const handleCopyId = () => {
         if (transaction.id) {
             if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -218,7 +236,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 </div>
                             )}
                             <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">
-                                {transaction.date}
+                                {transaction.date || (transaction.timestamp ? new Date(transaction.timestamp).toLocaleDateString() : 'Unknown Date')}
                                 {transaction.timestamp && ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
                             </div>
                         </div>
@@ -243,8 +261,8 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                     <div className="flex-1 min-w-0">
                                         <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Paid by</div>
                                         <div className="flex items-center gap-2">
-                                            <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transaction.paidByName}</div>
-                                            {transaction.paidByIsTemporary && (
+                                            <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{resolvedPaidByName}</div>
+                                            {isTemporaryPayer && (
                                                 <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
                                             )}
                                         </div>
@@ -276,7 +294,8 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 <div className="p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
                                     <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-3 lg:mb-4 font-semibold uppercase tracking-wide">Participants ({transaction.participants.length})</div>
                                     <div className="space-y-2 lg:space-y-3 max-h-32 overflow-y-auto scrollbar-hide">
-                                        {transaction.participants.map((participant: any, index: number) => (
+
+                                        {resolvedParticipants?.map((participant: any, index: number) => (
                                             <div key={index} className="flex justify-between items-center gap-2">
                                                 <div className="flex items-center gap-2 flex-1 min-w-0">
                                                     <span className="font-semibold text-gray-900 truncate text-sm lg:text-base">{participant.name}</span>
@@ -287,6 +306,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                 <span className="text-xs lg:text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">Rs {participant.amount.toLocaleString()}</span>
                                             </div>
                                         ))}
+
                                     </div>
                                 </div>
                             )}
@@ -424,18 +444,18 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                         )}
 
                         {/* Paid By */}
-                        {transaction.paidByName && (
+                        {resolvedPaidByName && (
                             <div style={{
                                 display: 'flex', alignItems: 'center', gap: '12px',
                                 padding: '14px 16px', background: '#F9FAFB', borderRadius: '16px',
                                 border: '1px solid #E5E7EB'
                             }}>
                                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#4a6850', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '13px', fontWeight: 800, flexShrink: 0 }}>
-                                    {transaction.paidByName.charAt(0).toUpperCase()}
+                                    {resolvedPaidByName.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
                                     <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Paid By</div>
-                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{transaction.paidByName}</div>
+                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{resolvedPaidByName}</div>
                                 </div>
                             </div>
                         )}
@@ -467,9 +487,9 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 border: '1px solid #E5E7EB'
                             }}>
                                 <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: '10px' }}>
-                                    Split Between ({transaction.participants.length})
+                                    Split Between ({resolvedParticipants?.length || 0})
                                 </div>
-                                {transaction.participants.map((p: any, i: number) => (
+                                {resolvedParticipants?.map((p: any, i: number) => (
                                     <div key={i} style={{
                                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                         padding: '6px 0',

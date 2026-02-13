@@ -398,7 +398,9 @@ const GroupDetail = () => {
                       title={item.title}
                       amount={item.amount}
                       date={item.date}
-                      paidBy={item.type === "expense" ? item.paidByName : undefined}
+                      paidBy={item.type === "expense" ? (
+                        item.paidBy === user?.uid ? "You" : (group.members.find((m) => m.id === item.paidBy)?.name || item.paidByName)
+                      ) : undefined}
                       participants={item.type === "expense" ? item.participants : undefined}
                       from={item.type === "payment" ? item.fromName : undefined}
                       to={item.type === "payment" ? item.toName : undefined}
