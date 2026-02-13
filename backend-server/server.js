@@ -6,9 +6,22 @@ const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
+const cloudinary = require('cloudinary').v2;
 const { loadEmailTemplate } = require('./utils/email');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
+
+// Cloudinary Configuration
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+  console.log('✅ Cloudinary configured successfully');
+} else {
+  console.warn('⚠️ Cloudinary not fully configured - image deletion will fail');
+}
 
 // Normalize group.members from Firebase: may be object or array.
 // Preserves Firebase key as member.id (matching frontend normalizeMembers logic).
@@ -318,6 +331,37 @@ const authenticate = async (req, res, next) => {
     });
   }
 };
+
+// Delete Image Endpoint (Secure)
+app.post('/api/delete-image', authenticate, async (req, res) => {
+  try {
+    const { publicId } = req.body;
+
+    if (!publicId) {
+      return res.status(400).json({ success: false, error: 'Missing publicId' });
+    }
+
+    // Optional: Verify that the publicId belongs to the user or is relevant to the app
+    // For now, we trust the authenticated user is deleting their own profile picture or an image they have access to.
+
+    console.log(`🗑️ Deleting image from Cloudinary: ${publicId} by user ${req.user.uid}`);
+
+    const result = await cloudinary.uploader.destroy(publicId);
+
+    if (result.result === 'ok' || result.result === 'not found') {
+      // 'not found' is also considered success (idempotent)
+      console.log(`✅ Image deleted successfully (result: ${result.result}): ${publicId}`);
+      res.json({ success: true });
+    } else {
+      console.error(`❌ Cloudinary delete failed: ${JSON.stringify(result)}`);
+      res.status(500).json({ success: false, error: 'Failed to delete image' });
+    }
+
+  } catch (error) {
+    console.error('❌ Delete image error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+  }
+});
 
 /**
  * Create Group Endpoint
