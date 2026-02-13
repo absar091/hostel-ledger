@@ -176,20 +176,10 @@ export default function CreateGroupPage() {
             const result = await createGroup(groupPayload);
             if (result.success) {
                 toast.success("Group created successfully! 🚀");
-                navigate('/dashboard');
-
-                // Handle email invites
-                if (emailsList.length > 0 && result.groupId) {
-                    // We'd import sendExternalInvitation here if needed, 
-                    // but usually the backend/context handles it or we do it here.
-                    // For now, let's assume Context handles invitedUsernames and we need to handle emails manually if context doesn't.
-                    // Actually context's createGroup takes invitedUsernames but invitedEmails logic was in Dashboard.
-                    // Let's rely on backend or add the call if needed.
-                    // Re-checking FirebaseDataContext... it handles invitedUsernames but NOT emails for external invites in `createGroup`, 
-                    // it returns `groupId` so we can do it here.
-
-                    // For this task, user just asked for validation. I'll stick to validation.
+                if (emailsList.length > 0) {
+                    toast.info(`Sent ${emailsList.length} email invitation${emailsList.length > 1 ? 's' : ''}`);
                 }
+                navigate('/dashboard');
             } else {
                 toast.error(result.error || "Failed to create group");
             }

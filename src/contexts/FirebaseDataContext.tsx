@@ -136,7 +136,7 @@ import {
 } from "@/lib/expenseLogic";
 import { logger } from "@/lib/logger";
 import { sendTransactionNotifications, triggerPushNotification, TransactionData, UserData } from "@/lib/transactionNotifications";
-import { callSecureApi, sendInvitation } from "@/lib/api";
+import { callSecureApi, sendInvitation, sendExternalInvitation } from "@/lib/api";
 import { saveOfflineExpense } from "@/lib/offlineDB";
 
 export interface GroupMember {
@@ -146,6 +146,9 @@ export interface GroupMember {
   paymentDetails?: PaymentDetails;
   phone?: string | null;
   userId?: string; // Firebase user ID for real users
+  email?: string;
+  isPending?: boolean;
+  invitedAt?: string;
   balance?: number; // Calculated balance - optional since computed dynamically
   isTemporary?: boolean;
   tempId?: string;
@@ -199,7 +202,7 @@ interface FirebaseDataContextType {
   groups: Group[];
   transactions: Transaction[];
   isLoading: boolean;
-  createGroup: (data: { name: string; emoji: string; members: { name: string; paymentDetails?: PaymentDetails; phone?: string }[]; coverPhoto?: string; invitedUsernames?: string[] }) => Promise<{ success: boolean; groupId?: string; error?: string }>;
+  createGroup: (data: { name: string; emoji: string; members: { name: string; paymentDetails?: PaymentDetails; phone?: string; email?: string }[]; coverPhoto?: string; invitedUsernames?: string[]; invitedEmails?: string[] }) => Promise<{ success: boolean; groupId?: string; error?: string }>;
   updateGroup: (groupId: string, data: Partial<Group>) => Promise<{ success: boolean; error?: string }>;
   deleteGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>;
   addMemberToGroup: (groupId: string, member: { id?: string; name: string; paymentDetails?: PaymentDetails; phone?: string; isTemporary?: boolean; deletionCondition?: 'SETTLED' | 'TIME_LIMIT' | null }) => Promise<{ success: boolean; error?: string; memberId?: string }>;
@@ -471,8 +474,9 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   const createGroup = async (data: {
     name: string;
     emoji: string;
-    members: { name: string; paymentDetails?: PaymentDetails; phone?: string }[];
+    members: { name: string; paymentDetails?: PaymentDetails; phone?: string; email?: string }[];
     invitedUsernames?: string[]; // New: List of usernames to invite
+    invitedEmails?: string[]; // New: List of emails to invite
     coverPhoto?: string;
   }): Promise<{ success: boolean; groupId?: string; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
@@ -498,11 +502,21 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       const newGroupRef = push(groupsRef);
       const groupId = newGroupRef.key!;
 
-      const sanitizedMembers = data.members.map(m => ({
-        name: m.name.trim().substring(0, 50),
-        paymentDetails: m.paymentDetails || {},
-        phone: m.phone ? m.phone.trim().substring(0, 20) : null,
-      }));
+      const sanitizedMembers = data.members.map(m => {
+        const memberObj: any = {
+          name: m.name.trim().substring(0, 50),
+          paymentDetails: m.paymentDetails || {},
+          phone: m.phone ? m.phone.trim().substring(0, 20) : null,
+        };
+
+        if (m.email) {
+          memberObj.email = m.email.trim();
+          memberObj.isPending = true;
+          memberObj.invitedAt = new Date().toISOString();
+        }
+
+        return memberObj;
+      });
 
       const newGroup: Partial<Group> = {
         id: groupId,
@@ -517,11 +531,14 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             phone: user.phone || null,
             userId: user.uid,
           },
-          ...sanitizedMembers.map((m) => ({
+          ...sanitizedMembers.map((m: any) => ({
             id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
             name: m.name,
             paymentDetails: m.paymentDetails,
             phone: m.phone,
+            email: m.email,
+            isPending: m.isPending,
+            invitedAt: m.invitedAt
           })),
         ],
         createdBy: user.uid,
@@ -569,17 +586,33 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       const result = await transaction.execute();
 
       // Send invitations if group creation was successful
-      if (result.success && data.invitedUsernames && data.invitedUsernames.length > 0) {
-        // We process invitations asynchronously but don't block success if one fails
-        (async () => {
-          await Promise.all(data.invitedUsernames!.map(async (username) => {
-            try {
-              await sendInvitation(groupId, username);
-            } catch (invError) {
-              console.error(`Failed to invite ${username}:`, invError);
-            }
-          }));
-        })();
+      if (result.success) {
+        // Handle Usernames
+        if (data.invitedUsernames && data.invitedUsernames.length > 0) {
+          // We process invitations asynchronously but don't block success if one fails
+          (async () => {
+            await Promise.all(data.invitedUsernames!.map(async (username) => {
+              try {
+                await sendInvitation(groupId, username);
+              } catch (invError) {
+                console.error(`Failed to invite ${username}:`, invError);
+              }
+            }));
+          })();
+        }
+
+        // Handle Emails
+        if (data.invitedEmails && data.invitedEmails.length > 0) {
+          (async () => {
+            await Promise.all(data.invitedEmails!.map(async (email) => {
+              try {
+                await sendExternalInvitation(groupId, email);
+              } catch (invError) {
+                console.error(`Failed to invite email ${email}:`, invError);
+              }
+            }));
+          })();
+        }
       }
 
       return { success: result.success, groupId: groupId, error: result.error };
