@@ -1,0 +1,21 @@
+{
+    "name": "Hostel Ledger",
+    "short_name": "Hostel Ledger",
+    "description": "Split expenses with ease using Hostel Ledger. Perfect for hostel students, roommates, and groups.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ecfdf5",
+    "theme_color": "#4a6850",
+    "icons": [
+        {
+            "src": "/only-logo.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/only-logo.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

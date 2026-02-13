@@ -1,8 +1,9 @@
-import { Home, Users, Clock, Settings, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { Home, Users, Clock, Settings, LogOut, ChevronLeft, ChevronRight, Mail } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useSidebar } from "@/contexts/SidebarContext";
+import { useInvitations } from "@/hooks/useInvitations";
 import { toast } from "sonner";
 import Logo from "./Logo";
 
@@ -11,6 +12,7 @@ const Sidebar = () => {
   const location = useLocation();
   const { user, logout } = useFirebaseAuth();
   const { isOpen, toggleSidebar } = useSidebar();
+  const { count: pendingInvites } = useInvitations();
 
   const handleLogout = async () => {
     try {
@@ -23,7 +25,7 @@ const Sidebar = () => {
   };
 
   const navItems = [
-    { id: "dashboard", icon: Home, label: "Dashboard", path: "/" },
+    { id: "dashboard", icon: Home, label: "Dashboard", path: "/", badge: pendingInvites },
     { id: "groups", icon: Users, label: "Groups", path: "/groups" },
     { id: "activity", icon: Clock, label: "Activity", path: "/activity" },
     { id: "settings", icon: Settings, label: "Settings", path: "/profile" },
@@ -80,8 +82,8 @@ const Sidebar = () => {
             <span className="text-xs font-black uppercase tracking-widest text-gray-400">Main</span>
           </div>
         )}
-        
-        {navItems.map((item) => {
+
+        {navItems.map((item: any) => {
           const Icon = item.icon;
           const active = isActive(item.path);
 
@@ -104,6 +106,16 @@ const Sidebar = () => {
               )}
               <Icon className={cn("w-5 h-5 flex-shrink-0", active && "font-bold")} />
               {isOpen && <span className={cn("font-bold truncate", active && "font-black")}>{item.label}</span>}
+
+              {/* Badge */}
+              {item.badge > 0 && (
+                <div className={cn(
+                  "bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white",
+                  isOpen ? "ml-auto px-1.5 h-5 min-w-[20px]" : "absolute -top-1 -right-1 w-4 h-4"
+                )}>
+                  {item.badge}
+                </div>
+              )}
             </button>
           );
         })}

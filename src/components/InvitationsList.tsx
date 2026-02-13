@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from "react";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useInvitations } from "@/hooks/useInvitations";
 import { respondInvitation } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Check, X, Mail, Loader2 } from "lucide-react";
-import { getDatabase, ref, onValue, off } from "firebase/database";
 
 interface Invitation {
     invitationId: string;
@@ -18,33 +18,10 @@ interface Invitation {
 
 const InvitationsList = () => {
     const { user } = useFirebaseAuth();
-    const [invitations, setInvitations] = useState<Invitation[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { invitations, loading } = useInvitations();
     const [processingId, setProcessingId] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (!user) return;
-
-        const db = getDatabase();
-        const invitationsRef = ref(db, `userInvitations/${user.uid}`);
-
-        const handleSnapshot = (snapshot: any) => {
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                const pendingInvitations = Object.values(data)
-                    .filter((inv: any) => inv.status === 'pending')
-                    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as Invitation[];
-
-                setInvitations(pendingInvitations);
-            } else {
-                setInvitations([]);
-            }
-            setLoading(false);
-        };
-
-        const unsubscribe = onValue(invitationsRef, handleSnapshot);
-        return () => off(invitationsRef, 'value', handleSnapshot);
-    }, [user]);
+    // Initial data fetching is now handled by useInvitations hook
 
     const handleRespond = async (invitationId: string, accept: boolean, groupId: string) => {
         try {

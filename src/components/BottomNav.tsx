@@ -1,5 +1,6 @@
 import { Home, Users, Plus, Clock, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useInvitations } from "@/hooks/useInvitations";
 import {
   Tooltip,
   TooltipContent,
@@ -22,8 +23,10 @@ const tabDescriptions = {
 };
 
 const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
+  const { count: pendingInvites } = useInvitations();
+
   const tabs = [
-    { id: "home" as const, icon: Home, label: "Home", shortLabel: "Home" },
+    { id: "home" as const, icon: Home, label: "Home", shortLabel: "Home", badge: pendingInvites },
     {
       id: "groups" as const,
       icon: Users,
@@ -96,6 +99,12 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
                   >
                     {tab.shortLabel}
                   </span>
+
+                  {/* Badge */}
+                  {(tab as any).badge > 0 && (
+                    <span className="absolute top-1 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+                  )}
+
                   <span
                     className={cn(
                       "absolute -bottom-1 h-1 w-8 rounded-full transition-all",

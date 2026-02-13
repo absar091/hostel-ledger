@@ -33,6 +33,7 @@ import OnboardingTour from "@/components/OnboardingTour";
 import PageGuide from "@/components/PageGuide";
 import ShareButton from "@/components/ShareButton";
 import TransactionDetailModal from "@/components/TransactionDetailModal";
+import UsernameMigration from "@/components/UsernameMigration";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -715,8 +716,10 @@ const Dashboard = () => {
             </button>
           </div>
         </header>
+        {/* Username Migration Prompt */}
+        <UsernameMigration />
 
-        <main className="px-6 lg:px-8 space-y-8 lg:max-w-7xl lg:mx-auto pb-24">
+        <main className="flex-1 w-full max-w-5xl mx-auto p-4 lg:p-6 space-y-6 pb-24 lg:pb-8">
           {/* Invitations List - Shows only when there are pending invitations */}
           <div className="mt-20 lg:mt-24 mb-[-2rem]">
             <InvitationsList />
@@ -1488,11 +1491,10 @@ const Dashboard = () => {
                             className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 active:scale-[0.99] transition-all text-left"
                           >
                             <div
-                              className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                                transaction.type === "expense"
-                                  ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
-                                  : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
-                              }`}
+                              className={`w-10 h-10 rounded-lg flex items-center justify-center ${transaction.type === "expense"
+                                ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
+                                : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
+                                }`}
                             >
                               {transaction.type === "expense" ? (
                                 <ArrowUpRight className="w-4 h-4" />
@@ -1522,17 +1524,16 @@ const Dashboard = () => {
                             </div>
                             <div className="text-right flex-shrink-0">
                               <p
-                                className={`font-black text-sm tabular-nums ${
-                                  transaction.type === "expense"
-                                    ? isPayer || isParticipant
-                                      ? "text-rose-500"
-                                      : "text-slate-400"
-                                    : "text-slate-900 dark:text-white"
-                                }`}
+                                className={`font-black text-sm tabular-nums ${transaction.type === "expense"
+                                  ? isPayer || isParticipant
+                                    ? "text-rose-500"
+                                    : "text-slate-400"
+                                  : "text-slate-900 dark:text-white"
+                                  }`}
                               >
                                 {transaction.type === "expense" &&
-                                !isPayer &&
-                                !isParticipant
+                                  !isPayer &&
+                                  !isParticipant
                                   ? "-"
                                   : `Rs ${displayAmount.toLocaleString()}`}
                               </p>
@@ -1591,11 +1592,10 @@ const Dashboard = () => {
                             className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 active:scale-[0.99] transition-all text-left"
                           >
                             <div
-                              className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                                transaction.type === "expense"
-                                  ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
-                                  : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
-                              }`}
+                              className={`w-10 h-10 rounded-lg flex items-center justify-center ${transaction.type === "expense"
+                                ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
+                                : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
+                                }`}
                             >
                               {transaction.type === "expense" ? (
                                 <ArrowUpRight className="w-4 h-4" />
@@ -1625,17 +1625,16 @@ const Dashboard = () => {
                             </div>
                             <div className="text-right flex-shrink-0">
                               <p
-                                className={`font-black text-sm tabular-nums ${
-                                  transaction.type === "expense"
-                                    ? isPayer || isParticipant
-                                      ? "text-rose-500"
-                                      : "text-slate-400"
-                                    : "text-slate-900 dark:text-white"
-                                }`}
+                                className={`font-black text-sm tabular-nums ${transaction.type === "expense"
+                                  ? isPayer || isParticipant
+                                    ? "text-rose-500"
+                                    : "text-slate-400"
+                                  : "text-slate-900 dark:text-white"
+                                  }`}
                               >
                                 {transaction.type === "expense" &&
-                                !isPayer &&
-                                !isParticipant
+                                  !isPayer &&
+                                  !isParticipant
                                   ? "-"
                                   : `Rs ${displayAmount.toLocaleString()}`}
                               </p>
@@ -1649,7 +1648,7 @@ const Dashboard = () => {
                   {/* Older Transactions */}
                   {olderTransactions.length > 0 &&
                     todayTransactions.length + yesterdayTransactions.length <
-                      3 && (
+                    3 && (
                       <div>
                         <div className="px-3 py-2 border-t border-slate-100 dark:border-slate-800">
                           <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">
@@ -1660,8 +1659,8 @@ const Dashboard = () => {
                           .slice(
                             0,
                             3 -
-                              todayTransactions.length -
-                              yesterdayTransactions.length,
+                            todayTransactions.length -
+                            yesterdayTransactions.length,
                           )
                           .map((transaction) => {
                             const transactionGroup = groups.find(
@@ -1706,11 +1705,10 @@ const Dashboard = () => {
                                 className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 active:scale-[0.99] transition-all text-left"
                               >
                                 <div
-                                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                                    transaction.type === "expense"
-                                      ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
-                                      : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
-                                  }`}
+                                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${transaction.type === "expense"
+                                    ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
+                                    : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
+                                    }`}
                                 >
                                   {transaction.type === "expense" ? (
                                     <ArrowUpRight className="w-4 h-4" />
@@ -1734,17 +1732,16 @@ const Dashboard = () => {
                                 </div>
                                 <div className="text-right flex-shrink-0">
                                   <p
-                                    className={`font-black text-sm tabular-nums ${
-                                      transaction.type === "expense"
-                                        ? isPayer || isParticipant
-                                          ? "text-rose-500"
-                                          : "text-slate-400"
-                                        : "text-slate-900 dark:text-white"
-                                    }`}
+                                    className={`font-black text-sm tabular-nums ${transaction.type === "expense"
+                                      ? isPayer || isParticipant
+                                        ? "text-rose-500"
+                                        : "text-slate-400"
+                                      : "text-slate-900 dark:text-white"
+                                      }`}
                                   >
                                     {transaction.type === "expense" &&
-                                    !isPayer &&
-                                    !isParticipant
+                                      !isPayer &&
+                                      !isParticipant
                                       ? "-"
                                       : `Rs ${displayAmount.toLocaleString()}`}
                                   </p>
@@ -1846,11 +1843,10 @@ const Dashboard = () => {
                             className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:scale-[1.01] active:scale-[0.99] transition-all text-left"
                           >
                             <div
-                              className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                                transaction.type === "expense"
-                                  ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
-                                  : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
-                              }`}
+                              className={`w-12 h-12 rounded-xl flex items-center justify-center ${transaction.type === "expense"
+                                ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
+                                : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
+                                }`}
                             >
                               {transaction.type === "expense" ? (
                                 <ArrowUpRight className="w-5 h-5" />
@@ -1880,17 +1876,16 @@ const Dashboard = () => {
                             </div>
                             <div className="text-right flex-shrink-0">
                               <p
-                                className={`font-black tabular-nums ${
-                                  transaction.type === "expense"
-                                    ? isPayer || isParticipant
-                                      ? "text-rose-500"
-                                      : "text-slate-400"
-                                    : "text-slate-900 dark:text-white"
-                                }`}
+                                className={`font-black tabular-nums ${transaction.type === "expense"
+                                  ? isPayer || isParticipant
+                                    ? "text-rose-500"
+                                    : "text-slate-400"
+                                  : "text-slate-900 dark:text-white"
+                                  }`}
                               >
                                 {transaction.type === "expense" &&
-                                !isPayer &&
-                                !isParticipant
+                                  !isPayer &&
+                                  !isParticipant
                                   ? "-"
                                   : `Rs ${displayAmount.toLocaleString()}`}
                               </p>
@@ -1902,7 +1897,7 @@ const Dashboard = () => {
                                       ? "You owe"
                                       : "Not involved"
                                   : transaction.paidBy === user?.uid ||
-                                      transaction.from === user?.uid
+                                    transaction.from === user?.uid
                                     ? "Sent"
                                     : "Received"}
                               </p>
@@ -1961,11 +1956,10 @@ const Dashboard = () => {
                             className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:scale-[1.01] active:scale-[0.99] transition-all text-left"
                           >
                             <div
-                              className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                                transaction.type === "expense"
-                                  ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
-                                  : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
-                              }`}
+                              className={`w-12 h-12 rounded-xl flex items-center justify-center ${transaction.type === "expense"
+                                ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
+                                : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
+                                }`}
                             >
                               {transaction.type === "expense" ? (
                                 <ArrowUpRight className="w-5 h-5" />
@@ -1995,17 +1989,16 @@ const Dashboard = () => {
                             </div>
                             <div className="text-right flex-shrink-0">
                               <p
-                                className={`font-black tabular-nums ${
-                                  transaction.type === "expense"
-                                    ? isPayer || isParticipant
-                                      ? "text-rose-500"
-                                      : "text-slate-400"
-                                    : "text-slate-900 dark:text-white"
-                                }`}
+                                className={`font-black tabular-nums ${transaction.type === "expense"
+                                  ? isPayer || isParticipant
+                                    ? "text-rose-500"
+                                    : "text-slate-400"
+                                  : "text-slate-900 dark:text-white"
+                                  }`}
                               >
                                 {transaction.type === "expense" &&
-                                !isPayer &&
-                                !isParticipant
+                                  !isPayer &&
+                                  !isParticipant
                                   ? "-"
                                   : `Rs ${displayAmount.toLocaleString()}`}
                               </p>
@@ -2017,7 +2010,7 @@ const Dashboard = () => {
                                       ? "You owe"
                                       : "Not involved"
                                   : transaction.paidBy === user?.uid ||
-                                      transaction.from === user?.uid
+                                    transaction.from === user?.uid
                                     ? "Sent"
                                     : "Received"}
                               </p>
@@ -2031,7 +2024,7 @@ const Dashboard = () => {
                   {/* Older Transactions */}
                   {olderTransactions.length > 0 &&
                     todayTransactions.length + yesterdayTransactions.length <
-                      3 && (
+                    3 && (
                       <div>
                         <div className="px-4 py-2 border-t border-slate-100 dark:border-slate-800">
                           <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">
@@ -2042,8 +2035,8 @@ const Dashboard = () => {
                           .slice(
                             0,
                             3 -
-                              todayTransactions.length -
-                              yesterdayTransactions.length,
+                            todayTransactions.length -
+                            yesterdayTransactions.length,
                           )
                           .map((transaction) => {
                             const transactionGroup = groups.find(
@@ -2088,11 +2081,10 @@ const Dashboard = () => {
                                 className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:scale-[1.01] active:scale-[0.99] transition-all text-left"
                               >
                                 <div
-                                  className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                                    transaction.type === "expense"
-                                      ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
-                                      : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
-                                  }`}
+                                  className={`w-12 h-12 rounded-xl flex items-center justify-center ${transaction.type === "expense"
+                                    ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
+                                    : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
+                                    }`}
                                 >
                                   {transaction.type === "expense" ? (
                                     <ArrowUpRight className="w-5 h-5" />
@@ -2116,17 +2108,16 @@ const Dashboard = () => {
                                 </div>
                                 <div className="text-right flex-shrink-0">
                                   <p
-                                    className={`font-black tabular-nums ${
-                                      transaction.type === "expense"
-                                        ? isPayer || isParticipant
-                                          ? "text-rose-500"
-                                          : "text-slate-400"
-                                        : "text-slate-900 dark:text-white"
-                                    }`}
+                                    className={`font-black tabular-nums ${transaction.type === "expense"
+                                      ? isPayer || isParticipant
+                                        ? "text-rose-500"
+                                        : "text-slate-400"
+                                      : "text-slate-900 dark:text-white"
+                                      }`}
                                   >
                                     {transaction.type === "expense" &&
-                                    !isPayer &&
-                                    !isParticipant
+                                      !isPayer &&
+                                      !isParticipant
                                       ? "-"
                                       : `Rs ${displayAmount.toLocaleString()}`}
                                   </p>
@@ -2138,7 +2129,7 @@ const Dashboard = () => {
                                           ? "You owe"
                                           : "Not involved"
                                       : transaction.paidBy === user?.uid ||
-                                          transaction.from === user?.uid
+                                        transaction.from === user?.uid
                                         ? "Sent"
                                         : "Received"}
                                   </p>
