@@ -1,6 +1,7 @@
-import React from "react";
-import { ArrowUpRight, ArrowDownLeft, CreditCard, Users, User, X, Share2, Copy } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { ArrowUpRight, ArrowDownLeft, CreditCard, Users, User, X, Share2, Copy, Download, Image } from "lucide-react";
 import { toast } from "sonner";
+import html2canvas from "html2canvas";
 
 interface TransactionDetailModalProps {
     transaction: any;
@@ -10,6 +11,9 @@ interface TransactionDetailModalProps {
 }
 
 const TransactionDetailModal = ({ transaction, onClose, groups, user }: TransactionDetailModalProps) => {
+    const receiptRef = useRef<HTMLDivElement>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+
     if (!transaction) return null;
 
     // Find the group for this transaction
@@ -22,7 +26,6 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                     .then(() => toast.success("Transaction ID copied! 📋"))
                     .catch(() => toast.error("Failed to copy ID"));
             } else {
-                // Fallback for non-secure contexts or older browsers
                 try {
                     const textArea = document.createElement("textarea");
                     textArea.value = transaction.id;
@@ -37,6 +40,93 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
             }
         }
     };
+
+    // Generate receipt image and share/download
+    const handleShareAsImage = async () => {
+        if (!receiptRef.current || isGenerating) return;
+        setIsGenerating(true);
+
+        const loadingToast = toast.loading("Generating receipt image...");
+
+        try {
+            // Make receipt visible for capture
+            receiptRef.current.style.position = 'fixed';
+            receiptRef.current.style.left = '-9999px';
+            receiptRef.current.style.top = '0';
+            receiptRef.current.style.display = 'block';
+            receiptRef.current.style.zIndex = '-1';
+
+            // Wait for render
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const canvas = await html2canvas(receiptRef.current, {
+                backgroundColor: '#ffffff',
+                scale: 3, // High resolution
+                useCORS: true,
+                logging: false,
+                width: 420,
+                windowWidth: 420,
+            });
+
+            // Hide receipt again
+            receiptRef.current.style.display = 'none';
+
+            // Convert to blob
+            const blob = await new Promise<Blob>((resolve, reject) => {
+                canvas.toBlob((b) => {
+                    if (b) resolve(b);
+                    else reject(new Error("Failed to create image"));
+                }, 'image/png', 1.0);
+            });
+
+            const fileName = `hostel-ledger-receipt-${transaction.id?.slice(-8) || 'txn'}.png`;
+            const file = new File([blob], fileName, { type: 'image/png' });
+
+            toast.dismiss(loadingToast);
+
+            // Try native share with file
+            if (navigator.share && navigator.canShare?.({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        title: 'Transaction Receipt - Hostel Ledger',
+                        text: `Receipt for Rs ${transaction.amount.toLocaleString()}`,
+                        files: [file],
+                    });
+                    toast.success("Receipt shared! 🧾");
+                } catch (err: any) {
+                    if (err.name !== 'AbortError') {
+                        // Fallback to download
+                        downloadImage(canvas, fileName);
+                    }
+                }
+            } else {
+                // Fallback: download the image
+                downloadImage(canvas, fileName);
+            }
+        } catch (error) {
+            console.error("Failed to generate receipt image:", error);
+            toast.dismiss(loadingToast);
+            toast.error("Failed to generate receipt image");
+            // Hide receipt on error
+            if (receiptRef.current) {
+                receiptRef.current.style.display = 'none';
+            }
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const downloadImage = (canvas: HTMLCanvasElement, fileName: string) => {
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+        toast.success("Receipt downloaded! 📥");
+    };
+
+    // Format date for receipt
+    const receiptDate = transaction.date +
+        (transaction.timestamp ? ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}` : '');
 
     return (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
@@ -61,30 +151,18 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                         </div>
                     </div>
                     <div className="flex items-center gap-2 lg:gap-3 ml-3 lg:ml-4">
+                        {/* Share as Image button */}
                         <button
-                            onClick={async () => {
-                                if (navigator.share) {
-                                    try {
-                                        const shareText = `🧾 Hostel Ledger Receipt\n\n` +
-                                            `Title: ${transaction.title}\n` +
-                                            `Amount: Rs ${transaction.amount.toLocaleString()}\n` +
-                                            `Date: ${transaction.date}\n` +
-                                            `${transaction.type === "expense" ? `Paid by: ${transaction.paidByName}` : `From: ${transaction.fromName} To: ${transaction.toName}`}\n\n` +
-                                            `Transaction ID: ${transaction.id}\n\n` +
-                                            `Shared via Hostel Ledger 🚀`;
-
-                                        await navigator.share({
-                                            title: 'Transaction Receipt',
-                                            text: shareText,
-                                        });
-                                    } catch (err) {
-                                        console.error('Error sharing:', err);
-                                    }
-                                }
-                            }}
-                            className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+                            onClick={handleShareAsImage}
+                            disabled={isGenerating}
+                            className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+                            title="Share as Image"
                         >
-                            <Share2 className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" />
+                            {isGenerating ? (
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                <Image className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" />
+                            )}
                         </button>
                         <button
                             onClick={onClose}
@@ -153,7 +231,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                     <div className="flex-1 min-w-0">
                                         <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Group</div>
                                         <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transactionGroup.name}</div>
-                                        <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">{transactionGroup.memberCount || transactionGroup.members.length} members</div>
+                                        <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">{transactionGroup.members.length} members</div>
                                     </div>
                                 </div>
                             )}
@@ -270,6 +348,210 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                     >
                         Close
                     </button>
+                </div>
+            </div>
+
+            {/* ========== HIDDEN RECEIPT FOR IMAGE GENERATION ========== */}
+            <div
+                ref={receiptRef}
+                style={{
+                    display: 'none',
+                    width: '420px',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                }}
+            >
+                <div style={{
+                    background: 'linear-gradient(135deg, #4a6850 0%, #3d5643 50%, #2f4a35 100%)',
+                    padding: '32px 24px 20px',
+                    color: 'white',
+                    textAlign: 'center',
+                }}>
+                    <div style={{ fontSize: '20px', fontWeight: 900, letterSpacing: '-0.5px', marginBottom: '4px' }}>
+                        Hostel Ledger
+                    </div>
+                    <div style={{ fontSize: '11px', opacity: 0.8, fontWeight: 500, letterSpacing: '1px', textTransform: 'uppercase' as const }}>
+                        Transaction Receipt
+                    </div>
+                </div>
+
+                <div style={{ background: '#ffffff', padding: '24px' }}>
+                    {/* Title & Amount */}
+                    <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                        <div style={{
+                            display: 'inline-block',
+                            padding: '4px 14px',
+                            borderRadius: '20px',
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            textTransform: 'uppercase' as const,
+                            letterSpacing: '1px',
+                            marginBottom: '12px',
+                            background: transaction.type === 'expense' ? '#FEF2F2' : '#F0FDF4',
+                            color: transaction.type === 'expense' ? '#DC2626' : '#16A34A',
+                            border: `1px solid ${transaction.type === 'expense' ? '#FECACA' : '#BBF7D0'}`,
+                        }}>
+                            {transaction.type}
+                        </div>
+                        <div style={{ fontSize: '18px', fontWeight: 700, color: '#111827', marginBottom: '8px' }}>
+                            {transaction.title}
+                        </div>
+                        <div style={{ fontSize: '42px', fontWeight: 900, color: '#111827', letterSpacing: '-2px', lineHeight: 1.1 }}>
+                            Rs {transaction.amount.toLocaleString()}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '8px', fontWeight: 500 }}>
+                            {receiptDate}
+                        </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div style={{ height: '1px', background: 'linear-gradient(to right, transparent, #E5E7EB, transparent)', margin: '0 0 20px' }} />
+
+                    {/* Details */}
+                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '12px' }}>
+                        {/* Group */}
+                        {transactionGroup && (
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: '12px',
+                                padding: '14px 16px', background: '#F9FAFB', borderRadius: '16px',
+                                border: '1px solid #E5E7EB'
+                            }}>
+                                <div style={{ fontSize: '20px' }}>{transactionGroup.emoji || '👥'}</div>
+                                <div>
+                                    <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Group</div>
+                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{transactionGroup.name}</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Paid By */}
+                        {transaction.paidByName && (
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: '12px',
+                                padding: '14px 16px', background: '#F9FAFB', borderRadius: '16px',
+                                border: '1px solid #E5E7EB'
+                            }}>
+                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#4a6850', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '13px', fontWeight: 800, flexShrink: 0 }}>
+                                    {transaction.paidByName.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Paid By</div>
+                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{transaction.paidByName}</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Payment (from → to) */}
+                        {transaction.fromName && transaction.toName && (
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: '12px',
+                                padding: '14px 16px', background: '#F9FAFB', borderRadius: '16px',
+                                border: '1px solid #E5E7EB'
+                            }}>
+                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#4a6850', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '13px', fontWeight: 800, flexShrink: 0 }}>
+                                    →
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Payment</div>
+                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{transaction.fromName} → {transaction.toName}</div>
+                                    {transaction.method && (
+                                        <div style={{ fontSize: '12px', color: '#6B7280', fontWeight: 500, textTransform: 'capitalize' as const }}>Via {transaction.method}</div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Participants */}
+                        {transaction.participants && transaction.participants.length > 0 && (
+                            <div style={{
+                                padding: '14px 16px', background: '#F9FAFB', borderRadius: '16px',
+                                border: '1px solid #E5E7EB'
+                            }}>
+                                <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: '10px' }}>
+                                    Split Between ({transaction.participants.length})
+                                </div>
+                                {transaction.participants.map((p: any, i: number) => (
+                                    <div key={i} style={{
+                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                        padding: '6px 0',
+                                        borderBottom: i < transaction.participants.length - 1 ? '1px solid #F3F4F6' : 'none'
+                                    }}>
+                                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>{p.name}</span>
+                                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#4a6850' }}>Rs {p.amount.toLocaleString()}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Place */}
+                        {transaction.place && (
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: '12px',
+                                padding: '14px 16px', background: '#F9FAFB', borderRadius: '16px',
+                                border: '1px solid #E5E7EB'
+                            }}>
+                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>📍</div>
+                                <div>
+                                    <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Place</div>
+                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{transaction.place}</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Note */}
+                        {transaction.note && (
+                            <div style={{
+                                padding: '14px 16px', background: '#F9FAFB', borderRadius: '16px',
+                                border: '1px solid #E5E7EB'
+                            }}>
+                                <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: '6px' }}>Note</div>
+                                <div style={{ fontSize: '13px', fontWeight: 500, color: '#374151', lineHeight: 1.5 }}>{transaction.note}</div>
+                            </div>
+                        )}
+
+                        {/* Wallet Balances */}
+                        {transaction.walletBalanceBefore !== undefined && (
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: '12px',
+                                padding: '14px 16px', background: '#F9FAFB', borderRadius: '16px',
+                                border: '1px solid #E5E7EB'
+                            }}>
+                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>💳</div>
+                                <div>
+                                    <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Wallet Before</div>
+                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>Rs {transaction.walletBalanceBefore.toLocaleString()}</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {transaction.walletBalanceAfter !== undefined && (
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: '12px',
+                                padding: '14px 16px', background: '#F0FDF4', borderRadius: '16px',
+                                border: '1px solid #BBF7D0'
+                            }}>
+                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>💳</div>
+                                <div>
+                                    <div style={{ fontSize: '10px', color: '#16A34A', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Wallet After</div>
+                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>Rs {transaction.walletBalanceAfter.toLocaleString()}</div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Receipt Footer */}
+                <div style={{
+                    background: '#F9FAFB',
+                    padding: '16px 24px',
+                    borderTop: '1px solid #E5E7EB',
+                    textAlign: 'center',
+                }}>
+                    <div style={{ fontSize: '9px', color: '#9CA3AF', fontWeight: 600, letterSpacing: '0.5px' }}>
+                        TXN: {transaction.id || 'N/A'}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '6px', fontWeight: 600 }}>
+                        Generated by Hostel Ledger • app.hostelledger.aarx.online
+                    </div>
                 </div>
             </div>
         </div>

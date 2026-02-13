@@ -9,6 +9,17 @@ const { loadEmailTemplate } = require('./utils/email');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
 
+// Normalize group.members from Firebase: may be object or array.
+// Preserves Firebase key as member.id (matching frontend normalizeMembers logic).
+function normalizeMembers(members) {
+  if (!members) return [];
+  if (Array.isArray(members)) return members;
+  return Object.entries(members).map(([key, value]) => ({
+    ...value,
+    id: value.id || key // Use stored id if present, otherwise the Firebase key
+  }));
+}
+
 // Initialize Firebase Admin SDK using environment variables
 try {
   const serviceAccount = {
@@ -326,6 +337,10 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     const newGroupRef = groupsRef.push();
     const groupId = newGroupRef.key;
 
+    // 1a. Fetch User Name first (so we don't store "You" in DB)
+    const userSnap = await admin.database().ref(`users/${userId}`).get();
+    const userName = userSnap.exists() ? userSnap.val().name : "User";
+
     // 1. Create Group Object
     const newGroup = {
       id: groupId,
@@ -335,10 +350,10 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
       members: [
         {
           id: userId,
-          name: "You",
+          name: userName, // Store real name, not "You"
           isCurrentUser: true,
           userId: userId,
-          paymentDetails: {}, // Should fetch from user profile ideally
+          paymentDetails: {},
           isAdmin: true
         },
         ...members.map(m => ({
@@ -347,9 +362,6 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
           userId: m.uid || null, // If real user
           username: m.username || null,
           type: m.type || 'manual',
-          email: m.email || null,
-          isPending: !!m.email,
-          invitedAt: m.email ? new Date().toISOString() : null,
           email: m.email || null, // Persist email for pending status
           isPending: !!m.email,   // Mark as pending if email exists
           invitedAt: m.email ? new Date().toISOString() : null
@@ -374,9 +386,8 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
     // 4. Handle Invited Usernames (send invitations to existing users)
     if (invitedUsernames && invitedUsernames.length > 0) {
-      // Optimization: Fetch sender name once
-      const senderSnap = await admin.database().ref(`users/${userId}/name`).get();
-      const senderName = senderSnap.exists() ? senderSnap.val() : "Someone";
+      // Optimization: reused fetched name
+      const senderName = userName;
 
       await Promise.all(invitedUsernames.map(async (username) => {
         const usernameRef = admin.database().ref(`usernames/${username.toLowerCase()}`);
@@ -456,8 +467,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
     if (emailMembers.length > 0) {
       console.log(`📧 Sending ${emailMembers.length} email invites...`);
-      const senderSnap = await admin.database().ref(`users/${userId}/name`).get();
-      const senderName = senderSnap.exists() ? senderSnap.val() : "A friend";
+      const senderName = userName;
 
       // Send emails in parallel
       await Promise.all(emailMembers.map(async (member) => {
@@ -1639,7 +1649,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     const user = userSnap.val();
 
     // 2. Verify current user is in the group
-    const membersArray = Object.values(group.members || {});
+    const membersArray = normalizeMembers(group.members);
     const member = membersArray.find(m => m.userId === currentUserId || m.id === currentUserId);
     if (!member) {
       return res.status(403).json({ success: false, error: 'You are not a member of this group' });
@@ -1749,7 +1759,8 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       paidByName: payer.name,
       paidByIsTemporary: !!payer.isTemporary,
       memberCount: membersArray.length,
-      participantsCount: participants.length
+      participantsCount: participants.length,
+      participants: newTransaction.participants // Added to avoid N+1 query
     };
 
     membersArray.forEach(m => {
@@ -1890,7 +1901,7 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     }
 
     // 2. Verify current user is in the group
-    const membersArray = Object.values(group.members || {});
+    const membersArray = normalizeMembers(group.members);
     const member = membersArray.find(m => m.userId === currentUserId || m.id === currentUserId);
     if (!member) {
       return res.status(403).json({ success: false, error: 'You are not a member of this group' });
@@ -2338,7 +2349,7 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
     }
 
     const group = groupSnap.val();
-    const isSenderMember = (group.members || []).some(m => m.userId === senderUid || (m.isTemporary && m.createdBy === senderUid)); // Ideally real members only
+    const isSenderMember = normalizeMembers(group.members).some(m => m.userId === senderUid || (m.isTemporary && m.createdBy === senderUid)); // Ideally real members only
 
     // Actually, only real members should invite. We check if sender is in the group.
     // For now, simpler check: check if userGroups has it
@@ -2348,7 +2359,7 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
     }
 
     // 3. Check if Invitee is already in group
-    const isInviteeAlreadyMember = (group.members || []).some(m => m.userId === inviteeUid);
+    const isInviteeAlreadyMember = normalizeMembers(group.members).some(m => m.userId === inviteeUid);
     if (isInviteeAlreadyMember) {
       return res.status(400).json({ success: false, error: 'User is already a member of this group' });
     }
@@ -2474,7 +2485,7 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
     const group = groupSnap.val();
 
     // Check sender membership
-    const isSenderMember = (group.members || []).some(m => m.userId === senderUid || (m.isTemporary && m.createdBy === senderUid));
+    const isSenderMember = normalizeMembers(group.members).some(m => m.userId === senderUid || (m.isTemporary && m.createdBy === senderUid));
     if (!isSenderMember) {
       // Also check userGroups as backup
       const senderGroupCheck = await db.ref(`userGroups/${senderUid}/${groupId}`).get();

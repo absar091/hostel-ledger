@@ -77,6 +77,9 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       injectManifest: {
+        // OneSignal requires importScripts() inside service worker, which needs classic format.
+        // Module service workers break registration and offline support.
+        rollupFormat: 'iife',
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,woff,woff2}'],
         globIgnores: ['**/node_modules/**/*', 'sw.js', 'workbox-*.js'],
         maximumFileSizeToCacheInBytes: 5000000,

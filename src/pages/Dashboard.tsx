@@ -259,6 +259,23 @@ const Dashboard = () => {
 
   const lastTransactionTime = getTimeSinceLastTransaction();
 
+  const dashboardHighlights = useMemo(() => {
+    return [
+      {
+        label: "Groups",
+        value: groups.length,
+      },
+      {
+        label: "Transactions",
+        value: allTransactions.length,
+      },
+      {
+        label: offline ? "Offline queue" : "Sync queue",
+        value: pendingCount,
+      },
+    ];
+  }, [groups.length, allTransactions.length, offline, pendingCount]);
+
   // Group transactions by date (Today, Yesterday, Older)
   const groupTransactionsByDate = (transactions: Transaction[]) => {
     const today = new Date();
@@ -712,32 +729,25 @@ const Dashboard = () => {
               {user?.name || "User"}
             </h2>
             <div className="mt-4 flex flex-wrap gap-2.5">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1.5 shadow-sm">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-                  Groups
+              {dashboardHighlights.map((item) => (
+                <div
+                  key={item.label}
+                  className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1.5 shadow-sm"
+                >
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+                    {item.label}
+                  </span>
+                  <span className="text-xs font-black text-slate-800 tabular-nums">
+                    {item.value}
+                  </span>
+                </div>
+              ))}
+              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1.5 shadow-sm">
+                <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600">
+                  Updated
                 </span>
-                <span className="text-xs font-black text-slate-800 tabular-nums">
-                  {groups.length}
-                </span>
-              </div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1.5 shadow-sm">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-                  Pending payments
-                </span>
-                <span className="text-xs font-black text-slate-800 tabular-nums">
-                  {pendingPaymentCounts.total}
-                </span>
-                <span className="text-[10px] font-bold text-slate-500">
-                  (pay {pendingPaymentCounts.toPayCount} • receive{" "}
-                  {pendingPaymentCounts.toReceiveCount})
-                </span>
-              </div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-200 px-3 py-1.5 shadow-sm">
-                <span className="text-[11px] font-black uppercase tracking-wider text-blue-600">
-                  Sync queue
-                </span>
-                <span className="text-xs font-black text-blue-700 tabular-nums">
-                  {pendingCount}
+                <span className="text-xs font-black text-emerald-700">
+                  {lastTransactionTime.replace("Updated ", "")}
                 </span>
               </div>
             </div>
@@ -873,7 +883,7 @@ const Dashboard = () => {
                   <h3 className="text-3xl lg:text-4xl font-black mt-1 tracking-tighter text-white tabular-nums">
                     Rs {walletBalance.toLocaleString()}
                   </h3>
-                  {/* Recency shown only here to avoid duplicate header signals */}
+                  {/* Last transaction time - smaller on mobile */}
                   <p className="text-white/40 text-[10px] lg:text-xs mt-1.5 lg:mt-2 font-semibold">
                     {lastTransactionTime}
                   </p>

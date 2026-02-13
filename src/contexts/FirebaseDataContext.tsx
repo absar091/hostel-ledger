@@ -15,14 +15,35 @@ const sanitizeAmount = (amount: string | number): number => {
 };
 
 // Normalize members: Firebase may return object {memberId: {}, ...} instead of array
-const normalizeMembers = (members: any): any[] => {
+const normalizeMembers = (members: any, currentUserId?: string): any[] => {
   if (!members) return [];
-  if (Array.isArray(members)) return members;
-  // Convert object to array, preserving key as id
-  return Object.entries(members).map(([key, value]: [string, any]) => ({
-    ...value,
-    id: key // Ensure the key is used as the member id
-  }));
+
+  const membersArray = Array.isArray(members)
+    ? members
+    : Object.entries(members).map(([key, value]: [string, any]) => ({
+      ...value,
+      id: value.id || key // Ensure the key is used as the member id
+    }));
+
+  // If currentUserId is provided, rename that user to "You" for display
+  if (currentUserId) {
+    return membersArray.map((m: any) => {
+      // Check both id and userId key for a match
+      if (m.id === currentUserId || m.userId === currentUserId) {
+        return { ...m, name: "You", isCurrentUser: true };
+      }
+
+      // Fix for legacy groups where creator was stored as "You"
+      // If we see "You" but it's not the current user, rename it to avoid confusion
+      if (m.name === "You") {
+        return { ...m, name: "Group Owner" };
+      }
+
+      return m;
+    });
+  }
+
+  return membersArray;
 };
 
 
@@ -279,7 +300,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                     const group = {
                       id,
                       ...fullData,
-                      members: normalizeMembers(fullData.members)
+                      members: normalizeMembers(fullData.members, user?.uid)
                     };
 
                     // Update the index if needed (for quick name display during next load)
@@ -363,8 +384,33 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             if (snapshot.exists()) {
               const userTransactions = snapshot.val();
               const transactionPromises = Object.entries(userTransactions).map(async ([id, data]: [string, any]) => {
-                // ALWAYS fetch full transaction data to ensure participants are loaded
-                // The metadata shortcut was missing the participants array causing missing chips
+                // OPTIMIZATION: Check if we have enough data in the summary to avoid N+1 fetch
+
+                // 1. For expenses, we need the participants array (added in recent backend update)
+                if (data && data.type === 'expense' && Array.isArray(data.participants) && data.participants.length > 0) {
+                  return { id, ...data };
+                }
+
+                // 2. For payments, fast-path only when both IDs and names are present.
+                // Some denormalized summaries only contain names, but downstream filters still
+                // rely on `from`/`to` member IDs (e.g. member-ledger views).
+                if (
+                  data &&
+                  data.type === 'payment' &&
+                  data.from &&
+                  data.to &&
+                  data.fromName &&
+                  data.toName
+                ) {
+                  return { id, ...data };
+                }
+
+                // 3. For wallet ops, summary is sufficient
+                if (data && (data.type === 'wallet_add' || data.type === 'wallet_deduct')) {
+                  return { id, ...data };
+                }
+
+                // Fallback: Fetch full transaction data if summary is incomplete (legacy data)
                 try {
                   const txRef = ref(database, `transactions/${id}`);
                   const txSnapshot = await get(txRef);
@@ -1024,7 +1070,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           const fullGroup = {
             id: groupId,
             ...data,
-            members: normalizeMembers(data.members)
+            members: normalizeMembers(data.members, user?.uid)
           };
 
           // Update global state with full details to fix "0 members" issue

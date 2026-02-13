@@ -19,8 +19,13 @@ import * as navigationPreload from 'workbox-navigation-preload';
 
 declare const self: ServiceWorkerGlobalScope;
 
-// Take control immediately
-self.skipWaiting();
+// NOTE: Do NOT call self.skipWaiting() here unconditionally!
+// vite-plugin-pwa with registerType:'autoUpdate' handles skipWaiting via its registration script.
+// Calling skipWaiting() here causes an infinite reload loop because:
+// 1. SW installs & immediately activates (skipWaiting)
+// 2. autoUpdate detects activation & reloads the page
+// 3. Reload triggers SW re-evaluation → back to step 1
+// skipWaiting is handled via the 'SKIP_WAITING' message listener at the bottom.
 clientsClaim();
 
 // Enable navigation preload

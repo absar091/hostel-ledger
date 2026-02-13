@@ -100,7 +100,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
   useEffect(() => {
     if (selectedGroup && step > 1) {
       const group = groups.find(g => g.id === selectedGroup);
-      if (group && group.members.length === 0 && (group.memberCount || 0) > 0) {
+      if (group && group.members.length === 0) {
         // Trigger fetch to populate members
         fetchGroupDetail(selectedGroup);
       }
@@ -232,7 +232,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   <div className="flex-1 text-left min-w-0">
                     <span className="font-black text-gray-900 tracking-tight block truncate">{group.name}</span>
                     <p className="text-xs text-[#4a6850]/80 font-bold">
-                      {group.memberCount || group.members.length} members
+                      {group.members.length} members
                     </p>
                   </div>
                   {selectedGroup === group.id && (
