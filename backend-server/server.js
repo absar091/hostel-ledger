@@ -2326,12 +2326,10 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
     }
 
     const group = groupSnap.val();
-    const isSenderMember = normalizeMembers(group.members).some(m => m.userId === senderUid || (m.isTemporary && m.createdBy === senderUid)); // Ideally real members only
+    // Ideally real members only. We check if sender is in the group.
+    const isSenderMember = normalizeMembers(group.members).some(m => m.userId === senderUid);
 
-    // Actually, only real members should invite. We check if sender is in the group.
-    // For now, simpler check: check if userGroups has it
-    const senderGroupCheck = await db.ref(`userGroups/${senderUid}/${groupId}`).get();
-    if (!senderGroupCheck.exists()) {
+    if (!isSenderMember) {
       return res.status(403).json({ success: false, error: 'You must be a member of the group to invite others' });
     }
 
@@ -2461,14 +2459,11 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
 
     const group = groupSnap.val();
 
-    // Check sender membership
-    const isSenderMember = normalizeMembers(group.members).some(m => m.userId === senderUid || (m.isTemporary && m.createdBy === senderUid));
+    // Check sender membership (must be a real member)
+    const isSenderMember = normalizeMembers(group.members).some(m => m.userId === senderUid);
+
     if (!isSenderMember) {
-      // Also check userGroups as backup
-      const senderGroupCheck = await db.ref(`userGroups/${senderUid}/${groupId}`).get();
-      if (!senderGroupCheck.exists()) {
-        return res.status(403).json({ success: false, error: 'You must be a member of the group to invite others' });
-      }
+      return res.status(403).json({ success: false, error: 'You must be a member of the group to invite others' });
     }
 
     // 2. Get Sender Info
