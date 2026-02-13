@@ -59,7 +59,6 @@ const Dashboard = () => {
     getTotalToReceive,
     getTotalToPay,
     getSettlementDelta,
-    getSettlements,
   } = useFirebaseAuth();
   const {
     groups,
@@ -300,8 +299,10 @@ const Dashboard = () => {
   const totalToPay = getTotalToPay();
 
   const pendingPaymentCounts = useMemo(() => {
-    const settlements = getSettlements();
-    const entries = Object.values(settlements || {});
+    const settlementsByGroup = user?.settlements || {};
+    const entries = Object.values(settlementsByGroup).flatMap(
+      (groupSettlements) => Object.values(groupSettlements || {}),
+    );
 
     const toPayCount = entries.filter((item) => (item?.toPay || 0) > 0).length;
     const toReceiveCount = entries.filter(
@@ -313,7 +314,7 @@ const Dashboard = () => {
       toPayCount,
       toReceiveCount,
     };
-  }, [getSettlements, user?.settlements]);
+  }, [user?.settlements]);
 
   // Calculate percentage change for after settlements
   const afterSettlementsBalance = walletBalance + settlementDelta;
