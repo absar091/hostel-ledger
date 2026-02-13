@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
 let globalSyncInProgress = false;
+let startupSyncedUserId: string | null = null;
 
 export const useSync = () => {
     const { addExpense } = useFirebaseData();
@@ -119,13 +120,22 @@ export const useSync = () => {
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
 
-        updatePendingCount();
+        const initSync = async () => {
+            await updatePendingCount();
+
+            if (navigator.onLine && user && startupSyncedUserId !== user.uid) {
+                startupSyncedUserId = user.uid;
+                setTimeout(() => syncData(), 1000);
+            }
+        };
+
+        initSync();
 
         return () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
         };
-    }, [syncData, updatePendingCount]);
+    }, [syncData, updatePendingCount, user]);
 
     return {
         isOnline,
