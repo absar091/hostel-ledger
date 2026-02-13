@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
+import { toast } from 'sonner';
 
 /**
  * Join Group Page
@@ -18,7 +19,7 @@ const JoinGroup = () => {
     const email = searchParams.get('email');
     const navigate = useNavigate();
     const { user, isLoading } = useFirebaseAuth();
-    const { claimMemberProfile } = useFirebaseData();
+    const { claimEmailInvite } = useFirebaseData();
     const [status, setStatus] = useState<'loading' | 'redirect' | 'error'>('loading');
 
     useEffect(() => {
@@ -37,12 +38,12 @@ const JoinGroup = () => {
         if (user) {
             // User is already logged in
             const handleJoin = async () => {
-                if (claimMemberId && groupId) {
+                if (groupId) {
                     try {
-                        await claimMemberProfile(groupId, claimMemberId);
-                        // toast.success("Profile claimed successfully!");
+                        await claimEmailInvite(groupId);
+                        toast.success("Joined group successfully!");
                     } catch (e) {
-                        console.error("Failed to claim profile automatically", e);
+                        console.error("Failed to join group automatically", e);
                     }
                 }
                 setStatus('redirect');
@@ -57,7 +58,7 @@ const JoinGroup = () => {
                 navigate(`/signup?invite=${groupId}&email=${encodeURIComponent(email || '')}${claimParam}`, { replace: true });
             }, 1500);
         }
-    }, [user, isLoading, groupId, email, claimMemberId, navigate, claimMemberProfile]);
+    }, [user, isLoading, groupId, email, claimMemberId, navigate, claimEmailInvite]);
 
     return (
         <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">

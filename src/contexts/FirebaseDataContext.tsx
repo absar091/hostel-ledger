@@ -162,7 +162,7 @@ export interface GroupMember {
   paymentDetails?: PaymentDetails;
   phone?: string | null;
   userId?: string; // Firebase user ID for real users
-  email?: string;
+  email?: string | null;
   isPending?: boolean;
   invitedAt?: string;
   balance?: number; // Calculated balance - optional since computed dynamically
@@ -171,7 +171,6 @@ export interface GroupMember {
   deletionCondition?: 'SETTLED' | 'TIME_LIMIT' | null;
   expiresAt?: number | null;
   deletionNotified?: boolean;
-  email?: string | null;
   photoURL?: string | null;
 }
 
@@ -240,6 +239,7 @@ interface FirebaseDataContextType {
   getAllTransactions: () => Transaction[];
   checkAccountDeletionEligibility: () => Promise<{ eligible: boolean; reason?: string }>;
   deleteAccountData: () => Promise<{ success: boolean; error?: string }>;
+  claimEmailInvite: (groupId: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const FirebaseDataContext = createContext<FirebaseDataContextType | undefined>(undefined);
@@ -1293,6 +1293,27 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const claimEmailInvite = async (groupId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: "User not authenticated" };
+
+    try {
+      const result = await callSecureApi('/api/claim-email-invite', {
+        method: 'POST',
+        body: JSON.stringify({ groupId })
+      });
+
+      if (!result.success) {
+        return { success: false, error: result.error || "Failed to claim invitation" };
+      }
+
+      // Refresh groups after claiming (listeners will handle this automatically)
+      return { success: true };
+    } catch (error: any) {
+      console.error("Claim email invite error:", error);
+      return { success: false, error: error.message || "Failed to join group" };
+    }
+  };
+
   const getGroupById = (groupId: string): Group | undefined => {
     return groups.find((g) => g.id === groupId);
   };
@@ -1577,12 +1598,14 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     getAllTransactions,
     checkAccountDeletionEligibility,
     deleteAccountData,
+    claimEmailInvite
   }), [
     groups,
     transactions,
     isLoading,
-    user?.uid, // Dependencies for functions that use user
-    fetchGroupDetail
+    user?.uid,
+    fetchGroupDetail,
+    claimEmailInvite
   ]);
 
   return (

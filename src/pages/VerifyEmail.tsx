@@ -15,13 +15,13 @@ const VerifyEmail = () => {
   const location = useLocation();
   const { markEmailAsVerified, firebaseUser, user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
-  
+
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [showPageGuide, setShowPageGuide] = useState(false);
-  
+
   const email = location.state?.email || "";
   const type = location.state?.type || "signup";
 
@@ -61,7 +61,7 @@ const VerifyEmail = () => {
 
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
-    
+
     return () => {
       clearInterval(interval);
       window.removeEventListener('popstate', handlePopState);
@@ -85,7 +85,7 @@ const VerifyEmail = () => {
     try {
       // Verify the code using Firestore
       const result = await verifyVerificationCode(email, code);
-      
+
       if (!result.success) {
         toast.error(result.error || "Invalid verification code");
         setIsLoading(false);
@@ -102,25 +102,39 @@ const VerifyEmail = () => {
 
         // Mark email as verified in our database
         const verificationResult = await markEmailAsVerified(firebaseUser.uid);
-        
+
         if (verificationResult.success) {
           // Send welcome email
           try {
             const pendingSignup = sessionStorage.getItem('pendingSignup');
-            const userName = pendingSignup 
+            const userName = pendingSignup
               ? `${JSON.parse(pendingSignup).firstName} ${JSON.parse(pendingSignup).lastName}`
               : firebaseUser.displayName || "User";
-            
+
             await sendWelcomeEmail(email, userName);
             console.log('✅ Welcome email sent successfully');
           } catch (emailError) {
             console.warn('⚠️ Welcome email failed (non-critical):', emailError);
-            // Don't block the flow if welcome email fails
           }
-          
+
           // Clean up session storage
           sessionStorage.removeItem('pendingSignup');
           toast.success("Email verified successfully! Welcome to Hostel Ledger!");
+
+          // CHECK FOR PENDING JOIN
+          const pendingJoin = localStorage.getItem('pendingJoinGroup');
+          if (pendingJoin) {
+            try {
+              const { groupId } = JSON.parse(pendingJoin);
+              console.log('🔗 Redirecting to pending group join:', groupId);
+              // navigate to JoinGroup page which will handle the claiming logic
+              navigate(`/join/${groupId}`, { replace: true });
+              return;
+            } catch (e) {
+              console.error('Failed to parse pending join info:', e);
+            }
+          }
+
           navigate("/download-app");
         } else {
           console.error('❌ Failed to mark email as verified:', verificationResult.error);
@@ -159,13 +173,13 @@ const VerifyEmail = () => {
 
       // Get user name for email
       const pendingSignup = sessionStorage.getItem('pendingSignup');
-      const userName = pendingSignup 
+      const userName = pendingSignup
         ? `${JSON.parse(pendingSignup).firstName} ${JSON.parse(pendingSignup).lastName}`
         : "User";
 
       // Send new verification email
       const emailResult = await sendVerificationEmail(email, newCode, userName);
-      
+
       if (emailResult.success) {
         toast.success("New verification code sent to your email!");
       } else {
@@ -183,7 +197,7 @@ const VerifyEmail = () => {
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 6);
     setCode(value);
-    
+
     // Auto-verify when 6 digits are entered
     if (value.length === 6) {
       // Small delay to show the complete code before verifying
@@ -204,7 +218,7 @@ const VerifyEmail = () => {
     try {
       // Verify the code using Firestore
       const result = await verifyVerificationCode(email, codeToVerify);
-      
+
       if (!result.success) {
         toast.error(result.error || "Invalid verification code");
         setIsLoading(false);
@@ -221,25 +235,38 @@ const VerifyEmail = () => {
 
         // Mark email as verified in our database
         const verificationResult = await markEmailAsVerified(firebaseUser.uid);
-        
+
         if (verificationResult.success) {
           // Send welcome email
           try {
             const pendingSignup = sessionStorage.getItem('pendingSignup');
-            const userName = pendingSignup 
+            const userName = pendingSignup
               ? `${JSON.parse(pendingSignup).firstName} ${JSON.parse(pendingSignup).lastName}`
               : firebaseUser.displayName || "User";
-            
+
             await sendWelcomeEmail(email, userName);
             console.log('✅ Welcome email sent successfully');
           } catch (emailError) {
             console.warn('⚠️ Welcome email failed (non-critical):', emailError);
-            // Don't block the flow if welcome email fails
           }
-          
+
           // Clean up session storage
           sessionStorage.removeItem('pendingSignup');
           toast.success("Email verified successfully! Welcome to Hostel Ledger!");
+
+          // CHECK FOR PENDING JOIN
+          const pendingJoin = localStorage.getItem('pendingJoinGroup');
+          if (pendingJoin) {
+            try {
+              const { groupId } = JSON.parse(pendingJoin);
+              console.log('🔗 Redirecting to pending group join:', groupId);
+              navigate(`/join/${groupId}`, { replace: true });
+              return;
+            } catch (e) {
+              console.error('Failed to parse pending join info:', e);
+            }
+          }
+
           navigate("/download-app");
         } else {
           console.error('❌ Failed to mark email as verified:', verificationResult.error);
@@ -263,7 +290,7 @@ const VerifyEmail = () => {
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
       {/* Top Accent Border - iPhone Style */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
-      
+
       {/* App Header - iPhone Style Enhanced with #4a6850 */}
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-4 pb-5 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
         <div className="flex items-center justify-center">
@@ -283,7 +310,7 @@ const VerifyEmail = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Page Guide */}
       <PageGuide
         title="Verify Your Email 📧"
@@ -351,7 +378,7 @@ const VerifyEmail = () => {
           {/* Resend Section - iPhone Style */}
           <div className="text-center pt-6 border-t border-[#4a6850]/20">
             <p className="text-[#4a6850]/80 mb-6 font-bold">Didn't receive the code?</p>
-            
+
             {timeRemaining > 0 ? (
               <p className="text-sm text-[#4a6850]/80 font-bold">
                 Resend available in {formatTime(timeRemaining)}

@@ -1939,7 +1939,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
               const shareAmount = split ? split.amount : 0;
 
               const mailOptions = {
-                from: process.env.EMAIL_FROM,
+                from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
                 to: recipient.email,
                 subject: `New Expense: ${note || 'Shared Expense'} in ${group.name}`,
                 html: await loadEmailTemplate('transaction-alert', {
@@ -2219,7 +2219,7 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
 
           try {
             const mailOptions = {
-              from: process.env.EMAIL_FROM,
+              from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
               to: otherPerson.email,
               subject: `Payment Recorded: Rs ${amount.toLocaleString()} in ${group.name}`,
               html: await loadEmailTemplate('transaction-alert', {
