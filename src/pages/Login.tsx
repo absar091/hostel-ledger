@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, Wallet } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Wallet, Loader2 } from "lucide-react";
 import PageGuide from "@/components/PageGuide";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 
@@ -98,10 +98,11 @@ const Login = () => {
         {/* Form - iPhone Style */}
         <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6 animate-slide-up">
           <div>
-            <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Email</label>
+            <label htmlFor="email" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Email</label>
             <div className="relative">
               <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
               <Input
+                id="email"
                 type="email"
                 placeholder="Enter your email"
                 value={email}
@@ -113,10 +114,11 @@ const Login = () => {
           </div>
 
           <div>
-            <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Password</label>
+            <label htmlFor="password" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Password</label>
             <div className="relative">
               <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
               <Input
+                id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 value={password}
@@ -126,6 +128,7 @@ const Login = () => {
               />
               <button
                 type="button"
+                aria-label={showPassword ? "Hide password" : "Show password"}
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-5 top-1/2 -translate-y-1/2 text-[#4a6850]/60 hover:text-[#4a6850] transition-colors"
               >
@@ -139,7 +142,14 @@ const Login = () => {
             className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
             disabled={isLoading}
           >
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Signing in...
+              </div>
+            ) : (
+              "Sign In"
+            )}
           </Button>
         </form>
 
