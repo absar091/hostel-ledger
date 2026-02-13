@@ -388,46 +388,61 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     if (invitedUsernames && invitedUsernames.length > 0) {
       // Optimization: reused fetched name
       const senderName = userName;
+      const updates = {};
+      const emailNotifications = [];
 
-      await Promise.all(invitedUsernames.map(async (username) => {
+      // Parallel Resolve Usernames
+      const resolvedUsers = await Promise.all(invitedUsernames.map(async (username) => {
         const usernameRef = admin.database().ref(`usernames/${username.toLowerCase()}`);
         const s = await usernameRef.get();
         if (s.exists()) {
-          // Handle both formats: direct UID string or object
           const uidData = s.val();
           const inviteeUid = typeof uidData === 'string' ? uidData : (uidData?.uid || uidData?.userId || null);
+          return { username, inviteeUid };
+        }
+        return null;
+      }));
 
-          if (!inviteeUid) {
-            console.error(`Invalid UID format for username ${username}:`, uidData);
-            return;
-          }
+      // Build Updates
+      resolvedUsers.forEach(user => {
+        if (!user || !user.inviteeUid) return;
+        const { username, inviteeUid } = user;
 
-          // Create invitation
-          const invRef = admin.database().ref('invitations').push();
+        // Create invitation
+        const invRef = admin.database().ref('invitations').push();
+        const invitationData = {
+          id: invRef.key,
+          invitationId: invRef.key, // Alias for frontend compatibility
+          groupId,
+          groupName: newGroup.name,
+          groupEmoji: newGroup.emoji,
+          senderId: userId,
+          senderName,
+          invitedBy: senderName, // Alias for frontend
+          receiverId: inviteeUid,
+          receiverName: username, // Username of the invited user
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        };
 
-          const invitationData = {
-            id: invRef.key,
-            invitationId: invRef.key, // Alias for frontend compatibility
-            groupId,
-            groupName: newGroup.name,
-            groupEmoji: newGroup.emoji,
-            senderId: userId,
-            senderName,
-            invitedBy: senderName, // Alias for frontend
-            receiverId: inviteeUid,
-            receiverName: username, // Username of the invited user
-            status: 'pending',
-            createdAt: new Date().toISOString()
-          };
+        // Batch updates
+        updates[`invitations/${invRef.key}`] = invitationData;
+        updates[`userInvitations/${inviteeUid}/${invRef.key}`] = invitationData;
 
-          // Write to main invitations collection
-          await invRef.set(invitationData);
+        console.log(`✅ Invitation prepared for user ${inviteeUid} to group ${groupId}`);
 
-          // ALSO write to userInvitations/{receiverId} so the invited user can see it
-          await admin.database().ref(`userInvitations/${inviteeUid}/${invRef.key}`).set(invitationData);
-          console.log(`✅ Invitation created for user ${inviteeUid} to group ${groupId}`);
+        // Queue for email
+        emailNotifications.push({ inviteeUid, username });
+      });
 
-          // Send email notification to existing user
+      // Execute DB Updates
+      if (Object.keys(updates).length > 0) {
+        await admin.database().ref().update(updates);
+      }
+
+      // Process Emails in Background
+      setImmediate(async () => {
+        await Promise.all(emailNotifications.map(async ({ inviteeUid, username }) => {
           try {
             const inviteeSnap = await admin.database().ref(`users/${inviteeUid}`).get();
             if (inviteeSnap.exists()) {
@@ -456,10 +471,9 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
             }
           } catch (emailErr) {
             console.error(`❌ Failed to send invitation email to ${username}:`, emailErr);
-            // Don't fail the group creation, just log the error
           }
-        }
-      }));
+        }));
+      });
     }
 
     // 5. Handle Email Invites (Manual members with emails)
