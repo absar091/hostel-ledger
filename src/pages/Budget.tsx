@@ -24,7 +24,7 @@ const Budget = () => {
   const { user } = useFirebaseAuth();
   const { groups, transactions } = useFirebaseData();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
-  
+
   const [showAddFunds, setShowAddFunds] = useState(false);
   const [fundAmount, setFundAmount] = useState("");
   const [fundNote, setFundNote] = useState("");
@@ -57,7 +57,7 @@ const Budget = () => {
   const totalSpent = useMemo(() => {
     let spent = 0;
     transactions.forEach((t) => {
-      if (t.type === "expense" && t.paidByName === "You") {
+      if (t.type === "expense" && t.paidBy === user?.uid) {
         spent += t.amount;
       }
     });
@@ -112,7 +112,7 @@ const Budget = () => {
     <div className="min-h-screen bg-white pb-8">
       {/* iPhone-style top accent border */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
-      
+
       {/* Page Guide */}
       <PageGuide
         title="Budget Tracker 💰"
@@ -148,7 +148,7 @@ const Budget = () => {
           <div className="text-5xl font-black mb-4 tracking-tighter tabular-nums drop-shadow-sm">
             {remainingBudget >= 0 ? "" : "-"}Rs {Math.abs(remainingBudget).toLocaleString()}
           </div>
-          
+
           <Button
             onClick={() => setShowAddFunds(true)}
             variant="secondary"
@@ -215,7 +215,7 @@ const Budget = () => {
         {/* Funds History */}
         <section>
           <h2 className="text-sm font-black text-[#4a6850]/80 uppercase tracking-widest mb-4">Funds Added</h2>
-          
+
           {budgetEntries.length > 0 ? (
             <div className="space-y-3">
               {budgetEntries.map((entry) => (

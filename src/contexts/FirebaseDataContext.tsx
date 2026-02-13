@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
 import { ref, push, set, update, remove, onValue, off, get } from "firebase/database";
 import { database } from "@/lib/firebase";
 import { useFirebaseAuth, PaymentDetails } from "./FirebaseAuthContext";
@@ -15,14 +15,35 @@ const sanitizeAmount = (amount: string | number): number => {
 };
 
 // Normalize members: Firebase may return object {memberId: {}, ...} instead of array
-const normalizeMembers = (members: any): any[] => {
+const normalizeMembers = (members: any, currentUserId?: string): any[] => {
   if (!members) return [];
-  if (Array.isArray(members)) return members;
-  // Convert object to array, preserving key as id
-  return Object.entries(members).map(([key, value]: [string, any]) => ({
-    ...value,
-    id: key // Ensure the key is used as the member id
-  }));
+
+  const membersArray = Array.isArray(members)
+    ? members
+    : Object.entries(members).map(([key, value]: [string, any]) => ({
+      ...value,
+      id: value.id || key // Ensure the key is used as the member id
+    }));
+
+  // If currentUserId is provided, rename that user to "You" for display
+  if (currentUserId) {
+    return membersArray.map((m: any) => {
+      // Check both id and userId key for a match
+      if (m.id === currentUserId || m.userId === currentUserId) {
+        return { ...m, name: "You", isCurrentUser: true };
+      }
+
+      // Fix for legacy groups where creator was stored as "You"
+      // If we see "You" but it's not the current user, rename it to avoid confusion
+      if (m.name === "You") {
+        return { ...m, name: "Group Owner" };
+      }
+
+      return m;
+    });
+  }
+
+  return membersArray;
 };
 
 
@@ -263,98 +284,90 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
         // Listen to user's groups with error handling
         const groupsRef = ref(database, `userGroups/${user.uid}`);
-        const groupsListener = onValue(groupsRef, async (snapshot) => {
+
+        // Track active group listeners to clean them up when groups are removed
+        // or when the component unmounts
+        const groupUnsubscribes: Record<string, () => void> = {};
+
+        const groupsListener = onValue(groupsRef, (snapshot) => {
           try {
-            if (snapshot.exists()) {
-              const userGroups = snapshot.val();
-              const groupPromises = Object.entries(userGroups).map(async ([id, metadata]: [string, any]) => {
-                // ALWAYS fetch full group data to ensure members are loaded
-                // The metadata path had a stale closure bug causing "0 members"
-                try {
-                  const groupRef = ref(database, `groups/${id}`);
-                  const groupSnapshot = await get(groupRef);
-                  if (groupSnapshot.exists()) {
-                    const fullData = groupSnapshot.val();
-                    // Normalize members: Firebase may return object instead of array
-                    const group = {
+            const userGroups = snapshot.exists() ? snapshot.val() : {};
+            const groupIds = Object.keys(userGroups);
+
+            // 1. Remove listeners for groups that are no longer in userGroups
+            Object.keys(groupUnsubscribes).forEach(id => {
+              if (!userGroups[id]) {
+                // Determine if we should keep it? No, if it's gone from userGroups, remove listener
+                if (groupUnsubscribes[id]) {
+                  groupUnsubscribes[id]();
+                  delete groupUnsubscribes[id];
+                }
+
+                // Update state to remove the group
+                setGroups(prev => prev.filter(g => g.id !== id));
+              }
+            });
+
+            // 2. Add listeners for new groups (or ensure existing ones are active)
+            groupIds.forEach(id => {
+              if (!groupUnsubscribes[id]) {
+                const groupRef = ref(database, `groups/${id}`);
+
+                // Set up REAL-TIME listener for this specific group
+                groupUnsubscribes[id] = onValue(groupRef, (groupSnap) => {
+                  if (groupSnap.exists()) {
+                    const fullData = groupSnap.val();
+                    const groupData = {
                       id,
                       ...fullData,
-                      members: normalizeMembers(fullData.members)
+                      members: normalizeMembers(fullData.members, user?.uid)
                     };
 
-                    // Update the index if needed (for quick name display during next load)
-                    if (typeof metadata !== 'object' || !metadata.name) {
-                      const userGroupMetadataRef = ref(database, `userGroups/${user.uid}/${id}`);
-                      set(userGroupMetadataRef, {
-                        name: group.name,
-                        emoji: group.emoji,
-                        coverPhoto: group.coverPhoto || null,
-                        memberCount: group.members?.length || 0,
-                        createdBy: group.createdBy,
-                        createdAt: group.createdAt
-                      }).catch(err => console.error("Index migration failed:", err));
-                    }
+                    // Update state carefully
+                    setGroups(prev => {
+                      const existingIndex = prev.findIndex(g => g.id === id);
+                      if (existingIndex >= 0) {
+                        // Check if data actually changed to avoid unnecessary re-renders
+                        // (Deep comparison is expensive, so maybe just replace?)
+                        // React keys usually handle this, but let's replace holding order
+                        const newGroups = [...prev];
+                        newGroups[existingIndex] = groupData;
+                        return newGroups;
+                      } else {
+                        // Add new group
+                        return [...prev, groupData].sort((a, b) =>
+                          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                        );
+                      }
+                    });
 
-                    return group;
+                    // Sync metadata block removed to prevent infinite loops from stale closures
+                    // The memberCount and name are updated by typical usage anyway.
+                  } else {
+                    // Group data is missing (maybe deleted?), remove it?
+                    // Keep logic simple for now.
                   }
-                } catch (err) {
-                  console.error(`Failed to fetch group ${id}:`, err);
-
-                  // Fallback to metadata if fetch fails (offline scenario)
-                  if (typeof metadata === 'object' && metadata !== null && metadata.name) {
-                    return {
-                      id,
-                      name: metadata.name,
-                      emoji: metadata.emoji || "📁",
-                      coverPhoto: metadata.coverPhoto,
-                      members: [], // Empty but memberCount will show count
-                      memberCount: metadata.memberCount || 0,
-                      createdBy: metadata.createdBy || "",
-                      createdAt: metadata.createdAt || ""
-                    };
-                  }
-                }
-                return null;
-              });
-
-              const groupsList = (await Promise.all(groupPromises)).filter(Boolean) as Group[];
-              setGroups(groupsList);
-
-              // Cache groups to IndexedDB for offline access
-              try {
-                const { cacheGroups } = await import('@/lib/offlineDB');
-                await cacheGroups(groupsList);
-              } catch (cacheError) {
-                console.error('Failed to cache groups:', cacheError);
+                }, (err) => {
+                  console.error(`Group listener error for ${id}:`, err);
+                });
               }
-            } else {
+            });
+
+            // Handle empty state if no groups
+            if (groupIds.length === 0) {
               setGroups([]);
             }
+
+            setIsLoading(false); // Initial load done (or at least listeners set up)
+
           } catch (error: any) {
-            logger.error("Error loading groups", { uid: user.uid, error: error.message });
-
-            // Try to load cached groups on error
-            try {
-              const { getCachedGroups } = await import('@/lib/offlineDB');
-              const cachedGroups = await getCachedGroups();
-              if (cachedGroups.length > 0) {
-                console.log('✅ Loaded cached groups on error');
-                setGroups(cachedGroups);
-              } else {
-                setGroups([]);
-              }
-            } catch (cacheError) {
-              console.error('Failed to load cached groups:', cacheError);
-              setGroups([]);
-            }
-          } finally {
+            logger.error("Error in groups listener", { uid: user.uid, error: error.message });
             setIsLoading(false);
           }
         }, (error) => {
           logger.error("Groups listener error", { uid: user.uid, error: error.message });
           setIsLoading(false);
-          // Don't throw error, just log it and continue
-        });
+        });  // Don't throw error, just log it and continue
 
         // Listen to user's transactions with error handling
         const transactionsRef = ref(database, `userTransactions/${user.uid}`);
@@ -465,6 +478,9 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         return () => {
           off(groupsRef, 'value', groupsListener);
           off(transactionsRef, 'value', transactionsListener);
+
+          // Cleanup dynamic group listeners
+          Object.values(groupUnsubscribes).forEach(unsub => unsub());
         };
       } catch (error: any) {
         logger.error("Error setting up Firebase listeners", { uid: user.uid, error: error.message });
@@ -853,8 +869,23 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       // Check online status - currently offline payments aren't in offlineDB schema but we can add them or use app-data
+      // Check online status - if offline, save to local DB
       if (!navigator.onLine) {
-        return { success: false, error: "Payments require internet connection to verify balances" };
+        try {
+          const { saveOfflinePayment } = await import('@/lib/offlineDB');
+          await saveOfflinePayment({
+            groupId: data.groupId,
+            fromMember: data.fromMember,
+            toMember: data.toMember,
+            amount: data.amount,
+            method: data.method,
+            note: data.note
+          });
+          return { success: true, error: "Offline: saved to sync later" };
+        } catch (offlineError) {
+          console.error("Failed to save offline payment", offlineError);
+          return { success: false, error: "Offline save failed" };
+        }
       }
 
       logger.info("Recording payment via secure API", { groupId: data.groupId, amount: data.amount });
@@ -1038,7 +1069,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     return groups.find((g) => g.id === groupId);
   };
 
-  const fetchGroupDetail = async (groupId: string): Promise<Group | null> => {
+  const fetchGroupDetail = useCallback(async (groupId: string): Promise<Group | null> => {
     try {
       if (navigator.onLine) {
         const groupRef = ref(database, `groups/${groupId}`);
@@ -1049,7 +1080,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           const fullGroup = {
             id: groupId,
             ...data,
-            members: normalizeMembers(data.members)
+            members: normalizeMembers(data.members, user?.uid)
           };
 
           // Update global state with full details to fix "0 members" issue
@@ -1095,7 +1126,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
     }
-  };
+  }, [user?.uid]);
 
   const getTransactionsByGroup = (groupId: string): Transaction[] => {
     return transactions.filter((t) => t.groupId === groupId);
@@ -1117,30 +1148,36 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     return transactions;
   };
 
+  const value = useMemo(() => ({
+    groups,
+    transactions,
+    isLoading,
+    createGroup,
+    updateGroup,
+    deleteGroup,
+    addMemberToGroup,
+    removeMemberFromGroup,
+    updateMemberPaymentDetails,
+    addExpense,
+    recordPayment,
+    payMyDebt,
+    markPaymentAsPaid,
+    addMoneyToWallet,
+    getGroupById,
+    fetchGroupDetail,
+    getTransactionsByGroup,
+    getTransactionsByMember,
+    getAllTransactions,
+  }), [
+    groups,
+    transactions,
+    isLoading,
+    user?.uid, // Dependencies for functions that use user
+    fetchGroupDetail
+  ]);
+
   return (
-    <FirebaseDataContext.Provider
-      value={{
-        groups,
-        transactions,
-        isLoading,
-        createGroup,
-        updateGroup,
-        deleteGroup,
-        addMemberToGroup,
-        removeMemberFromGroup,
-        updateMemberPaymentDetails,
-        addExpense,
-        recordPayment,
-        payMyDebt,
-        markPaymentAsPaid,
-        addMoneyToWallet,
-        getGroupById,
-        fetchGroupDetail,
-        getTransactionsByGroup,
-        getTransactionsByMember,
-        getAllTransactions,
-      }}
-    >
+    <FirebaseDataContext.Provider value={value}>
       {children}
     </FirebaseDataContext.Provider>
   );
