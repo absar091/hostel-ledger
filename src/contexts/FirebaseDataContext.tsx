@@ -649,7 +649,6 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const updatedMembers = [...group.members, newMember];
-      const groupRef = ref(database, `groups/${groupId}/members`);
 
       // Optimistic local update to ensure validation passes immediately
       setGroups(prev => prev.map(g => {
@@ -659,7 +658,9 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         return g;
       }));
 
-      await retryOperation(() => set(groupRef, updatedMembers));
+      // Use push for optimized add - this is much more efficient than rewriting the whole array
+      const membersRef = ref(database, `groups/${groupId}/members`);
+      await retryOperation(() => push(membersRef, newMember));
 
       // Update denormalized count for the current user
       const userGroupMetadataCountRef = ref(database, `userGroups/${user.uid}/${groupId}/memberCount`);
@@ -700,12 +701,15 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, error: "Cannot remove yourself from the group" };
       }
 
-      const memberToRemove = groupData.members.find((m: GroupMember) => m.id === memberId);
+      // Normalize members to handle both array (legacy) and object (push) structures
+      const members = normalizeMembers(groupData.members);
+
+      const memberToRemove = members.find((m: GroupMember) => m.id === memberId);
       if (!memberToRemove) {
         return { success: false, error: "Member not found" };
       }
 
-      const updatedMembers = groupData.members.filter((m: GroupMember) => m.id !== memberId);
+      const updatedMembers = members.filter((m: GroupMember) => m.id !== memberId);
       const groupMembersRef = ref(database, `groups/${groupId}/members`);
 
       await retryOperation(() => set(groupMembersRef, updatedMembers));
