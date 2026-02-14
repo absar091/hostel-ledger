@@ -1357,12 +1357,47 @@ app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid email format' });
     }
 
-    // Security Fix: Do not reveal if user exists to prevent email enumeration
-    // Always return the same response
+    // Check Firebase Auth first (Signed up users)
+    try {
+      const userRecord = await admin.auth().getUserByEmail(email);
+      console.log('✅ Found in Firebase Auth:', email);
+      return res.json({
+        success: true,
+        exists: true,
+        source: 'auth',
+        message: 'Account exists'
+      });
+    } catch (authError) {
+      if (authError.code !== 'auth/user-not-found') {
+        console.warn('⚠️ Auth check error:', authError.code);
+      }
+      // Continue to check DB if not found in Auth
+    }
+
+    // Check Realtime Database (Invited users who haven't signed up)
+    try {
+      const usersRef = admin.database().ref('users');
+      const snapshot = await usersRef.orderByChild('email').equalTo(email).once('value');
+
+      if (snapshot.exists()) {
+        console.log('✅ Found in Realtime Database (Invited):', email);
+        return res.json({
+          success: true,
+          exists: true,
+          source: 'database',
+          message: 'Account exists (invited)'
+        });
+      }
+    } catch (dbError) {
+      console.error('❌ DB check error:', dbError);
+    }
+
+    // If we reach here, email is not found
+    console.log('✅ Email is available:', email);
     res.json({
       success: true,
-      exists: false, // Returning false ensures legacy signup flow doesn't block. New frontend ignores this.
-      message: 'If this email is registered, you will receive instructions.'
+      exists: false,
+      message: 'Email is available'
     });
 
   } catch (error) {

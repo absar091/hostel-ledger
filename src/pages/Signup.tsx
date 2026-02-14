@@ -25,7 +25,7 @@ import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { signup, checkUsernameAvailable, user } = useFirebaseAuth();
+  const { signup, checkUsernameAvailable, checkEmailExists, user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   const [currentView, setCurrentView] = useState<'basic' | 'password'>('basic');
   const [showPassword, setShowPassword] = useState(false);
@@ -170,8 +170,24 @@ const Signup = () => {
       return;
     }
 
-    // Move to password step
-    setCurrentView('password');
+    setIsLoading(true);
+    try {
+      // Check if email already exists
+      const emailExists = await checkEmailExists(formData.email);
+      if (emailExists) {
+        toast.error("An account with this email already exists. Please Sign In instead.");
+        setErrors(prev => ({ ...prev, email: "Account already exists" }));
+        return;
+      }
+
+      // Move to password step
+      setCurrentView('password');
+    } catch (error) {
+      console.error("Email check failed:", error);
+      toast.error("Failed to verify email. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCreateAccount = async () => {

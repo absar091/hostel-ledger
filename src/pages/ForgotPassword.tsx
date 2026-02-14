@@ -10,7 +10,7 @@ import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
-  const { sendPasswordResetEmail, user } = useFirebaseAuth();
+  const { sendPasswordResetEmail, checkEmailExists, user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -30,7 +30,7 @@ const ForgotPassword = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email) {
       toast.error("Please enter your email address");
       return;
@@ -50,16 +50,26 @@ const ForgotPassword = () => {
       toast.loading("Sending reset email...", { id: "sending-reset" });
       const result = await sendPasswordResetEmail(email);
       toast.dismiss("sending-reset");
-      
+
       if (result.success) {
         setEmailSent(true);
         toast.success("Password reset email sent! Check your inbox.");
       } else {
         // Handle specific Firebase errors
         if (result.error?.includes('user-not-found')) {
-          // Security: Don't reveal if user exists or not. Show success message.
-          setEmailSent(true);
-          toast.success("Password reset email sent! Check your inbox.");
+          // Check if user exists in backend (Invited but not signed up)
+          const existsInDb = await checkEmailExists(email);
+
+          if (existsInDb) {
+            // It's an invited user!
+            toast.error("This email is linked to an INVITED account. Please Sign Up to set your password.");
+            // Optional: You could set an error state here to show a "Go to Sign Up" button in the UI
+          } else {
+            // Genuine non-existent user
+            // Security: Don't reveal if user exists or not. Show success message (fake success).
+            setEmailSent(true);
+            toast.success("Password reset email sent! Check your inbox.");
+          }
         } else if (result.error?.includes('too-many-requests')) {
           toast.error("Too many reset attempts. Please wait a few minutes before trying again.");
         } else {
@@ -80,7 +90,7 @@ const ForgotPassword = () => {
       <div className="min-h-screen bg-white flex items-center justify-center p-4">
         {/* Top Accent Border - iPhone Style */}
         <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
-        
+
         {/* App Header - iPhone Style Enhanced with #4a6850 */}
         <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
           <div className="flex items-center justify-center">
@@ -97,7 +107,7 @@ const ForgotPassword = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="w-full max-w-md pt-20">
           {/* Success State - iPhone Style */}
           <div className="text-center mb-8">
@@ -113,9 +123,9 @@ const ForgotPassword = () => {
               <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-3xl flex items-center justify-center mx-auto shadow-[0_25px_70px_rgba(34,197,94,0.3)]">
                 <Send className="w-10 h-10 text-white font-bold" />
               </div>
-              
+
               <h3 className="text-2xl font-black text-gray-900 tracking-tight">Email Sent!</h3>
-              
+
               <p className="text-[#4a6850]/80 font-bold leading-relaxed">
                 Click the link in your email to reset your password.
               </p>
@@ -137,7 +147,7 @@ const ForgotPassword = () => {
                 >
                   Try Different Email
                 </Button>
-                
+
                 <Button
                   type="button"
                   onClick={() => navigate("/login")}
@@ -157,7 +167,7 @@ const ForgotPassword = () => {
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
       {/* Top Accent Border - iPhone Style */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
-      
+
       {/* App Header - iPhone Style Enhanced with #4a6850 */}
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
         <div className="flex items-center justify-center">
@@ -177,7 +187,7 @@ const ForgotPassword = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Page Guide */}
       <PageGuide
         title="Reset Your Password 🔑"
@@ -206,7 +216,7 @@ const ForgotPassword = () => {
           </div>
         </div>
 
-        
+
         {/* Form - iPhone Style */}
         <div className="space-y-8">
           <form onSubmit={handleSubmit} className="space-y-8">
