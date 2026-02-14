@@ -182,5 +182,6 @@ export default defineConfig(({ mode }) => ({
   // Enable esbuild for faster builds
   esbuild: {
     target: 'es2020',
+    drop: mode === 'production' ? ['console', 'debugger'] : undefined,
   },
 }));
