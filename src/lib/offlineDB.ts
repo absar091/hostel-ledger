@@ -53,6 +53,7 @@ export interface OfflinePayment {
   timestamp: number;
   createdOffline: boolean;
   syncAttempts?: number;
+  lastSyncAttempt?: number;
 }
 
 let dbInstance: IDBPDatabase<HostelLedgerDB> | null = null;
@@ -136,6 +137,11 @@ export const saveOfflinePayment = async (payment: Omit<OfflinePayment, "id" | "t
   };
   await db.put("offline-payments", offlinePayment);
   return offlinePayment.id;
+};
+
+export const updateOfflinePayment = async (payment: OfflinePayment) => {
+  const db = await initDB();
+  await db.put("offline-payments", payment);
 };
 
 export const getOfflinePayments = async (): Promise<OfflinePayment[]> => {
