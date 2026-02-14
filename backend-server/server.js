@@ -1805,8 +1805,27 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     const user = userSnap.val();
 
     // 2. Verify current user is in the group
-    const membersArray = normalizeMembers(group.members);
+    let membersArray = normalizeMembers(group.members);
     const member = membersArray.find(m => m.userId === currentUserId || m.id === currentUserId);
+
+    // CRITICAL FIX: Hydrate members with emails from 'users' node
+    try {
+      const memberHydrationPromises = membersArray.map(async (m) => {
+        if (m.userId && !m.email) {
+          try {
+            const userSnap = await db.ref(`users/${m.userId}`).get();
+            if (userSnap.exists()) {
+              const userData = userSnap.val();
+              return { ...m, email: userData.email };
+            }
+          } catch (err) {
+            console.error(`⚠️ Failed to hydrate email for user ${m.userId}:`, err.message);
+          }
+        }
+        return m;
+      });
+      membersArray = await Promise.all(memberHydrationPromises);
+    } catch (hydrateError) { console.error('Hydration failed', hydrateError); }
     if (!member) {
       return res.status(403).json({ success: false, error: 'You are not a member of this group' });
     }
