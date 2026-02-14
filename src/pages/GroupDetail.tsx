@@ -76,20 +76,20 @@ const GroupDetail = () => {
   const rawGroup = fullGroup || partialGroup;
 
   // Defensive: Ensure members is always an array (Firebase may return object)
-  const group = rawGroup ? {
+  const group = useMemo(() => rawGroup ? {
     ...rawGroup,
     members: Array.isArray(rawGroup.members)
       ? rawGroup.members
       : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
-  } : null;
+  } : null, [rawGroup]);
 
-  const transactions = id ? getTransactionsByGroup(id) : [];
-  const settlements = id ? getSettlements(id) : {};
+  const transactions = useMemo(() => id ? getTransactionsByGroup(id) : [], [id, getTransactionsByGroup]);
+  const settlements = useMemo(() => id ? getSettlements(id) : {}, [id, getSettlements]);
 
   // Calculate total amount to receive in this group
-  const groupTotalToReceive = Object.values(settlements).reduce((total, settlement) => {
+  const groupTotalToReceive = useMemo(() => Object.values(settlements).reduce((total, settlement) => {
     return total + (settlement.toReceive || 0);
-  }, 0);
+  }, 0), [settlements]);
 
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
@@ -175,6 +175,55 @@ const GroupDetail = () => {
       });
   }, [group, selectedMember, transactions]);
 
+  const members = useMemo(() => group ? group.members.map((m) => ({
+    id: m.id,
+    name: m.name,
+    isTemporary: m.isTemporary,
+    deletionCondition: m.deletionCondition,
+    expiresAt: m.expiresAt,
+    email: (m as any).email,
+    isPending: (m as any).isPending
+  })) : [], [group]);
+  const currentUser = useMemo(() => group ? group.members.find((m) => m.isCurrentUser) : null, [group]);
+
+  // Calculate total pending using settlements
+  const totalPending = useMemo(() => group ? group.members.reduce((sum, m) => {
+    if (!m.isCurrentUser) {
+      const settlement = settlements[m.id];
+      // If settlement exists and you owe them (toPay > 0)
+      if (settlement && settlement.toPay > 0) {
+        return sum + settlement.toPay;
+      }
+    }
+    return sum;
+  }, 0) : 0, [group, settlements]);
+
+  // Calculate summary data
+  const totalSpent = useMemo(() => transactions
+    .filter((t) => t.type === "expense")
+    .reduce((sum, t) => sum + t.amount, 0), [transactions]);
+  const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
+
+  // Find the member who has paid the most in expenses (actual top contributor)
+  const topSpender = useMemo(() => {
+    if (!group) return null;
+    const memberExpenseContributions = group.members.map(member => {
+      const totalPaid = transactions
+        .filter(t => t.type === "expense" && t.paidBy === member.id)
+        .reduce((sum, t) => sum + t.amount, 0);
+      return {
+        ...member,
+        totalPaid
+      };
+    });
+
+    return memberExpenseContributions.length > 0
+      ? memberExpenseContributions.reduce((prev, curr) => {
+        return curr.totalPaid > prev.totalPaid ? curr : prev;
+      })
+      : null;
+  }, [group, transactions]);
+
   if (!group && !isGroupLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -199,29 +248,6 @@ const GroupDetail = () => {
       </div>
     );
   }
-
-  const members = group.members.map((m) => ({
-    id: m.id,
-    name: m.name,
-    isTemporary: m.isTemporary,
-    deletionCondition: m.deletionCondition,
-    expiresAt: m.expiresAt,
-    email: (m as any).email,
-    isPending: (m as any).isPending
-  }));
-  const currentUser = group.members.find((m) => m.isCurrentUser);
-
-  // Calculate total pending using settlements
-  const totalPending = group.members.reduce((sum, m) => {
-    if (!m.isCurrentUser) {
-      const settlement = settlements[m.id];
-      // If settlement exists and you owe them (toPay > 0)
-      if (settlement && settlement.toPay > 0) {
-        return sum + settlement.toPay;
-      }
-    }
-    return sum;
-  }, 0);
 
   const handleMemberClick = (member: { id: string; name: string; balance: number; paymentDetails?: any; phone?: string; isTemporary?: boolean }) => {
     if (member.id === currentUser?.id) return;
@@ -302,28 +328,6 @@ const GroupDetail = () => {
     members: members,
   }];
 
-  // Calculate summary data
-  const totalSpent = transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
-  const expenseCount = transactions.filter((t) => t.type === "expense").length;
-
-  // Find the member who has paid the most in expenses (actual top contributor)
-  const memberExpenseContributions = group.members.map(member => {
-    const totalPaid = transactions
-      .filter(t => t.type === "expense" && t.paidBy === member.id)
-      .reduce((sum, t) => sum + t.amount, 0);
-    return {
-      ...member,
-      totalPaid
-    };
-  });
-
-  const topSpender = memberExpenseContributions.length > 0
-    ? memberExpenseContributions.reduce((prev, curr) => {
-      return curr.totalPaid > prev.totalPaid ? curr : prev;
-    })
-    : null;
 
   return (
     <div className="min-h-screen bg-white pb-24">
