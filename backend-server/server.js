@@ -1976,12 +1976,15 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
     // 8. Notifications (Async - Fire and Forget)
     setImmediate(async () => {
+      console.log('🚀 Starting Async Notifications for Transaction:', transactionId);
+
       // Run Push and Email in parallel so one doesn't block the other
       const notifications = [];
 
       // A. Push Notifications (OneSignal)
       const membersWithUserId = membersArray.filter(m => m.userId);
       if (membersWithUserId.length > 0) {
+        console.log(`🔔 Queuing Push Notifications for ${membersWithUserId.length} users`);
         const userIds = membersWithUserId.map(m => m.userId);
         notifications.push(
           sendOneSignalNotificationInternal({
@@ -1989,7 +1992,9 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
             title: `New Expense in ${group.name}`,
             body: `${payer.name} paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`,
             data: { type: 'expense', transactionId, groupId, amount }
-          }).catch(err => console.error('⚠️ OneSignal Push failed:', err.message))
+          })
+            .then(() => console.log('✅ Push Notifications Sent Successfully'))
+            .catch(err => console.error('⚠️ OneSignal Push failed:', err.message))
         );
       }
 
@@ -1999,13 +2004,21 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
         m.id !== paidBy // Send to all members with email except payer
       );
 
+      console.log(`📧 Found ${participantsWithEmail.length} potential email recipients (excluding payer)`);
+      if (participantsWithEmail.length > 0) {
+        console.log('📧 Recipients list:', participantsWithEmail.map(p => p.email).join(', '));
+      }
+
       if (participantsWithEmail.length > 0) {
         notifications.push((async () => {
-          console.log(`📧 Sending expense emails to ${participantsWithEmail.length} members`);
-          await Promise.allSettled(participantsWithEmail.map(async (recipient) => {
+          console.log(`📧 Starting email sending loop for ${participantsWithEmail.length} members...`);
+
+          const emailResults = await Promise.allSettled(participantsWithEmail.map(async (recipient) => {
+            console.log(`🔹 Preparing email for: ${recipient.email}`);
             try {
               const split = splits.find(s => s.participantId === recipient.id);
               const shareAmount = split ? split.amount : 0;
+
               const isParticipant = participants.includes(recipient.id);
 
               const amountDisplay = isParticipant
@@ -2040,15 +2053,25 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
                 text: `Hi ${recipient.name}, a new expense for Rs ${amount.toLocaleString()} was added in ${group.name}. Your share is Rs ${shareAmount.toLocaleString()}. Paid by: ${payer.name}.`
               };
 
+              console.log(`📨 Sending email to ${recipient.email}...`);
               await sendMailWithFallback(mailOptions);
+              console.log(`✅ Email sent successfully to ${recipient.email}`);
+              return recipient.email;
             } catch (emailErr) {
               console.error(`❌ Failed to send expense email to ${recipient.email}:`, emailErr.message);
+              throw emailErr;
             }
           }));
-        })().catch(err => console.error('⚠️ Email sending process failed:', err.message)));
+
+          console.log('🏁 Email sending loop finished. Results:',
+            emailResults.map(r => r.status === 'fulfilled' ? 'Success' : 'Failed').join(', ')
+          );
+
+        })().catch(err => console.error('⚠️ Critical Email sending process failed:', err.message)));
       }
 
       await Promise.allSettled(notifications);
+      console.log('🏁 All Async Notifications Processed');
     });
 
   } catch (error) {
