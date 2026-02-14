@@ -428,6 +428,9 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     // 2. Save Group
     await newGroupRef.set(newGroup);
 
+    // Initialize groupSettlements for fast access (New groups only)
+    await admin.database().ref(`groupSettlements/${groupId}`).set({ _migrated: true });
+
     // 3. Add to User's Group Index
     await admin.database().ref(`userGroups/${userId}/${groupId}`).set({
       name: newGroup.name,
@@ -1741,17 +1744,29 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     const involvedMemberIds = new Set([paidBy, ...participants]);
     const settlementsMap = {}; // StorageKey -> { [PeerMemberId]: { toReceive, toPay } }
 
-    const fetchPromises = Array.from(involvedMemberIds).map(async (memberId) => {
-      const storageKey = getStorageKey(memberId);
-      const snap = await db.ref(`users/${storageKey}/settlements/${groupId}`).get();
-      if (snap.exists()) {
-        settlementsMap[storageKey] = snap.val();
-      } else {
-        settlementsMap[storageKey] = {};
-      }
-    });
+    // Optimized: Fetch all settlements for the group at once (if available)
+    const groupSettlementsData = await fetchGroupSettlements(db, groupId);
 
-    await Promise.all(fetchPromises);
+    if (groupSettlementsData && groupSettlementsData.settlements) {
+      // Fast Path: Use optimized data
+      const allSettlements = groupSettlementsData.settlements;
+      involvedMemberIds.forEach(memberId => {
+        const storageKey = getStorageKey(memberId);
+        settlementsMap[storageKey] = allSettlements[storageKey] || {};
+      });
+    } else {
+      // Slow Path: Fallback to N+1 fetching (safe for old groups)
+      const fetchPromises = Array.from(involvedMemberIds).map(async (memberId) => {
+        const storageKey = getStorageKey(memberId);
+        const snap = await db.ref(`users/${storageKey}/settlements/${groupId}`).get();
+        if (snap.exists()) {
+          settlementsMap[storageKey] = snap.val();
+        } else {
+          settlementsMap[storageKey] = {};
+        }
+      });
+      await Promise.all(fetchPromises);
+    }
 
     // 5. Build multi-path update object
     const updates = {};
@@ -1855,10 +1870,14 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       // Netting removed as per user request (Bidirectional debts allowed)
       // if (debtorNewToPay > 0 && debtorNewToReceive > 0) { ... }
 
-      updates[`users/${debtorStorageKey}/settlements/${groupId}/${creditorId}`] = {
+      const newSettlementDebtor = {
         toReceive: Math.max(0, debtorNewToReceive),
         toPay: Math.max(0, debtorNewToPay)
       };
+
+      updates[`users/${debtorStorageKey}/settlements/${groupId}/${creditorId}`] = newSettlementDebtor;
+      // Always dual-write to mirror (safe incremental update)
+      updates[`groupSettlements/${groupId}/${debtorStorageKey}/${creditorId}`] = newSettlementDebtor;
 
       // 2. Update Creditor's Settlements (Creditor receives from Debtor)
       // Path: users/{CreditorStorageKey}/settlements/{GroupId}/{DebtorMemberId}
@@ -1871,10 +1890,14 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       // Netting removed as per user request
       // if (creditorNewToReceive > 0 && creditorNewToPay > 0) { ... }
 
-      updates[`users/${creditorStorageKey}/settlements/${groupId}/${debtorId}`] = {
+      const newSettlementCreditor = {
         toReceive: Math.max(0, creditorNewToReceive),
         toPay: Math.max(0, creditorNewToPay)
       };
+
+      updates[`users/${creditorStorageKey}/settlements/${groupId}/${debtorId}`] = newSettlementCreditor;
+      // Always dual-write to mirror (safe incremental update)
+      updates[`groupSettlements/${groupId}/${creditorStorageKey}/${debtorId}`] = newSettlementCreditor;
 
       // Update local map to handle multiple debts between same pair?
       // Since Debtor->Creditor pair is unique in this loop (one split per participant),
@@ -2157,16 +2180,20 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     }
 
     // Update current user's view
-    updates[`users/${currentUserId}/settlements/${groupId}/${otherPersonId}`] = {
+    const settlementForCurrentUser = {
       toReceive: newToReceive,
       toPay: newToPay
     };
+    updates[`users/${currentUserId}/settlements/${groupId}/${otherPersonId}`] = settlementForCurrentUser;
+    updates[`groupSettlements/${groupId}/${currentUserId}/${otherPersonId}`] = settlementForCurrentUser;
 
     // Update other user's view (Mirror)
-    updates[`users/${otherPersonId}/settlements/${groupId}/${currentUserId}`] = {
+    const settlementForOtherUser = {
       toReceive: newToPay,
       toPay: newToReceive
     };
+    updates[`users/${otherPersonId}/settlements/${groupId}/${currentUserId}`] = settlementForOtherUser;
+    updates[`groupSettlements/${groupId}/${otherPersonId}/${currentUserId}`] = settlementForOtherUser;
 
     // 5. Execute Atomic Update
     await db.ref().update(updates);
@@ -2648,6 +2675,21 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
+
+// Helper to fetch group settlements with optimization (no auto-migration for safety)
+async function fetchGroupSettlements(db, groupId) {
+  const groupSettlementsRef = db.ref(`groupSettlements/${groupId}`);
+  const snap = await groupSettlementsRef.get();
+
+  if (snap.exists()) {
+    const data = snap.val();
+    if (data._migrated === true) {
+      return { settlements: data };
+    }
+  }
+
+  return null; // Fallback to standard fetching
+}
 
 // Cleanup Unverified Users Endpoint (Admin/Secure)
 app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
