@@ -1925,18 +1925,22 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
         // B. Email Notifications
         const participantsWithEmail = membersArray.filter(m =>
-          participants.includes(m.id) &&
           m.email &&
-          m.id !== paidBy // Don't send email to the person who paid
+          m.id !== paidBy // Send to all members with email except payer
         );
 
         if (participantsWithEmail.length > 0) {
-          console.log(`📧 Sending expense emails to ${participantsWithEmail.length} participants`);
+          console.log(`📧 Sending expense emails to ${participantsWithEmail.length} members`);
 
           for (const recipient of participantsWithEmail) {
             try {
               const split = splits.find(s => s.participantId === recipient.id);
               const shareAmount = split ? split.amount : 0;
+              const isParticipant = participants.includes(recipient.id);
+
+              const amountDisplay = isParticipant
+                ? `Rs ${shareAmount.toLocaleString()} (Your share of Rs ${amount.toLocaleString()})`
+                : `Rs ${amount.toLocaleString()} (Total Amount)`;
 
               const mailOptions = {
                 from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
@@ -1945,7 +1949,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
                 html: await loadEmailTemplate('transaction-alert', {
                   USER_NAME: recipient.name,
                   TRANSACTION_TYPE: 'Expense Added',
-                  AMOUNT: `Rs ${shareAmount.toLocaleString()} (Your share of Rs ${amount.toLocaleString()})`,
+                  AMOUNT: amountDisplay,
                   GROUP_NAME: group.name,
                   DATE: newTransaction.date,
                   DESCRIPTION: `${payer.name} paid for "${note || 'Expense'}"${place ? ` at ${place}` : ''}.`
