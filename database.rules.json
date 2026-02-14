@@ -46,11 +46,8 @@
       }
     },
     "verificationCodes": {
-      "$codeId": {
-        ".read": "auth != null || auth == null",
-        ".write": "auth != null || auth == null",
-        ".validate": "newData.hasChildren(['email', 'code', 'createdAt']) && newData.child('code').isString() && newData.child('email').isString()"
-      }
+      ".read": false,
+      ".write": false
     },
     "emailVerification": {
       "$uid": {
