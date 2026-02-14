@@ -239,6 +239,45 @@ if (process.env.FALLBACK_SMTP_USER) {
   console.log('ℹ️ No fallback SMTP configured (FALLBACK_SMTP_USER not set)');
 }
 
+// Email Template Helper - Sleek, Simple, Green (#4a6850)
+const getStandardEmailTemplate = (title, contentLines, actionLink, actionText) => {
+  const footerText = `
+    <p style="color: #666; font-size: 12px; margin-top: 24px; border-top: 1px solid #eee; padding-top: 16px;">
+      By using Hostel Ledger, you agree to our <a href="https://hostelledger.aarx.online/terms" style="color: #4a6850;">Terms & Conditions</a> and <a href="https://hostelledger.aarx.online/privacy" style="color: #4a6850;">Privacy Policy</a>.
+    </p>
+    <p style="color: #999; font-size: 11px;">
+      Hostel Ledger - Simplify Shared Expenses
+    </p>
+  `;
+
+  const actionButton = actionLink && actionText ? `
+    <a href="${actionLink}" style="display: inline-block; background-color: #4a6850; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 16px 0;">
+      ${actionText}
+    </a>
+  ` : '';
+
+  const contentHtml = contentLines.map(line => `<p style="margin-bottom: 12px;">${line}</p>`).join('');
+
+  return `
+    <div style="font-family: 'Segoe UI', user-select: none, -webkit-user-select: none, Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h2 style="color: #4a6850; margin: 0;">${title}</h2>
+      </div>
+      
+      <div style="color: #333; font-size: 16px; line-height: 1.5;">
+        ${contentHtml}
+        <div style="text-align: center;">
+          ${actionButton}
+        </div>
+      </div>
+
+      <div style="text-align: center;">
+        ${footerText}
+      </div>
+    </div>
+  `;
+};
+
 // Root endpoint
 app.get('/', (req, res) => {
   console.log('📍 Root endpoint accessed from:', req.get('origin') || 'direct');
@@ -1292,25 +1331,27 @@ app.post('/api/send-verification-new', emailLimiter, async (req, res) => {
       });
     }
 
-    // Load and process verification template
-    const html = await loadEmailTemplate('verification', {
-      USER_NAME: name,
-      CODE: code
-    });
+    const emailContent = [
+      `Hello <strong>${name}</strong>,`,
+      `Your verification code is:`,
+      `<div style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #4a6850; text-align: center; margin: 24px 0;">${code}</div>`,
+      `This code will expire in 10 minutes.`,
+      `If you didn't request this, please ignore this email.`
+    ];
 
-    if (!html) {
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to load email template'
-      });
-    }
+    const html = getStandardEmailTemplate(
+      'Verify Your Account',
+      emailContent,
+      null,
+      null
+    );
 
     const mailOptions = {
       from: process.env.EMAIL_FROM,
       to: email,
-      subject: ' Verify Your Hostel Ledger Account',
+      subject: 'Verify Your Hostel Ledger Account',
       html: html,
-      text: `Hi ${name}!\n\nYour verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nBest regards,\nHostel Ledger Team`
+      text: `Hi ${name}!\n\nYour verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nBy using Hostel Ledger, you agree to our Terms & Conditions.`
     };
 
     console.log('📧 Sending verification email...');
@@ -1954,22 +1995,37 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
               const shareAmount = split ? split.amount : 0;
               const isParticipant = participants.includes(recipient.id);
 
+              const isParticipant = participants.includes(recipient.id);
+
               const amountDisplay = isParticipant
                 ? `Rs ${shareAmount.toLocaleString()} (Your share of Rs ${amount.toLocaleString()})`
                 : `Rs ${amount.toLocaleString()} (Total Amount)`;
+
+              const emailContent = [
+                `Hi <strong>${recipient.name}</strong>,`,
+                `${payer.name} added a new expense in <strong>${group.name}</strong>.`,
+                `<div style="background-color: #f5f5f5; padding: 16px; border-radius: 8px; margin: 16px 0;">
+                  <p style="margin: 0; color: #666; font-size: 14px;">Amount</p>
+                  <p style="margin: 4px 0 0; font-size: 24px; font-weight: bold; color: #333;">${amountDisplay}</p>
+                  <p style="margin: 12px 0 0; color: #666; font-size: 14px;">For</p>
+                  <p style="margin: 4px 0 0; font-size: 18px; color: #333;">"${note || 'Expense'}"</p>
+                  ${place ? `<p style="margin: 12px 0 0; color: #666; font-size: 14px;">At</p><p style="margin: 4px 0 0; font-size: 16px; color: #333;">${place}</p>` : ''}
+                </div>`,
+                `Date: ${newTransaction.date}`
+              ];
+
+              const html = getStandardEmailTemplate(
+                'New Expense Added',
+                emailContent,
+                'https://app.hostelledger.aarx.online',
+                'View Expense'
+              );
 
               const mailOptions = {
                 from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
                 to: recipient.email,
                 subject: `New Expense: ${note || 'Shared Expense'} in ${group.name}`,
-                html: await loadEmailTemplate('transaction-alert', {
-                  USER_NAME: recipient.name,
-                  TRANSACTION_TYPE: 'Expense Added',
-                  AMOUNT: amountDisplay,
-                  GROUP_NAME: group.name,
-                  DATE: newTransaction.date,
-                  DESCRIPTION: `${payer.name} paid for "${note || 'Expense'}"${place ? ` at ${place}` : ''}.`
-                }),
+                html: html,
                 text: `Hi ${recipient.name}, a new expense for Rs ${amount.toLocaleString()} was added in ${group.name}. Your share is Rs ${shareAmount.toLocaleString()}. Paid by: ${payer.name}.`
               };
 
