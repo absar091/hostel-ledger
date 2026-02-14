@@ -195,25 +195,28 @@ async function sendMailWithFallback(mailOptions) {
       || /timeout|connection|network/i.test(primaryError.message);
 
     const shouldFallback = isQuotaError || isAuthError || isConnectionError;
+    console.log(`📧 Attempting to send email to: ${mailOptions.to} via Primary (Zoho)`);
+    const info = await primaryTransporter.sendMail(mailOptions);
+    console.log('✅ Email sent via Primary (Zoho):', info.messageId);
+    return info;
+  } catch (error) {
+    console.warn('⚠️ Primary SMTP failed:', error.message);
+    console.log('🔄 Attempting Fallback (Gmail)...');
 
-    if (shouldFallback && process.env.FALLBACK_SMTP_USER) {
-      console.warn(`⚠️ Primary SMTP failed (${code}): ${primaryError.message}. Trying Gmail fallback...`);
-      try {
-        // Override "from" to use the fallback sender if the original fails auth
-        const fallbackOptions = {
-          ...mailOptions,
-          from: process.env.FALLBACK_EMAIL_FROM || `"Hostel Ledger" <${process.env.FALLBACK_SMTP_USER}>`
-        };
-        const result = await fallbackTransporter.sendMail(fallbackOptions);
-        console.log('📧 Email sent via fallback (Gmail):', result.messageId);
-        return result;
-      } catch (fallbackError) {
-        console.error('❌ Fallback Gmail SMTP also failed:', fallbackError.message);
-        throw fallbackError; // Throw the fallback error
+    try {
+      const info = await fallbackTransporter.sendMail(mailOptions);
+      console.log('✅ Email sent via Fallback (Gmail):', info.messageId);
+      return info;
+    } catch (fallbackError) {
+      console.error('❌ Fallback SMTP also failed.');
+      console.error('❌ Primary Error:', error.message);
+      console.error('❌ Fallback Error:', fallbackError.message);
+
+      if (fallbackError.response) {
+        console.error('❌ SMTP Response:', fallbackError.response);
       }
-    } else {
-      console.error('❌ Primary SMTP failed (non-recoverable error):', primaryError.message);
-      throw primaryError;
+
+      throw new Error(`Email sending failed: ${fallbackError.message}`);
     }
   }
 }
