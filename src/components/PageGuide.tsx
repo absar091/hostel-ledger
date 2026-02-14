@@ -41,6 +41,7 @@ const PageGuide = ({ title, description, tips = [], emoji = "💡", show, onClos
               </h3>
               <button
                 onClick={handleClose}
+                aria-label="Close guide"
                 className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
               >
                 <X className="w-4 h-4" />
@@ -52,14 +53,14 @@ const PageGuide = ({ title, description, tips = [], emoji = "💡", show, onClos
             </p>
             
             {tips.length > 0 && (
-              <div className="space-y-1.5">
+              <ul className="space-y-1.5 m-0 p-0 list-none">
                 {tips.map((tip, index) => (
-                  <div key={index} className="flex items-start gap-2">
-                    <Info className="w-3 h-3 text-emerald-500 mt-0.5 flex-shrink-0" />
+                  <li key={index} className="flex items-start gap-2">
+                    <Info className="w-3 h-3 text-emerald-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
                     <span className="text-xs text-gray-600 leading-relaxed">{tip}</span>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
           </div>
         </div>
