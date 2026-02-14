@@ -99,21 +99,23 @@ export const validateName = (name: string): { isValid: boolean; error?: string; 
     return { isValid: false, error: 'Name must be a string' };
   }
   
-  const sanitizedName = sanitizeInput(name);
+  const trimmedName = name.trim();
   
-  if (sanitizedName.length === 0) {
+  if (trimmedName.length === 0) {
     return { isValid: false, error: 'Name is required' };
   }
   
-  if (sanitizedName.length > 50) {
+  if (trimmedName.length > 50) {
     return { isValid: false, error: 'Name must be less than 50 characters' };
   }
   
   // Only allow letters, spaces, hyphens, and apostrophes
-  if (!/^[a-zA-Z\s\-']+$/.test(sanitizedName)) {
+  if (!/^[a-zA-Z\s\-']+$/.test(trimmedName)) {
     return { isValid: false, error: 'Name can only contain letters, spaces, hyphens, and apostrophes' };
   }
   
+  const sanitizedName = sanitizeInput(name);
+
   return { isValid: true, sanitizedName };
 };
 
