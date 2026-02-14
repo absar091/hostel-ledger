@@ -1993,7 +1993,6 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
             try {
               const split = splits.find(s => s.participantId === recipient.id);
               const shareAmount = split ? split.amount : 0;
-              const isParticipant = participants.includes(recipient.id);
 
               const isParticipant = participants.includes(recipient.id);
 
