@@ -625,57 +625,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const checkEmailExists = async (email: string): Promise<boolean> => {
-    try {
-      console.log('🔍 Checking if email exists:', email);
-
-      // Primary check: Use backend API with Firebase Admin SDK
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/check-email-exists`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email })
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success) {
-            if (result.exists) {
-              logger.info('Email exists', { email });
-              return true;
-            } else {
-              logger.info('Email is available', { email });
-              return false;
-            }
-          }
-        } else {
-          logger.warn('Backend email check failed, falling back to Firebase Auth', { email });
-        }
-      } catch (backendError: any) {
-        console.warn('⚠️ Backend email check error, falling back to Firebase Auth:', backendError.message);
-      }
-
-      try {
-        const methods = await fetchSignInMethodsForEmail(auth, email);
-        if (methods.length > 0) {
-          logger.info('Email exists in Firebase Auth', { email, methods });
-          return true;
-        }
-      } catch (authError: any) {
-        console.warn('⚠️ Firebase Auth check failed:', authError.message);
-        // If auth check fails, we can't determine if email exists
-        // Return false to allow signup attempt (Firebase will catch duplicates during signup)
-      }
-
-      console.log('✅ Email is available:', email);
-      return false;
-
-    } catch (error: any) {
-      console.error("❌ Error checking email existence:", error);
-      // In case of error, return false to allow signup (Firebase will catch duplicates during actual signup)
-      return false;
-    }
+    // Deprecated for security reasons to prevent email enumeration
+    console.warn('checkEmailExists is deprecated and insecure. Always returning false.');
+    return false;
   };
 
   const deleteAccount = async (): Promise<{ success: boolean; error?: string }> => {

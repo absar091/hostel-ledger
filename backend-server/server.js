@@ -1360,27 +1360,13 @@ app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid email format' });
     }
 
-    try {
-      // Check Firebase Auth efficiently
-      await admin.auth().getUserByEmail(email);
-
-      // If we reach here, the user exists
-      res.json({
-        success: true,
-        exists: true,
-        message: 'If this email is registered, you will receive instructions.'
-      });
-    } catch (authError) {
-      if (authError.code === 'auth/user-not-found') {
-        res.json({
-          success: true,
-          exists: false,
-          message: 'If this email is registered, you will receive instructions.'
-        });
-      } else {
-        throw authError;
-      }
-    }
+    // Security Fix: Do not reveal if user exists to prevent email enumeration
+    // Always return the same response
+    res.json({
+      success: true,
+      exists: false, // Returning false ensures legacy signup flow doesn't block. New frontend ignores this.
+      message: 'If this email is registered, you will receive instructions.'
+    });
 
   } catch (error) {
     console.error('❌ Email check error:', error);

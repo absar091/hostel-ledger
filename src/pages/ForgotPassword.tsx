@@ -10,7 +10,7 @@ import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
-  const { sendPasswordResetEmail, checkEmailExists, user } = useFirebaseAuth();
+  const { sendPasswordResetEmail, user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -46,17 +46,6 @@ const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
-      // Check if account exists with this email
-      toast.loading("Checking account...", { id: "email-check" });
-      const emailExists = await checkEmailExists(email);
-      toast.dismiss("email-check");
-
-      if (!emailExists) {
-        toast.error("No account found with this email address. Please check your email or create a new account.");
-        setIsLoading(false);
-        return;
-      }
-
       // Send password reset email using Firebase
       toast.loading("Sending reset email...", { id: "sending-reset" });
       const result = await sendPasswordResetEmail(email);
@@ -68,7 +57,9 @@ const ForgotPassword = () => {
       } else {
         // Handle specific Firebase errors
         if (result.error?.includes('user-not-found')) {
-          toast.error("No account found with this email address. Please check your email or create a new account.");
+          // Security: Don't reveal if user exists or not. Show success message.
+          setEmailSent(true);
+          toast.success("Password reset email sent! Check your inbox.");
         } else if (result.error?.includes('too-many-requests')) {
           toast.error("Too many reset attempts. Please wait a few minutes before trying again.");
         } else {
