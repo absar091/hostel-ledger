@@ -194,8 +194,16 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       logger.debug("Setting up real-time profile listener", { uid });
 
       try {
+        // Added Safety Timeout: If profile fetch hangs, force app entry after 5s
+        const profileTimeout = setTimeout(() => {
+          console.warn('⏱️ Profile load timeout - forcing app entry (offline/partial state)');
+          setIsLoading(false);
+        }, 5000);
+
         // User Profile Listener
         unsubscribeUser = onValue(userRef, async (snapshot) => {
+          clearTimeout(profileTimeout); // Success: clear timeout
+
           if (snapshot.exists()) {
             const userData = snapshot.val();
 
@@ -310,7 +318,12 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       logger.info("Login attempt", { email: sanitizedEmail });
 
       const userCredential = await signInWithEmailAndPassword(auth, sanitizedEmail, password);
-      logger.info("Login successful", { uid: userCredential.user.uid });
+
+      // OPTIMISTIC UPDATE: Update state immediately to force UI transition
+      // This bypasses potential delay in onAuthStateChanged listener
+      logger.info("Login successful - applying optimistic update", { uid: userCredential.user.uid });
+      setFirebaseUser(userCredential.user);
+      setIsLoading(true); // Force loading state to trigger Splash Screen
 
       return { success: true };
     } catch (error: any) {

@@ -133,6 +133,17 @@ const Dashboard = () => {
     }
   }, [shouldShowOnboarding, shouldShowPageGuide]);
 
+  // One-time post-login guidance
+  useEffect(() => {
+    const shouldShowRefreshTip = sessionStorage.getItem("showPostLoginRefreshTip");
+    if (shouldShowRefreshTip === "1") {
+      toast.info("Tip", {
+        description: "Please refresh once after login to access the app smoothly.",
+      });
+      sessionStorage.removeItem("showPostLoginRefreshTip");
+    }
+  }, []);
+
   // Show notification prompt when app is first installed
   useEffect(() => {
     const checkNotificationPrompt = () => {

@@ -45,12 +45,14 @@ const Login = () => {
 
     setIsLoading(true);
     const result = await login(email, password);
-    setIsLoading(false);
+    // On success, we keep loading state true for smooth redirection UX
+    // On error, we turn it off
 
     if (result.success) {
       toast.success("Welcome back!");
       navigate("/", { replace: true });
     } else {
+      setIsLoading(false);
       toast.error(result.error || "Login failed");
     }
   };
@@ -153,7 +155,7 @@ const Login = () => {
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Signing in...
+                {user ? "Redirecting..." : "Signing in..."}
               </>
             ) : (
               "Sign In"
