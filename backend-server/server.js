@@ -145,29 +145,36 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Primary SMTP Transporter (Zoho Mail)
+// Email Configuration (Nodemailer)
+// Primary: Zoho Mail (Official)
 const primaryTransporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT),
-  secure: process.env.SMTP_SECURE === 'true', // true for 465 (SSL), false for 587 (TLS)
+  host: process.env.SMTP_HOST || 'smtp.zoho.com',
+  port: parseInt(process.env.SMTP_PORT || '465'),
+  secure: true, // true for 465, false for other ports
   auth: {
     user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    pass: process.env.SMTP_PASS
   },
+  connectionTimeout: 10000, // 10 seconds
+  greetingTimeout: 10000,   // 10 seconds
+  socketTimeout: 15000,      // 15 seconds
   tls: {
     rejectUnauthorized: true
   }
 });
 
-// Fallback SMTP Transporter (Gmail)
+// Fallback: Gmail (Backup)
 const fallbackTransporter = nodemailer.createTransport({
   host: process.env.FALLBACK_SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.FALLBACK_SMTP_PORT || '587'),
-  secure: false, // Gmail uses STARTTLS on 587
+  port: parseInt(process.env.FALLBACK_SMTP_PORT || '465'), // Gmail SSL
+  secure: true,
   auth: {
     user: process.env.FALLBACK_SMTP_USER,
-    pass: process.env.FALLBACK_SMTP_PASS,
+    pass: process.env.FALLBACK_SMTP_PASS
   },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
   tls: {
     rejectUnauthorized: true
   }
