@@ -186,9 +186,27 @@ const transporter = primaryTransporter;
 // Smart email sender with automatic fallback
 // Smart email sender with automatic fallback
 async function sendMailWithFallback(mailOptions) {
-  console.log(`📧 Attempting to send email to: ${mailOptions.to} via Primary (Zoho)`);
+  // CRITICAL: Ensure 'from' matches authenticated user to prevent rejection/hanging
+  const primaryFrom = process.env.EMAIL_FROM || process.env.SMTP_USER;
+  const finalMailOptions = {
+    ...mailOptions,
+    from: primaryFrom // Override to ensure match
+  };
+
+  console.log(`📧 Attempting to send email to: ${mailOptions.to}`);
+  console.log(`   Detailed Info: From: ${primaryFrom}, Via: Primary (Zoho)`);
+
+  const sendWithTimeout = (transporter, options, timeoutMs = 15000) => {
+    return Promise.race([
+      transporter.sendMail(options),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Email sending timed out after ${timeoutMs}ms`)), timeoutMs)
+      )
+    ]);
+  };
+
   try {
-    const result = await primaryTransporter.sendMail(mailOptions);
+    const result = await sendWithTimeout(primaryTransporter, finalMailOptions);
     console.log('✅ Email sent via Primary (Zoho):', result.messageId);
     return result;
   } catch (primaryError) {
@@ -197,24 +215,21 @@ async function sendMailWithFallback(mailOptions) {
 
     if (process.env.FALLBACK_SMTP_USER) {
       try {
-        // Override "from" to use the fallback sender if the original fails auth
+        const fallbackFrom = process.env.FALLBACK_EMAIL_FROM || process.env.FALLBACK_SMTP_USER;
         const fallbackOptions = {
           ...mailOptions,
-          from: process.env.FALLBACK_EMAIL_FROM || `"Hostel Ledger" <${process.env.FALLBACK_SMTP_USER}>`
+          from: fallbackFrom
         };
-        const result = await fallbackTransporter.sendMail(fallbackOptions);
+        console.log(`   Fallback Info: From: ${fallbackFrom}`);
+
+        const result = await sendWithTimeout(fallbackTransporter, fallbackOptions);
         console.log('✅ Email sent via Fallback (Gmail):', result.messageId);
         return result;
       } catch (fallbackError) {
         console.error('❌ Fallback SMTP also failed.');
         console.error('❌ Primary Error:', primaryError.message);
         console.error('❌ Fallback Error:', fallbackError.message);
-
-        if (fallbackError.response) {
-          console.error('❌ SMTP Response:', fallbackError.response);
-        }
-
-        throw new Error(`Email sending failed (Primary & Fallback): ${fallbackError.message}`);
+        throw new Error(`Email sending failed: ${fallbackError.message}`);
       }
     } else {
       console.error('❌ Primary SMTP failed and no fallback configured:', primaryError.message);
