@@ -535,7 +535,8 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
       // Process Emails in Background
       setImmediate(async () => {
-        await Promise.all(emailNotifications.map(async ({ inviteeUid, username }) => {
+        // Run emails concurrently
+        await Promise.allSettled(emailNotifications.map(async ({ inviteeUid, username }) => {
           try {
             const inviteeSnap = await admin.database().ref(`users/${inviteeUid}`).get();
             if (inviteeSnap.exists()) {
@@ -544,19 +545,24 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
               const inviteeName = inviteeData.name || username;
 
               if (inviteeEmail) {
+                const emailContent = [
+                  `Hello <strong>${inviteeName}</strong>,`,
+                  `<strong>${senderName}</strong> has invited you to join the group <strong>"${newGroup.name}"</strong> on Hostel Ledger.`,
+                  `Open the app to accept or decline this invitation.`
+                ];
+
+                const html = getStandardEmailTemplate(
+                  "You've been invited! 🎉",
+                  emailContent,
+                  "https://app.hostelledger.aarx.online",
+                  "Open Hostel Ledger"
+                );
+
                 const mailOptions = {
                   from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
                   to: inviteeEmail,
                   subject: `${senderName} invited you to join "${newGroup.name}" on Hostel Ledger`,
-                  html: `
-                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                      <h2 style="color: #4a6850;">You've been invited! 🎉</h2>
-                      <p>Hello <strong>${inviteeName}</strong>,</p>
-                      <p><strong>${senderName}</strong> has invited you to join the group <strong>"${newGroup.name}"</strong> on Hostel Ledger.</p>
-                      <p>Open the app to accept or decline this invitation.</p>
-                      <a href="https://app.hostelledger.aarx.online" style="display: inline-block; background-color: #4a6850; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 16px 0;">Open Hostel Ledger</a>
-                    </div>
-                  `
+                  html: html
                 };
                 await sendMailWithFallback(mailOptions);
                 console.log('✅ Invitation email sent to existing user:', inviteeUid);
@@ -577,38 +583,41 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
       const senderName = userName;
 
       // Send emails in parallel
-      await Promise.all(emailMembers.map(async (member) => {
-        try {
-          const inviteLink = `https://app.hostelledger.aarx.online/join/${groupId}?email=${encodeURIComponent(member.email)}`;
+      setImmediate(async () => {
+        await Promise.allSettled(emailMembers.map(async (member) => {
+          try {
+            const inviteLink = `https://app.hostelledger.aarx.online/join/${groupId}?email=${encodeURIComponent(member.email)}`;
 
-          const mailOptions = {
-            from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
-            to: member.email,
-            subject: `${senderName} wants to split expenses with you on Hostel Ledger!`,
-            html: `
-              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #4a6850;">You're invited to Hostel Ledger! 🎉</h2>
-                <p>Hello <strong>${member.name}</strong>,</p>
-                <p><strong>${senderName}</strong> has invited you to the group <strong>"${newGroup.name}"</strong> on Hostel Ledger - an app to easily split and track shared expenses.</p>
-                <p>They've already added you as a member so you can start tracking expenses together immediately.</p>
-                <p><strong>Sign up now to:</strong></p>
-                <ul style="margin: 16px 0;">
-                  <li>See who owes what</li>
-                  <li>Track all shared expenses</li>
-                  <li>Settle debts easily</li>
-                </ul>
-                <a href="${inviteLink}" style="display: inline-block; background-color: #4a6850; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 16px 0;">Sign Up & Join Group</a>
-                <p style="color: #666; font-size: 12px; margin-top: 24px;">If you don't sign up within 7 days, your pending access may expire.</p>
-              </div>
-            `
-          };
+            const emailContent = [
+              `Hello <strong>${member.name}</strong>,`,
+              `<strong>${senderName}</strong> has invited you to the group <strong>"${newGroup.name}"</strong> on Hostel Ledger - an app to easily split and track shared expenses.`,
+              `They've already added you as a member so you can start tracking expenses together immediately.`,
+              `<strong>Sign up now to:</strong>`,
+              `- See who owes what<br>- Track all shared expenses<br>- Settle debts easily`
+            ];
 
-          await sendMailWithFallback(mailOptions);
-          console.log('✅ Email sent to manual member');
-        } catch (emailErr) {
-          console.error('❌ Failed to send email to member:', emailErr);
-        }
-      }));
+            const html = getStandardEmailTemplate(
+              "You're invited to Hostel Ledger! 🎉",
+              emailContent,
+              inviteLink,
+              "Sign Up & Join Group"
+            );
+
+            const mailOptions = {
+              from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
+              to: member.email,
+              subject: `${senderName} wants to split expenses with you on Hostel Ledger!`,
+              html: html,
+              text: `You have been invited to join ${newGroup.name} on Hostel Ledger. Sign up here: ${inviteLink}`
+            };
+
+            await sendMailWithFallback(mailOptions);
+            console.log('✅ Email sent to manual member');
+          } catch (emailErr) {
+            console.error('❌ Failed to send email to member:', emailErr);
+          }
+        }));
+      });
     }
 
 
@@ -1965,35 +1974,38 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       transaction: newTransaction
     });
 
-    // 8. Notifications (Async - Call helper directly)
+    // 8. Notifications (Async - Fire and Forget)
     setImmediate(async () => {
-      try {
-        // A. Push Notifications (OneSignal)
-        const membersWithUserId = membersArray.filter(m => m.userId);
-        if (membersWithUserId.length > 0) {
-          const userIds = membersWithUserId.map(m => m.userId);
-          await sendOneSignalNotificationInternal({
+      // Run Push and Email in parallel so one doesn't block the other
+      const notifications = [];
+
+      // A. Push Notifications (OneSignal)
+      const membersWithUserId = membersArray.filter(m => m.userId);
+      if (membersWithUserId.length > 0) {
+        const userIds = membersWithUserId.map(m => m.userId);
+        notifications.push(
+          sendOneSignalNotificationInternal({
             userIds,
             title: `New Expense in ${group.name}`,
             body: `${payer.name} paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`,
             data: { type: 'expense', transactionId, groupId, amount }
-          });
-        }
-
-        // B. Email Notifications
-        const participantsWithEmail = membersArray.filter(m =>
-          m.email &&
-          m.id !== paidBy // Send to all members with email except payer
+          }).catch(err => console.error('⚠️ OneSignal Push failed:', err.message))
         );
+      }
 
-        if (participantsWithEmail.length > 0) {
+      // B. Email Notifications
+      const participantsWithEmail = membersArray.filter(m =>
+        m.email &&
+        m.id !== paidBy // Send to all members with email except payer
+      );
+
+      if (participantsWithEmail.length > 0) {
+        notifications.push((async () => {
           console.log(`📧 Sending expense emails to ${participantsWithEmail.length} members`);
-
-          for (const recipient of participantsWithEmail) {
+          await Promise.allSettled(participantsWithEmail.map(async (recipient) => {
             try {
               const split = splits.find(s => s.participantId === recipient.id);
               const shareAmount = split ? split.amount : 0;
-
               const isParticipant = participants.includes(recipient.id);
 
               const amountDisplay = isParticipant
@@ -2032,11 +2044,11 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
             } catch (emailErr) {
               console.error(`❌ Failed to send expense email to ${recipient.email}:`, emailErr.message);
             }
-          }
-        }
-      } catch (notifyError) {
-        console.error('⚠️ Async notification failed:', notifyError);
+          }));
+        })().catch(err => console.error('⚠️ Email sending process failed:', err.message)));
       }
+
+      await Promise.allSettled(notifications);
     });
 
   } catch (error) {
