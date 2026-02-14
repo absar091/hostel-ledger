@@ -2059,7 +2059,10 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
         notifications.push((async () => {
           console.log(`📧 Starting email sending loop for ${participantsWithEmail.length} members...`);
 
-          const emailResults = await Promise.allSettled(participantsWithEmail.map(async (recipient) => {
+          // Switch to Sequential Sending to avoid SMTP connection limits/blocking
+          const emailResults = [];
+
+          for (const recipient of participantsWithEmail) {
             console.log(`🔹 Preparing email for: ${recipient.email}`);
             try {
               const split = splits.find(s => s.participantId === recipient.id);
@@ -2100,30 +2103,86 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
               };
 
               console.log(`📨 Sending email to ${recipient.email}...`);
+              // Wait for one email to finish before starting the next
               await sendMailWithFallback(mailOptions);
               console.log(`✅ Email sent successfully to ${recipient.email}`);
-              return recipient.email;
+              emailResults.push({ email: recipient.email, status: 'Success' });
             } catch (emailErr) {
               console.error(`❌ Failed to send expense email to ${recipient.email}:`, emailErr.message);
-              throw emailErr;
+              emailResults.push({ email: recipient.email, status: 'Failed' });
             }
-          }));
+          }
 
           console.log('🏁 Email sending loop finished. Results:',
-            emailResults.map(r => r.status === 'fulfilled' ? 'Success' : 'Failed').join(', ')
+            emailResults.map(r => `${r.email} (${r.status})`).join(', ')
           );
 
         })().catch(err => console.error('⚠️ Critical Email sending process failed:', err.message)));
       }
+      console.log(`🔹 Preparing email for: ${recipient.email}`);
+      try {
+        const split = splits.find(s => s.participantId === recipient.id);
+        const shareAmount = split ? split.amount : 0;
 
-      await Promise.allSettled(notifications);
-      console.log('🏁 All Async Notifications Processed');
+        const isParticipant = participants.includes(recipient.id);
+
+        const amountDisplay = isParticipant
+          ? `Rs ${shareAmount.toLocaleString()} (Your share of Rs ${amount.toLocaleString()})`
+          : `Rs ${amount.toLocaleString()} (Total Amount)`;
+
+        const emailContent = [
+          `Hi <strong>${recipient.name}</strong>,`,
+          `${payer.name} added a new expense in <strong>${group.name}</strong>.`,
+          `<div style="background-color: #f5f5f5; padding: 16px; border-radius: 8px; margin: 16px 0;">
+                  <p style="margin: 0; color: #666; font-size: 14px;">Amount</p>
+                  <p style="margin: 4px 0 0; font-size: 24px; font-weight: bold; color: #333;">${amountDisplay}</p>
+                  <p style="margin: 12px 0 0; color: #666; font-size: 14px;">For</p>
+                  <p style="margin: 4px 0 0; font-size: 18px; color: #333;">"${note || 'Expense'}"</p>
+                  ${place ? `<p style="margin: 12px 0 0; color: #666; font-size: 14px;">At</p><p style="margin: 4px 0 0; font-size: 16px; color: #333;">${place}</p>` : ''}
+                </div>`,
+          `Date: ${newTransaction.date}`
+        ];
+
+        const html = getStandardEmailTemplate(
+          'New Expense Added',
+          emailContent,
+          'https://app.hostelledger.aarx.online',
+          'View Expense'
+        );
+
+        const mailOptions = {
+          from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
+          to: recipient.email,
+          subject: `New Expense: ${note || 'Shared Expense'} in ${group.name}`,
+          html: html,
+          text: `Hi ${recipient.name}, a new expense for Rs ${amount.toLocaleString()} was added in ${group.name}. Your share is Rs ${shareAmount.toLocaleString()}. Paid by: ${payer.name}.`
+        };
+
+        console.log(`📨 Sending email to ${recipient.email}...`);
+        await sendMailWithFallback(mailOptions);
+        console.log(`✅ Email sent successfully to ${recipient.email}`);
+        return recipient.email;
+      } catch (emailErr) {
+        console.error(`❌ Failed to send expense email to ${recipient.email}:`, emailErr.message);
+        throw emailErr;
+      }
+    }));
+
+console.log('🏁 Email sending loop finished. Results:',
+  emailResults.map(r => r.status === 'fulfilled' ? 'Success' : 'Failed').join(', ')
+);
+
+        }) ().catch(err => console.error('⚠️ Critical Email sending process failed:', err.message)));
+      }
+
+await Promise.allSettled(notifications);
+console.log('🏁 All Async Notifications Processed');
     });
 
   } catch (error) {
-    console.error('❌ Add expense error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
-  }
+  console.error('❌ Add expense error:', error);
+  res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+}
 });
 
 // Record Payment endpoint (Secure)
