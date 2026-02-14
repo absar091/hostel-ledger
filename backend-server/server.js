@@ -8,6 +8,7 @@ const path = require('path');
 const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
 const { loadEmailTemplate } = require('./utils/email');
+const { validateCreateGroup } = require('./utils/validation');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
 
@@ -376,18 +377,14 @@ app.post('/api/delete-image', authenticate, async (req, res) => {
  * Create Group Endpoint
  */
 app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
+  // Input Validation
+  const validationError = validateCreateGroup(req.body);
+  if (validationError) {
+    return res.status(400).json({ success: false, error: validationError });
+  }
+
   const { name, emoji, members, invitedUsernames, invitedEmails, coverPhoto } = req.body;
   const userId = req.user.uid;
-
-  if (!name) return res.status(400).json({ success: false, error: 'Group name is required' });
-
-  const hasManualMembers = members && members.length > 0;
-  const hasInvitedUsernames = invitedUsernames && invitedUsernames.length > 0;
-  const hasInvitedEmails = invitedEmails && invitedEmails.length > 0;
-
-  if (!hasManualMembers && !hasInvitedUsernames && !hasInvitedEmails) {
-    return res.status(400).json({ success: false, error: 'Please add at least one member (manual or invited)' });
-  }
 
   try {
     const groupsRef = admin.database().ref('groups');
