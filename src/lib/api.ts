@@ -55,3 +55,7 @@ export const getValidUserDetails = async (username: string) => {
 export const claimEmailInvite = async (groupId: string) => {
     return await callSecureApi('/api/claim-email-invite', { groupId });
 };
+
+export const getTransactions = async (transactionIds: string[]) => {
+    return await callSecureApi('/api/get-transactions', { transactionIds });
+};

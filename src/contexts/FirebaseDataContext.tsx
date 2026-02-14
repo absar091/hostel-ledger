@@ -152,8 +152,32 @@ import {
 } from "@/lib/expenseLogic";
 import { logger } from "@/lib/logger";
 import { sendTransactionNotifications, triggerPushNotification, TransactionData, UserData } from "@/lib/transactionNotifications";
-import { callSecureApi, sendInvitation, sendExternalInvitation } from "@/lib/api";
+import { callSecureApi, sendInvitation, sendExternalInvitation, getTransactions } from "@/lib/api";
 import { saveOfflineExpense } from "@/lib/offlineDB";
+
+const isTransactionSummarySufficient = (data: any): boolean => {
+  if (!data) return false;
+
+  // 1. For expenses, we need the participants array
+  if (data.type === 'expense') {
+    return Array.isArray(data.participants) && data.participants.length > 0;
+  }
+
+  // 2. For payments, fast-path only when both IDs and names are present
+  if (data.type === 'payment') {
+    // Check if we have both IDs and names
+    // Note: We check for truthiness, not just existence, to catch empty strings
+    return !!(data.from && data.to && data.fromName && data.toName);
+  }
+
+  // 3. For wallet ops, summary is sufficient
+  if (data.type === 'wallet_add' || data.type === 'wallet_deduct') {
+    return true;
+  }
+
+  // Fallback for unknown types or legacy data
+  return false;
+};
 
 export interface GroupMember {
   id: string;
@@ -367,66 +391,79 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           try {
             if (snapshot.exists()) {
               const userTransactions = snapshot.val();
-              const transactionPromises = Object.entries(userTransactions).map(async ([id, data]: [string, any]) => {
-                // OPTIMIZATION: Check if we have enough data in the summary to avoid N+1 fetch
+              const transactionsList: Transaction[] = [];
+              const idsToFetch: string[] = [];
 
-                // 1. For expenses, we need the participants array (added in recent backend update)
-                if (data && data.type === 'expense' && Array.isArray(data.participants) && data.participants.length > 0) {
-                  return { id, ...data };
+              // 1. First pass: Separate complete summaries from those needing fetch
+              Object.entries(userTransactions).forEach(([id, data]: [string, any]) => {
+                if (isTransactionSummarySufficient(data)) {
+                  transactionsList.push({ id, ...data });
+                } else {
+                  idsToFetch.push(id);
                 }
-
-                // 2. For payments, fast-path only when both IDs and names are present.
-                // Some denormalized summaries only contain names, but downstream filters still
-                // rely on `from`/`to` member IDs (e.g. member-ledger views).
-                if (
-                  data &&
-                  data.type === 'payment' &&
-                  data.from &&
-                  data.to &&
-                  data.fromName &&
-                  data.toName
-                ) {
-                  return { id, ...data };
-                }
-
-                // 3. For wallet ops, summary is sufficient
-                if (data && (data.type === 'wallet_add' || data.type === 'wallet_deduct')) {
-                  return { id, ...data };
-                }
-
-                // Fallback: Fetch full transaction data if summary is incomplete (legacy data)
-                try {
-                  const txRef = ref(database, `transactions/${id}`);
-                  const txSnapshot = await get(txRef);
-                  if (txSnapshot.exists()) {
-                    const fullTx = txSnapshot.val();
-                    return { id, ...fullTx };
-                  }
-                } catch (err) {
-                  console.error(`Failed to fetch transaction ${id}:`, err);
-                  // Fallback to metadata if fetch fails (offline scenario)
-                  if (typeof data === 'object' && data !== null && data.type) {
-                    return {
-                      id,
-                      groupId: data.groupId || "unknown",
-                      type: data.type || "expense",
-                      title: data.title || "Transaction",
-                      amount: data.amount || 0,
-                      date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "Unknown Date",
-                      createdAt: data.createdAt || new Date().toISOString(),
-                      timestamp: data.timestamp || Date.now(),
-                      paidBy: data.paidBy || "",
-                      paidByName: data.paidByName || "",
-                      participants: [], // Empty in offline fallback
-                      fromName: data.fromName || "",
-                      toName: data.toName || ""
-                    } as Transaction;
-                  }
-                }
-                return null;
               });
 
-              const transactionsList = (await Promise.all(transactionPromises)).filter(Boolean) as Transaction[];
+              // 2. Second pass: Batch fetch incomplete transactions
+              if (idsToFetch.length > 0) {
+                // Determine chunks if > 50 (backend limit is 50)
+                const chunkSize = 50;
+                for (let i = 0; i < idsToFetch.length; i += chunkSize) {
+                  const chunk = idsToFetch.slice(i, i + chunkSize);
+
+                  try {
+                    // Try batch API fetch first
+                    const response = await getTransactions(chunk);
+
+                    if (response && response.success && Array.isArray(response.transactions)) {
+                      transactionsList.push(...response.transactions);
+
+                      // Handle partially missing transactions (security filtered or deleted)
+                      // If any IDs in chunk are missing from response, use fallback summary
+                      const returnedIds = new Set(response.transactions.map((t: any) => t.id));
+                      chunk.forEach(id => {
+                        if (!returnedIds.has(id)) {
+                          const summary = userTransactions[id];
+                          if (summary) transactionsList.push({ id, ...summary });
+                        }
+                      });
+                    } else {
+                      throw new Error("Invalid API response");
+                    }
+                  } catch (err) {
+                    console.warn(`Batch fetch failed for chunk, falling back to individual fetch:`, err);
+
+                    // Fallback: Individual fetching using Firebase SDK
+                    const fallbackPromises = chunk.map(async (id) => {
+                      try {
+                        const txRef = ref(database, `transactions/${id}`);
+                        const txSnapshot = await get(txRef);
+                        if (txSnapshot.exists()) {
+                          return { id, ...txSnapshot.val() };
+                        }
+                      } catch (e) {
+                        console.error(`Failed to fetch individual transaction ${id}`, e);
+                      }
+
+                      // Last resort: use the incomplete summary data if available
+                      const summary = userTransactions[id];
+                      if (summary) {
+                        return {
+                          id,
+                          ...summary,
+                          // Ensure required fields exist for UI safety
+                          participants: summary.participants || [],
+                          timestamp: summary.timestamp || Date.now(),
+                        };
+                      }
+                      return null;
+                    });
+
+                    const fallbackResults = await Promise.all(fallbackPromises);
+                    transactionsList.push(...(fallbackResults.filter(Boolean) as Transaction[]));
+                  }
+                }
+              }
+
               const sortedTransactions = transactionsList.sort((a, b) =>
                 new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
               );

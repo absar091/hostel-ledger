@@ -2752,6 +2752,71 @@ app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
   }
 });
 
+// Get Batch Transactions Endpoint (Secure)
+app.post('/api/get-transactions', authenticate, async (req, res) => {
+  try {
+    const { transactionIds } = req.body;
+    const userId = req.user.uid;
+
+    if (!transactionIds || !Array.isArray(transactionIds)) {
+      return res.status(400).json({ success: false, error: 'transactionIds array is required' });
+    }
+
+    if (transactionIds.length === 0) {
+      return res.json({ success: true, transactions: [] });
+    }
+
+    if (transactionIds.length > 50) {
+      return res.status(400).json({ success: false, error: 'Cannot fetch more than 50 transactions at once' });
+    }
+
+    const db = admin.database();
+
+    // Fetch transactions in parallel
+    const promises = transactionIds.map(async (id) => {
+      // Basic validation of ID format to prevent injection
+      if (typeof id !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(id)) {
+        return null;
+      }
+
+      const snap = await db.ref(`transactions/${id}`).get();
+      if (snap.exists()) {
+        const tx = snap.val();
+
+        // Optimization: We check if the transaction's groupId is in the user's groups.
+        // Or if the user is a participant.
+        return tx;
+      }
+      return null;
+    });
+
+    const results = await Promise.all(promises);
+    const transactions = results.filter(t => t !== null);
+
+    // Security Filtering: verify user has access to these transactions
+    // Fetch user's groups to validate access
+    const userGroupsSnap = await db.ref(`userGroups/${userId}`).get();
+    const userGroups = userGroupsSnap.exists() ? Object.keys(userGroupsSnap.val()) : [];
+
+    const validTransactions = transactions.filter(tx => {
+      // Allow if user is directly named (just in case they left group but still want history)
+      if (tx.paidBy === userId || tx.from === userId || tx.to === userId) return true;
+      if (tx.participants && Array.isArray(tx.participants) && tx.participants.some(p => p.id === userId || p.userId === userId)) return true;
+
+      // Allow if user is in the group
+      if (userGroups.includes(tx.groupId)) return true;
+
+      return false;
+    });
+
+    res.json({ success: true, transactions: validTransactions });
+
+  } catch (error) {
+    console.error('❌ Get transactions error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+  }
+});
+
 // 404 handler - MUST BE LAST
 app.use('*', (req, res) => {
   res.status(404).json({
