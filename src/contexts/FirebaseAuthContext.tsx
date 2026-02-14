@@ -13,10 +13,11 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider
 } from "firebase/auth";
-import { ref, set, get, update, push, onValue, off } from "firebase/database";
+import { ref, set, get, update, push, onValue, off, query, orderByChild, equalTo } from "firebase/database";
 import { auth, database } from "@/lib/firebase";
 import { logger } from "@/lib/logger";
 import { retryOperation } from "@/lib/transaction";
+import { IndividualDebt, calculateDebtSummary, createDebtEntries } from "@/lib/debtTracking";
 import {
   sanitizeInput,
   isValidEmail,
@@ -90,7 +91,7 @@ interface FirebaseAuthContextType {
   markPaymentReceived: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   markDebtPaid: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   // New debt tracking methods
-  getIndividualDebts: (groupId: string, personId: string) => { youOwe: any[]; theyOwe: any[]; totalYouOwe: number; totalTheyOwe: number; netAmount: number };
+  getIndividualDebts: (groupId: string, personId: string) => Promise<{ youOwe: IndividualDebt[]; theyOwe: IndividualDebt[]; totalYouOwe: number; totalTheyOwe: number; netAmount: number }>;
   addIndividualDebt: (groupId: string, personId: string, debt: any) => Promise<{ success: boolean; error?: string }>;
   settleIndividualDebt: (groupId: string, personId: string, debtId: string, amount?: number) => Promise<{ success: boolean; error?: string }>;
   settleNetAmount: (groupId: string, personId: string, amount: number) => Promise<{ success: boolean; error?: string }>;
@@ -936,20 +937,136 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Stub implementations for new interface methods
-  const getIndividualDebts = (groupId: string, personId: string) => {
-    return { youOwe: [], theyOwe: [], totalYouOwe: 0, totalTheyOwe: 0, netAmount: 0 };
+  const getIndividualDebts = async (groupId: string, personId: string) => {
+    if (!user) return { youOwe: [], theyOwe: [], totalYouOwe: 0, totalTheyOwe: 0, netAmount: 0 };
+
+    try {
+      const txRef = query(
+        ref(database, `userTransactions/${user.uid}`),
+        orderByChild('groupId'),
+        equalTo(groupId)
+      );
+
+      const snapshot = await get(txRef);
+      if (!snapshot.exists()) {
+        return { youOwe: [], theyOwe: [], totalYouOwe: 0, totalTheyOwe: 0, netAmount: 0 };
+      }
+
+      const transactions = snapshot.val();
+      const debts: IndividualDebt[] = [];
+
+      Object.values(transactions).forEach((tx: any) => {
+        if (tx.type === 'expense') {
+          let participants: { id: string, amount: number }[] = [];
+          if (Array.isArray(tx.participants)) {
+            participants = tx.participants;
+          }
+
+          if (participants.length > 0) {
+            const personInvolved = participants.some(p => p.id === personId) || tx.paidBy === personId;
+            const userInvolved = participants.some(p => p.id === user.uid) || tx.paidBy === user.uid;
+
+            if (personInvolved && userInvolved) {
+              const newDebts = createDebtEntries(
+                tx.id,
+                tx.title || 'Expense',
+                tx.date || new Date(tx.createdAt).toISOString(),
+                participants.map(p => ({ participantId: p.id, amount: p.amount })),
+                tx.paidBy,
+                user.uid
+              );
+              debts.push(...newDebts);
+            }
+          }
+        }
+
+        if (tx.type === 'payment') {
+          if (tx.from === user.uid && tx.to === personId) {
+            debts.push({
+              id: tx.id,
+              expenseId: tx.id,
+              expenseTitle: `Payment: ${tx.note || 'Settlement'}`,
+              amount: -tx.amount,
+              date: tx.date || new Date(tx.createdAt).toISOString(),
+              createdAt: tx.createdAt,
+              settled: false
+            });
+          } else if (tx.from === personId && tx.to === user.uid) {
+            debts.push({
+              id: tx.id,
+              expenseId: tx.id,
+              expenseTitle: `Payment: ${tx.note || 'Settlement'}`,
+              amount: tx.amount,
+              date: tx.date || new Date(tx.createdAt).toISOString(),
+              createdAt: tx.createdAt,
+              settled: false
+            });
+          }
+        }
+      });
+
+      return calculateDebtSummary({ [personId]: debts }, personId);
+
+    } catch (error) {
+      console.error("Error fetching individual debts:", error);
+      return { youOwe: [], theyOwe: [], totalYouOwe: 0, totalTheyOwe: 0, netAmount: 0 };
+    }
   };
 
   const addIndividualDebt = async (groupId: string, personId: string, debt: any): Promise<{ success: boolean; error?: string }> => {
-    return { success: true };
+    try {
+      if (!user) return { success: false, error: "Not authenticated" };
+
+      const amount = parseFloat(debt.amount);
+      if (isNaN(amount) || amount <= 0) return { success: false, error: "Invalid amount" };
+
+      const isYouOwe = debt.direction === 'youOwe';
+
+      const payerId = isYouOwe ? personId : user.uid;
+      const debtorId = isYouOwe ? user.uid : personId;
+
+      const payload = {
+        groupId,
+        amount,
+        note: debt.note || 'Manual debt',
+        place: 'Manual Entry',
+        paidBy: payerId,
+        participants: [
+          // Explicitly define consumer and amount to ensure correct debt calculation
+          // If debtor is the only participant, they are responsible for the full amount
+          { id: debtorId, amount: amount }
+        ],
+      };
+
+      return await callSecureApi('/api/add-expense', payload);
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
   };
 
   const settleIndividualDebt = async (groupId: string, personId: string, debtId: string, amount?: number): Promise<{ success: boolean; error?: string }> => {
-    return { success: true };
+    try {
+      if (!user) return { success: false, error: "Not authenticated" };
+      if (!amount) return { success: false, error: "Amount is required for settlement" };
+      return await markDebtPaid(groupId, personId, amount);
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
   };
 
   const settleNetAmount = async (groupId: string, personId: string, amount: number): Promise<{ success: boolean; error?: string }> => {
-    return { success: true };
+    try {
+      const debts = await getIndividualDebts(groupId, personId);
+      if (debts.netAmount < 0) {
+        return await markDebtPaid(groupId, personId, amount);
+      } else if (debts.netAmount > 0) {
+        return await markPaymentReceived(groupId, personId, amount);
+      } else {
+        return { success: false, error: "No debt to settle" };
+      }
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
   };
 
   // Favorite groups functions
