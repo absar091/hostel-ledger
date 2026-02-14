@@ -2011,12 +2011,12 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       }
 
       // B. Email Notifications
-      const participantsWithEmail = membersArray.filter(m =>
-        m.email &&
-        m.id !== paidBy // Send to all members with email except payer
-      );
+      // Modified: Send to ALL members with email (including payer) per user request
+      const participantsWithEmail = membersArray.filter(m => m.email);
 
-      console.log(`📧 Found ${participantsWithEmail.length} potential email recipients (excluding payer)`);
+      console.log('🔍 Debug: All Group Members:', membersArray.map(m => ({ name: m.name, email: m.email || 'No Email' })));
+      console.log(`📧 Found ${participantsWithEmail.length} potential email recipients (Payer included)`);
+
       if (participantsWithEmail.length > 0) {
         console.log('📧 Recipients list:', participantsWithEmail.map(p => p.email).join(', '));
       }

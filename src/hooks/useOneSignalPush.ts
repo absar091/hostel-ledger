@@ -172,42 +172,12 @@ export const useOneSignalPush = () => {
         await OneSignal.User.PushSubscription.optIn();
         console.log('✅ Opted in to push notifications');
 
-        // Get OneSignal Player ID (after opt-in)
-        const playerId = await OneSignal.User.PushSubscription.id;
-        console.log('🎯 OneSignal Player ID:', playerId);
+        setState((prev) => ({ ...prev, isSubscribed: true }));
+        toast.success("✅ Push notifications enabled!");
+        logger.info("Push notifications enabled successfully");
 
-        // Store Player ID in Firebase Realtime Database
-        if (playerId) {
-          try {
-            const { getDatabase, ref, set } = await import('firebase/database');
-            const db = getDatabase();
-            await set(ref(db, `oneSignalPlayers/${currentUser.uid}`), {
-              playerId: playerId,
-              updatedAt: new Date().toISOString(),
-              userAgent: navigator.userAgent,
-            });
-            console.log('✅ Player ID stored in Firebase');
-
-            // Store in localStorage as backup
-            localStorage.setItem('oneSignalPlayerId', playerId);
-            localStorage.setItem('oneSignalUserId', currentUser.uid);
-          } catch (error) {
-            console.error('❌ Failed to store Player ID:', error);
-          }
-        }
-
-        // Verify External ID was set
-        const externalId = OneSignal.User.externalId;
-        console.log('🔍 Verified External ID:', externalId);
-      } else {
-        console.warn('⚠️ No Firebase user found, cannot set External ID');
+        return true;
       }
-
-      setState((prev) => ({ ...prev, isSubscribed: true }));
-      toast.success("✅ Push notifications enabled!");
-      logger.info("Push notifications enabled successfully");
-
-      return true;
     } catch (error: any) {
       console.error("❌ Failed to subscribe to push notifications:", error);
       logger.error("Failed to subscribe to push notifications", { error: error.message });
