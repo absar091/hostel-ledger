@@ -224,27 +224,32 @@ async function sendMailWithFallback(mailOptions) {
 }
 
 // Verify email configuration on startup
-primaryTransporter.verify((error, success) => {
-  if (error) {
-    console.error('❌ Primary email configuration error:', error.message);
-  } else {
+const verifyTransporter = async () => {
+  try {
+    console.log('🔍 Verifying Primary SMTP (Zoho)...');
+    await primaryTransporter.verify();
     console.log('✅ Primary email server (Zoho) is ready');
-    console.log('📧 Primary SMTP User:', process.env.SMTP_USER);
-  }
-});
 
-if (process.env.FALLBACK_SMTP_USER) {
-  fallbackTransporter.verify((error, success) => {
-    if (error) {
-      console.error('❌ Fallback email configuration error:', error.message);
-    } else {
+    console.log('📧 Primary SMTP User:', process.env.SMTP_USER);
+  } catch (error) {
+    console.error('❌ Primary email configuration error:', error.message);
+    // don't throw, just log
+  }
+
+  if (process.env.FALLBACK_SMTP_USER) {
+    try {
+      console.log('🔍 Verifying Fallback SMTP (Gmail)...');
+      await fallbackTransporter.verify();
       console.log('✅ Fallback email server (Gmail) is ready');
       console.log('📧 Fallback SMTP User:', process.env.FALLBACK_SMTP_USER);
+    } catch (error) {
+      console.error('❌ Fallback email configuration error:', error.message);
     }
-  });
-} else {
-  console.log('ℹ️ No fallback SMTP configured (FALLBACK_SMTP_USER not set)');
-}
+  } else {
+    console.log('ℹ️ No fallback SMTP configured (FALLBACK_SMTP_USER not set)');
+  }
+};
+verifyTransporter();
 
 // Email Template Helper - Sleek, Simple, Green (#4a6850)
 const getStandardEmailTemplate = (title, contentLines, actionLink, actionText) => {
