@@ -2322,6 +2322,13 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
 // Cleanup Temporary Members endpoint (Server-Authoritative)
 app.post('/api/cleanup-temp-members', generalLimiter, async (req, res) => {
   try {
+    // 🛡️ Security Fix: Require Admin API Key
+    const apiKey = req.headers['x-admin-key'];
+    if (!process.env.ADMIN_API_KEY || apiKey !== process.env.ADMIN_API_KEY) {
+      console.warn(`⚠️ Unauthorized access attempt to cleanup-temp-members from ${req.ip}`);
+      return res.status(403).json({ success: false, error: 'Unauthorized: Admin access required' });
+    }
+
     const db = admin.database();
     const groupsRef = db.ref('groups');
 
@@ -2652,6 +2659,13 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
 // Cleanup Unverified Users Endpoint (Admin/Secure)
 app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
   try {
+    // 🛡️ Security Fix: Require Admin API Key
+    const apiKey = req.headers['x-admin-key'];
+    if (!process.env.ADMIN_API_KEY || apiKey !== process.env.ADMIN_API_KEY) {
+      console.warn(`⚠️ Unauthorized access attempt to cleanup-unverified-users from ${req.ip}`);
+      return res.status(403).json({ success: false, error: 'Unauthorized: Admin access required' });
+    }
+
     const db = admin.database();
     const verificationRef = db.ref('emailVerification');
 
