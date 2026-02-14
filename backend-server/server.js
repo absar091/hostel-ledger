@@ -330,7 +330,7 @@ const authenticate = async (req, res, next) => {
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     req.user = decodedToken;
-    console.log(`👤 Authenticated user: ${decodedToken.email} (${decodedToken.uid})`);
+    console.log(`👤 Authenticated user: ${decodedToken.uid}`);
     next();
   } catch (error) {
     console.error('❌ Token verification failed:', error.message);
@@ -525,7 +525,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
                   `
                 };
                 await sendMailWithFallback(mailOptions);
-                console.log(`✅ Invitation email sent to existing user: ${inviteeEmail}`);
+                console.log('✅ Invitation email sent to existing user:', inviteeUid);
               }
             }
           } catch (emailErr) {
@@ -570,9 +570,9 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
           };
 
           await sendMailWithFallback(mailOptions);
-          console.log(`✅ Email sent to ${member.email}`);
+          console.log('✅ Email sent to manual member');
         } catch (emailErr) {
-          console.error(`❌ Failed to send email to ${member.email}:`, emailErr);
+          console.error('❌ Failed to send email to member:', emailErr);
         }
       }));
     }
@@ -945,7 +945,7 @@ app.post('/api/send-email', emailLimiter, async (req, res) => {
       text: text || ''
     };
 
-    console.log('📧 Sending email to:', to);
+    console.log('📧 Sending email...');
     const result = await sendMailWithFallback(mailOptions);
     console.log('✅ Email sent successfully:', result.messageId);
 
@@ -1045,7 +1045,7 @@ app.post('/api/send-verification', emailLimiter, async (req, res) => {
       text: `Hi ${name}!\n\nYour verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nBest regards,\nHostel Ledger Team`
     };
 
-    console.log('📧 Sending verification email to:', email);
+    console.log('📧 Sending verification email...');
     const result = await sendMailWithFallback(mailOptions);
     console.log('✅ Verification email sent:', result.messageId);
 
@@ -1135,7 +1135,7 @@ app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
       text: `Hi ${name}!\n\nClick the link below to reset your password:\n${resetLink}\n\nThis link expires in 1 hour.\n\nBest regards,\nHostel Ledger Team`
     };
 
-    console.log('📧 Sending password reset email to:', email);
+    console.log('📧 Sending password reset email...');
     const result = await sendMailWithFallback(mailOptions);
     console.log('✅ Password reset email sent:', result.messageId);
 
@@ -1194,7 +1194,7 @@ app.post('/api/send-welcome', emailLimiter, async (req, res) => {
       text: `Welcome to Hostel Ledger, ${name}!\n\nYour account has been successfully created and verified.\n\nYou can now start tracking shared expenses, settling balances, and managing hostel finances with ease.\n\nBest regards,\nHostel Ledger Team`
     };
 
-    console.log('📧 Sending welcome email to:', email);
+    console.log('📧 Sending welcome email...');
     const result = await sendMailWithFallback(mailOptions);
     console.log('✅ Welcome email sent:', result.messageId);
 
@@ -1258,7 +1258,7 @@ app.post('/api/send-transaction-alert', emailLimiter, async (req, res) => {
       text: `Transaction Alert\n\nHello ${name},\n\nA new transaction has been recorded on your Hostel Ledger account.\n\nType: ${transactionType}\nAmount: ${amount}\nGroup: ${groupName}\nDate: ${date}\nDescription: ${description}\n\nBest regards,\nHostel Ledger Team`
     };
 
-    console.log('📧 Sending transaction alert email to:', email);
+    console.log('📧 Sending transaction alert email...');
     const result = await sendMailWithFallback(mailOptions);
     console.log('✅ Transaction alert email sent:', result.messageId);
 
@@ -1318,7 +1318,7 @@ app.post('/api/send-verification-new', emailLimiter, async (req, res) => {
       text: `Hi ${name}!\n\nYour verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nBest regards,\nHostel Ledger Team`
     };
 
-    console.log('📧 Sending verification email to:', email);
+    console.log('📧 Sending verification email...');
     const result = await sendMailWithFallback(mailOptions);
     console.log('✅ Verification email sent:', result.messageId);
 
@@ -2581,7 +2581,7 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
               subject: `${senderName} invited you to join "${group.name}" 🏠`,
               html: html
             });
-            console.log(`📧 Invitation email sent to ${inviteeEmail}`);
+            console.log('📧 Invitation email sent to user:', inviteeUid);
           } else {
             console.warn("Invitation template not found or failed to load");
           }
@@ -2652,7 +2652,7 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
         subject: `${senderName} invited you to join "${group.name}" 🚀`,
         html: html
       });
-      console.log(`📧 External invitation email sent to ${email}`);
+      console.log('📧 External invitation email sent');
 
       res.json({ success: true, message: 'Invitation email sent successfully' });
     } else {
@@ -2697,7 +2697,7 @@ app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
           continue;
         }
 
-        console.log(`🗑️ Deleting unverified account: ${accountData.email} (${uid})`);
+        console.log('🗑️ Deleting unverified account:', uid);
 
         // 1. Delete from Firebase Auth
         try {
@@ -2726,7 +2726,7 @@ app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
             // or just skip if it throws
             await db.ref(`verificationCodes/${accountData.email}`).remove();
           } catch (e) {
-            console.warn(`Could not delete RTDB verification codes for ${accountData.email}:`, e.message);
+            console.warn('Could not delete RTDB verification codes for user:', e.message);
           }
 
           // Firestore (Current)
@@ -2739,10 +2739,10 @@ app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
                 batch.delete(doc.ref);
               });
               await batch.commit();
-              console.log(`Deleted Firestore verification codes for ${accountData.email}`);
+              console.log('Deleted Firestore verification codes for user');
             }
           } catch (e) {
-            console.warn(`Could not delete Firestore verification codes for ${accountData.email}:`, e.message);
+            console.warn('Could not delete Firestore verification codes for user:', e.message);
           }
         }
 
