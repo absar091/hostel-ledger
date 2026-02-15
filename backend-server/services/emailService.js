@@ -107,7 +107,7 @@ const sendEmailSafe = async (mailOptions) => {
 // TEMPLATE HELPERS (Refactored for Clean, Mobile-Friendly Design)
 // ============================================================================
 
-const getCommonTemplate = (title, content, actionButton = '') => {
+const getCommonTemplate = (title, content, actionButton = '', showUnsubscribe = false) => {
     const logoUrl = 'https://app.hostelledger.aarx.online/only-logo.png';
     return `
 <!DOCTYPE html>
@@ -154,6 +154,7 @@ const getCommonTemplate = (title, content, actionButton = '') => {
         <a href="https://app.hostelledger.aarx.online/terms-of-service">Terms</a> • 
         <a href="https://app.hostelledger.aarx.online/privacy-policy">Privacy</a> • 
         <a href="https://app.hostelledger.aarx.online/settings">Preferences</a>
+        ${showUnsubscribe ? `• <a href="https://app.hostelledger.aarx.online/settings" style="color: #666;">Unsubscribe</a>` : ''}
       </p>
       <p>Copyright© ${new Date().getFullYear()} Hostel Ledger. All rights reserved.
       </p>
@@ -206,7 +207,9 @@ const emailService = {
           <span style="font-size: 36px; font-weight: 800; letter-spacing: 4px; color: #111;">${otp}</span>
         </div>
         <p>This code expires in 10 minutes.</p>
-      `
+      `,
+            '',
+            false // No unsubscribe for critical auth emails
         );
         return sendEmailSafe({
             to: email,
@@ -225,7 +228,8 @@ const emailService = {
         <p><span class="highlight">${inviterName}</span> invited you to join the group <strong>"${groupName}"</strong> on Hostel Ledger.</p>
         <p>Join the group to start tracking expenses, splitting bills, and settling up directly from your phone.</p>
       `,
-            `<a href="${inviteLink}" class="button">Accept Invitation</a>`
+            `<a href="${inviteLink}" class="button">Accept Invitation</a>`,
+            true // Allow unsubscribe
         );
         return sendEmailSafe({
             to: email,
@@ -245,7 +249,8 @@ const emailService = {
         <p>Thanks for creating an account! You’re all set to start managing shared expenses without the stress.</p>
         <p>Create a group, invite your friends, and never worry about details again.</p>
       `,
-            `<a href="https://app.hostelledger.aarx.online" class="button">Go to Dashboard</a>`
+            `<a href="https://app.hostelledger.aarx.online" class="button">Go to Dashboard</a>`,
+            false // Essential account email
         );
         return sendEmailSafe({
             to: email,
@@ -264,7 +269,8 @@ const emailService = {
         <p>Hi ${name ? `<span class="highlight">${name}</span>` : 'there'},</p>
         <p>We received a request to reset your password. Tap the button below to choose a new one:</p>
       `,
-            `<a href="${resetLink}" class="button">Reset Password</a>`
+            `<a href="${resetLink}" class="button">Reset Password</a>`,
+            false // Critical security email
         );
         return sendEmailSafe({
             to: email,
@@ -305,7 +311,8 @@ const emailService = {
           </div>
         </div>
       `,
-            `<a href="https://app.hostelledger.aarx.online" class="button">View Details</a>`
+            `<a href="https://app.hostelledger.aarx.online" class="button">View Details</a>`,
+            true // Allow unsubscribe
         );
         return sendEmailSafe({
             to: data.email,
@@ -352,7 +359,8 @@ const emailService = {
             <span class="detail-value">"${data.note}"</span>
         </div>` : ''}
       `,
-            `<a href="https://app.hostelledger.aarx.online/groups/${data.groupId}" class="button">View Expense</a>`
+            `<a href="https://app.hostelledger.aarx.online/groups/${data.groupId}" class="button">View Expense</a>`,
+            true // Allow unsubscribe
         );
 
         return sendEmailSafe({

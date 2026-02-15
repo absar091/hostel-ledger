@@ -1930,24 +1930,18 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
           console.log(`📧 Sending payment email to counterparty: ${otherPerson.email}`);
 
           try {
-            const mailOptions = {
-              from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
-              to: otherPerson.email,
-              subject: `Payment Recorded: Rs ${amount.toLocaleString()} in ${group.name}`,
-              html: await loadEmailTemplate('transaction-alert', {
-                USER_NAME: otherPerson.name,
-                TRANSACTION_TYPE: 'Payment Recorded',
-                AMOUNT: `Rs ${amount.toLocaleString()}`,
-                GROUP_NAME: group.name,
-                DATE: newTransaction.date,
-                DESCRIPTION: isPaying
-                  ? `You received Rs ${amount.toLocaleString()} from ${user.name}.`
-                  : `You paid Rs ${amount.toLocaleString()} to ${user.name}.`
-              }),
-              text: `Hi ${otherPerson.name}, a payment of Rs ${amount.toLocaleString()} has been recorded in ${group.name}. ${isPaying ? `You received this from ${user.name}.` : `You paid this to ${user.name}.`}`
-            };
-
-            await sendMailWithFallback(mailOptions);
+            await emailService.sendTransactionAlert({
+              email: otherPerson.email,
+              name: otherPerson.name,
+              transactionType: 'payment',
+              amount: amount.toLocaleString(),
+              groupName: group.name,
+              date: newTransaction.date,
+              description: isPaying
+                ? `You received Rs ${amount.toLocaleString()} from ${user.name}.`
+                : `You paid Rs ${amount.toLocaleString()} to ${user.name}.`
+            });
+            console.log(`📧 Payment notification sent via emailService to ${otherPerson.email}`);
           } catch (emailErr) {
             console.error(`❌ Failed to send payment email to ${otherPerson.email}:`, emailErr.message);
           }
