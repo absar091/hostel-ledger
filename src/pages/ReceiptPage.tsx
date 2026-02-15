@@ -9,31 +9,54 @@ import html2canvas from "html2canvas";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import AppContainer from "@/components/AppContainer";
 
-// Success Sound (Base64 MP3 - High quality success chime)
-const SUCCESS_SOUND = "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU5LjI3LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHlwZSAAAAAAAAAD//uSZAAANIAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZAsA/AAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uSZFAAAAAA0gAAAAAABpAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+// Success Chime using Web Audio API for maximum reliability
+const playSuccessChime = () => {
+    try {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContext) return;
+
+        const context = new AudioContext();
+        const playNote = (frequency: number, startTime: number, duration: number, volume: number) => {
+            const osc = context.createOscillator();
+            const gain = context.createGain();
+
+            osc.className = "chime-osc";
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(frequency, startTime);
+
+            gain.gain.setValueAtTime(0, startTime);
+            gain.gain.linearRampToValueAtTime(volume, startTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+
+            osc.connect(gain);
+            gain.connect(context.destination);
+
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        };
+
+        // A pleasant "Ding-Ding" success chime
+        const now = context.currentTime;
+        playNote(523.25, now, 0.5, 0.15); // C5
+        playNote(659.25, now + 0.1, 0.6, 0.2); // E5
+        playNote(783.99, now + 0.2, 0.8, 0.15); // G5
+    } catch (e) {
+        console.error("Failed to play chime", e);
+    }
+};
 
 const ReceiptPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user: currentUser } = useFirebaseAuth();
     const receiptRef = useRef<HTMLDivElement>(null);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     const { transaction, type } = location.state || {};
 
     useEffect(() => {
         if (transaction) {
-            // Play sound
-            try {
-                if (!audioRef.current) {
-                    audioRef.current = new Audio(SUCCESS_SOUND);
-                    audioRef.current.volume = 0.5;
-                }
-                audioRef.current.currentTime = 0;
-                audioRef.current.play().catch(e => console.log("Audio play failed", e));
-            } catch (err) {
-                console.error("Audio error", err);
-            }
+            // Play sound using Web Audio API chime
+            playSuccessChime();
 
             // Trigger confetti
             const duration = 3 * 1000;
@@ -152,17 +175,19 @@ const ReceiptPage = () => {
                 {/* iPhone-style Status Bar Spacer */}
                 <div className="h-12 w-full lg:hidden" />
 
-                {/* Back Button */}
-                <header className="px-6 py-4 flex items-center justify-between z-50">
-                    <button
-                        onClick={() => navigate("/")}
-                        className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-all border border-slate-100"
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <h1 className="text-sm font-black uppercase tracking-widest text-slate-400">Transaction Receipt</h1>
-                    <div className="w-10 h-10" /> {/* Spacer */}
-                </header>
+                {/* Header Container */}
+                <div className="w-full max-w-2xl">
+                    <header className="px-6 py-4 flex items-center justify-between z-50">
+                        <button
+                            onClick={() => navigate("/")}
+                            className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-all border border-slate-100"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <h1 className="text-sm font-black uppercase tracking-widest text-slate-400">Transaction Receipt</h1>
+                        <div className="w-10 h-10" /> {/* Spacer */}
+                    </header>
+                </div>
 
                 <main className="flex-1 flex flex-col items-center px-6 pb-24 lg:pb-12 max-w-2xl mx-auto w-full">
                     {/* Success Hero */}
