@@ -16,7 +16,7 @@ const SMTP_CONFIG = {
     transactional: { // SendPulse (Best for Notifications)
         host: (process.env.SENDPULSE_SMTP_HOST || 'smtp-pulse.com').trim(),
         port: parseInt(process.env.SENDPULSE_SMTP_PORT) || 2525, // 2525 is often better for avoiding blocks
-        secure: false, // Port 2525 is usually non-SSL or STARTTLS
+        secure: (parseInt(process.env.SENDPULSE_SMTP_PORT) === 465), // True for 465, False for 587/2525
         auth: {
             user: (process.env.SENDPULSE_SMTP_USER || '').trim(),
             pass: (process.env.SENDPULSE_SMTP_PASS || '').replace(/\s+/g, '')
