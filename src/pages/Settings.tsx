@@ -3,7 +3,7 @@ import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Sidebar } from '@/components/Sidebar';
+import Sidebar from '@/components/Sidebar';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { Bell, Mail, Smartphone, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
