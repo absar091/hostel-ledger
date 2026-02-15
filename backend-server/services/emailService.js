@@ -110,9 +110,10 @@ const sendEmailByType = async (type, mailOptions) => {
         headers: {
             ...mailOptions.headers,
             // Add List-Unsubscribe header for transactional emails (Gmail/Outlook support)
+            // Note: List-Unsubscribe-Post is removed because our settings page is a frontend route
+            // and doesn't support the POST request required by RFC 8058 for 'One-Click'.
             ...(type === 'transactional' ? {
-                'List-Unsubscribe': '<https://app.hostelledger.aarx.online/settings>',
-                'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+                'List-Unsubscribe': '<https://app.hostelledger.aarx.online/settings>'
             } : {})
         }
     };
@@ -242,22 +243,40 @@ const emailService = {
      */
     verifyConnection: async () => {
         try {
-            const primary = getPrimaryTransporter();
-            await primary.verify();
-            console.log('✅ SMTP Connection Verified (Zoho)');
-            return true;
-        } catch (err) {
-            console.warn('⚠️ Primary SMTP Connection Failed:', err.message);
-            // Try fallback
+            console.log('🧪 Verifying SMTP Configurations...');
+
+            // Primary (Zoho)
+            try {
+                const primary = getPrimaryTransporter();
+                await primary.verify();
+                console.log('✅ SMTP Connection Verified (Zoho)');
+            } catch (err) {
+                console.warn('⚠️ Primary SMTP Connection Failed (Zoho):', err.message);
+            }
+
+            // Transactional (SendPulse)
+            try {
+                const transactional = getTransactionalTransporter();
+                await transactional.verify();
+                console.log('✅ SMTP Connection Verified (SendPulse)');
+            } catch (err) {
+                console.warn('⚠️ Transactional SMTP Connection Failed (SendPulse):', err.message);
+                console.warn('   Ensure port 2525 is open and credentials in .env are correct.');
+            }
+
+            // Fallback (Gmail)
             try {
                 const fallback = getFallbackTransporter();
                 await fallback.verify();
-                console.log('✅ Fallback SMTP Connection Verified (Gmail)');
-                return true;
-            } catch (fbErr) {
-                console.error('❌ ALL SMTP Connections Failed. Emails will not send.');
-                return false;
+                console.log('✅ SMTP Connection Verified (Gmail)');
+            } catch (err) {
+                console.warn('⚠️ Fallback SMTP Connection Failed (Gmail):', err.message);
             }
+
+            return true;
+        } catch (fatalError) {
+            console.error('❌ unexpected error during SMTP verification:', fatalError);
+            return false;
         }
     },
 
