@@ -370,9 +370,12 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               const transactionPromises = Object.entries(userTransactions).map(async ([id, data]: [string, any]) => {
                 // OPTIMIZATION: Check if we have enough data in the summary to avoid N+1 fetch
 
-                // 1. For expenses, we need the participants array (added in recent backend update)
                 if (data && data.type === 'expense' && Array.isArray(data.participants) && data.participants.length > 0) {
-                  return { id, ...data };
+                  return {
+                    id,
+                    ...data,
+                    date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : (data.date || "Unknown Date")
+                  };
                 }
 
                 // 2. For payments, fast-path only when both IDs and names are present.
@@ -386,12 +389,20 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                   data.fromName &&
                   data.toName
                 ) {
-                  return { id, ...data };
+                  return {
+                    id,
+                    ...data,
+                    date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : (data.date || "Unknown Date")
+                  };
                 }
 
                 // 3. For wallet ops, summary is sufficient
                 if (data && (data.type === 'wallet_add' || data.type === 'wallet_deduct')) {
-                  return { id, ...data };
+                  return {
+                    id,
+                    ...data,
+                    date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : (data.date || "Unknown Date")
+                  };
                 }
 
                 // Fallback: Fetch full transaction data if summary is incomplete (legacy data)
@@ -713,7 +724,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
       // Use push for optimized add - this is much more efficient than rewriting the whole array
       const membersRef = ref(database, `groups/${groupId}/members`);
-      await retryOperation(() => push(membersRef, newMember));
+      await retryOperation(() => Promise.resolve(push(membersRef, newMember)));
 
       // Update denormalized count for the current user
       const userGroupMetadataCountRef = ref(database, `userGroups/${user.uid}/${groupId}/memberCount`);

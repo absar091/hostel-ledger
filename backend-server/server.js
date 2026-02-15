@@ -123,6 +123,7 @@ app.options('*', cors());
 app.use(express.json());
 
 const emailService = require('./services/emailService');
+const expenseLogic = require('./utils/expenseLogic');
 
 // Rate limiting for email endpoints - very generous limits for testing
 const emailLimiter = rateLimit({
@@ -504,26 +505,7 @@ const calculateExpenseSplit = (totalAmount, participants, payerId) => {
   });
 };
 
-const calculateExpenseSettlements = (splits, payerId) => {
-  const debts = [];
-  const payerSplit = splits.find(s => s.participantId === payerId);
-
-  // If payer is NOT a participant, they are just a "creditor" for the whole amount
-  // No error should be thrown, as it's a valid use case (e.g., someone paying for others)
-
-  splits.forEach(split => {
-    if (split.participantId !== payerId) {
-      // Participant owes Payer
-      debts.push({
-        debtorId: split.participantId,
-        creditorId: payerId,
-        amount: split.amount
-      });
-    }
-  });
-
-  return debts;
-};
+const calculateExpenseSettlements = expenseLogic.calculateExpenseSettlements;
 
 // --- New Endpoint: Get Valid User Details ---
 app.post('/api/get-valid-user-details', authenticate, async (req, res) => {
@@ -1816,6 +1798,8 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
       groupId,
       timestamp,
       paidBy: fromMember,
+      from: fromMember, // Alignment with Transaction interface
+      to: toMember,     // Alignment with Transaction interface
       paidByName: fromPerson.name,
       fromName: fromPerson.name,
       toName: toPerson.name,

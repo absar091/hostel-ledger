@@ -48,9 +48,9 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Verification codes - allow both authenticated and unauthenticated access
+    // Verification codes - restrict to prevent public manipulation
     match /verificationCodes/{codeId} {
-      allow read, write, delete: if true; // Allow anyone to read/write/delete verification codes
+      allow read, write, delete: if false; // Only manageable via Admin SDK/Backend
     }
     
     // Email verification
