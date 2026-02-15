@@ -1610,7 +1610,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
                 return admin.firestore().doc(`users/${participant.userId}/preferences/notifications`).get();
               };
 
-              const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 2000));
+              const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 5000));
 
               try {
                 const prefSnap = await Promise.race([getPreferences(), timeout]);
