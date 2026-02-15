@@ -10,7 +10,6 @@ const SMTP_CONFIG = {
             user: process.env.SMTP_USER,
             pass: (process.env.SMTP_PASS || '').replace(/\s+/g, '') // Trim spaces automatically
         },
-        // Increased timeouts for reliability
         connectionTimeout: 30000,
         greetingTimeout: 30000,
         socketTimeout: 30000
@@ -55,6 +54,15 @@ const getFallbackTransporter = () => {
  * @param {Object} mailOptions - Nodemailer mail options
  * @returns {Promise<{success: boolean, message: string, provider: string}>}
  */
+const sendWithTimeout = async (transporter, options, timeoutMs = 15000) => {
+    return Promise.race([
+        transporter.sendMail(options),
+        new Promise((_, reject) =>
+            setTimeout(() => reject(new Error(`Email sending timed out after ${timeoutMs}ms`)), timeoutMs)
+        )
+    ]);
+};
+
 const sendEmailSafe = async (mailOptions) => {
     const primary = getPrimaryTransporter();
 
@@ -66,7 +74,7 @@ const sendEmailSafe = async (mailOptions) => {
 
     try {
         console.log(`📨 Attempting to send email to ${finalMailOptions.to} via Primary...`);
-        const info = await primary.sendMail(finalMailOptions);
+        const info = await sendWithTimeout(primary, finalMailOptions, 15000); // 15s timeout
         console.log(`✅ Email sent via Primary: ${info.messageId}`);
         return { success: true, message: 'Sent via Primary', provider: 'primary', messageId: info.messageId };
     } catch (primaryError) {
@@ -83,12 +91,12 @@ const sendEmailSafe = async (mailOptions) => {
                 from: `Hostel Ledger <${SMTP_CONFIG.fallback.auth.user}>` // Match fallback auth
             };
 
-            const info = await fallback.sendMail(fallbackOptions);
+            const info = await sendWithTimeout(fallback, fallbackOptions, 15000); // 15s timeout
             console.log(`✅ Email sent via Fallback: ${info.messageId}`);
             return { success: true, message: 'Sent via Fallback', provider: 'fallback', messageId: info.messageId };
         } catch (fallbackError) {
             console.error(`❌ All email transports failed for ${finalMailOptions.to}`);
-            console.error(`   Primary Error: ${primaryError.message}`);
+            console.error(`   PrimaryKey Error: ${primaryError.message}`);
             console.error(`   Fallback Error: ${fallbackError.message}`);
             return { success: false, error: fallbackError.message };
         }
@@ -96,54 +104,64 @@ const sendEmailSafe = async (mailOptions) => {
 };
 
 // ============================================================================
-// TEMPLATE HELPERS (Moved from server.js for cohesion)
+// TEMPLATE HELPERS (Refactored for Clean, Mobile-Friendly Design)
 // ============================================================================
 
-const getCommonTemplate = (title, content, actionButton = '', footerText = '') => {
-    const logoUrl = 'https://app.hostelledger.aarx.online/hostel-ledger-logo.webp';
+const getCommonTemplate = (title, content, actionButton = '') => {
+    const logoUrl = 'https://app.hostelledger.aarx.online/only-logo.png';
     return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body { margin: 0; padding: 0; background-color: #f4f6f5; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
-        .header { text-align: center; margin-bottom: 32px; }
-        .logo { max-height: 48px; margin-bottom: 16px; }
-        .title { color: #4a6850; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
-        .content { color: #444; font-size: 16px; line-height: 1.6; }
-        .button { display: inline-block; background-color: #4a6850; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 20px; }
-        .footer { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; text-align: center; font-size: 12px; color: #888; }
-        .footer a { color: #4a6850; text-decoration: none; margin: 0 5px; }
-      </style>
-    </head>
-    <body style="background-color: #f4f6f5; padding: 20px 0;">
-      <div class="container">
-        <div class="header">
-          <img src="${logoUrl}" alt="Hostel Ledger" class="logo" onerror="this.style.display='none'">
-          <h1 class="title">${title}</h1>
-        </div>
-        <div class="content">
-          ${content}
-          ${actionButton}
-        </div>
-        <div class="footer">
-          <p>${footerText}</p>
-          <p>
-            <a href="https://hostel-ledger.aarx.online/terms">Terms</a> • 
-            <a href="https://hostel-ledger.aarx.online/privacy">Privacy</a> •
-            <a href="https://app.hostelledger.aarx.online/settings">Manage Preferences</a>
-          </p>
-          <p style="font-size: 10px; opacity: 0.7; margin-top: 10px;">
-            This email was sent to you because you are a user of Hostel Ledger.
-          </p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #333333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; text-align: center; }
+    .logo { width: 48px; height: auto; margin-top: 20px; margin-bottom: 20px; }
+    .title { font-size: 24px; font-weight: 700; color: #111111; margin-bottom: 20px; letter-spacing: -0.5px; line-height: 1.3; }
+    .content { font-size: 16px; line-height: 1.6; color: #555555; margin-bottom: 30px; text-align: left; }
+    .button-container { text-align: center; margin: 30px 0; }
+    .button { background-color: #000000; color: #ffffff; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; display: inline-block; font-size: 16px; }
+    
+    /* Footer Card */
+    .footer { background-color: #f7f7f7; padding: 20px; border-radius: 12px; margin-top: 40px; font-size: 12px; color: #999999; text-align: center; }
+    .footer a { color: #555555; text-decoration: none; margin: 0 8px; }
+    
+    /* Utility */
+    .highlight { color: #000; font-weight: 600; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: #888; font-size: 14px; }
+    .detail-value { font-weight: 600; color: #333; font-size: 14px; text-align: right; }
+    .amount-large { font-size: 24px; font-weight: 800; color: #111; margin: 10px 0; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="${logoUrl}" alt="Hostel Ledger" class="logo">
+    <h1 class="title">${title}</h1>
+    
+    <div class="content">
+      ${content}
+    </div>
+
+    ${actionButton ? `<div class="button-container">${actionButton}</div>` : ''}
+
+    <div class="footer">
+      <p style="margin-bottom: 10px;">
+        <a href="https://app.hostelledger.aarx.online/terms-of-service">Terms</a> • 
+        <a href="https://app.hostelledger.aarx.online/privacy-policy">Privacy</a> • 
+        <a href="https://app.hostelledger.aarx.online/settings">Preferences</a>
+      </p>
+      <p>Hostel Ledger. CopyrightAll rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+`;
 };
 
 // ============================================================================
@@ -180,14 +198,14 @@ const emailService = {
      */
     sendVerification: async (email, otp, name) => {
         const html = getCommonTemplate(
-            'Verify Your Email',
+            'Confirm your email',
             `
-        <p>Hi <strong>${name || 'there'}</strong>,</p>
-        <p>Welcome to Hostel Ledger! Please verify your email address to continue.</p>
-        <p style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4a6850; text-align: center; margin: 30px 0;">
-          ${otp}
-        </p>
-        <p>This code will expire in 10 minutes.</p>
+        <p>Hi ${name ? `<span class="highlight">${name}</span>` : 'there'},</p>
+        <p>Welcome to Hostel Ledger! Use the code below to verify your email address. It helps us keep your account secure.</p>
+        <div style="text-align: center; margin: 40px 0;">
+          <span style="font-size: 36px; font-weight: 800; letter-spacing: 4px; color: #111;">${otp}</span>
+        </div>
+        <p>This code expires in 10 minutes.</p>
       `
         );
         return sendEmailSafe({
@@ -202,12 +220,12 @@ const emailService = {
      */
     sendInvitation: async (email, inviterName, groupName, inviteLink) => {
         const html = getCommonTemplate(
-            'You are invited!',
+            'You’ve been invited!',
             `
-        <p><strong>${inviterName}</strong> has invited you to join the group <strong>"${groupName}"</strong> on Hostel Ledger.</p>
-        <p>Click the button below to accept the invitation and start tracking expenses together.</p>
+        <p><span class="highlight">${inviterName}</span> invited you to join the group <strong>"${groupName}"</strong> on Hostel Ledger.</p>
+        <p>Join the group to start tracking expenses, splitting bills, and settling up directly from your phone.</p>
       `,
-            `<div style="text-align: center; margin-top: 20px;"><a href="${inviteLink}" style="background-color: #4a6850; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">Accept Invitation</a></div>`
+            `<a href="${inviteLink}" class="button">Accept Invitation</a>`
         );
         return sendEmailSafe({
             to: email,
@@ -221,13 +239,13 @@ const emailService = {
      */
     sendWelcome: async (email, name) => {
         const html = getCommonTemplate(
-            'Welcome to Hostel Ledger! 🎉',
+            'Welcome to Hostel Ledger',
             `
-        <p>Hi <strong>${name}</strong>,</p>
-        <p>Thanks for joining Hostel Ledger! We're excited to help you split bills and manage expenses stress-free.</p>
-        <p>Create a group, invite your friends, and never worry about "who owes who" again.</p>
+        <p>Hi ${name ? `<span class="highlight">${name}</span>` : 'there'},</p>
+        <p>Thanks for creating an account! You’re all set to start managing shared expenses without the stress.</p>
+        <p>Create a group, invite your friends, and never worry about details again.</p>
       `,
-            `<div style="text-align: center; margin-top: 20px;"><a href="https://app.hostelledger.aarx.online" style="background-color: #4a6850; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">Go to Dashboard</a></div>`
+            `<a href="https://app.hostelledger.aarx.online" class="button">Go to Dashboard</a>`
         );
         return sendEmailSafe({
             to: email,
@@ -241,13 +259,12 @@ const emailService = {
      */
     sendPasswordReset: async (email, resetLink, name) => {
         const html = getCommonTemplate(
-            'Reset Your Password',
+            'Reset Password',
             `
-        <p>Hi <strong>${name || 'there'}</strong>,</p>
-        <p>We received a request to reset your password. If this was you, click the button below:</p>
-        <p>If you didn't ask for this, you can safely ignore this email.</p>
+        <p>Hi ${name ? `<span class="highlight">${name}</span>` : 'there'},</p>
+        <p>We received a request to reset your password. Tap the button below to choose a new one:</p>
       `,
-            `<div style="text-align: center; margin-top: 20px;"><a href="${resetLink}" style="background-color: #4a6850; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">Reset Password</a></div>`
+            `<a href="${resetLink}" class="button">Reset Password</a>`
         );
         return sendEmailSafe({
             to: email,
@@ -262,23 +279,37 @@ const emailService = {
     sendTransactionAlert: async (data) => {
         // data = { email, name, transactionType, amount, groupName, date, description }
         const html = getCommonTemplate(
-            `Transaction Alert: ${data.transactionType}`,
+            `Transaction Alert`,
             `
-        <p>Hi <strong>${data.name}</strong>,</p>
-        <p>A new transaction has been recorded on your Hostel Ledger account.</p>
-        <div style="background-color: #f8fcf9; border: 1px solid #e0e9e2; border-radius: 12px; padding: 20px; margin: 20px 0;">
-             <p style="margin: 5px 0;"><strong>Type:</strong> ${data.transactionType}</p>
-             <p style="margin: 5px 0;"><strong>Amount:</strong> Rs ${data.amount}</p>
-             <p style="margin: 5px 0;"><strong>Group:</strong> ${data.groupName}</p>
-             <p style="margin: 5px 0;"><strong>Date:</strong> ${data.date}</p>
-             <p style="margin: 5px 0;"><strong>Description:</strong> ${data.description}</p>
+        <p>Hi ${data.name},</p>
+        <p>A new <strong>${data.transactionType}</strong> was recorded in <strong>${data.groupName}</strong>.</p>
+        
+        <div class="amount-large">Rs ${data.amount}</div>
+
+        <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+          <div class="detail-row">
+            <span class="detail-label">Type</span>
+            <span class="detail-value" style="text-transform: capitalize;">${data.transactionType}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Group</span>
+            <span class="detail-value">${data.groupName}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Date</span>
+            <span class="detail-value">${data.date}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Note</span>
+            <span class="detail-value">${data.description || '-'}</span>
+          </div>
         </div>
       `,
-            `<div style="text-align: center; margin-top: 20px;"><a href="https://app.hostelledger.aarx.online" style="background-color: #4a6850; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">View Details</a></div>`
+            `<a href="https://app.hostelledger.aarx.online" class="button">View Details</a>`
         );
         return sendEmailSafe({
             to: data.email,
-            subject: `Transaction Alert - ${data.transactionType} in ${data.groupName}`,
+            subject: `${data.transactionType}: Rs ${data.amount} in ${data.groupName}`,
             html
         });
     },
@@ -289,30 +320,39 @@ const emailService = {
     sendExpenseNotification: async (recipient, data) => {
         // data = { payerName, amount, title, splitAmount, date, groupName, note }
         const html = getCommonTemplate(
-            `New Expense in ${data.groupName}`,
+            `New Expense Added`,
             `
-        <div style="background-color: #f8fcf9; border: 1px solid #e0e9e2; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-            <span style="color: #666;">Amount</span>
-            <span style="font-weight: bold; color: #1a1a1a;">Rs ${data.amount}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-            <span style="color: #666;">Paid by</span>
-            <span style="font-weight: bold; color: #1a1a1a;">${data.payerName}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-            <span style="color: #666;">Your Share</span>
-            <span style="font-weight: bold; color: #d32f2f;">Rs ${data.splitAmount}</span>
-          </div>
-           <div style="display: flex; justify-content: space-between;">
-            <span style="color: #666;">Date</span>
-            <span style="font-weight: bold; color: #1a1a1a;">${data.date}</span>
-          </div>
+        <div style="text-align: center; margin-bottom: 20px;">
+          <p style="margin: 0; color: #888;">Total Amount</p>
+          <div class="amount-large">Rs ${data.amount}</div>
+          <p style="margin: 5px 0 0 0; color: #555;">Paid by <strong>${data.payerName}</strong></p>
         </div>
-        ${data.note ? `<p style="font-style: italic; color: #666; text-align: center;">"${data.note}"</p>` : ''}
-        <p>A new expense <strong>"${data.title}"</strong> was added.</p>
+
+        <div style="border-top: 1px solid #eee; margin: 20px 0;"></div>
+
+        <div class="detail-row">
+            <span class="detail-label">For</span>
+            <span class="detail-value">"${data.title}"</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Your Share</span>
+            <span class="detail-value" style="color: #d32f2f;">Rs ${data.splitAmount}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Group</span>
+            <span class="detail-value">${data.groupName}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Date</span>
+            <span class="detail-value">${data.date}</span>
+        </div>
+        ${data.note ? `
+        <div class="detail-row">
+            <span class="detail-label">Note</span>
+            <span class="detail-value">"${data.note}"</span>
+        </div>` : ''}
       `,
-            `<div style="text-align: center;"><a href="https://app.hostelledger.aarx.online/groups/${data.groupId}" class="button" style="color: #ffffff;">View Details</a></div>`
+            `<a href="https://app.hostelledger.aarx.online/groups/${data.groupId}" class="button">View Expense</a>`
         );
 
         return sendEmailSafe({
