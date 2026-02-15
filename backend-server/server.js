@@ -1582,22 +1582,33 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       const participantsWithEmail = membersArray.filter(m => m.email && !m.isPending);
       if (participantsWithEmail.length > 0) {
         notificationPromises.push((async () => {
-          const recipientsWithPreference = [];
-          for (const participant of participantsWithEmail) {
-            let emailEnabled = true;
-            if (participant.userId) {
-              try {
-                const getPreferences = async () => admin.firestore().doc(`users/${participant.userId}/preferences/notifications`).get();
-                const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 3000));
-                const prefSnap = await Promise.race([getPreferences(), timeout]);
-                if (prefSnap.exists && prefSnap.data().emailEnabled === false) emailEnabled = false;
-              } catch (err) { /* default to enabled on timeout/error */ }
+          // Fetch all preferences in parallel
+          const preferencePromises = participantsWithEmail.map(async (participant) => {
+            if (!participant.userId) return { participant, emailEnabled: true };
+            try {
+              const getPref = admin.firestore().doc(`users/${participant.userId}/preferences/notifications`).get();
+              const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 3000));
+              const prefSnap = await Promise.race([getPref, timeout]);
+              return {
+                participant,
+                emailEnabled: prefSnap.exists ? prefSnap.data().emailEnabled !== false : true
+              };
+            } catch (err) {
+              console.warn(`⚠️ Preference check failed for ${participant.email}: ${err.message}. Defaulting to ENABLED.`);
+              return { participant, emailEnabled: true };
             }
-            if (emailEnabled) recipientsWithPreference.push(participant);
-          }
+          });
+
+          const results = await Promise.allSettled(preferencePromises);
+          const recipientsWithPreference = results
+            .filter(r => r.status === 'fulfilled')
+            .map(r => r.value)
+            .filter(v => v.emailEnabled)
+            .map(v => v.participant);
 
           if (recipientsWithPreference.length > 0) {
-            const results = await Promise.allSettled(recipientsWithPreference.map(recipient => {
+            console.log(`📧 Sending emails to ${recipientsWithPreference.length} recipients...`);
+            const emailResults = await Promise.allSettled(recipientsWithPreference.map(recipient => {
               const split = splits.find(s => s.participantId === recipient.id);
               return emailService.sendExpenseNotification(recipient.email, {
                 payerName: payer.name,
@@ -1610,7 +1621,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
                 note: note || ''
               });
             }));
-            const successCount = results.filter(r => r.status === 'fulfilled' && r.value?.success).length;
+            const successCount = emailResults.filter(r => r.status === 'fulfilled' && r.value?.success).length;
             console.log(`✅ Sent ${successCount}/${recipientsWithPreference.length} expense emails`);
           }
         })());
@@ -1875,20 +1886,32 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
 
       // B. Email Notifications (Send to counterparty)
       if (otherPerson && otherPerson.email) {
-        notificationPromises.push(
-          emailService.sendTransactionAlert({
-            email: otherPerson.email,
-            name: otherPerson.name,
-            transactionType: 'payment',
-            amount: amount.toLocaleString(),
-            groupName: group.name,
-            date: newTransaction.date,
-            description: isPaying
-              ? `You received Rs ${amount.toLocaleString()} from ${user.name}.`
-              : `You paid Rs ${amount.toLocaleString()} to ${user.name}.`
-          })
-            .catch(err => console.error('⚠️ Payment Email failed:', err.message))
-        );
+        notificationPromises.push((async () => {
+          let emailEnabled = true;
+          if (otherPerson.userId) {
+            try {
+              const getPref = admin.firestore().doc(`users/${otherPerson.userId}/preferences/notifications`).get();
+              const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 3000));
+              const prefSnap = await Promise.race([getPref, timeout]);
+              if (prefSnap.exists && prefSnap.data().emailEnabled === false) emailEnabled = false;
+            } catch (err) { /* default to enabled on timeout/error */ }
+          }
+
+          if (emailEnabled) {
+            await emailService.sendTransactionAlert({
+              email: otherPerson.email,
+              name: otherPerson.name,
+              transactionType: 'payment',
+              amount: amount.toLocaleString(),
+              groupName: group.name,
+              date: newTransaction.date,
+              description: isPaying
+                ? `You received Rs ${amount.toLocaleString()} from ${user.name}.`
+                : `You paid Rs ${amount.toLocaleString()} to ${user.name}.`
+            });
+            console.log(`📧 Payment notification sent via emailService to ${otherPerson.email}`);
+          }
+        })().catch(err => console.error('⚠️ Payment Email failed:', err.message)));
       }
 
       // Wait for notifications with a timeout
