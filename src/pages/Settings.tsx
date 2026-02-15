@@ -135,7 +135,7 @@ const Settings = () => {
 
                 <div className="mt-8 text-center">
                     <p className="text-sm text-gray-400">
-                        Hostel Ledger v1.2.0 • Build 2026.02.15
+                        Hostel Ledger v{__APP_VERSION__} • Build {__BUILD_DATE__}
                     </p>
                 </div>
             </div>

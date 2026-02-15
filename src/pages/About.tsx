@@ -66,7 +66,7 @@ const About = () => {
               className="w-24 h-24 mb-4"
             />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Hostel Ledger</h2>
-            <p className="text-gray-500 text-sm">Version 1.0.0</p>
+            <p className="text-gray-500 text-sm">Version {__APP_VERSION__} (Build {__COMMIT_HASH__})</p>
           </div>
 
           <div className="space-y-4">

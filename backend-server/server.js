@@ -11,6 +11,7 @@ const { loadEmailTemplate } = require('./utils/email');
 const { validateCreateGroup } = require('./utils/validation');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
+const pkg = require('./package.json');
 
 // Cloudinary Configuration
 if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
@@ -162,7 +163,7 @@ app.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'Hostel Ledger Email API',
-    version: '4.0.0-onesignal',
+    version: pkg.version,
     pushProvider: 'OneSignal',
     endpoints: {
       health: '/health',
@@ -189,7 +190,7 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
-    version: '4.0.0-onesignal', // Updated version for OneSignal
+    version: pkg.version, // Dynamic from package.json
     pushProvider: 'OneSignal',
     oneSignalConfigured: !!(process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY),
     deployedAt: '2026-01-22T13:00:00Z'
