@@ -83,7 +83,46 @@ const GroupDetail = () => {
       : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
   } : null;
 
-  const transactions = id ? getTransactionsByGroup(id) : [];
+  const transactions = useMemo(() => id ? getTransactionsByGroup(id) : [], [id, getTransactionsByGroup]);
+
+  // Pre-process transactions to stabilize props for TimelineItem and avoid inline mapping
+  const processedTransactions = useMemo(() => {
+    if (!transactions.length || !group) return [];
+
+    return transactions.map(item => {
+      // Logic for paidBy display
+      let displayPaidBy;
+      if (item.type === "expense") {
+        if (item.paidBy === user?.uid) displayPaidBy = "You";
+        else if (item.paidBy === group.createdBy) displayPaidBy = "Group Owner";
+        else {
+          const member = group.members.find(m => m.id === item.paidBy);
+          displayPaidBy = member?.name || item.paidByName;
+        }
+      }
+
+      // Logic for participants display
+      let displayParticipants;
+      if (item.type === "expense" && item.participants) {
+        displayParticipants = item.participants.map(p => ({
+          ...p,
+          name: (() => {
+            if (p.id === user?.uid) return "You";
+            if (p.id === group.createdBy) return "Group Owner";
+            const member = group.members.find(m => m.id === p.id);
+            return member?.name || p.name;
+          })()
+        }));
+      }
+
+      return {
+        ...item,
+        displayPaidBy,
+        displayParticipants
+      };
+    });
+  }, [transactions, group, user?.uid]);
+
   const settlements = id ? getSettlements(id) : {};
 
   // Calculate total amount to receive in this group
@@ -385,9 +424,9 @@ const GroupDetail = () => {
       <main className="px-4 py-4">
         {activeTab === "ledger" && (
           <div className="space-y-3 animate-fade-in">
-            {transactions.length > 0 ? (
+            {processedTransactions.length > 0 ? (
               <div className="space-y-3">
-                {transactions.map((item, index) => (
+                {processedTransactions.map((item, index) => (
                   <div
                     key={item.id}
                     className="animate-slide-up bg-white rounded-3xl shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 overflow-hidden"
@@ -398,24 +437,8 @@ const GroupDetail = () => {
                       title={item.title}
                       amount={item.amount}
                       date={item.date}
-                      paidBy={item.type === "expense" ? (
-                        (() => {
-                          // Use consistent naming logic
-                          if (item.paidBy === user?.uid) return "You";
-                          if (item.paidBy === group.createdBy) return "Group Owner";
-                          const member = group.members.find(m => m.id === item.paidBy);
-                          return member?.name || item.paidByName;
-                        })()
-                      ) : undefined}
-                      participants={item.type === "expense" ? item.participants?.map(p => ({
-                        ...p,
-                        name: (() => {
-                          if (p.id === user?.uid) return "You"; // Your share
-                          if (p.id === group.createdBy) return "Group Owner"; // Owner's share
-                          const member = group.members.find(m => m.id === p.id); // Valid member name
-                          return member?.name || p.name;
-                        })()
-                      })) : undefined}
+                      paidBy={item.displayPaidBy}
+                      participants={item.displayParticipants}
                       from={item.type === "payment" ? item.fromName : undefined}
                       to={item.type === "payment" ? item.toName : undefined}
                       method={item.type === "payment" ? item.method : undefined}
