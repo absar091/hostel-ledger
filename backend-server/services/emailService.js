@@ -335,12 +335,16 @@ const emailService = {
     /**
      * Send Invitation Email
      */
-    sendInvitation: async (email, senderName, groupName, link) => {
+    sendInvitation: async (email, senderName, groupName, link, isNewUser = false) => {
+        const title = isNewUser ? 'You\'ve been invited to Hostel Ledger!' : 'You\'re invited!';
+        const buttonText = isNewUser ? 'Sign Up & Join' : 'Join Group';
+
         const html = getCommonTemplate(
-            'You\'re invited!',
+            title,
             `<p><strong>${senderName}</strong> invited you to join the group <strong>${groupName}</strong> on Hostel Ledger.</p>
-             <p>Track expenses, settle debts, and manage shared costs easily.</p>`,
-            `<a href="${link}" class="button">Join Group</a>`,
+             <p>Track expenses, settle debts, and manage shared costs easily.</p>
+             ${isNewUser ? '<p>Create an account to accept the invitation and start tracking.</p>' : ''}`,
+            `<a href="${link}" class="button">${buttonText}</a>`,
             true // Allow unsubscribe
         );
 

@@ -486,7 +486,8 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
           member.email,
           senderName,
           newGroup.name,
-          joinLink
+          joinLink,
+          true // isNewUser = true for manual email invites
         );
       });
       notificationPromises.push(...manualInvitePromises);
@@ -2474,11 +2475,24 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
     }
 
     // 3. Send Email
+    // Determine if this is a new user or existing user
+    let isNewUser = true;
+    try {
+      await admin.auth().getUserByEmail(email);
+      isNewUser = false; // User exists!
+    } catch (e) {
+      // User not found, so they are new
+      isNewUser = true;
+    }
+
+    const joinLink = `https://app.hostelledger.aarx.online/join/${groupId}?email=${encodeURIComponent(email)}`;
+
     await emailService.sendInvitation(
       email,
       senderName,
       group.name,
-      `https://app.hostelledger.aarx.online/join/${groupId}`
+      joinLink,
+      isNewUser
     );
     console.log('📧 External invitation email sent');
 
