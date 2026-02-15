@@ -317,7 +317,7 @@ const emailService = {
     /**
      * Send Expense Notification
      */
-    sendExpenseNotification: async (recipient, data) => {
+    sendExpenseNotification: async (email, data) => {
         // data = { payerName, amount, title, splitAmount, date, groupName, note }
         const html = getCommonTemplate(
             `New Expense Added`,
@@ -356,7 +356,7 @@ const emailService = {
         );
 
         return sendEmailSafe({
-            to: recipient.email,
+            to: email,
             subject: `New Expense: ${data.title} (Rs ${data.amount})`,
             html
         });

@@ -61,7 +61,7 @@ async function runTest() {
         expense: async () => {
             console.log('6️⃣ Sending Expense Notification...');
             return emailService.sendExpenseNotification(
-                { email: recipient, name: 'Test User' },
+                recipient,
                 {
                     payerName: 'Bob (Test)',
                     amount: '1,200',
