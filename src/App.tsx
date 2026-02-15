@@ -38,6 +38,7 @@ import Notifications from "./pages/Notifications";
 import Security from "./pages/Security";
 import JoinGroup from "./pages/JoinGroup";
 import NotFound from "./pages/NotFound";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -200,6 +201,7 @@ const AppRoutes = () => (
     <Route path="/to-receive" element={<ProtectedRoute><ToReceive /></ProtectedRoute>} />
     <Route path="/to-pay" element={<ProtectedRoute><ToPay /></ProtectedRoute>} />
     <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     <Route path="/security" element={<ProtectedRoute><Security /></ProtectedRoute>} />
     <Route path="/about" element={<ProtectedRoute><About /></ProtectedRoute>} />
     <Route path="/privacy-policy" element={<PrivacyPolicy />} />

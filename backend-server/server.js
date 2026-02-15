@@ -2075,20 +2075,48 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       const participantsWithEmail = membersArray.filter(m => m.email);
 
       console.log('🔍 Debug: All Group Members:', membersArray.map(m => ({ name: m.name, email: m.email || 'No Email' })));
-      console.log(`📧 Found ${participantsWithEmail.length} potential email recipients (Payer included)`);
+
+      // Filter out users who have disabled email notifications
+      const recipientsWithPreference = [];
 
       if (participantsWithEmail.length > 0) {
-        console.log('📧 Recipients list:', participantsWithEmail.map(p => p.email).join(', '));
+        console.log(`📧 Checking preferences for ${participantsWithEmail.length} potential recipients...`);
+
+        for (const participant of participantsWithEmail) {
+          try {
+            // Check user preference
+            let emailEnabled = true; // Default to true
+            if (participant.userId) {
+              const prefSnap = await admin.firestore().doc(`users/${participant.userId}/preferences/notifications`).get();
+              if (prefSnap.exists) {
+                const prefs = prefSnap.data();
+                if (prefs.emailEnabled === false) {
+                  emailEnabled = false;
+                  console.log(`🔕 User ${participant.name} (${participant.email}) has disabled email notifications.`);
+                }
+              }
+            }
+
+            if (emailEnabled) {
+              recipientsWithPreference.push(participant);
+            }
+          } catch (prefErr) {
+            console.error(`⚠️ Error checking preferences for ${participant.email}, defaulting to ENABLED:`, prefErr.message);
+            recipientsWithPreference.push(participant);
+          }
+        }
       }
 
-      if (participantsWithEmail.length > 0) {
+      console.log(`📧 Found ${recipientsWithPreference.length} valid email recipients (Preferences checked)`);
+
+      if (recipientsWithPreference.length > 0) {
         notifications.push((async () => {
-          console.log(`📧 Starting email sending loop for ${participantsWithEmail.length} members...`);
+          console.log(`📧 Starting email sending loop for ${recipientsWithPreference.length} members...`);
 
           // Switch to Sequential Sending to avoid SMTP connection limits/blocking
           const emailResults = [];
 
-          for (const recipient of participantsWithEmail) {
+          for (const recipient of recipientsWithPreference) {
             console.log(`🔹 Preparing email for: ${recipient.email}`);
             try {
               const split = splits.find(s => s.participantId === recipient.id);
