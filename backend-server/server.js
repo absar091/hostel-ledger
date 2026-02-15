@@ -302,6 +302,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
   const { name, emoji, members, invitedUsernames, invitedEmails, coverPhoto } = req.body;
   const userId = req.user.uid;
+  const notificationPromises = [];
 
   try {
     const groupsRef = admin.database().ref('groups');
@@ -413,60 +414,65 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
         await admin.database().ref().update(updates);
       }
 
-      // Process Emails in Background
-      setImmediate(async () => {
-        console.log('📧 Processing username invites...');
-        const results = await Promise.allSettled(emailNotifications.map(async ({ inviteeUid, username }) => {
-          try {
-            // We need to fetch email from Auth or DB. DB is safer if we have it in users node.
-            // But existing code used admin.database().ref... let's stick to that but cleaner.
-            const inviteeSnap = await admin.database().ref(`users/${inviteeUid}`).get();
-            if (inviteeSnap.exists()) {
-              const inviteeData = inviteeSnap.val();
-              if (inviteeData.email) {
-                return emailService.sendInvitation(
-                  inviteeData.email,
-                  senderName,
-                  newGroup.name,
-                  "https://app.hostelledger.aarx.online"
-                );
-              }
+      // 4b. Collect Email Promises
+      const usernameInvitePromises = emailNotifications.map(async ({ inviteeUid, username }) => {
+        try {
+          const inviteeSnap = await admin.database().ref(`users/${inviteeUid}`).get();
+          if (inviteeSnap.exists()) {
+            const inviteeData = inviteeSnap.val();
+            if (inviteeData.email) {
+              return emailService.sendInvitation(
+                inviteeData.email,
+                senderName,
+                newGroup.name,
+                `https://app.hostelledger.aarx.online/join/${groupId}`
+              );
             }
-            // Fallback to Auth if not in DB? No, stick to existing logic for consistency.
-          } catch (err) {
-            console.error(`❌ Failed to send invite to ${username}:`, err.message);
           }
-        }));
-        const successCount = results.filter(r => r.status === 'fulfilled' && r.value && r.value.success).length;
-        console.log(`✅ Sent ${successCount}/${emailNotifications.length} username invites`);
+        } catch (err) {
+          console.error(`❌ Failed to send invite to ${username}:`, err.message);
+        }
       });
+      notificationPromises.push(...usernameInvitePromises);
     }
 
-    // 5. Handle Email Invites (Manual members with emails)
-    const emailMembers = newGroup.members.filter(m => m.email && m.type === 'manual');
+    // 5. Handle Email Invites (Manual members with emails + invitedEmails array)
+    const emailMembers = [
+      ...newGroup.members.filter(m => m.email && m.type === 'manual'),
+      ...(invitedEmails || []).map(email => ({
+        email,
+        name: email.split('@')[0], // Fallback name
+        type: 'manual'
+      }))
+    ];
 
     if (emailMembers.length > 0) {
-      console.log(`📧 Sending ${emailMembers.length} email invites...`);
+      console.log(`📧 Preparing ${emailMembers.length} manual email invites...`);
       const senderName = userName;
 
-      // Send emails in parallel (Non-blocking)
-      setImmediate(async () => {
-        console.log('📧 Processing manual email invites...');
-        const results = await Promise.allSettled(emailMembers.map(member =>
-          emailService.sendInvitation(
-            member.email,
-            senderName,
-            newGroup.name,
-            `https://app.hostelledger.aarx.online/join/${groupId}?email=${encodeURIComponent(member.email)}`
-          )
-        ));
-
-        const successCount = results.filter(r => r.status === 'fulfilled' && r.value && r.value.success).length;
-        console.log(`✅ Sent ${successCount}/${emailMembers.length} manual invites`);
+      const manualInvitePromises = emailMembers.map(member => {
+        const joinLink = `https://app.hostelledger.aarx.online/join/${groupId}?email=${encodeURIComponent(member.email)}`;
+        return emailService.sendInvitation(
+          member.email,
+          senderName,
+          newGroup.name,
+          joinLink
+        );
       });
+      notificationPromises.push(...manualInvitePromises);
     }
 
-
+    // 6. Await all notifications (Critical for Vercel)
+    if (notificationPromises.length > 0) {
+      try {
+        console.log(`🚀 Awaiting ${notificationPromises.length} group creation notifications...`);
+        const globalTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Invite timeout')), 8000));
+        await Promise.race([Promise.allSettled(notificationPromises), globalTimeout])
+          .catch(e => console.warn("⚠️ Group invites partially timed out:", e.message));
+      } catch (notifErr) {
+        console.error("❌ Notification awaiting failed:", notifErr);
+      }
+    }
 
     res.json({ success: true, groupId, message: 'Group created successfully' });
 
@@ -2231,7 +2237,8 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
         try {
           const userRecord = await admin.auth().getUser(inviteeUid);
           if (userRecord.email) {
-            await emailService.sendInvitation(userRecord.email, senderName, group.name, "https://app.hostelledger.aarx.online");
+            const joinLink = `https://app.hostelledger.aarx.online/join/${groupId}`;
+            await emailService.sendInvitation(userRecord.email, senderName, group.name, joinLink);
           }
         } catch (e) { console.error("Invitations email inner failed:", e.message); }
       })());

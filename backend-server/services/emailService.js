@@ -5,24 +5,30 @@ const SMTP_CONFIG = {
     primary: { // Zoho (Best for Auth/OTP)
         host: (process.env.SMTP_HOST || 'smtp.zoho.in').trim(),
         port: parseInt(process.env.SMTP_PORT) || 465,
-        secure: true,
+        secure: process.env.SMTP_SECURE === 'false' ? false : true, // Support explict false
         auth: {
             user: (process.env.SMTP_USER || '').trim(),
             pass: (process.env.SMTP_PASS || '').replace(/\s+/g, '')
         },
-        connectionTimeout: 10000, // Faster timeout for OTP
-        greetingTimeout: 5000
+        tls: {
+            rejectUnauthorized: false // Often needed for proxies/various environments
+        },
+        connectionTimeout: 15000,
+        greetingTimeout: 10000
     },
     transactional: { // SendPulse (Best for Notifications)
         host: (process.env.SENDPULSE_SMTP_HOST || 'smtp-pulse.com').trim(),
-        port: parseInt(process.env.SENDPULSE_SMTP_PORT) || 2525, // 2525 is often better for avoiding blocks
-        secure: (parseInt(process.env.SENDPULSE_SMTP_PORT) === 465), // True for 465, False for 587/2525
+        port: parseInt(process.env.SENDPULSE_SMTP_PORT) || 2525,
+        secure: (parseInt(process.env.SENDPULSE_SMTP_PORT) === 465),
         auth: {
             user: (process.env.SENDPULSE_SMTP_USER || '').trim(),
             pass: (process.env.SENDPULSE_SMTP_PASS || '').replace(/\s+/g, '')
         },
-        connectionTimeout: 15000,
-        greetingTimeout: 10000
+        tls: {
+            rejectUnauthorized: false
+        },
+        connectionTimeout: 20000,
+        greetingTimeout: 15000
     },
     fallback: { // Gmail (Universal Backup)
         host: (process.env.FALLBACK_SMTP_HOST || 'smtp.gmail.com').trim(),
@@ -31,7 +37,11 @@ const SMTP_CONFIG = {
         auth: {
             user: (process.env.FALLBACK_SMTP_USER || '').trim(),
             pass: (process.env.FALLBACK_SMTP_PASS || '').replace(/\s+/g, '')
-        }
+        },
+        tls: {
+            rejectUnauthorized: false
+        },
+        connectionTimeout: 20000
     }
 };
 
@@ -244,36 +254,55 @@ const emailService = {
     verifyConnection: async () => {
         try {
             console.log('🧪 Verifying SMTP Configurations...');
+            let allGood = true;
 
             // Primary (Zoho)
             try {
-                const primary = getPrimaryTransporter();
-                await primary.verify();
-                console.log('✅ SMTP Connection Verified (Zoho)');
+                if (isConfigValid(SMTP_CONFIG.primary)) {
+                    const primary = getPrimaryTransporter();
+                    await primary.verify();
+                    console.log('✅ SMTP Connection Verified (Zoho)');
+                } else {
+                    console.warn('⚠️ Primary SMTP (Zoho) not configured.');
+                    allGood = false;
+                }
             } catch (err) {
                 console.warn('⚠️ Primary SMTP Connection Failed (Zoho):', err.message);
+                allGood = false;
             }
 
             // Transactional (SendPulse)
             try {
-                const transactional = getTransactionalTransporter();
-                await transactional.verify();
-                console.log('✅ SMTP Connection Verified (SendPulse)');
+                if (isConfigValid(SMTP_CONFIG.transactional)) {
+                    const transactional = getTransactionalTransporter();
+                    await transactional.verify();
+                    console.log('✅ SMTP Connection Verified (SendPulse)');
+                } else {
+                    console.warn('⚠️ Transactional SMTP (SendPulse) not configured.');
+                    allGood = false;
+                }
             } catch (err) {
                 console.warn('⚠️ Transactional SMTP Connection Failed (SendPulse):', err.message);
                 console.warn('   Ensure port 2525 is open and credentials in .env are correct.');
+                allGood = false;
             }
 
             // Fallback (Gmail)
             try {
-                const fallback = getFallbackTransporter();
-                await fallback.verify();
-                console.log('✅ SMTP Connection Verified (Gmail)');
+                if (isConfigValid(SMTP_CONFIG.fallback)) {
+                    const fallback = getFallbackTransporter();
+                    await fallback.verify();
+                    console.log('✅ SMTP Connection Verified (Gmail)');
+                } else {
+                    console.warn('⚠️ Fallback SMTP (Gmail) not configured.');
+                    allGood = false;
+                }
             } catch (err) {
                 console.warn('⚠️ Fallback SMTP Connection Failed (Gmail):', err.message);
+                allGood = false;
             }
 
-            return true;
+            return allGood;
         } catch (fatalError) {
             console.error('❌ unexpected error during SMTP verification:', fatalError);
             return false;
