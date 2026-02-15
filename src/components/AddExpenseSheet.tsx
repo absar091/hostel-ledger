@@ -72,6 +72,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
   const [showTempMemberInput, setShowTempMemberInput] = useState(false);
   const [tempMemberName, setTempMemberName] = useState("");
   const [tempMemberCondition, setTempMemberCondition] = useState<'SETTLED' | 'TIME_LIMIT'>('TIME_LIMIT');
+  const [localTempMembers, setLocalTempMembers] = useState<Member[]>([]);
   const [fullGroupData, setFullGroupData] = useState<Group | null>(null);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const { fetchGroupDetail } = useFirebaseData();
@@ -86,9 +87,15 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
       const group = groups.find((g) => g.id === selectedGroup);
       allMembers = group?.members || [];
     }
+
+    // Merge local temp members if they are not already in the list
+    const existingIds = new Set(allMembers.map(m => m.id));
+    const newLocalMembers = localTempMembers.filter(m => !existingIds.has(m.id));
+    allMembers = [...allMembers, ...newLocalMembers];
+
     // Filter out pending members (invited but not joined)
     return allMembers.filter(m => !m.isPending);
-  }, [groups, selectedGroup, fullGroupData]);
+  }, [groups, selectedGroup, fullGroupData, localTempMembers]);
 
   // Fetch wallet balances for members
   useEffect(() => {
@@ -212,6 +219,8 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
     setParticipants([]);
     setNote("");
     setPlace("");
+    setPlace("");
+    setLocalTempMembers([]); // Reset local state
     setValidationErrors([]);
     onClose();
   };
@@ -335,6 +344,15 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
       });
 
       if (result.success && result.memberId) {
+        // Optimistically add to local state so they appear immediately in the list
+        const newMember: Member = {
+          id: result.memberId,
+          name: tempMemberName.trim(),
+          isTemporary: true,
+          deletionCondition: tempMemberCondition
+        };
+        setLocalTempMembers(prev => [...prev, newMember]);
+
         // Automatically add the new member to participants
         setParticipants(prev => [...prev, result.memberId!]);
         setTempMemberName("");
