@@ -106,7 +106,15 @@ const sendEmailByType = async (type, mailOptions) => {
     // Prepare Options
     const finalMailOptions = {
         ...mailOptions,
-        from: fromAddress // Set correct FROM address for the provider
+        from: fromAddress, // Set correct FROM address for the provider
+        headers: {
+            ...mailOptions.headers,
+            // Add List-Unsubscribe header for transactional emails (Gmail/Outlook support)
+            ...(type === 'transactional' ? {
+                'List-Unsubscribe': '<https://app.hostelledger.aarx.online/settings>',
+                'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+            } : {})
+        }
     };
 
     try {
