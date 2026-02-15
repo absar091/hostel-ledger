@@ -127,7 +127,7 @@ const getCommonTemplate = (title, content, actionButton = '') => {
     
     /* Footer Card */
     .footer { background-color: #f7f7f7; padding: 20px; border-radius: 12px; margin-top: 40px; font-size: 12px; color: #999999; text-align: center; }
-    .footer a { color: #555555; text-decoration: none; margin: 0 8px; }
+    .footer a { color: #007bff; text-decoration: none; margin: 0 8px; }
     
     /* Utility */
     .highlight { color: #000; font-weight: 600; }
@@ -155,7 +155,7 @@ const getCommonTemplate = (title, content, actionButton = '') => {
         <a href="https://app.hostelledger.aarx.online/privacy-policy">Privacy</a> • 
         <a href="https://app.hostelledger.aarx.online/settings">Preferences</a>
       </p>
-      <p>Hostel Ledger. CopyrightAll rights reserved.
+      <p>Copyright© ${new Date().getFullYear()} Hostel Ledger. All rights reserved.
       </p>
     </div>
   </div>
