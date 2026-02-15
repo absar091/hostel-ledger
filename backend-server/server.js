@@ -2087,14 +2087,34 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
             // Check user preference
             let emailEnabled = true; // Default to true
             if (participant.userId) {
-              const prefSnap = await admin.firestore().doc(`users/${participant.userId}/preferences/notifications`).get();
-              if (prefSnap.exists) {
-                const prefs = prefSnap.data();
-                if (prefs.emailEnabled === false) {
-                  emailEnabled = false;
-                  console.log(`🔕 User ${participant.name} (${participant.email}) has disabled email notifications.`);
+              console.log(`   🔸 Checking for ${participant.email}...`);
+
+              // Wrap Firestore call in a timeout to prevent hanging
+              const getPreferences = async () => {
+                return admin.firestore().doc(`users/${participant.userId}/preferences/notifications`).get();
+              };
+
+              const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 2000));
+
+              try {
+                const prefSnap = await Promise.race([getPreferences(), timeout]);
+
+                if (prefSnap.exists) {
+                  const prefs = prefSnap.data();
+                  if (prefs.emailEnabled === false) {
+                    emailEnabled = false;
+                    console.log(`   🔕 User ${participant.name} (${participant.email}) has disabled email notifications.`);
+                  } else {
+                    console.log(`   ✅ User ${participant.name} has enabled email notifications (explicit or default).`);
+                  }
+                } else {
+                  console.log(`   ℹ️ No preferences found for ${participant.name}, defaulting to ENABLED.`);
                 }
+              } catch (err) {
+                console.warn(`   ⚠️ Preference check failed/timed out for ${participant.email}: ${err.message}. Defaulting to ENABLED.`);
               }
+            } else {
+              console.log(`   ℹ️ User ${participant.name} has no userId, defaulting to ENABLED.`);
             }
 
             if (emailEnabled) {
