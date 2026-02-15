@@ -350,7 +350,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
           name: u.username,
           userId: u.inviteeUid,
           username: u.username,
-          type: 'manual', // Will become 'real' on accept
+          type: 'invited', // Changed from 'manual' to 'invited' so they excluded from expenses
           isPending: true,
           invitedAt: new Date().toISOString()
         })),
@@ -365,15 +365,17 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
           isPending: !!m.email,
           invitedAt: m.email ? new Date().toISOString() : null
         })),
-        // Invited Emails (pure string array)
-        ...(invitedEmails || []).map(email => ({
-          id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-          name: email.split('@')[0],
-          email: email,
-          type: 'manual',
-          isPending: true,
-          invitedAt: new Date().toISOString()
-        }))
+        // Invited Emails (pure string array) - DEDUPLICATED
+        ...(invitedEmails || [])
+          .filter(email => !members.some(m => m.email && m.email.toLowerCase() === email.toLowerCase()))
+          .map(email => ({
+            id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            name: email.split('@')[0],
+            email: email,
+            type: 'manual',
+            isPending: true,
+            invitedAt: new Date().toISOString()
+          }))
       ],
       createdBy: userId,
       createdAt: new Date().toISOString()
@@ -632,57 +634,111 @@ app.post('/api/respond-invitation', authenticate, async (req, res) => {
     const now = new Date().toISOString();
 
     if (accept) {
-      // === ACCEPT: Add user to group ===
+      // === ACCEPT: Add/Update user in group ===
       const groupId = invitation.groupId;
 
       // Get user data
       const userSnap = await admin.database().ref(`users/${userId}`).get();
       const userData = userSnap.val() || {};
 
-      // Create member entry
-      const memberData = {
-        oderId: Date.now(), // ordering
-        name: userData.name || 'Member',
+      // Get group members
+      const groupRef = admin.database().ref(`groups/${groupId}`);
+      const groupSnap = await groupRef.get();
+      const groupData = groupSnap.val() || {};
+      let members = groupData.members || [];
+
+      const isArray = Array.isArray(members);
+      const membersArray = normalizeMembers(members);
+
+      // Find existing member entry for this user
+      // PRIORITY 1: Match by userId (Already joined/linked)
+      let memberIndex = membersArray.findIndex(m => m.userId === userId);
+
+      // PRIORITY 2: Match by Email (Manual member invited by email)
+      if (memberIndex === -1 && userData.email) {
+        memberIndex = membersArray.findIndex(m =>
+          (m.type === 'manual' || m.type === 'invited') &&
+          m.email &&
+          m.email.toLowerCase() === userData.email.toLowerCase()
+        );
+        if (memberIndex !== -1) console.log(`🔗 Found matching member by EMAIL for merge: ${userData.email}`);
+      }
+
+      // PRIORITY 3: Match by Username (Manual member invited by username)
+      if (memberIndex === -1 && userData.username) {
+        memberIndex = membersArray.findIndex(m =>
+          (m.type === 'manual' || m.type === 'invited') &&
+          m.username &&
+          m.username.toLowerCase() === userData.username.toLowerCase()
+        );
+        if (memberIndex !== -1) console.log(`🔗 Found matching member by USERNAME for merge: ${userData.username}`);
+      }
+
+      const memberEntry = {
+        id: memberIndex !== -1 ? membersArray[memberIndex].id : `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        name: userData.name || (memberIndex !== -1 ? membersArray[memberIndex].name : 'Member'),
         isRegistered: true,
+        type: 'registered',
         userId: userId,
+        joinedAt: now,
+        isPending: false,
+        photoURL: userData.photoURL || null
+      };
+
+      if (memberIndex !== -1) {
+        // Update existing entry
+        if (isArray) {
+          members[memberIndex] = memberEntry;
+        } else {
+          // It's an object, we need to find the key
+          const memberKey = Object.keys(members).find(key => members[key].userId === userId || members[key].id === membersArray[memberIndex].id);
+          if (memberKey) {
+            members[memberKey] = memberEntry;
+          } else {
+            // Fallback: use userId as key
+            members[userId] = memberEntry;
+          }
+        }
+      } else {
+        // Add new entry
+        if (isArray) {
+          members.push(memberEntry);
+        } else {
+          members[userId] = memberEntry;
+        }
+      }
+
+      // Update group members and memberCount
+      const updates = {};
+      updates[`groups/${groupId}/members`] = members;
+
+      // Calculate member count
+      const finalMemberCount = isArray ? members.length : Object.keys(members).length;
+      updates[`groups/${groupId}/memberCount`] = finalMemberCount;
+
+      // Add to userGroups (REQUIRED for Firebase rules to grant access)
+      updates[`userGroups/${userId}/${groupId}`] = {
+        name: groupData.name,
+        emoji: groupData.emoji || '👥',
+        coverPhoto: groupData.coverPhoto || null,
+        memberCount: finalMemberCount,
+        createdBy: groupData.createdBy || '',
+        createdAt: groupData.createdAt || now,
         joinedAt: now
       };
 
-      // Add user to group members
-      await admin.database().ref(`groups/${groupId}/members/${userId}`).set(memberData);
+      // Also add to users/{uid}/groups for backwards compatibility
+      updates[`users/${userId}/groups/${groupId}`] = {
+        name: groupData.name,
+        emoji: groupData.emoji || '👥',
+        coverPhoto: groupData.coverPhoto || null,
+        memberCount: finalMemberCount,
+        role: 'member',
+        joinedAt: now
+      };
 
-      // Add group to user's groups list
-      const groupSnap = await admin.database().ref(`groups/${groupId}`).get();
-      const groupData = groupSnap.val();
-
-      if (groupData) {
-        // Add to userGroups (REQUIRED for Firebase rules to grant access)
-        await admin.database().ref(`userGroups/${userId}/${groupId}`).set({
-          name: groupData.name,
-          emoji: groupData.emoji || '👥',
-          coverPhoto: groupData.coverPhoto || null,
-          memberCount: (groupData.memberCount || 0) + 1,
-          createdBy: groupData.createdBy || '',
-          createdAt: groupData.createdAt || now,
-          joinedAt: now
-        });
-
-        // Also add to users/{uid}/groups for backwards compatibility
-        await admin.database().ref(`users/${userId}/groups/${groupId}`).set({
-          name: groupData.name,
-          emoji: groupData.emoji || '👥',
-          coverPhoto: groupData.coverPhoto || null,
-          memberCount: (groupData.memberCount || 0) + 1,
-          role: 'member',
-          joinedAt: now
-        });
-
-        // Update group member count
-        const currentCount = groupData.memberCount || 0;
-        await admin.database().ref(`groups/${groupId}/memberCount`).set(currentCount + 1);
-      }
-
-      console.log(`✅ User ${userId} joined group ${groupId}`);
+      await admin.database().ref().update(updates);
+      console.log(`✅ User ${userId} joined group ${groupId} (Updated ${memberIndex !== -1 ? 'existing' : 'new'} member)`);
     }
 
     // Update invitation status in both locations
@@ -1126,7 +1182,7 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${oneSignalApiKey.trim()}`
+        'Authorization': `Key ${oneSignalApiKey.trim()}`
       },
       body: JSON.stringify(notificationData)
     });
@@ -1231,7 +1287,7 @@ const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, b
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Basic ${oneSignalApiKey.trim()}`
+      'Authorization': `Key ${oneSignalApiKey.trim()}`
     },
     body: JSON.stringify(notificationData)
   });
@@ -2166,6 +2222,8 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
     }
 
     const inviteeUid = usernameSnap.val().uid;
+    const inviteeUserSnap = await db.ref(`users/${inviteeUid}`).get();
+    const inviteeEmail = inviteeUserSnap.exists() ? (inviteeUserSnap.val().email || '').toLowerCase() : '';
 
     if (inviteeUid === senderUid) {
       return res.status(400).json({ success: false, error: 'You cannot invite yourself' });
@@ -2187,8 +2245,16 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
       return res.status(403).json({ success: false, error: 'You must be a member of the group to invite others' });
     }
 
-    // 3. Check if Invitee is already in group
-    const isInviteeAlreadyMember = normalizeMembers(group.members).some(m => m.userId === inviteeUid);
+    // 3. Check if Invitee is already in group (by UID)
+    const currentMembers = normalizeMembers(group.members);
+    const isInviteeAlreadyMember = currentMembers.some(m => m.userId === inviteeUid);
+
+    // Check if invitee is already in group as Manual Member (by Email)
+    let existingManualMemberIndex = -1;
+    if (inviteeEmail && !isInviteeAlreadyMember) {
+      existingManualMemberIndex = currentMembers.findIndex(m => m.email && m.email.toLowerCase() === inviteeEmail && m.type === 'manual');
+    }
+
     if (isInviteeAlreadyMember) {
       return res.status(400).json({ success: false, error: 'User is already a member of this group' });
     }
@@ -2204,9 +2270,15 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
 
     const invitationData = {
       id: invitationId,
+      invitationId, // Add alias
       groupId,
       groupName: group.name,
-      invitedBy: {
+      senderName, // New: Support legacy frontend
+      invitedBy: senderName, // New: Simple string for frontend
+      senderId: senderUid, // Simple field
+      receiverId: inviteeUid, // Simple field for filtering
+      receiverName: inviteeUsername || normalizedUsername, // CRITICAL: Fix for "Invited User" display
+      invitedByDetail: { // Preserve the object in a subfield if needed
         uid: senderUid,
         name: senderName,
         username: senderUsername
@@ -2226,10 +2298,47 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
       invitationId,
       groupId,
       groupName: group.name,
+      senderName,
       invitedBy: senderName,
       createdAt: now,
       status: 'pending'
     };
+
+    // SYNC: Add or Update member in group list
+    if (existingManualMemberIndex !== -1) {
+      // MERGE: Update existing manual member
+      // We modify the copy in the currentMembers array and save the whole array back
+      // This is safe because normalizeMembers preserves structure mostly, but writing it back as array standardizes it.
+      const memberToUpdate = { ...currentMembers[existingManualMemberIndex] };
+      memberToUpdate.userId = inviteeUid;
+      memberToUpdate.isPending = true; // Mark as pending acceptance
+      memberToUpdate.invitedAt = now;
+      memberToUpdate.username = normalizedUsername; // Add username if missing
+
+      // Update the array
+      currentMembers[existingManualMemberIndex] = memberToUpdate;
+
+      updates[`groups/${groupId}/members`] = currentMembers;
+      console.log(`🔄 Merging invitation with existing manual member (Index: ${existingManualMemberIndex})`);
+    } else {
+      // ADD NEW: Add pending member to group list for visibility to owner
+      // Use type: 'invited' so they are excluded from expense splitting until they accept
+      const newMember = {
+        id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        name: inviteeUsername || normalizedUsername,
+        userId: inviteeUid,
+        username: normalizedUsername,
+        type: 'invited', // Changed from 'manual' to 'invited'
+        isPending: true,
+        invitedAt: now
+      };
+
+      const updatedMembers = [...currentMembers, newMember];
+      updates[`groups/${groupId}/members`] = updatedMembers;
+      // Also update index count for owner
+      updates[`userGroups/${senderUid}/${groupId}/memberCount`] = updatedMembers.length;
+      console.log(`➕ Adding new pending member (type: invited) to group list`);
+    }
 
     await db.ref().update(updates);
 
@@ -2312,6 +2421,32 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
     // 2. Get Sender Info
     const senderSnap = await db.ref(`users/${senderUid}`).get();
     const senderName = senderSnap.exists() ? senderSnap.val().name : "A friend";
+
+    // 2b. Add Manual Member to Group (so they can be added to expenses immediately)
+    const currentMembers = normalizeMembers(group.members);
+    const existingMember = currentMembers.find(m => m.email && m.email.toLowerCase() === email.toLowerCase());
+
+    if (!existingMember) {
+      const newMember = {
+        id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        name: email.split('@')[0],
+        email: email,
+        type: 'manual', // Correctly set as manual so they can be split with
+        isPending: true,
+        invitedAt: new Date().toISOString()
+      };
+
+      const updatedMembers = [...currentMembers, newMember];
+
+      const updates = {};
+      updates[`groups/${groupId}/members`] = updatedMembers;
+      updates[`userGroups/${senderUid}/${groupId}/memberCount`] = updatedMembers.length;
+
+      await db.ref().update(updates);
+      console.log(`➕ Added manual member for email invite: ${email}`);
+    } else {
+      console.log(`ℹ️ Member with email ${email} already exists, skipping add.`);
+    }
 
     // 3. Send Email
     await emailService.sendInvitation(

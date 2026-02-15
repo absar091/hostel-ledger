@@ -1339,10 +1339,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return { success: false, error: "User not authenticated" };
 
     try {
-      const result = await callSecureApi('/api/claim-email-invite', {
-        method: 'POST',
-        body: JSON.stringify({ groupId })
-      });
+      const result = await callSecureApi('/api/claim-email-invite', { groupId });
 
       if (!result.success) {
         return { success: false, error: result.error || "Failed to claim invitation" };

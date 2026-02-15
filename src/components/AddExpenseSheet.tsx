@@ -21,6 +21,7 @@ interface Member {
   deletionCondition?: 'SETTLED' | 'TIME_LIMIT' | null;
   expiresAt?: number | null;
   isPending?: boolean;
+  isCurrentUser?: boolean;
 }
 
 interface Group {
@@ -111,8 +112,8 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
     const newLocalMembers = localTempMembers.filter(m => !existingIds.has(m.id));
     allMembers = [...allMembers, ...newLocalMembers];
 
-    // Allow pending members (invited via email) to be selected as they are valid expense participants
-    return allMembers; // Return all, including pending and temp
+    // Allow pending manual members (invited via email) but EXCLUDE existing app users who haven't joined yet (type='invited')
+    return allMembers.filter(m => (m as any).type !== 'invited');
   }, [groups, selectedGroup, fullGroupData, localTempMembers]);
 
   // Fetch full group details when a group is selected to ensure members are loaded
@@ -428,7 +429,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                               <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
                             )}
                             {member.isPending && !member.isCurrentUser && (
-                              <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited</span>
+                              <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited (Email)</span>
                             )}
                           </div>
                           {member.isTemporary && (
@@ -494,7 +495,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                                 <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
                               )}
                               {member.isPending && !member.isCurrentUser && (
-                                <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited</span>
+                                <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited (Email)</span>
                               )}
                             </div>
                             {member.isTemporary && (

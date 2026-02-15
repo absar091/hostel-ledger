@@ -63,8 +63,8 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
     const group = groups.find((g) => g.id === selectedGroup);
     if (!group) return [];
 
-    // Filter out "You"
-    const members = group.members.filter((m) => !m.isCurrentUser);
+    // Filter out "You" and "Invited" user-types (who haven't joined yet)
+    const members = group.members.filter((m) => !m.isCurrentUser && (m as any).type !== 'invited');
 
     // Sort by amount they owe (toReceive) descending
     const groupSettlements = getSettlements(selectedGroup);
@@ -291,7 +291,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                             <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
                           )}
                           {(member as any).isPending && (
-                            <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited</span>
+                            <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited (Email)</span>
                           )}
                           {member.isTemporary && (
                             <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
@@ -339,7 +339,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                           <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
                         )}
                         {(selectedMemberData as any).isPending && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited</span>
+                          <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited (Email)</span>
                         )}
                       </div>
                       <div className="text-xs font-bold truncate">
