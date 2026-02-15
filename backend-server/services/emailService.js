@@ -2,19 +2,29 @@ const nodemailer = require('nodemailer');
 
 // Environment variables should be checked at startup
 const SMTP_CONFIG = {
-    primary: {
+    primary: { // Zoho (Best for Auth/OTP)
         host: (process.env.SMTP_HOST || 'smtp.zoho.in').trim(),
         port: parseInt(process.env.SMTP_PORT) || 465,
         secure: true,
         auth: {
             user: (process.env.SMTP_USER || '').trim(),
-            pass: (process.env.SMTP_PASS || '').replace(/\s+/g, '') // Trim spaces automatically
+            pass: (process.env.SMTP_PASS || '').replace(/\s+/g, '')
         },
-        connectionTimeout: 30000,
-        greetingTimeout: 30000,
-        socketTimeout: 30000
+        connectionTimeout: 10000, // Faster timeout for OTP
+        greetingTimeout: 5000
     },
-    fallback: {
+    transactional: { // SendPulse (Best for Notifications)
+        host: (process.env.SENDPULSE_SMTP_HOST || 'smtp-pulse.com').trim(),
+        port: parseInt(process.env.SENDPULSE_SMTP_PORT) || 2525, // 2525 is often better for avoiding blocks
+        secure: false, // Port 2525 is usually non-SSL or STARTTLS
+        auth: {
+            user: (process.env.SENDPULSE_SMTP_USER || '').trim(),
+            pass: (process.env.SENDPULSE_SMTP_PASS || '').replace(/\s+/g, '')
+        },
+        connectionTimeout: 15000,
+        greetingTimeout: 10000
+    },
+    fallback: { // Gmail (Universal Backup)
         host: (process.env.FALLBACK_SMTP_HOST || 'smtp.gmail.com').trim(),
         port: parseInt(process.env.FALLBACK_SMTP_PORT) || 465,
         secure: true,
@@ -27,13 +37,14 @@ const SMTP_CONFIG = {
 
 // Singleton transporters
 let primaryTransporter = null;
+let transactionalTransporter = null;
 let fallbackTransporter = null;
 
 const createTransporter = (config) => {
     return nodemailer.createTransport(config);
 };
 
-const getPrimaryTransporter = () => {
+const getPrimaryTransporter = () => { // Zoho
     if (!primaryTransporter) {
         console.log('📧 Initializing Primary Transporter (Zoho)...');
         primaryTransporter = createTransporter(SMTP_CONFIG.primary);
@@ -41,7 +52,15 @@ const getPrimaryTransporter = () => {
     return primaryTransporter;
 };
 
-const getFallbackTransporter = () => {
+const getTransactionalTransporter = () => { // SendPulse
+    if (!transactionalTransporter) {
+        console.log('📧 Initializing Transactional Transporter (SendPulse)...');
+        transactionalTransporter = createTransporter(SMTP_CONFIG.transactional);
+    }
+    return transactionalTransporter;
+};
+
+const getFallbackTransporter = () => { // Gmail
     if (!fallbackTransporter) {
         console.log('📧 Initializing Fallback Transporter (Gmail)...');
         fallbackTransporter = createTransporter(SMTP_CONFIG.fallback);
@@ -51,56 +70,96 @@ const getFallbackTransporter = () => {
 
 /**
  * Sends an email with automatic fallback and retry logic.
- * @param {Object} mailOptions - Nodemailer mail options
- * @returns {Promise<{success: boolean, message: string, provider: string}>}
  */
-const sendWithTimeout = async (transporter, options, timeoutMs = 15000) => {
+const sendWithTimeout = async (transporter, options, timeoutMs = 15000, providerName = 'Unknown') => {
     return Promise.race([
         transporter.sendMail(options),
         new Promise((_, reject) =>
-            setTimeout(() => reject(new Error(`Email sending timed out after ${timeoutMs}ms`)), timeoutMs)
+            setTimeout(() => reject(new Error(`${providerName} sending timed out after ${timeoutMs}ms`)), timeoutMs)
         )
     ]);
 };
 
-const sendEmailSafe = async (mailOptions) => {
-    const primary = getPrimaryTransporter();
+/**
+ * Validates config before attempting connection
+ */
+const isConfigValid = (config) => {
+    return config && config.host && config.auth.user && config.auth.pass;
+}
 
-    // Enforce strict 'from' address to match auth user to prevent blocking
+/**
+ * Smart Routing Email Sender
+ * type: 'auth' | 'transactional'
+ */
+const sendEmailByType = async (type, mailOptions) => {
+    // 1. Determine Primary Provider based on Type
+    let primaryProvider = 'primary'; // Default to Zoho
+    let primaryGetFn = getPrimaryTransporter;
+    let fromAddress = `Hostel Ledger <${SMTP_CONFIG.primary.auth.user}>`;
+
+    if (type === 'transactional' && isConfigValid(SMTP_CONFIG.transactional)) {
+        primaryProvider = 'transactional';
+        primaryGetFn = getTransactionalTransporter;
+        fromAddress = `Hostel Ledger <${SMTP_CONFIG.transactional.auth.user}>`;
+    }
+
+    // Prepare Options
     const finalMailOptions = {
         ...mailOptions,
-        from: `Hostel Ledger <${SMTP_CONFIG.primary.auth.user}>`
+        from: fromAddress // Set correct FROM address for the provider
     };
 
     try {
-        console.log(`📨 Attempting to send email to ${finalMailOptions.to} via Primary...`);
-        const info = await sendWithTimeout(primary, finalMailOptions, 15000); // 15s timeout
-        console.log(`✅ Email sent via Primary: ${info.messageId}`);
-        return { success: true, message: 'Sent via Primary', provider: 'primary', messageId: info.messageId };
+        console.log(`📨 Sending (${type}) to ${finalMailOptions.to} via ${primaryProvider.toUpperCase()}...`);
+        const transporter = primaryGetFn();
+
+        // 5 second shorter timeout for Auth to allow quicker fallback
+        const timeout = type === 'auth' ? 10000 : 15000;
+
+        const info = await sendWithTimeout(transporter, finalMailOptions, timeout, primaryProvider);
+        console.log(`✅ Sent via ${primaryProvider.toUpperCase()}: ${info.messageId}`);
+        return { success: true, message: `Sent via ${primaryProvider}`, provider: primaryProvider, messageId: info.messageId };
+
     } catch (primaryError) {
-        console.warn(`⚠️ Primary Transport Failed: ${primaryError.message}`);
+        console.warn(`⚠️ ${primaryProvider.toUpperCase()} Failed: ${primaryError.message}`);
 
-        // Attempt Fallback
+        // 2. Fallback Logic
+        // If Primary (Zoho) failed -> Try Fallback (Gmail)
+        // If Transactional (SendPulse) failed -> Try Primary (Zoho) -> Then Fallback (Gmail)
+
+        if (primaryProvider === 'transactional') {
+            try {
+                console.log(`🔄 Failing over to ZOHO (Backup for Transactional)...`);
+                const zoho = getPrimaryTransporter();
+                const zohoOptions = { ...finalMailOptions, from: `Hostel Ledger <${SMTP_CONFIG.primary.auth.user}>` };
+
+                const info = await sendWithTimeout(zoho, zohoOptions, 15000, 'Zoho');
+                console.log(`✅ Sent via ZOHO (Fallback): ${info.messageId}`);
+                return { success: true, message: 'Sent via Zoho (Fallback)', provider: 'primary', messageId: info.messageId };
+            } catch (zohoError) {
+                console.warn(`⚠️ Zoho Fallback Failed: ${zohoError.message}`);
+                // Continue to Gmail fallback below...
+            }
+        }
+
+        // 3. Ultimate Fallback: Gmail
         try {
-            console.log(`📨 Attempting Fallback (Gmail) to ${finalMailOptions.to}...`);
-            const fallback = getFallbackTransporter();
+            console.log(`🚨 Failing over to GMAIL (Ultimate Backup)...`);
+            const gmail = getFallbackTransporter();
+            const gmailOptions = { ...finalMailOptions, from: `Hostel Ledger <${SMTP_CONFIG.fallback.auth.user}>` };
 
-            // Update 'from' for fallback if needed (Gmail usually overwrites it anyway)
-            const fallbackOptions = {
-                ...finalMailOptions,
-                from: `Hostel Ledger <${SMTP_CONFIG.fallback.auth.user}>` // Match fallback auth
-            };
-
-            const info = await sendWithTimeout(fallback, fallbackOptions, 15000); // 15s timeout
-            console.log(`✅ Email sent via Fallback: ${info.messageId}`);
-            return { success: true, message: 'Sent via Fallback', provider: 'fallback', messageId: info.messageId };
-        } catch (fallbackError) {
-            console.error(`❌ All email transports failed for ${finalMailOptions.to}`);
-            console.error(`   PrimaryKey Error: ${primaryError.message}`);
-            console.error(`   Fallback Error: ${fallbackError.message}`);
-            return { success: false, error: fallbackError.message };
+            const info = await sendWithTimeout(gmail, gmailOptions, 20000, 'Gmail');
+            console.log(`✅ Sent via GMAIL: ${info.messageId}`);
+            return { success: true, message: 'Sent via Gmail (Fallback)', provider: 'fallback', messageId: info.messageId };
+        } catch (gmailError) {
+            console.error(`❌ ALL transports failed for ${finalMailOptions.to}`);
+            return { success: false, error: gmailError.message };
         }
     }
+};
+
+const sendEmailSafe = async (mailOptions) => {
+    return sendEmailByType('transactional', mailOptions); // Default to transactional if generic call
 };
 
 // ============================================================================
@@ -195,23 +254,22 @@ const emailService = {
     },
 
     /**
-     * Send Verification Code
+     * Send Verification Email (High Priority - Auth Type)
+     * Uses Zoho -> Gmail Fallback
      */
     sendVerification: async (email, otp, name) => {
         const html = getCommonTemplate(
             'Confirm your email',
-            `
-        <p>Hi ${name ? `<span class="highlight">${name}</span>` : 'there'},</p>
-        <p>Welcome to Hostel Ledger! Use the code below to verify your email address. It helps us keep your account secure.</p>
-        <div style="text-align: center; margin: 40px 0;">
-          <span style="font-size: 36px; font-weight: 800; letter-spacing: 4px; color: #111;">${otp}</span>
-        </div>
-        <p>This code expires in 10 minutes.</p>
-      `,
-            '',
+            `<p>Hi ${name},</p>
+             <p>Thank you for signing up for Hostel Ledger. To complete your registration, please verify your email address.</p>
+             <p>Your verification code is:</p>
+             <div class="otp-box">${otp}</div>
+             <p>This code will expire in 10 minutes.</p>`,
+            '', // No action button
             false // No unsubscribe for critical auth emails
         );
-        return sendEmailSafe({
+
+        return sendEmailByType('auth', {
             to: email,
             subject: 'Verify your email - Hostel Ledger',
             html
@@ -221,38 +279,37 @@ const emailService = {
     /**
      * Send Invitation Email
      */
-    sendInvitation: async (email, inviterName, groupName, inviteLink) => {
+    sendInvitation: async (email, senderName, groupName, link) => {
         const html = getCommonTemplate(
-            'You’ve been invited!',
-            `
-        <p><span class="highlight">${inviterName}</span> invited you to join the group <strong>"${groupName}"</strong> on Hostel Ledger.</p>
-        <p>Join the group to start tracking expenses, splitting bills, and settling up directly from your phone.</p>
-      `,
-            `<a href="${inviteLink}" class="button">Accept Invitation</a>`,
+            'You\'re invited! 🏠',
+            `<p><strong>${senderName}</strong> invited you to join the group <strong>${groupName}</strong> on Hostel Ledger.</p>
+             <p>Track expenses, settle debts, and manage shared costs easily.</p>`,
+            `<a href="${link}" class="button">Join Group</a>`,
             true // Allow unsubscribe
         );
-        return sendEmailSafe({
+
+        return sendEmailByType('transactional', {
             to: email,
-            subject: `${inviterName} invited you to join "${groupName}"`,
+            subject: `${senderName} invited you to join ${groupName}`,
             html
         });
     },
 
     /**
-     * Send Welcome Email
+     * Send Welcome Email (Transactional)
+     * Uses SendPulse -> Zoho -> Gmail Fallback
      */
     sendWelcome: async (email, name) => {
         const html = getCommonTemplate(
-            'Welcome to Hostel Ledger',
-            `
-        <p>Hi ${name ? `<span class="highlight">${name}</span>` : 'there'},</p>
-        <p>Thanks for creating an account! You’re all set to start managing shared expenses without the stress.</p>
-        <p>Create a group, invite your friends, and never worry about details again.</p>
-      `,
+            'Welcome to Hostel Ledger! 🎉',
+            `<p>Hi ${name},</p>
+             <p>We're excited to have you on board! Hostel Ledger makes it easy to track shared expenses with your roommates.</p>
+             <p>You can now create groups, add expenses, and settle debts easily.</p>`,
             `<a href="https://app.hostelledger.aarx.online" class="button">Go to Dashboard</a>`,
-            false // Essential account email
+            false
         );
-        return sendEmailSafe({
+
+        return sendEmailByType('transactional', {
             to: email,
             subject: 'Welcome to Hostel Ledger!',
             html
@@ -260,57 +317,39 @@ const emailService = {
     },
 
     /**
-     * Send Password Reset
+     * Send Password Reset Email (Legacy - Firebase handles this natively now)
+     * But keeping this as a backup or for custom flows.
      */
     sendPasswordReset: async (email, resetLink, name) => {
         const html = getCommonTemplate(
             'Reset Password',
-            `
-        <p>Hi ${name ? `<span class="highlight">${name}</span>` : 'there'},</p>
-        <p>We received a request to reset your password. Tap the button below to choose a new one:</p>
-      `,
+            `<p>Hi ${name},</p>
+             <p>We received a request to reset your password. If you didn't make the request, just ignore this email.</p>
+             <p>Otherwise, you can reset your password using this link:</p>`,
             `<a href="${resetLink}" class="button">Reset Password</a>`,
             false // Critical security email
         );
-        return sendEmailSafe({
+
+        return sendEmailByType('auth', {
             to: email,
-            subject: 'Reset Password - Hostel Ledger',
+            subject: 'Reset your password - Hostel Ledger',
             html
         });
     },
 
     /**
-     * Send Transaction Alert
+     * Send Transaction Alert (Transactional)
      */
     sendTransactionAlert: async (data) => {
-        // data = { email, name, transactionType, amount, groupName, date, description }
+        const { email, name, transactionType, amount, groupName, date, description } = data;
+
         const html = getCommonTemplate(
             `Transaction Alert`,
-            `
-        <p>Hi ${data.name},</p>
-        <p>A new <strong>${data.transactionType}</strong> was recorded in <strong>${data.groupName}</strong>.</p>
-        
-        <div class="amount-large">Rs ${data.amount}</div>
-
-        <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
-          <div class="detail-row">
-            <span class="detail-label">Type</span>
-            <span class="detail-value" style="text-transform: capitalize;">${data.transactionType}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Group</span>
-            <span class="detail-value">${data.groupName}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Date</span>
-            <span class="detail-value">${data.date}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Note</span>
-            <span class="detail-value">${data.description || '-'}</span>
-          </div>
-        </div>
-      `,
+            `<p>Hi ${name},</p>
+             <p>A new <strong>${transactionType}</strong> was recorded in <strong>${groupName}</strong>.</p>
+             <div class="amount-box">${amount}</div>
+             <p>${description}</p>
+             <p style="font-size: 12px; color: #999; margin-top: 20px;">Date: ${date}</p>`,
             `<a href="https://app.hostelledger.aarx.online" class="button">View Details</a>`,
             true // Allow unsubscribe
         );
@@ -322,7 +361,7 @@ const emailService = {
     },
 
     /**
-     * Send Expense Notification
+     * Send Expense Notification (Transactional)
      */
     sendExpenseNotification: async (email, data) => {
         // data = { payerName, amount, title, splitAmount, date, groupName, note }
