@@ -155,9 +155,9 @@ const primaryTransporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS
   },
-  connectionTimeout: 10000, // 10 seconds
-  greetingTimeout: 10000,   // 10 seconds
-  socketTimeout: 15000,      // 15 seconds
+  connectionTimeout: 30000, // 30 seconds
+  greetingTimeout: 30000,   // 30 seconds
+  socketTimeout: 30000,      // 30 seconds
   tls: {
     rejectUnauthorized: true
   }
@@ -172,9 +172,9 @@ const fallbackTransporter = nodemailer.createTransport({
     user: process.env.FALLBACK_SMTP_USER,
     pass: process.env.FALLBACK_SMTP_PASS
   },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
+  connectionTimeout: 30000,
+  greetingTimeout: 30000,
+  socketTimeout: 30000,
   tls: {
     rejectUnauthorized: true
   }
@@ -183,7 +183,6 @@ const fallbackTransporter = nodemailer.createTransport({
 // Keep backward compatibility alias
 const transporter = primaryTransporter;
 
-// Smart email sender with automatic fallback
 // Smart email sender with automatic fallback
 async function sendMailWithFallback(mailOptions) {
   // CRITICAL: Ensure 'from' matches authenticated user to prevent rejection/hanging
@@ -196,7 +195,7 @@ async function sendMailWithFallback(mailOptions) {
   console.log(`📧 Attempting to send email to: ${mailOptions.to}`);
   console.log(`   Detailed Info: From: ${primaryFrom}, Via: Primary (Zoho)`);
 
-  const sendWithTimeout = (transporter, options, timeoutMs = 15000) => {
+  const sendWithTimeout = (transporter, options, timeoutMs = 30000) => {
     return Promise.race([
       transporter.sendMail(options),
       new Promise((_, reject) =>
@@ -268,40 +267,67 @@ verifyTransporter();
 
 // Email Template Helper - Sleek, Simple, Green (#4a6850)
 const getStandardEmailTemplate = (title, contentLines, actionLink, actionText) => {
+  const logoUrl = 'https://app.hostelledger.aarx.online/hostel-ledger-logo.webp'; // Update with actual deployed logo URL
+
   const footerText = `
-    <p style="color: #666; font-size: 12px; margin-top: 24px; border-top: 1px solid #eee; padding-top: 16px;">
-      By using Hostel Ledger, you agree to our <a href="https://hostelledger.aarx.online/terms" style="color: #4a6850;">Terms & Conditions</a> and <a href="https://hostelledger.aarx.online/privacy" style="color: #4a6850;">Privacy Policy</a>.
-    </p>
-    <p style="color: #999; font-size: 11px;">
-      Hostel Ledger - Simplify Shared Expenses
-    </p>
+    <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid #e0e0e0; color: #888; font-size: 12px;">
+      <p style="margin-bottom: 8px;">
+        <a href="https://app.hostelledger.aarx.online/terms-of-service" style="color: #4a6850; text-decoration: none;">Terms of Service</a>
+        &nbsp;|&nbsp;
+        <a href="https://app.hostelledger.aarx.online/privacy-policy" style="color: #4a6850; text-decoration: none;">Privacy Policy</a>
+      </p>
+      <p style="margin: 0;">
+        You are receiving this email because you are a member of Hostel Ledger.
+        <br>
+        <a href="https://app.hostelledger.aarx.online/settings" style="color: #999; text-decoration: underline;">Manage Notification Preferences</a>
+      </p>
+      <p style="margin-top: 12px; font-size: 11px; color: #aaa;">
+        © ${new Date().getFullYear()} Hostel Ledger by AarX. All rights reserved.
+      </p>
+    </div>
   `;
 
   const actionButton = actionLink && actionText ? `
-    <a href="${actionLink}" style="display: inline-block; background-color: #4a6850; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 16px 0;">
-      ${actionText}
-    </a>
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="${actionLink}" style="display: inline-block; background-color: #4a6850; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(74, 104, 80, 0.2);">
+        ${actionText}
+      </a>
+    </div>
   ` : '';
 
-  const contentHtml = contentLines.map(line => `<p style="margin-bottom: 12px;">${line}</p>`).join('');
+  const contentHtml = contentLines.map(line => `<div style="margin-bottom: 12px;">${line}</div>`).join('');
 
   return `
-    <div style="font-family: 'Segoe UI', user-select: none, -webkit-user-select: none, Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px;">
-      <div style="text-align: center; margin-bottom: 24px;">
-        <h2 style="color: #4a6850; margin: 0;">${title}</h2>
-      </div>
-      
-      <div style="color: #333; font-size: 16px; line-height: 1.5;">
-        ${contentHtml}
-        <div style="text-align: center;">
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { margin: 0; padding: 0; background-color: #f4f6f5; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+        .header { text-align: center; margin-bottom: 32px; }
+        .logo { max-height: 48px; margin-bottom: 16px; }
+        .title { color: #1a1a1a; margin: 0; font-size: 24px; font-weight: 700; color: #4a6850; }
+        .content { color: #444; font-size: 16px; line-height: 1.6; }
+      </style>
+    </head>
+    <body style="background-color: #f4f6f5; padding: 20px 0;">
+      <div class="container" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 16px;">
+        <div class="header" style="text-align: center; margin-bottom: 32px;">
+          <img src="${logoUrl}" alt="Hostel Ledger" class="logo" style="max-height: 48px; margin-bottom: 16px;" onerror="this.style.display='none'">
+          <h1 class="title" style="margin: 0; font-size: 24px; font-weight: 700; color: #4a6850; letter-spacing: -0.5px;">${title}</h1>
+        </div>
+
+        <div class="content" style="color: #444; font-size: 16px; line-height: 1.6;">
+          ${contentHtml}
           ${actionButton}
         </div>
-      </div>
 
-      <div style="text-align: center;">
         ${footerText}
       </div>
-    </div>
+    </body>
+    </html>
   `;
 };
 
@@ -2075,29 +2101,52 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
                 : `Rs ${amount.toLocaleString()} (Total Amount)`;
 
               const emailContent = [
-                `Hi <strong>${recipient.name}</strong>,`,
-                `${payer.name} added a new expense in <strong>${group.name}</strong>.`,
-                `<div style="background-color: #f5f5f5; padding: 16px; border-radius: 8px; margin: 16px 0;">
-                  <p style="margin: 0; color: #666; font-size: 14px;">Amount</p>
-                  <p style="margin: 4px 0 0; font-size: 24px; font-weight: bold; color: #333;">${amountDisplay}</p>
-                  <p style="margin: 12px 0 0; color: #666; font-size: 14px;">For</p>
-                  <p style="margin: 4px 0 0; font-size: 18px; color: #333;">"${note || 'Expense'}"</p>
-                  ${place ? `<p style="margin: 12px 0 0; color: #666; font-size: 14px;">At</p><p style="margin: 4px 0 0; font-size: 16px; color: #333;">${place}</p>` : ''}
+                `<div style="text-align: center; margin-bottom: 24px;">
+                  <p style="font-size: 16px; margin-bottom: 8px;">Hi <strong>${recipient.name}</strong>,</p>
+                  <p style="font-size: 18px; color: #4a6850;">${payer.name} added a new expense in <strong>${group.name}</strong></p>
                 </div>`,
-                `Date: ${newTransaction.date}`
+
+                `<div style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 12px; padding: 24px; margin: 24px 0;">
+                  <div style="text-align: center; margin-bottom: 24px; border-bottom: 1px dashed #ced4da; padding-bottom: 16px;">
+                    <p style="margin: 0; color: #6c757d; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Total Amount</p>
+                    <p style="margin: 8px 0 0; font-size: 36px; font-weight: 700; color: #212529;">Rs ${amount.toLocaleString()}</p>
+                    <p style="margin: 4px 0 0; color: #adb5bd; font-size: 14px;">${new Date(newTransaction.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                  </div>
+
+                  <div style="margin-bottom: 16px;">
+                    <p style="margin: 0; color: #6c757d; font-size: 14px;">For</p>
+                    <p style="margin: 4px 0 0; font-size: 18px; color: #495057; font-weight: 500;">${note || 'Expense'}</p>
+                  </div>
+
+                  ${place ? `<div style="margin-bottom: 16px;">
+                    <p style="margin: 0; color: #6c757d; font-size: 14px;">At</p>
+                    <p style="margin: 4px 0 0; font-size: 16px; color: #495057;">${place}</p>
+                  </div>` : ''}
+
+                  <div style="background-color: ${isParticipant ? '#e8f5e9' : '#f8f9fa'}; padding: 16px; border-radius: 8px; margin-top: 20px;">
+                    <p style="margin: 0; color: #4a6850; font-size: 14px; font-weight: 600;">Your Share</p>
+                    <p style="margin: 4px 0 0; font-size: 24px; font-weight: 700; color: #2e7d32;">
+                      ${isParticipant ? `Rs ${shareAmount.toLocaleString()}` : 'Rs 0'}
+                    </p>
+                  </div>
+                </div>`,
+
+                `<div style="text-align: center;">
+                  <p style="color: #6c757d; font-size: 14px; margin: 0;">Paid by <strong>${payer.name}</strong></p>
+                </div>`
               ];
 
               const html = getStandardEmailTemplate(
-                'New Expense Added',
+                'Expense Receipt',
                 emailContent,
                 'https://app.hostelledger.aarx.online',
-                'View Expense'
+                'View Full Details'
               );
 
               const mailOptions = {
                 from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
                 to: recipient.email,
-                subject: `New Expense: ${note || 'Shared Expense'} in ${group.name}`,
+                subject: `Receipt: ${note || 'Expense'} - Rs ${amount.toLocaleString()}`,
                 html: html,
                 text: `Hi ${recipient.name}, a new expense for Rs ${amount.toLocaleString()} was added in ${group.name}. Your share is Rs ${shareAmount.toLocaleString()}. Paid by: ${payer.name}.`
               };
