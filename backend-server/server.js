@@ -1587,8 +1587,10 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       }
 
       // B. Email Notifications
+      // B. Email Notifications
       // Modified: Send to ALL members with email (including payer) per user request
-      const participantsWithEmail = membersArray.filter(m => m.email);
+      // CRITICAL UPDATE: Exclude pending members to protect privacy until they join
+      const participantsWithEmail = membersArray.filter(m => m.email && !m.isPending);
 
       console.log('🔍 Debug: All Group Members:', membersArray.map(m => ({ name: m.name, email: m.email || 'No Email' })));
 
@@ -1658,7 +1660,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
               payerName: payer.name,
               amount: amount.toLocaleString(),
               title: note || 'Expense',
-              splitAmount: isParticipant ? `Rs ${shareAmount.toLocaleString()}` : 'Rs 0',
+              splitAmount: isParticipant ? shareAmount.toLocaleString() : '0',
               date: new Date(newTransaction.date).toLocaleDateString(),
               groupName: group.name,
               groupId: groupId,

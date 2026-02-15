@@ -8,6 +8,11 @@ service cloud.firestore {
                    resource == null && 
                    request.resource.data.keys().hasAll(['uid', 'email', 'name', 'createdAt']) &&
                    request.resource.data.uid == request.auth.uid;
+                   
+      // Allow access to all subcollections (like preferences)
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
     
     // Groups - only members can access

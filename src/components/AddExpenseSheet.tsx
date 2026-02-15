@@ -29,6 +29,7 @@ interface Group {
   emoji: string;
   members: Member[];
   createdBy?: string;
+  memberCount?: number;
 }
 interface AddExpenseSheetProps {
   open: boolean;
@@ -65,8 +66,11 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
   const [note, setNote] = useState("");
   const [place, setPlace] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // Hooks
   const { isOnline, updatePendingCount } = useSync();
   const offline = !isOnline;
+  const { fetchGroupDetail } = useFirebaseData();
 
   // Temp member state
   const [showTempMemberInput, setShowTempMemberInput] = useState(false);
@@ -75,8 +79,22 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
   const [localTempMembers, setLocalTempMembers] = useState<Member[]>([]);
   const [fullGroupData, setFullGroupData] = useState<Group | null>(null);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
-  const { fetchGroupDetail } = useFirebaseData();
-  const [memberBalances, setMemberBalances] = useState<Record<string, number>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Reset state when sheet opens
+  useEffect(() => {
+    if (open) {
+      setStep(1);
+      setSelectedGroup("");
+      setAmount("");
+      setPaidBy("");
+      setParticipants([]);
+      setNote("");
+      setPlace("");
+      setValidationErrors([]);
+      setIsSubmitting(false); // Reset submitting state too
+    }
+  }, [open]);
 
   // Get members from selected group
   const members = useMemo(() => {
@@ -93,59 +111,83 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
     const newLocalMembers = localTempMembers.filter(m => !existingIds.has(m.id));
     allMembers = [...allMembers, ...newLocalMembers];
 
-    // Filter out pending members (invited but not joined), but keep temp members
-    return allMembers.filter(m => !m.isPending || m.isTemporary);
+    // Allow pending members (invited via email) to be selected as they are valid expense participants
+    return allMembers; // Return all, including pending and temp
   }, [groups, selectedGroup, fullGroupData, localTempMembers]);
+
+  // Fetch full group details when a group is selected to ensure members are loaded
+  useEffect(() => {
+    if (selectedGroup && isOnline) {
+      setIsLoadingMembers(true);
+      fetchGroupDetail(selectedGroup)
+        .then((data) => {
+          if (data) {
+            setFullGroupData(data);
+          }
+        })
+        .finally(() => {
+          setIsLoadingMembers(false);
+        });
+    }
+  }, [selectedGroup, isOnline, fetchGroupDetail]);
 
   // Handle expense submission
   const handleSubmit = async () => {
     const invalidParticipants = participants.filter(p => !members.some(m => String(m.id) === String(p)));
     if (invalidParticipants.length > 0) {
       console.error("Invalid participants detected:", { invalidParticipants, availableMembers: members.map(m => m.id) });
-      setValidationErrors(["Some selected participants are not valid"]);
+      toast.error("Some selected participants are not valid members of this group");
       return;
     }
 
-    // Clear errors
-    setValidationErrors([]);
+    setIsSubmitting(true);
 
-    // OFFLINE MODE: Save to IndexedDB
     if (offline) {
+      // Save for later sync
+      const offlineExpense = {
+        groupId: selectedGroup,
+        groupName: selectedGroupData?.name || "Unknown Group",
+        amount: parseFloat(amount),
+        paidBy,
+        participants,
+        note,
+        place,
+        timestamp: Date.now(),
+        synced: false
+      };
+
       try {
-        await saveOfflineExpense({
+        await saveOfflineExpense(offlineExpense);
+        updatePendingCount();
+        toast.success("Expense saved offline", {
+          description: "Will sync when you're back online"
+        });
+        setIsSubmitting(false);
+        onClose();
+      } catch (error) {
+        console.error("Failed to save offline expense:", error);
+        toast.error("Failed to save expense locally");
+        setIsSubmitting(false);
+      }
+    } else {
+      // Online submission
+      try {
+        await onSubmit({
           groupId: selectedGroup,
-          amount: Math.max(0, Math.min(parseFloat(amount), 1000000)),
+          amount: parseFloat(amount),
           paidBy,
           participants,
-          note: note.trim().substring(0, 200),
-          place: place.trim().substring(0, 100),
+          note,
+          place
         });
-
-        await updatePendingCount();
-        toast.success("Saved offline — will sync when online", {
-          description: "Your expense is saved locally and will sync automatically",
-          icon: "📴",
-        });
-        handleClose();
-      } catch (error: any) {
-        toast.error("Failed to save offline", {
-          description: error.message || "Please try again",
-        });
+        setIsSubmitting(false);
+        onClose();
+      } catch (error) {
+        console.error("Failed to submit expense:", error);
+        toast.error("Failed to submit expense");
+        setIsSubmitting(false);
       }
-      return;
     }
-
-    // ONLINE MODE: Submit normally
-    onSubmit({
-      groupId: selectedGroup,
-      amount: Math.max(0, Math.min(parseFloat(amount), 1000000)),
-      paidBy,
-      participants,
-      note: note.trim().substring(0, 200),
-      place: place.trim().substring(0, 100),
-      // No longer need stagedMembers here
-    });
-    handleClose();
   };
 
   const toggleParticipant = (id: string) => {
@@ -217,10 +259,38 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
   const paidByName = members.find((m) => m.id === paidBy)?.name;
   const selectedGroupData = groups.find((g) => g.id === selectedGroup);
 
+  // Calculate split details for display
+  const splitDetails = useMemo(() => {
+    const totalAmount = parseFloat(amount) || 0;
+    const count = participants.length || 1;
+    const perPerson = count > 0 ? Math.round((totalAmount / count) * 100) / 100 : 0;
+
+    // Logic: 
+    // If I paid (paidBy === me), I receive (Total - MyShare)
+    // If someone else paid, I owe MyShare
+
+    // Ideally we'd use calculateExpenseSplit here, but for display simplicity:
+    return {
+      perPerson,
+      toReceive: (totalAmount - perPerson), // Rough estimate for UI
+      toGive: perPerson,
+      othersCount: Math.max(0, count - 1)
+    };
+  }, [amount, participants]);
+
   return (
     <>
-      <Sheet open={open} onOpenChange={handleClose}>
+      <Sheet open={open} onOpenChange={(open) => !open && onClose()}>
         <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
+
+          {/* Loading Overlay */}
+          {isSubmitting && (
+            <div className="absolute inset-0 z-[150] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-200">
+              <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
+              <h3 className="text-lg font-black text-slate-900">Processing...</h3>
+            </div>
+          )}
+
           <SheetHeader className="flex-shrink-0 mb-6 pt-2">
             {/* Handle Bar */}
             <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
@@ -283,9 +353,11 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                     </div>
                     <div className="flex-1 text-left min-w-0">
                       <span className="font-black text-gray-900 tracking-tight block truncate">{group.name}</span>
-                      <p className="text-xs text-[#4a6850]/80 font-bold">
-                        {group.members.length} members
-                      </p>
+                      {(group.memberCount || group.members.length) > 0 && (
+                        <p className="text-xs text-[#4a6850]/80 font-bold">
+                          {group.memberCount || group.members.length} members
+                        </p>
+                      )}
                     </div>
                     {selectedGroup === group.id && (
                       <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
@@ -330,49 +402,51 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                     position="bottom"
                   />
                 </div>
-                {members.filter(m => !m.isTemporary).map((member) => (
-                  <button
-                    key={member.id}
-                    onClick={() => setPaidBy(member.id)}
-                    className={cn(
-                      "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
-                      paidBy === member.id
-                        ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
-                        : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
-                    )}
-                  >
-                    <Avatar name={member.name} size="sm" />
-                    <div className="flex-1 text-left min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
-                        {(member.id === fullGroupData?.createdBy || (member as any).userId === fullGroupData?.createdBy) && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                {isLoadingMembers ? (
+                  <div className="flex flex-col items-center justify-center py-8 space-y-3 animate-fade-in">
+                    <div className="w-8 h-8 border-4 border-[#4a6850]/20 border-t-[#4a6850] rounded-full animate-spin"></div>
+                    <p className="text-sm text-[#4a6850]/70 font-bold">Loading members...</p>
+                  </div>
+                ) : (
+                  <>
+                    {members.filter(m => !m.isTemporary).map((member) => (
+                      <button
+                        key={member.id}
+                        onClick={() => setPaidBy(member.id)}
+                        className={cn(
+                          "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
+                          paidBy === member.id
+                            ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
+                            : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
                         )}
-                      </div>
-                      {member.isTemporary && (
-                        <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600 mt-0.5">
-                          {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
-                          <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
+                      >
+                        <Avatar name={member.name} size="sm" />
+                        <div className="flex-1 text-left min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
+                            {(member.id === fullGroupData?.createdBy || (member as any).userId === fullGroupData?.createdBy) && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                            )}
+                            {member.isPending && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited</span>
+                            )}
+                          </div>
+                          {member.isTemporary && (
+                            <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600 mt-0.5">
+                              {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                              <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-
-                      {/* Wallet Balance Display */}
-                      {memberBalances[member.id] !== undefined && (
-                        <div className={cn(
-                          "text-xs font-bold mt-0.5",
-                          memberBalances[member.id] < 0 ? "text-red-500" : "text-[#4a6850]"
-                        )}>
-                          Wallet: Rs {memberBalances[member.id]}
-                        </div>
-                      )}
-                    </div>
-                    {paidBy === member.id && (
-                      <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
-                        <Check className="w-3.5 h-3.5 text-white font-bold" />
-                      </div>
-                    )}
-                  </button>
-                ))}
+                        {paidBy === member.id && (
+                          <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
+                            <Check className="w-3.5 h-3.5 text-white font-bold" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </>
+                )}
               </div>
             )}
 
@@ -388,51 +462,63 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                     position="bottom"
                   />
                 </div>
-                {members.map((member) => {
-                  const isSelected = participants.includes(member.id);
+                {isLoadingMembers ? (
+                  <div className="flex flex-col items-center justify-center py-8 space-y-3 animate-fade-in">
+                    <div className="w-8 h-8 border-4 border-[#4a6850]/20 border-t-[#4a6850] rounded-full animate-spin"></div>
+                    <p className="text-sm text-[#4a6850]/70 font-bold">Loading members...</p>
+                  </div>
+                ) : (
+                  <>
+                    {members.map((member) => {
+                      const isSelected = participants.includes(member.id);
 
-                  return (
-                    <button
-                      key={member.id}
-                      onClick={() => toggleParticipant(member.id)}
-                      className={cn(
-                        "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
-                        isSelected
-                          ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
-                          : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
-                      )}
-                    >
-                      <Avatar name={member.name} size="sm" />
-                      <div className="flex-1 text-left min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
-                          {member.isTemporary && (
-                            <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                      return (
+                        <button
+                          key={member.id}
+                          onClick={() => toggleParticipant(member.id)}
+                          className={cn(
+                            "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
+                            isSelected
+                              ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
+                              : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
                           )}
-                          {(member.id === fullGroupData?.createdBy || (member as any).userId === fullGroupData?.createdBy) && (
-                            <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                        >
+                          <Avatar name={member.name} size="sm" />
+                          <div className="flex-1 text-left min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
+                              {member.isTemporary && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                              )}
+                              {(member.id === fullGroupData?.createdBy || (member as any).userId === fullGroupData?.createdBy) && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                              )}
+                              {member.isPending && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited</span>
+                              )}
+                            </div>
+                            {member.isTemporary && (
+                              <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600 mt-0.5">
+                                {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                                <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
+                              </div>
+                            )}
+                            {isSelected && (
+                              <div className="text-xs text-[#4a6850] font-bold">
+                                Rs {splitDetails.perPerson} share
+                              </div>
+                            )}
+                          </div>
+                          {isSelected && (
+                            <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
+                              <Check className="w-3.5 h-3.5 text-white font-bold" />
+                            </div>
                           )}
-                        </div>
-                        {member.isTemporary && (
-                          <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600 mt-0.5">
-                            {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
-                            <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
-                          </div>
-                        )}
-                        {isSelected && (
-                          <div className="text-xs text-[#4a6850] font-bold">
-                            Rs {splitDetails.perPerson} share
-                          </div>
-                        )}
-                      </div>
-                      {isSelected && (
-                        <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
-                          <Check className="w-3.5 h-3.5 text-white font-bold" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
+                        </button>
+                      );
+                    })}
+                  </>
+                )}
 
                 {/* Add Temp Member Button */}
                 <button

@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { ArrowLeft, Settings, ChevronRight, Plus, HandCoins, Users, Share2 } from "lucide-react";
 import GroupPendingInvitations from "@/components/GroupPendingInvitations";
-import TransactionSuccessSheet from "@/components/TransactionSuccessSheet";
 import { Button } from "@/components/ui/button";
 import TimelineItem from "@/components/TimelineItem";
 import Avatar from "@/components/Avatar";
@@ -41,11 +40,6 @@ const GroupDetail = () => {
   const [showGroupGuide, setShowGroupGuide] = useState(false);
   const [fullGroup, setFullGroup] = useState<any>(null);
   const [isGroupLoading, setIsGroupLoading] = useState(true);
-
-  // Success Sheet states
-  const [showSuccessSheet, setShowSuccessSheet] = useState(false);
-  const [successTransaction, setSuccessTransaction] = useState<any>(null);
-  const [successType, setSuccessType] = useState<"expense" | "payment">("expense");
 
   // Check if we should show page guide
   useEffect(() => {
@@ -251,9 +245,7 @@ const GroupDetail = () => {
       if (result.success) {
         toast.success(`Added expense of Rs ${data.amount.toLocaleString()}`);
         if (result.transaction) {
-          setSuccessTransaction(result.transaction);
-          setSuccessType("expense");
-          setShowSuccessSheet(true);
+          navigate("/receipt", { state: { transaction: result.transaction, type: "expense" } });
         }
       } else {
         toast.error(result.error || "Failed to add expense");
@@ -285,9 +277,7 @@ const GroupDetail = () => {
       const memberName = group.members.find((m) => m.id === data.fromMember)?.name;
       toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
       if (result.transaction) {
-        setSuccessTransaction(result.transaction);
-        setSuccessType("payment");
-        setShowSuccessSheet(true);
+        navigate("/receipt", { state: { transaction: result.transaction, type: "payment" } });
       }
     } else {
       toast.error(result.error || "Failed to record payment");
@@ -805,15 +795,6 @@ const GroupDetail = () => {
         onClose={handleGroupGuideClose}
       />
 
-      <TransactionSuccessSheet
-        open={showSuccessSheet}
-        onClose={() => {
-          setShowSuccessSheet(false);
-          setSuccessTransaction(null);
-        }}
-        transaction={successTransaction}
-        type={successType}
-      />
     </div>
   );
 };

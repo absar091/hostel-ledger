@@ -39,6 +39,8 @@ import Security from "./pages/Security";
 import JoinGroup from "./pages/JoinGroup";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
+import ReceiptPage from "./pages/ReceiptPage";
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -207,6 +209,7 @@ const AppRoutes = () => (
     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
     <Route path="/terms-of-service" element={<TermsOfService />} />
     <Route path="/join/:id" element={<JoinGroup />} />
+    <Route path="/receipt" element={<ProtectedRoute><ReceiptPage /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

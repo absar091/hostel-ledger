@@ -863,7 +863,13 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       });
 
       // Fallback to offline if API call fails due to network
-      if (!navigator.onLine || error.message.includes('fetch') || error.message.includes('Network')) {
+      const errorMessage = error.message || "";
+      const isNetworkError = !navigator.onLine ||
+        errorMessage.toLowerCase().includes('fetch') ||
+        errorMessage.toLowerCase().includes('network') ||
+        errorMessage.includes('auth/network-request-failed');
+
+      if (isNetworkError) {
         const offlineId = await saveOfflineExpense({
           groupId: data.groupId,
           amount: data.amount,
@@ -934,6 +940,31 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         amount: data.amount,
         error: error.message
       });
+
+      // Fallback to offline if API call fails due to network
+      const errorMessage = error.message || "";
+      const isNetworkError = !navigator.onLine ||
+        errorMessage.toLowerCase().includes('fetch') ||
+        errorMessage.toLowerCase().includes('network') ||
+        errorMessage.includes('auth/network-request-failed');
+
+      if (isNetworkError) {
+        try {
+          const { saveOfflinePayment } = await import('@/lib/offlineDB');
+          await saveOfflinePayment({
+            groupId: data.groupId,
+            fromMember: data.fromMember,
+            toMember: data.toMember,
+            amount: data.amount,
+            method: data.method,
+            note: data.note
+          });
+          return { success: true, error: "Network error: saved to sync later" };
+        } catch (offlineError) {
+          console.error("Failed to save offline payment", offlineError);
+        }
+      }
+
       return { success: false, error: error.message || "Failed to record payment" };
     }
   };

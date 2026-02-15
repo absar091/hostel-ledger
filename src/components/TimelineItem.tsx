@@ -13,7 +13,15 @@ interface TimelineItemProps {
   title: string;
   amount: number;
   date: string;
+  paidBy?: string;
+  participants?: Participant[];
+  from?: string;
+  to?: string;
+  method?: string;
+  category?: "food" | "shopping" | "transport" | "coffee" | "other";
+  userRole?: 'payer' | 'receiver' | 'none';
   isPayerOwner?: boolean;
+  onClick?: () => void;
 }
 
 const categoryIcons = {

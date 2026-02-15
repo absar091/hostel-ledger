@@ -15,7 +15,6 @@ import {
   Share2,
 } from "@/lib/icons";
 import { sendExternalInvitation } from "@/lib/api";
-import TransactionSuccessSheet from "@/components/TransactionSuccessSheet";
 import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
@@ -111,13 +110,6 @@ const Dashboard = () => {
   // Notification prompt state
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [isEnablingNotifications, setIsEnablingNotifications] = useState(false);
-
-  // Success Sheet states
-  const [showSuccessSheet, setShowSuccessSheet] = useState(false);
-  const [successTransaction, setSuccessTransaction] = useState<any>(null);
-  const [successType, setSuccessType] = useState<"expense" | "payment">(
-    "expense",
-  );
 
   // Tooltip states for mobile
   const [showBalanceTooltip, setShowBalanceTooltip] = useState(false);
@@ -497,9 +489,7 @@ const Dashboard = () => {
       if (result.success) {
         toast.success(`Added expense of Rs ${data.amount.toLocaleString()}`);
         if (result.transaction) {
-          setSuccessTransaction(result.transaction);
-          setSuccessType("expense");
-          setShowSuccessSheet(true);
+          navigate("/receipt", { state: { transaction: result.transaction, type: "expense" } });
         }
       } else {
         toast.error(result.error || "Failed to add expense");
@@ -537,9 +527,7 @@ const Dashboard = () => {
           `Recorded Rs ${data.amount.toLocaleString()} from ${memberName}`,
         );
         if (result.transaction) {
-          setSuccessTransaction(result.transaction);
-          setSuccessType("payment");
-          setShowSuccessSheet(true);
+          navigate("/receipt", { state: { transaction: result.transaction, type: "payment" } });
         }
       } else {
         toast.error(result.error || "Failed to record payment");
@@ -2254,16 +2242,6 @@ const Dashboard = () => {
           }}
           member={selectedMemberForPayment}
           onConfirmPayment={handlePaymentConfirmation}
-        />
-
-        <TransactionSuccessSheet
-          open={showSuccessSheet}
-          onClose={() => {
-            setShowSuccessSheet(false);
-            setSuccessTransaction(null);
-          }}
-          transaction={successTransaction}
-          type={successType}
         />
       </AppContainer>
     </>
