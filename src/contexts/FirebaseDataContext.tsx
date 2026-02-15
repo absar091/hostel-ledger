@@ -38,7 +38,7 @@ const normalizeMembers = (members: any, currentUserId?: string): any[] => {
     return membersArray.map((m: any) => {
       // Check both id and userId key for a match
       if (m.id === currentUserId || m.userId === currentUserId) {
-        return { ...m, name: "You", isCurrentUser: true };
+        return { ...m, name: "You", isCurrentUser: true, isPending: false };
       }
 
       // Fix for legacy groups where creator was stored as "You"

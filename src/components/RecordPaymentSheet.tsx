@@ -22,6 +22,9 @@ interface Member {
   };
   phone?: string;
   isTemporary?: boolean;
+  isCurrentUser?: boolean;
+  isPending?: boolean;
+  userId?: string;
 }
 
 interface Group {
@@ -29,6 +32,7 @@ interface Group {
   name: string;
   emoji: string;
   members: Member[];
+  createdBy?: string;
 }
 
 interface RecordPaymentSheetProps {
@@ -60,7 +64,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
     if (!group) return [];
 
     // Filter out "You"
-    const members = group.members.filter((m) => m.name !== "You");
+    const members = group.members.filter((m) => !m.isCurrentUser);
 
     // Sort by amount they owe (toReceive) descending
     const groupSettlements = getSettlements(selectedGroup);
@@ -283,6 +287,12 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                       <div className="flex-1 text-left min-w-0">
                         <div className="flex items-center gap-2">
                           <div className="font-black text-gray-900 tracking-tight truncate">{member.name}</div>
+                          {(member.id === selectedGroupData?.createdBy || (member as any).userId === selectedGroupData?.createdBy) && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                          )}
+                          {(member as any).isPending && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited</span>
+                          )}
                           {member.isTemporary && (
                             <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
                           )}
@@ -323,7 +333,15 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   <div className="flex items-center gap-3 mb-3">
                     <Avatar name={selectedMemberData.name} size="sm" />
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-black text-gray-900 text-base tracking-tight truncate">{selectedMemberData.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-black text-gray-900 text-base tracking-tight truncate">{selectedMemberData.name}</h3>
+                        {(selectedMemberData.id === selectedGroupData?.createdBy || (selectedMemberData as any).userId === selectedGroupData?.createdBy) && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                        )}
+                        {(selectedMemberData as any).isPending && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited</span>
+                        )}
+                      </div>
                       <div className="text-xs font-bold truncate">
                         {selectedMemberData.settlement.toReceive > 0 ? (
                           <span className="text-[#4a6850]">

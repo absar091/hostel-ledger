@@ -15,6 +15,9 @@ interface MemberSettlementSheetProps {
     name: string;
     avatar?: string;
     isTemporary?: boolean;
+    isOwner?: boolean;
+    isPending?: boolean;
+    isCurrentUser?: boolean;
   };
   groupId: string;
 }
@@ -128,6 +131,12 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-black text-gray-900 text-sm truncate">{member.name}</span>
+                {member.isOwner && (
+                  <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                )}
+                {member.isPending && !member.isCurrentUser && (
+                  <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited</span>
+                )}
                 {member.isTemporary && (
                   <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
                 )}

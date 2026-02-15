@@ -508,9 +508,8 @@ const calculateExpenseSettlements = (splits, payerId) => {
   const debts = [];
   const payerSplit = splits.find(s => s.participantId === payerId);
 
-  if (!payerSplit) {
-    throw new Error("Payer must be a participant");
-  }
+  // If payer is NOT a participant, they are just a "creditor" for the whole amount
+  // No error should be thrown, as it's a valid use case (e.g., someone paying for others)
 
   splits.forEach(split => {
     if (split.participantId !== payerId) {
@@ -1123,7 +1122,7 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${oneSignalApiKey}`
+        'Authorization': `Basic ${oneSignalApiKey.trim()}`
       },
       body: JSON.stringify(notificationData)
     });
@@ -1228,7 +1227,7 @@ const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, b
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Basic ${oneSignalApiKey}`
+      'Authorization': `Basic ${oneSignalApiKey.trim()}`
     },
     body: JSON.stringify(notificationData)
   });
@@ -1555,127 +1554,81 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     // 6. Execute Atomic Update
     await db.ref().update(updates);
 
-    // 7. Success Response
-    res.json({
-      success: true,
-      transactionId,
-      transaction: newTransaction
-    });
+    // 7. Await Notifications (CRITICAL for Vercel/Serverless)
+    // Run them BEFORE res.json to ensure the process isn't killed before they finish
+    console.log('🚀 Triggering Notifications for Transaction:', transactionId);
 
-    // 8. Notifications (Async - Fire and Forget)
-    setImmediate(async () => {
-      console.log('🚀 Starting Async Notifications for Transaction:', transactionId);
-
-      // Run Push and Email in parallel so one doesn't block the other
-      const notifications = [];
+    try {
+      // Run Push and Email in parallel
+      const notificationPromises = [];
 
       // A. Push Notifications (OneSignal)
       const membersWithUserId = membersArray.filter(m => m.userId);
       if (membersWithUserId.length > 0) {
-        console.log(`🔔 Queuing Push Notifications for ${membersWithUserId.length} users`);
         const userIds = membersWithUserId.map(m => m.userId);
-        notifications.push(
+        notificationPromises.push(
           sendOneSignalNotificationInternal({
             userIds,
             title: `New Expense in ${group.name}`,
             body: `${payer.name} paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`,
             data: { type: 'expense', transactionId, groupId, amount }
           })
-            .then(() => console.log('✅ Push Notifications Sent Successfully'))
+            .then(() => console.log('✅ Push Notifications Promise Resolved'))
             .catch(err => console.error('⚠️ OneSignal Push failed:', err.message))
         );
       }
 
       // B. Email Notifications
-      // B. Email Notifications
-      // Modified: Send to ALL members with email (including payer) per user request
-      // CRITICAL UPDATE: Exclude pending members to protect privacy until they join
       const participantsWithEmail = membersArray.filter(m => m.email && !m.isPending);
-
-      console.log('🔍 Debug: All Group Members:', membersArray.map(m => ({ name: m.name, email: m.email || 'No Email' })));
-
-      // Filter out users who have disabled email notifications
-      const recipientsWithPreference = [];
-
       if (participantsWithEmail.length > 0) {
-        console.log(`📧 Checking preferences for ${participantsWithEmail.length} potential recipients...`);
-
-        for (const participant of participantsWithEmail) {
-          try {
-            // Check user preference
-            let emailEnabled = true; // Default to true
+        notificationPromises.push((async () => {
+          const recipientsWithPreference = [];
+          for (const participant of participantsWithEmail) {
+            let emailEnabled = true;
             if (participant.userId) {
-              console.log(`   🔸 Checking for ${participant.email}...`);
-
-              // Wrap Firestore call in a timeout to prevent hanging
-              const getPreferences = async () => {
-                return admin.firestore().doc(`users/${participant.userId}/preferences/notifications`).get();
-              };
-
-              const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 5000));
-
               try {
+                const getPreferences = async () => admin.firestore().doc(`users/${participant.userId}/preferences/notifications`).get();
+                const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 3000));
                 const prefSnap = await Promise.race([getPreferences(), timeout]);
-
-                if (prefSnap.exists) {
-                  const prefs = prefSnap.data();
-                  if (prefs.emailEnabled === false) {
-                    emailEnabled = false;
-                    console.log(`   🔕 User ${participant.name} (${participant.email}) has disabled email notifications.`);
-                  } else {
-                    console.log(`   ✅ User ${participant.name} has enabled email notifications (explicit or default).`);
-                  }
-                } else {
-                  console.log(`   ℹ️ No preferences found for ${participant.name}, defaulting to ENABLED.`);
-                }
-              } catch (err) {
-                console.warn(`   ⚠️ Preference check failed/timed out for ${participant.email}: ${err.message}. Defaulting to ENABLED.`);
-              }
-            } else {
-              console.log(`   ℹ️ User ${participant.name} has no userId, defaulting to ENABLED.`);
+                if (prefSnap.exists && prefSnap.data().emailEnabled === false) emailEnabled = false;
+              } catch (err) { /* default to enabled on timeout/error */ }
             }
-
-            if (emailEnabled) {
-              recipientsWithPreference.push(participant);
-            }
-          } catch (prefErr) {
-            console.error(`⚠️ Error checking preferences for ${participant.email}, defaulting to ENABLED:`, prefErr.message);
-            recipientsWithPreference.push(participant);
+            if (emailEnabled) recipientsWithPreference.push(participant);
           }
-        }
+
+          if (recipientsWithPreference.length > 0) {
+            const results = await Promise.allSettled(recipientsWithPreference.map(recipient => {
+              const split = splits.find(s => s.participantId === recipient.id);
+              return emailService.sendExpenseNotification(recipient.email, {
+                payerName: payer.name,
+                amount: amount.toLocaleString(),
+                title: note || 'Expense',
+                splitAmount: split ? split.amount.toLocaleString() : '0',
+                date: new Date(newTransaction.date).toLocaleDateString(),
+                groupName: group.name,
+                groupId: groupId,
+                note: note || ''
+              });
+            }));
+            const successCount = results.filter(r => r.status === 'fulfilled' && r.value?.success).length;
+            console.log(`✅ Sent ${successCount}/${recipientsWithPreference.length} expense emails`);
+          }
+        })());
       }
 
-      console.log(`📧 Found ${recipientsWithPreference.length} valid email recipients (Preferences checked)`);
+      // Wait for all notifications (or at least attempt them) with a global timeout for safety
+      const globalTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Global notification timeout')), 8000));
+      await Promise.race([Promise.allSettled(notificationPromises), globalTimeout]).catch(e => console.warn('⚠️ Notifications timed out or failed partially:', e.message));
 
-      if (recipientsWithPreference.length > 0) {
-        notifications.push((async () => {
-          console.log(`📧 Starting email sending loop for ${recipientsWithPreference.length} members...`);
+    } catch (notifErr) {
+      console.error('⚠️ Notification process failed:', notifErr.message);
+    }
 
-          const results = await Promise.allSettled(recipientsWithPreference.map(recipient => {
-            const split = splits.find(s => s.participantId === recipient.id);
-            const shareAmount = split ? split.amount : 0;
-            const isParticipant = participants.includes(recipient.id);
-
-            return emailService.sendExpenseNotification(recipient.email, {
-              payerName: payer.name,
-              amount: amount.toLocaleString(),
-              title: note || 'Expense',
-              splitAmount: isParticipant ? shareAmount.toLocaleString() : '0',
-              date: new Date(newTransaction.date).toLocaleDateString(),
-              groupName: group.name,
-              groupId: groupId,
-              note: note || ''
-            });
-          }));
-
-          const successCount = results.filter(r => r.status === 'fulfilled' && r.value && r.value.success).length;
-          console.log(`✅ Sent ${successCount}/${recipientsWithPreference.length} expense emails`);
-        })().catch(err => console.error('⚠️ Critical Email sending process failed:', err.message)));
-      }
-
-
-      await Promise.allSettled(notifications);
-      console.log('🏁 All Async Notifications Processed');
+    // 8. Success Response
+    res.json({
+      success: true,
+      transactionId,
+      transaction: newTransaction
     });
 
   } catch (error) {
@@ -1898,59 +1851,58 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     // 5. Execute Atomic Update
     await db.ref().update(updates);
 
-    // 6. Success Response
-    res.json({
-      success: true,
-      transactionId,
-      transaction: newTransaction
-    });
+    // 7. Notifications (Awaited for Vercel/Serverless)
+    console.log('🚀 Triggering Notifications for Payment:', transactionId);
+    try {
+      const notificationPromises = [];
 
-    // 7. Notifications (Async - Send to ALL group members)
-    setImmediate(async () => {
-      try {
-        // A. Push Notifications (OneSignal)
-        const membersWithUserId = membersArray.filter(m => m.userId);
-        if (membersWithUserId.length > 0) {
-          const userIds = membersWithUserId.map(m => m.userId);
-          await sendOneSignalNotificationInternal({
+      // A. Push Notifications (OneSignal)
+      const membersWithUserId = membersArray.filter(m => m.userId);
+      if (membersWithUserId.length > 0) {
+        const userIds = membersWithUserId.map(m => m.userId);
+        notificationPromises.push(
+          sendOneSignalNotificationInternal({
             userIds,
             title: `Payment Recorded in ${group.name}`,
             body: isPaying
               ? `${user.name} paid Rs ${amount.toLocaleString()} to ${toPerson.name}`
               : `${fromPerson.name} paid Rs ${amount.toLocaleString()} to ${user.name}`,
-            data: {
-              type: 'payment',
-              transactionId,
-              groupId,
-              amount
-            }
-          });
-        }
-
-        // B. Email Notifications (Send to counterparty)
-        if (otherPerson && otherPerson.email) {
-          console.log(`📧 Sending payment email to counterparty: ${otherPerson.email}`);
-
-          try {
-            await emailService.sendTransactionAlert({
-              email: otherPerson.email,
-              name: otherPerson.name,
-              transactionType: 'payment',
-              amount: amount.toLocaleString(),
-              groupName: group.name,
-              date: newTransaction.date,
-              description: isPaying
-                ? `You received Rs ${amount.toLocaleString()} from ${user.name}.`
-                : `You paid Rs ${amount.toLocaleString()} to ${user.name}.`
-            });
-            console.log(`📧 Payment notification sent via emailService to ${otherPerson.email}`);
-          } catch (emailErr) {
-            console.error(`❌ Failed to send payment email to ${otherPerson.email}:`, emailErr.message);
-          }
-        }
-      } catch (notifyError) {
-        console.error('⚠️ Async notification failed:', notifyError);
+            data: { type: 'payment', transactionId, groupId, amount }
+          })
+            .catch(err => console.error('⚠️ Payment Push failed:', err.message))
+        );
       }
+
+      // B. Email Notifications (Send to counterparty)
+      if (otherPerson && otherPerson.email) {
+        notificationPromises.push(
+          emailService.sendTransactionAlert({
+            email: otherPerson.email,
+            name: otherPerson.name,
+            transactionType: 'payment',
+            amount: amount.toLocaleString(),
+            groupName: group.name,
+            date: newTransaction.date,
+            description: isPaying
+              ? `You received Rs ${amount.toLocaleString()} from ${user.name}.`
+              : `You paid Rs ${amount.toLocaleString()} to ${user.name}.`
+          })
+            .catch(err => console.error('⚠️ Payment Email failed:', err.message))
+        );
+      }
+
+      // Wait for notifications with a timeout
+      const globalTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Notification timeout')), 8000));
+      await Promise.race([Promise.allSettled(notificationPromises), globalTimeout]).catch(e => console.warn('⚠️ Notifications took too long:', e.message));
+    } catch (notifErr) {
+      console.error('⚠️ Payment Notification process failed:', notifErr.message);
+    }
+
+    // 8. Success Response
+    res.json({
+      success: true,
+      transactionId,
+      transaction: newTransaction
     });
 
   } catch (error) {
@@ -2252,35 +2204,36 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
 
     await db.ref().update(updates);
 
-    // 5. Send Notification (Async)
-    setImmediate(async () => {
-      try {
-        // Send Push Notification
-        await sendOneSignalNotificationInternal({
+    // 5. Send Notification (Awaited for Vercel/Serverless)
+    try {
+      const notificationPromises = [];
+
+      // Push Notification
+      notificationPromises.push(
+        sendOneSignalNotificationInternal({
           userIds: [inviteeUid],
           title: "New Group Invitation! 🏠",
           body: `${senderName} invited you to join "${group.name}"`,
           data: { type: 'invitation', invitationId, groupId }
-        });
-      } catch (err) {
-        console.error("Failed to send invitation push:", err.message);
-      }
+        })
+          .catch(err => console.error("Invitation push failed:", err.message))
+      );
 
-      // Send Email Invitation
-      try {
-        const userRecord = await admin.auth().getUser(inviteeUid);
-        if (userRecord.email) {
-          await emailService.sendInvitation(
-            userRecord.email,
-            senderName,
-            group.name,
-            "https://app.hostelledger.aarx.online"
-          );
-        }
-      } catch (emailError) {
-        console.error("Failed to send invitation email:", emailError.message);
-      }
-    });
+      // Email Invitation
+      notificationPromises.push((async () => {
+        try {
+          const userRecord = await admin.auth().getUser(inviteeUid);
+          if (userRecord.email) {
+            await emailService.sendInvitation(userRecord.email, senderName, group.name, "https://app.hostelledger.aarx.online");
+          }
+        } catch (e) { console.error("Invitations email inner failed:", e.message); }
+      })());
+
+      const globalTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Invite timeout')), 8000));
+      await Promise.race([Promise.allSettled(notificationPromises), globalTimeout]).catch(e => console.warn("Invitation notifications timed out"));
+    } catch (notifErr) {
+      console.error("Invitation notifications failed overall:", notifErr.message);
+    }
 
     res.json({ success: true, message: 'Invitation sent successfully' });
 

@@ -427,7 +427,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                             {(member.id === fullGroupData?.createdBy || (member as any).userId === fullGroupData?.createdBy) && (
                               <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
                             )}
-                            {member.isPending && (
+                            {member.isPending && !member.isCurrentUser && (
                               <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited</span>
                             )}
                           </div>
@@ -493,7 +493,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                               {(member.id === fullGroupData?.createdBy || (member as any).userId === fullGroupData?.createdBy) && (
                                 <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
                               )}
-                              {member.isPending && (
+                              {member.isPending && !member.isCurrentUser && (
                                 <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited</span>
                               )}
                             </div>

@@ -448,6 +448,9 @@ const GroupDetail = () => {
                   id: member.id,
                   name: member.name,
                   isTemporary: member.isTemporary,
+                  isOwner: member.userId === group.createdBy || member.id === group.createdBy,
+                  isPending: member.isPending,
+                  isCurrentUser: member.isCurrentUser,
                 });
                 setShowMemberSettlement(true);
               };
@@ -473,7 +476,7 @@ const GroupDetail = () => {
                         {member.isTemporary && (
                           <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
                         )}
-                        {member.isPending && (
+                        {member.isPending && !isYou && (
                           <span className="px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-600 text-[10px] font-black uppercase tracking-wider">Pending</span>
                         )}
                         {(member.userId === group.createdBy || member.id === group.createdBy) && (
