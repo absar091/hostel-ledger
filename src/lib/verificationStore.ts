@@ -14,6 +14,30 @@ import {
 } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 
+const toBase64 = (value: string): string => {
+  if (typeof globalThis.btoa === 'function') {
+    return globalThis.btoa(value);
+  }
+
+  return Buffer.from(value, 'binary').toString('base64');
+};
+
+const utf8ToBinary = (value: string): string => {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+
+  bytes.forEach(byte => {
+    binary += String.fromCharCode(byte);
+  });
+
+  return binary;
+};
+
+export const createVerificationDocId = (email: string): string => {
+  const normalizedEmail = email.trim().toLowerCase();
+  return toBase64(utf8ToBinary(normalizedEmail)).replace(/[^a-zA-Z0-9]/g, '');
+};
+
 // Initialize Firebase app and Firestore directly in this file to avoid import issues
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDnbnq_aO1JHFshsY4RmBoU0NiHOqnq9mU",
@@ -49,7 +73,7 @@ class VerificationStore {
   
   // Generate document ID from email (hash for security)
   private getDocId(email: string): string {
-    return btoa(email.toLowerCase()).replace(/[^a-zA-Z0-9]/g, '');
+    return createVerificationDocId(email);
   }
   
   // Generate and store verification code in Firestore
