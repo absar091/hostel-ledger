@@ -336,6 +336,7 @@ const GroupDetail = () => {
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate("/")}
+              aria-label="Go back"
               className="w-11 h-11 rounded-2xl bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
             >
               <ArrowLeft className="w-5 h-5 text-[#4a6850] font-bold" />
@@ -353,6 +354,7 @@ const GroupDetail = () => {
 
             <button
               onClick={() => setShowGroupSettings(true)}
+              aria-label="Group settings"
               className="w-11 h-11 rounded-2xl bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
             >
               <Settings className="w-5 h-5 text-[#4a6850] font-bold" />
@@ -361,7 +363,7 @@ const GroupDetail = () => {
         </div>
 
         {/* Tabs - iPhone Style Enhanced */}
-        <div className="flex gap-2 px-4 pb-4">
+        <div className="flex gap-2 px-4 pb-4" role="tablist" aria-label="Group details tabs">
           {[
             { id: "ledger", label: "Ledger" },
             { id: "members", label: "Members" },
@@ -369,6 +371,10 @@ const GroupDetail = () => {
           ].map((tab) => (
             <button
               key={tab.id}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-controls={`panel-${tab.id}`}
+              id={`tab-${tab.id}`}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
               className={`flex-1 py-3 px-4 rounded-2xl text-sm font-black transition-all duration-200 ${activeTab === tab.id
                 ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] scale-105"
@@ -384,7 +390,12 @@ const GroupDetail = () => {
       {/* Content */}
       <main className="px-4 py-4">
         {activeTab === "ledger" && (
-          <div className="space-y-3 animate-fade-in">
+          <div
+            role="tabpanel"
+            id="panel-ledger"
+            aria-labelledby="tab-ledger"
+            className="space-y-3 animate-fade-in"
+          >
             {transactions.length > 0 ? (
               <div className="space-y-3">
                 {transactions.map((item, index) => (
@@ -440,7 +451,12 @@ const GroupDetail = () => {
         )}
 
         {activeTab === "members" && (
-          <div className="space-y-4 animate-fade-in">
+          <div
+            role="tabpanel"
+            id="panel-members"
+            aria-labelledby="tab-members"
+            className="space-y-4 animate-fade-in"
+          >
             {/* Pending Invitations Section */}
             {id && <GroupPendingInvitations groupId={id} />}
 
@@ -546,7 +562,12 @@ const GroupDetail = () => {
         )}
 
         {activeTab === "summary" && (
-          <div className="space-y-6 animate-fade-in">
+          <div
+            role="tabpanel"
+            id="panel-summary"
+            aria-labelledby="tab-summary"
+            className="space-y-6 animate-fade-in"
+          >
             {/* Total Spent Card - iPhone Style */}
             <div className="bg-gradient-to-br from-[#4a6850] via-[#3d5643] to-[#4a6850] rounded-3xl p-6 shadow-[0_25px_70px_rgba(74,104,80,0.4)] text-white border-t-2 border-[#5a7860]/40">
               <div className="flex items-center gap-3 mb-4">
