@@ -121,22 +121,24 @@ app.options('*', cors());
 
 app.use(express.json());
 
+const emailService = require('./services/emailService');
+
 // Rate limiting for email endpoints - very generous limits for testing
 const emailLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs (increased from 50)
+  max: 100, // limit each IP to 100 requests per windowMs
   message: {
     success: false,
     error: 'Too many email requests, please try again later.'
   },
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 // General rate limiter for API endpoints
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // limit each IP to 200 requests per windowMs (increased from 100)
+  max: 200, // limit each IP to 200 requests per windowMs
   message: {
     success: false,
     error: 'Too many requests, please try again later.'
@@ -145,191 +147,14 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Email Configuration (Nodemailer)
-// Primary: Zoho Mail (Official)
-const primaryTransporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.zoho.com',
-  port: parseInt(process.env.SMTP_PORT || '465'),
-  secure: true, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  },
-  connectionTimeout: 30000, // 30 seconds
-  greetingTimeout: 30000,   // 30 seconds
-  socketTimeout: 30000,      // 30 seconds
-  tls: {
-    rejectUnauthorized: true
-  }
-});
-
-// Fallback: Gmail (Backup)
-const fallbackTransporter = nodemailer.createTransport({
-  host: process.env.FALLBACK_SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.FALLBACK_SMTP_PORT || '465'), // Gmail SSL
-  secure: true,
-  auth: {
-    user: process.env.FALLBACK_SMTP_USER,
-    pass: process.env.FALLBACK_SMTP_PASS
-  },
-  connectionTimeout: 30000,
-  greetingTimeout: 30000,
-  socketTimeout: 30000,
-  tls: {
-    rejectUnauthorized: true
-  }
-});
-
-// Keep backward compatibility alias
-const transporter = primaryTransporter;
-
-// Smart email sender with automatic fallback
-async function sendMailWithFallback(mailOptions) {
-  // CRITICAL: Ensure 'from' matches authenticated user to prevent rejection/hanging
-  const primaryFrom = process.env.EMAIL_FROM || process.env.SMTP_USER;
-  const finalMailOptions = {
-    ...mailOptions,
-    from: primaryFrom // Override to ensure match
-  };
-
-  console.log(`📧 Attempting to send email to: ${mailOptions.to}`);
-  console.log(`   Detailed Info: From: ${primaryFrom}, Via: Primary (Zoho)`);
-
-  const sendWithTimeout = (transporter, options, timeoutMs = 30000) => {
-    return Promise.race([
-      transporter.sendMail(options),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Email sending timed out after ${timeoutMs}ms`)), timeoutMs)
-      )
-    ]);
-  };
-
-  try {
-    const result = await sendWithTimeout(primaryTransporter, finalMailOptions);
-    console.log('✅ Email sent via Primary (Zoho):', result.messageId);
-    return result;
-  } catch (primaryError) {
-    console.warn(`⚠️ Primary SMTP failed (${primaryError.code}): ${primaryError.message}`);
-    console.log('🔄 Attempting Fallback (Gmail)...');
-
-    if (process.env.FALLBACK_SMTP_USER) {
-      try {
-        const fallbackFrom = process.env.FALLBACK_EMAIL_FROM || process.env.FALLBACK_SMTP_USER;
-        const fallbackOptions = {
-          ...mailOptions,
-          from: fallbackFrom
-        };
-        console.log(`   Fallback Info: From: ${fallbackFrom}`);
-
-        const result = await sendWithTimeout(fallbackTransporter, fallbackOptions);
-        console.log('✅ Email sent via Fallback (Gmail):', result.messageId);
-        return result;
-      } catch (fallbackError) {
-        console.error('❌ Fallback SMTP also failed.');
-        console.error('❌ Primary Error:', primaryError.message);
-        console.error('❌ Fallback Error:', fallbackError.message);
-        throw new Error(`Email sending failed: ${fallbackError.message}`);
-      }
-    } else {
-      console.error('❌ Primary SMTP failed and no fallback configured:', primaryError.message);
-      throw primaryError;
-    }
-  }
-}
-
 // Verify email configuration on startup
-const verifyTransporter = async () => {
-  try {
-    console.log('🔍 Verifying Primary SMTP (Zoho)...');
-    await primaryTransporter.verify();
-    console.log('✅ Primary email server (Zoho) is ready');
-
-    console.log('📧 Primary SMTP User:', process.env.SMTP_USER);
-  } catch (error) {
-    console.error('❌ Primary email configuration error:', error.message);
-    // don't throw, just log
-  }
-
-  if (process.env.FALLBACK_SMTP_USER) {
-    try {
-      console.log('🔍 Verifying Fallback SMTP (Gmail)...');
-      await fallbackTransporter.verify();
-      console.log('✅ Fallback email server (Gmail) is ready');
-      console.log('📧 Fallback SMTP User:', process.env.FALLBACK_SMTP_USER);
-    } catch (error) {
-      console.error('❌ Fallback email configuration error:', error.message);
-    }
+emailService.verifyConnection().then(connected => {
+  if (connected) {
+    console.log('✅ Email Service Configured Successfully');
   } else {
-    console.log('ℹ️ No fallback SMTP configured (FALLBACK_SMTP_USER not set)');
+    console.warn('⚠️ Email Service Failed to Connect - Emails may not send');
   }
-};
-verifyTransporter();
-
-// Email Template Helper - Sleek, Simple, Green (#4a6850)
-const getStandardEmailTemplate = (title, contentLines, actionLink, actionText) => {
-  const logoUrl = 'https://app.hostelledger.aarx.online/hostel-ledger-logo.webp'; // Update with actual deployed logo URL
-
-  const footerText = `
-    <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid #e0e0e0; color: #888; font-size: 12px;">
-      <p style="margin-bottom: 8px;">
-        <a href="https://app.hostelledger.aarx.online/terms-of-service" style="color: #4a6850; text-decoration: none;">Terms of Service</a>
-        &nbsp;|&nbsp;
-        <a href="https://app.hostelledger.aarx.online/privacy-policy" style="color: #4a6850; text-decoration: none;">Privacy Policy</a>
-      </p>
-      <p style="margin: 0;">
-        You are receiving this email because you are a member of Hostel Ledger.
-        <br>
-        <a href="https://app.hostelledger.aarx.online/settings" style="color: #999; text-decoration: underline;">Manage Notification Preferences</a>
-      </p>
-      <p style="margin-top: 12px; font-size: 11px; color: #aaa;">
-        © ${new Date().getFullYear()} Hostel Ledger by AarX. All rights reserved.
-      </p>
-    </div>
-  `;
-
-  const actionButton = actionLink && actionText ? `
-    <div style="text-align: center; margin: 32px 0;">
-      <a href="${actionLink}" style="display: inline-block; background-color: #4a6850; color: white; padding: 14px 28px; text-decoration: none; border-radius: 50px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(74, 104, 80, 0.2);">
-        ${actionText}
-      </a>
-    </div>
-  ` : '';
-
-  const contentHtml = contentLines.map(line => `<div style="margin-bottom: 12px;">${line}</div>`).join('');
-
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        body { margin: 0; padding: 0; background-color: #f4f6f5; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
-        .header { text-align: center; margin-bottom: 32px; }
-        .logo { max-height: 48px; margin-bottom: 16px; }
-        .title { color: #1a1a1a; margin: 0; font-size: 24px; font-weight: 700; color: #4a6850; }
-        .content { color: #444; font-size: 16px; line-height: 1.6; }
-      </style>
-    </head>
-    <body style="background-color: #f4f6f5; padding: 20px 0;">
-      <div class="container" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 16px;">
-        <div class="header" style="text-align: center; margin-bottom: 32px;">
-          <img src="${logoUrl}" alt="Hostel Ledger" class="logo" style="max-height: 48px; margin-bottom: 16px;" onerror="this.style.display='none'">
-          <h1 class="title" style="margin: 0; font-size: 24px; font-weight: 700; color: #4a6850; letter-spacing: -0.5px;">${title}</h1>
-        </div>
-
-        <div class="content" style="color: #444; font-size: 16px; line-height: 1.6;">
-          ${contentHtml}
-          ${actionButton}
-        </div>
-
-        ${footerText}
-      </div>
-    </body>
-    </html>
-  `;
-};
+});
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -588,43 +413,30 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
       // Process Emails in Background
       setImmediate(async () => {
-        // Run emails concurrently
-        await Promise.allSettled(emailNotifications.map(async ({ inviteeUid, username }) => {
+        console.log('📧 Processing username invites...');
+        const results = await Promise.allSettled(emailNotifications.map(async ({ inviteeUid, username }) => {
           try {
+            // We need to fetch email from Auth or DB. DB is safer if we have it in users node.
+            // But existing code used admin.database().ref... let's stick to that but cleaner.
             const inviteeSnap = await admin.database().ref(`users/${inviteeUid}`).get();
             if (inviteeSnap.exists()) {
               const inviteeData = inviteeSnap.val();
-              const inviteeEmail = inviteeData.email;
-              const inviteeName = inviteeData.name || username;
-
-              if (inviteeEmail) {
-                const emailContent = [
-                  `Hello <strong>${inviteeName}</strong>,`,
-                  `<strong>${senderName}</strong> has invited you to join the group <strong>"${newGroup.name}"</strong> on Hostel Ledger.`,
-                  `Open the app to accept or decline this invitation.`
-                ];
-
-                const html = getStandardEmailTemplate(
-                  "You've been invited! 🎉",
-                  emailContent,
-                  "https://app.hostelledger.aarx.online",
-                  "Open Hostel Ledger"
+              if (inviteeData.email) {
+                return emailService.sendInvitation(
+                  inviteeData.email,
+                  senderName,
+                  newGroup.name,
+                  "https://app.hostelledger.aarx.online"
                 );
-
-                const mailOptions = {
-                  from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
-                  to: inviteeEmail,
-                  subject: `${senderName} invited you to join "${newGroup.name}" on Hostel Ledger`,
-                  html: html
-                };
-                await sendMailWithFallback(mailOptions);
-                console.log('✅ Invitation email sent to existing user:', inviteeUid);
               }
             }
-          } catch (emailErr) {
-            console.error(`❌ Failed to send invitation email to ${username}:`, emailErr);
+            // Fallback to Auth if not in DB? No, stick to existing logic for consistency.
+          } catch (err) {
+            console.error(`❌ Failed to send invite to ${username}:`, err.message);
           }
         }));
+        const successCount = results.filter(r => r.status === 'fulfilled' && r.value && r.value.success).length;
+        console.log(`✅ Sent ${successCount}/${emailNotifications.length} username invites`);
       });
     }
 
@@ -635,41 +447,20 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
       console.log(`📧 Sending ${emailMembers.length} email invites...`);
       const senderName = userName;
 
-      // Send emails in parallel
+      // Send emails in parallel (Non-blocking)
       setImmediate(async () => {
-        await Promise.allSettled(emailMembers.map(async (member) => {
-          try {
-            const inviteLink = `https://app.hostelledger.aarx.online/join/${groupId}?email=${encodeURIComponent(member.email)}`;
+        console.log('📧 Processing manual email invites...');
+        const results = await Promise.allSettled(emailMembers.map(member =>
+          emailService.sendInvitation(
+            member.email,
+            senderName,
+            newGroup.name,
+            `https://app.hostelledger.aarx.online/join/${groupId}?email=${encodeURIComponent(member.email)}`
+          )
+        ));
 
-            const emailContent = [
-              `Hello <strong>${member.name}</strong>,`,
-              `<strong>${senderName}</strong> has invited you to the group <strong>"${newGroup.name}"</strong> on Hostel Ledger - an app to easily split and track shared expenses.`,
-              `They've already added you as a member so you can start tracking expenses together immediately.`,
-              `<strong>Sign up now to:</strong>`,
-              `- See who owes what<br>- Track all shared expenses<br>- Settle debts easily`
-            ];
-
-            const html = getStandardEmailTemplate(
-              "You're invited to Hostel Ledger! 🎉",
-              emailContent,
-              inviteLink,
-              "Sign Up & Join Group"
-            );
-
-            const mailOptions = {
-              from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
-              to: member.email,
-              subject: `${senderName} wants to split expenses with you on Hostel Ledger!`,
-              html: html,
-              text: `You have been invited to join ${newGroup.name} on Hostel Ledger. Sign up here: ${inviteLink}`
-            };
-
-            await sendMailWithFallback(mailOptions);
-            console.log('✅ Email sent to manual member');
-          } catch (emailErr) {
-            console.error('❌ Failed to send email to member:', emailErr);
-          }
-        }));
+        const successCount = results.filter(r => r.status === 'fulfilled' && r.value && r.value.success).length;
+        console.log(`✅ Sent ${successCount}/${emailMembers.length} manual invites`);
       });
     }
 
@@ -1011,6 +802,7 @@ app.use('/api', (req, res, next) => {
 });
 
 // Generic email sending endpoint
+// Generic email sending endpoint
 app.post('/api/send-email', emailLimiter, async (req, res) => {
   try {
     const { to, subject, html, text } = req.body;
@@ -1032,23 +824,29 @@ app.post('/api/send-email', emailLimiter, async (req, res) => {
       });
     }
 
-    // Send email
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to: to,
-      subject: subject,
-      html: html,
+    // Send email using emailService
+    console.log('📧 Sending email via emailService...');
+    const result = await emailService.sendEmailSafe({
+      to,
+      subject,
+      html,
       text: text || ''
-    };
-
-    console.log('📧 Sending email...');
-    const result = await sendMailWithFallback(mailOptions);
-    console.log('✅ Email sent successfully:', result.messageId);
-
-    res.json({
-      success: true,
-      messageId: result.messageId
     });
+
+    if (result.success) {
+      console.log('✅ Email sent successfully:', result.messageId);
+      res.json({
+        success: true,
+        messageId: result.messageId,
+        provider: result.provider
+      });
+    } else {
+      console.error('❌ Failed to send email:', result.error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to send email: ' + result.error
+      });
+    }
 
   } catch (error) {
     console.error('❌ Email sending error:', error);
@@ -1060,102 +858,35 @@ app.post('/api/send-email', emailLimiter, async (req, res) => {
 });
 
 // Verification email endpoint
+// Verification email endpoint
 app.post('/api/send-verification', emailLimiter, async (req, res) => {
   try {
     const { email, code, name } = req.body;
-
     if (!email || !code || !name) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: email, code, name'
-      });
+      return res.status(400).json({ success: false, error: 'Missing required fields: email, code, name' });
     }
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Email Verification</title>
-        <style>
-          body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 0; background-color: #f0fdf4; }
-          .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-          .header { background: linear-gradient(135deg, #10b981, #059669); padding: 40px 20px; text-align: center; }
-          .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
-          .content { padding: 40px 20px; }
-          .verification-code { background: #f0fdf4; border: 2px solid #10b981; border-radius: 12px; padding: 20px; text-align: center; margin: 30px 0; }
-          .code { font-size: 36px; font-weight: 800; color: #059669; letter-spacing: 8px; margin: 10px 0; }
-          .footer { background-color: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1> Hostel Ledger</h1>
-            <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">Welcome to smart expense sharing!</p>
-          </div>
-          
-          <div class="content">
-            <h2 style="color: #1f2937; margin-bottom: 20px;">Hi ${name}! 👋</h2>
-            
-            <p style="color: #4b5563; line-height: 1.6; margin-bottom: 20px;">
-              Thanks for signing up for Hostel Ledger! We're excited to help you manage your shared expenses effortlessly.
-            </p>
-            
-            <p style="color: #4b5563; line-height: 1.6; margin-bottom: 20px;">
-              To complete your registration, please verify your email address using the code below:
-            </p>
-            
-            <div class="verification-code">
-              <p style="margin: 0; color: #059669; font-weight: 600;">Your Verification Code</p>
-              <div class="code">${code}</div>
-              <p style="margin: 0; color: #6b7280; font-size: 14px;">This code expires in 10 minutes</p>
-            </div>
-            
-            <p style="color: #4b5563; line-height: 1.6; margin-bottom: 20px;">
-              Simply enter this code in the app to verify your account and start splitting expenses with your friends!
-            </p>
-            
-            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px;">
-              <p style="margin: 0; color: #92400e; font-size: 14px;">
-                <strong>Security Note:</strong> If you didn't create an account with Hostel Ledger, please ignore this email.
-              </p>
-            </div>
-          </div>
-          
-          <div class="footer">
-            <p>© 2024 Hostel Ledger. Made with ❤️ for better expense sharing.</p>
-            <p>Need help? Contact us at support@hostelledger.com</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to: email,
-      subject: ' Verify Your Hostel Ledger Account',
-      html: html,
-      text: `Hi ${name}!\n\nYour verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nBest regards,\nHostel Ledger Team`
-    };
-
-    console.log('📧 Sending verification email...');
-    const result = await sendMailWithFallback(mailOptions);
-    console.log('✅ Verification email sent:', result.messageId);
-
-    res.json({
-      success: true,
-      messageId: result.messageId
-    });
-
+    await emailService.sendVerification(email, code, name);
+    console.log('✅ Verification email sent');
+    res.json({ success: true, message: 'Verification email sent successfully' });
   } catch (error) {
     console.error('❌ Verification email error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to send verification email: ' + error.message
-    });
+    res.status(500).json({ success: false, error: 'Failed to send verification email: ' + error.message });
+  }
+});
+
+// Alias for compatibility if needed (Frontend might be using this)
+app.post('/api/send-verification-new', emailLimiter, async (req, res) => {
+  try {
+    const { email, code, name } = req.body;
+    if (!email || !code || !name) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+    await emailService.sendVerification(email, code, name);
+    res.json({ success: true, message: 'Verification email sent successfully' });
+  } catch (e) {
+    console.error('❌ Verification email error:', e);
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
@@ -1163,89 +894,16 @@ app.post('/api/send-verification', emailLimiter, async (req, res) => {
 app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
   try {
     const { email, resetLink, name } = req.body;
-
     if (!email || !resetLink || !name) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: email, resetLink, name'
-      });
+      return res.status(400).json({ success: false, error: 'Missing required fields: email, resetLink, name' });
     }
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Password Reset</title>
-        <style>
-          body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 0; background-color: #f0fdf4; }
-          .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-          .header { background: linear-gradient(135deg, #10b981, #059669); padding: 40px 20px; text-align: center; }
-          .content { padding: 40px 20px; }
-          .button { display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 20px 0; }
-          .footer { background-color: #f9fafb; padding: 20px; text-align: center; color: #6b7280; font-size: 14px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1 style="color: white; margin: 0;"> Password Reset</h1>
-          </div>
-          
-          <div class="content">
-            <h2 style="color: #1f2937;">Hi ${name}!</h2>
-            
-            <p style="color: #4b5563; line-height: 1.6;">
-              We received a request to reset your password for your Hostel Ledger account.
-            </p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetLink}" class="button">Reset Password</a>
-            </div>
-            
-            <p style="color: #4b5563; line-height: 1.6; font-size: 14px;">
-              This link will expire in 1 hour for security reasons.
-            </p>
-            
-            <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin: 20px 0; border-radius: 4px;">
-              <p style="margin: 0; color: #dc2626; font-size: 14px;">
-                <strong>Security Note:</strong> If you didn't request this password reset, please ignore this email and your password will remain unchanged.
-              </p>
-            </div>
-          </div>
-          
-          <div class="footer">
-            <p>© 2024 Hostel Ledger. Keeping your account secure.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to: email,
-      subject: '🔑 Reset Your Hostel Ledger Password',
-      html: html,
-      text: `Hi ${name}!\n\nClick the link below to reset your password:\n${resetLink}\n\nThis link expires in 1 hour.\n\nBest regards,\nHostel Ledger Team`
-    };
-
-    console.log('📧 Sending password reset email...');
-    const result = await sendMailWithFallback(mailOptions);
-    console.log('✅ Password reset email sent:', result.messageId);
-
-    res.json({
-      success: true,
-      messageId: result.messageId
-    });
-
+    await emailService.sendPasswordReset(email, resetLink, name);
+    console.log('✅ Password reset email sent');
+    res.json({ success: true, message: 'Password reset email sent' });
   } catch (error) {
     console.error('❌ Password reset email error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to send password reset email: ' + error.message
-    });
+    res.status(500).json({ success: false, error: 'Failed to send password reset email: ' + error.message });
   }
 });
 
@@ -1253,58 +911,16 @@ app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
 app.post('/api/send-welcome', emailLimiter, async (req, res) => {
   try {
     const { email, name } = req.body;
-
     if (!email || !name) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: email, name'
-      });
+      return res.status(400).json({ success: false, error: 'Missing required fields: email, name' });
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid email address'
-      });
-    }
-
-    // Load and process welcome template
-    const html = await loadEmailTemplate('welcome', {
-      USER_NAME: name
-    });
-
-    if (!html) {
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to load email template'
-      });
-    }
-
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to: email,
-      subject: '🎉 Welcome to Hostel Ledger!',
-      html: html,
-      text: `Welcome to Hostel Ledger, ${name}!\n\nYour account has been successfully created and verified.\n\nYou can now start tracking shared expenses, settling balances, and managing hostel finances with ease.\n\nBest regards,\nHostel Ledger Team`
-    };
-
-    console.log('📧 Sending welcome email...');
-    const result = await sendMailWithFallback(mailOptions);
-    console.log('✅ Welcome email sent:', result.messageId);
-
-    res.json({
-      success: true,
-      messageId: result.messageId
-    });
-
+    await emailService.sendWelcome(email, name);
+    console.log('✅ Welcome email sent');
+    res.json({ success: true, message: 'Welcome email sent' });
   } catch (error) {
     console.error('❌ Welcome email error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to send welcome email: ' + error.message
-    });
+    res.status(500).json({ success: false, error: 'Failed to send welcome email: ' + error.message });
   }
 });
 
@@ -1316,121 +932,20 @@ app.post('/api/send-transaction-alert', emailLimiter, async (req, res) => {
     if (!email || !name || !transactionType || !amount || !groupName || !date || !description) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: email, name, transactionType, amount, groupName, date, description'
+        error: 'Missing required fields'
       });
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid email address'
-      });
-    }
-
-    // Load and process transaction alert template
-    const html = await loadEmailTemplate('transaction-alert', {
-      USER_NAME: name,
-      TRANSACTION_TYPE: transactionType,
-      AMOUNT: amount,
-      GROUP_NAME: groupName,
-      DATE: date,
-      DESCRIPTION: description
+    await emailService.sendTransactionAlert({
+      email, name, transactionType, amount, groupName, date, description
     });
 
-    if (!html) {
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to load email template'
-      });
-    }
-
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to: email,
-      subject: `Transaction Alert - ${transactionType} in ${groupName}`,
-      html: html,
-      text: `Transaction Alert\n\nHello ${name},\n\nA new transaction has been recorded on your Hostel Ledger account.\n\nType: ${transactionType}\nAmount: ${amount}\nGroup: ${groupName}\nDate: ${date}\nDescription: ${description}\n\nBest regards,\nHostel Ledger Team`
-    };
-
-    console.log('📧 Sending transaction alert email...');
-    const result = await sendMailWithFallback(mailOptions);
-    console.log('✅ Transaction alert email sent:', result.messageId);
-
-    res.json({
-      success: true,
-      messageId: result.messageId
-    });
+    console.log('✅ Transaction alert email sent');
+    res.json({ success: true, message: 'Transaction alert email sent' });
 
   } catch (error) {
     console.error('❌ Transaction alert email error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to send transaction alert email: ' + error.message
-    });
-  }
-});
-
-// Update verification email endpoint to use new template
-app.post('/api/send-verification-new', emailLimiter, async (req, res) => {
-  try {
-    const { email, code, name } = req.body;
-
-    if (!email || !code || !name) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: email, code, name'
-      });
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid email address'
-      });
-    }
-
-    const emailContent = [
-      `Hello <strong>${name}</strong>,`,
-      `Your verification code is:`,
-      `<div style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #4a6850; text-align: center; margin: 24px 0;">${code}</div>`,
-      `This code will expire in 10 minutes.`,
-      `If you didn't request this, please ignore this email.`
-    ];
-
-    const html = getStandardEmailTemplate(
-      'Verify Your Account',
-      emailContent,
-      null,
-      null
-    );
-
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to: email,
-      subject: 'Verify Your Hostel Ledger Account',
-      html: html,
-      text: `Hi ${name}!\n\nYour verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nBy using Hostel Ledger, you agree to our Terms & Conditions.`
-    };
-
-    console.log('📧 Sending verification email...');
-    const result = await sendMailWithFallback(mailOptions);
-    console.log('✅ Verification email sent:', result.messageId);
-
-    res.json({
-      success: true,
-      messageId: result.messageId
-    });
-
-  } catch (error) {
-    console.error('❌ Verification email error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to send verification email: ' + error.message
-    });
+    res.status(500).json({ success: false, error: 'Failed to send transaction alert email: ' + error.message });
   }
 });
 
@@ -2133,87 +1648,25 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
         notifications.push((async () => {
           console.log(`📧 Starting email sending loop for ${recipientsWithPreference.length} members...`);
 
-          // Switch to Sequential Sending to avoid SMTP connection limits/blocking
-          const emailResults = [];
+          const results = await Promise.allSettled(recipientsWithPreference.map(recipient => {
+            const split = splits.find(s => s.participantId === recipient.id);
+            const shareAmount = split ? split.amount : 0;
+            const isParticipant = participants.includes(recipient.id);
 
-          for (const recipient of recipientsWithPreference) {
-            console.log(`🔹 Preparing email for: ${recipient.email}`);
-            try {
-              const split = splits.find(s => s.participantId === recipient.id);
-              const shareAmount = split ? split.amount : 0;
+            return emailService.sendExpenseNotification(recipient.email, {
+              payerName: payer.name,
+              amount: amount.toLocaleString(),
+              title: note || 'Expense',
+              splitAmount: isParticipant ? `Rs ${shareAmount.toLocaleString()}` : 'Rs 0',
+              date: new Date(newTransaction.date).toLocaleDateString(),
+              groupName: group.name,
+              groupId: groupId,
+              note: note || ''
+            });
+          }));
 
-              const isParticipant = participants.includes(recipient.id);
-
-              const amountDisplay = isParticipant
-                ? `Rs ${shareAmount.toLocaleString()} (Your share of Rs ${amount.toLocaleString()})`
-                : `Rs ${amount.toLocaleString()} (Total Amount)`;
-
-              const emailContent = [
-                `<div style="text-align: center; margin-bottom: 24px;">
-                  <p style="font-size: 16px; margin-bottom: 8px;">Hi <strong>${recipient.name}</strong>,</p>
-                  <p style="font-size: 18px; color: #4a6850;">${payer.name} added a new expense in <strong>${group.name}</strong></p>
-                </div>`,
-
-                `<div style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 12px; padding: 24px; margin: 24px 0;">
-                  <div style="text-align: center; margin-bottom: 24px; border-bottom: 1px dashed #ced4da; padding-bottom: 16px;">
-                    <p style="margin: 0; color: #6c757d; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Total Amount</p>
-                    <p style="margin: 8px 0 0; font-size: 36px; font-weight: 700; color: #212529;">Rs ${amount.toLocaleString()}</p>
-                    <p style="margin: 4px 0 0; color: #adb5bd; font-size: 14px;">${new Date(newTransaction.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                  </div>
-
-                  <div style="margin-bottom: 16px;">
-                    <p style="margin: 0; color: #6c757d; font-size: 14px;">For</p>
-                    <p style="margin: 4px 0 0; font-size: 18px; color: #495057; font-weight: 500;">${note || 'Expense'}</p>
-                  </div>
-
-                  ${place ? `<div style="margin-bottom: 16px;">
-                    <p style="margin: 0; color: #6c757d; font-size: 14px;">At</p>
-                    <p style="margin: 4px 0 0; font-size: 16px; color: #495057;">${place}</p>
-                  </div>` : ''}
-
-                  <div style="background-color: ${isParticipant ? '#e8f5e9' : '#f8f9fa'}; padding: 16px; border-radius: 8px; margin-top: 20px;">
-                    <p style="margin: 0; color: #4a6850; font-size: 14px; font-weight: 600;">Your Share</p>
-                    <p style="margin: 4px 0 0; font-size: 24px; font-weight: 700; color: #2e7d32;">
-                      ${isParticipant ? `Rs ${shareAmount.toLocaleString()}` : 'Rs 0'}
-                    </p>
-                  </div>
-                </div>`,
-
-                `<div style="text-align: center;">
-                  <p style="color: #6c757d; font-size: 14px; margin: 0;">Paid by <strong>${payer.name}</strong></p>
-                </div>`
-              ];
-
-              const html = getStandardEmailTemplate(
-                'Expense Receipt',
-                emailContent,
-                'https://app.hostelledger.aarx.online',
-                'View Full Details'
-              );
-
-              const mailOptions = {
-                from: process.env.EMAIL_FROM || '"Hostel Ledger" <noreply@hostelledger.aarx.online>',
-                to: recipient.email,
-                subject: `Receipt: ${note || 'Expense'} - Rs ${amount.toLocaleString()}`,
-                html: html,
-                text: `Hi ${recipient.name}, a new expense for Rs ${amount.toLocaleString()} was added in ${group.name}. Your share is Rs ${shareAmount.toLocaleString()}. Paid by: ${payer.name}.`
-              };
-
-              console.log(`📨 Sending email to ${recipient.email}...`);
-              // Wait for one email to finish before starting the next
-              await sendMailWithFallback(mailOptions);
-              console.log(`✅ Email sent successfully to ${recipient.email}`);
-              emailResults.push({ email: recipient.email, status: 'Success' });
-            } catch (emailErr) {
-              console.error(`❌ Failed to send expense email to ${recipient.email}:`, emailErr.message);
-              emailResults.push({ email: recipient.email, status: 'Failed' });
-            }
-          }
-
-          console.log('🏁 Email sending loop finished. Results:',
-            emailResults.map(r => `${r.email} (${r.status})`).join(', ')
-          );
-
+          const successCount = results.filter(r => r.status === 'fulfilled' && r.value && r.value.success).length;
+          console.log(`✅ Sent ${successCount}/${recipientsWithPreference.length} expense emails`);
         })().catch(err => console.error('⚠️ Critical Email sending process failed:', err.message)));
       }
 
@@ -2813,35 +2266,22 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
           data: { type: 'invitation', invitationId, groupId }
         });
       } catch (err) {
-        console.error("Failed to send invitation notification", err);
+        console.error("Failed to send invitation push:", err.message);
       }
 
       // Send Email Invitation
       try {
         const userRecord = await admin.auth().getUser(inviteeUid);
-        const inviteeEmail = userRecord.email;
-
-        if (inviteeEmail) {
-          const html = await loadEmailTemplate('invitation', {
-            INVITEE_NAME: userRecord.displayName || normalizedUsername,
-            SENDER_NAME: senderName,
-            GROUP_NAME: group.name
-          });
-
-          if (html) {
-            await sendMailWithFallback({
-              from: `"Hostel Ledger" <${process.env.SMTP_USER}>`,
-              to: inviteeEmail,
-              subject: `${senderName} invited you to join "${group.name}" 🏠`,
-              html: html
-            });
-            console.log('📧 Invitation email sent to user:', inviteeUid);
-          } else {
-            console.warn("Invitation template not found or failed to load");
-          }
+        if (userRecord.email) {
+          await emailService.sendInvitation(
+            userRecord.email,
+            senderName,
+            group.name,
+            "https://app.hostelledger.aarx.online"
+          );
         }
       } catch (emailError) {
-        console.error("Failed to send invitation email:", emailError);
+        console.error("Failed to send invitation email:", emailError.message);
       }
     });
 
@@ -2894,25 +2334,15 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
     const senderName = senderSnap.exists() ? senderSnap.val().name : "A friend";
 
     // 3. Send Email
-    const html = await loadEmailTemplate('external-invitation', {
-      SENDER_NAME: senderName,
-      GROUP_NAME: group.name
-    });
+    await emailService.sendInvitation(
+      email,
+      senderName,
+      group.name,
+      `https://app.hostelledger.aarx.online/join/${groupId}`
+    );
+    console.log('📧 External invitation email sent');
 
-    if (html) {
-      await sendMailWithFallback({
-        from: `"Hostel Ledger" <${process.env.SMTP_USER}>`,
-        to: email,
-        subject: `${senderName} invited you to join "${group.name}" 🚀`,
-        html: html
-      });
-      console.log('📧 External invitation email sent');
-
-      res.json({ success: true, message: 'Invitation email sent successfully' });
-    } else {
-      console.error("External invitation template not found or failed to load");
-      res.status(500).json({ success: false, error: 'Email template error' });
-    }
+    res.json({ success: true, message: 'Invitation email sent successfully' });
 
   } catch (error) {
     console.error('❌ Send external invitation error:', error);
