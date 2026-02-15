@@ -313,6 +313,22 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     const userSnap = await admin.database().ref(`users/${userId}`).get();
     const userName = userSnap.exists() ? userSnap.val().name : "User";
 
+    // 1b. Resolve Invited Usernames (Existing Users)
+    const resolvedUsers = [];
+    if (invitedUsernames && invitedUsernames.length > 0) {
+      const resolved = await Promise.all(invitedUsernames.map(async (username) => {
+        const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
+        const s = await admin.database().ref(`usernames/${cleanUsername}`).get();
+        if (s.exists()) {
+          const uidData = s.val();
+          const inviteeUid = typeof uidData === 'string' ? uidData : (uidData?.uid || uidData?.userId || null);
+          if (inviteeUid) return { username, inviteeUid };
+        }
+        return null;
+      }));
+      resolvedUsers.push(...resolved.filter(u => u !== null));
+    }
+
     // 1. Create Group Object
     const newGroup = {
       id: groupId,
@@ -322,21 +338,41 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
       members: [
         {
           id: userId,
-          name: userName, // Store real name, not "You"
+          name: userName,
           isCurrentUser: true,
           userId: userId,
           paymentDetails: {},
           isAdmin: true
         },
+        // Existing Users (by username)
+        ...resolvedUsers.map(u => ({
+          id: u.inviteeUid, // Real UID
+          name: u.username,
+          userId: u.inviteeUid,
+          username: u.username,
+          type: 'manual', // Will become 'real' on accept
+          isPending: true,
+          invitedAt: new Date().toISOString()
+        })),
+        // Manual Members from array
         ...members.map(m => ({
           id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
           name: m.name,
-          userId: m.uid || null, // If real user
+          userId: m.uid || null,
           username: m.username || null,
           type: m.type || 'manual',
-          email: m.email || null, // Persist email for pending status
-          isPending: !!m.email,   // Mark as pending if email exists
+          email: m.email || null,
+          isPending: !!m.email,
           invitedAt: m.email ? new Date().toISOString() : null
+        })),
+        // Invited Emails (pure string array)
+        ...(invitedEmails || []).map(email => ({
+          id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          name: email.split('@')[0],
+          email: email,
+          type: 'manual',
+          isPending: true,
+          invitedAt: new Date().toISOString()
         }))
       ],
       createdBy: userId,
@@ -357,55 +393,35 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     });
 
     // 4. Handle Invited Usernames (send invitations to existing users)
-    if (invitedUsernames && invitedUsernames.length > 0) {
-      // Optimization: reused fetched name
+    if (resolvedUsers.length > 0) {
       const senderName = userName;
       const updates = {};
       const emailNotifications = [];
 
-      // Parallel Resolve Usernames
-      const resolvedUsers = await Promise.all(invitedUsernames.map(async (username) => {
-        // Sanitize username to prevent path traversal
-        const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
-        const usernameRef = admin.database().ref(`usernames/${cleanUsername}`);
-        const s = await usernameRef.get();
-        if (s.exists()) {
-          const uidData = s.val();
-          const inviteeUid = typeof uidData === 'string' ? uidData : (uidData?.uid || uidData?.userId || null);
-          return { username, inviteeUid };
-        }
-        return null;
-      }));
-
-      // Build Updates
       resolvedUsers.forEach(user => {
-        if (!user || !user.inviteeUid) return;
         const { username, inviteeUid } = user;
 
-        // Create invitation
+        // Create invitation record
         const invRef = admin.database().ref('invitations').push();
         const invitationData = {
           id: invRef.key,
-          invitationId: invRef.key, // Alias for frontend compatibility
+          invitationId: invRef.key,
           groupId,
           groupName: newGroup.name,
           groupEmoji: newGroup.emoji,
           senderId: userId,
           senderName,
-          invitedBy: senderName, // Alias for frontend
+          invitedBy: senderName,
           receiverId: inviteeUid,
-          receiverName: username, // Username of the invited user
+          receiverName: username,
           status: 'pending',
           createdAt: new Date().toISOString()
         };
 
-        // Batch updates
         updates[`invitations/${invRef.key}`] = invitationData;
         updates[`userInvitations/${inviteeUid}/${invRef.key}`] = invitationData;
 
-        console.log(`✅ Invitation prepared for user ${inviteeUid} to group ${groupId}`);
-
-        // Queue for email
+        console.log(`✅ Invitation prepared for user ${inviteeUid} (existing app user)`);
         emailNotifications.push({ inviteeUid, username });
       });
 
@@ -414,7 +430,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
         await admin.database().ref().update(updates);
       }
 
-      // 4b. Collect Email Promises
+      // Collect Email Promises
       const usernameInvitePromises = emailNotifications.map(async ({ inviteeUid, username }) => {
         try {
           const inviteeSnap = await admin.database().ref(`users/${inviteeUid}`).get();
