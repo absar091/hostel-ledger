@@ -423,6 +423,18 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
         updates[`invitations/${invRef.key}`] = invitationData;
         updates[`userInvitations/${inviteeUid}/${invRef.key}`] = invitationData;
 
+        // GRANT READ ACCESS: Add to userGroups with status 'invited'
+        updates[`userGroups/${inviteeUid}/${groupId}`] = {
+          name: newGroup.name,
+          emoji: newGroup.emoji,
+          coverPhoto: newGroup.coverPhoto || null,
+          memberCount: newGroup.members.length, // Initial count
+          createdBy: userId,
+          createdAt: newGroup.createdAt,
+          status: 'invited', // Access Key
+          invitedAt: new Date().toISOString()
+        };
+
         console.log(`✅ Invitation prepared for user ${inviteeUid} (existing app user)`);
         emailNotifications.push({ inviteeUid, username });
       });
@@ -2337,6 +2349,19 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
       updates[`groups/${groupId}/members`] = updatedMembers;
       // Also update index count for owner
       updates[`userGroups/${senderUid}/${groupId}/memberCount`] = updatedMembers.length;
+
+      // GRANT READ ACCESS: Add to userGroups of the invitee
+      updates[`userGroups/${inviteeUid}/${groupId}`] = {
+        name: group.name,
+        emoji: group.emoji,
+        coverPhoto: group.coverPhoto || null,
+        memberCount: updatedMembers.length,
+        createdBy: group.createdBy || '',
+        createdAt: group.createdAt || now,
+        status: 'invited', // Access Key
+        invitedAt: now
+      };
+
       console.log(`➕ Adding new pending member (type: invited) to group list`);
     }
 
