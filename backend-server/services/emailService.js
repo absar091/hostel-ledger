@@ -3,11 +3,11 @@ const nodemailer = require('nodemailer');
 // Environment variables should be checked at startup
 const SMTP_CONFIG = {
     primary: {
-        host: process.env.SMTP_HOST || 'smtp.zoho.in',
+        host: (process.env.SMTP_HOST || 'smtp.zoho.in').trim(),
         port: parseInt(process.env.SMTP_PORT) || 465,
         secure: true,
         auth: {
-            user: process.env.SMTP_USER,
+            user: (process.env.SMTP_USER || '').trim(),
             pass: (process.env.SMTP_PASS || '').replace(/\s+/g, '') // Trim spaces automatically
         },
         connectionTimeout: 30000,
@@ -15,11 +15,11 @@ const SMTP_CONFIG = {
         socketTimeout: 30000
     },
     fallback: {
-        host: process.env.FALLBACK_SMTP_HOST || 'smtp.gmail.com',
+        host: (process.env.FALLBACK_SMTP_HOST || 'smtp.gmail.com').trim(),
         port: parseInt(process.env.FALLBACK_SMTP_PORT) || 465,
         secure: true,
         auth: {
-            user: process.env.FALLBACK_SMTP_USER,
+            user: (process.env.FALLBACK_SMTP_USER || '').trim(),
             pass: (process.env.FALLBACK_SMTP_PASS || '').replace(/\s+/g, '')
         }
     }
