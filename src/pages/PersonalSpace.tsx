@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useP2PTransactions, P2PTransaction } from "@/hooks/useP2PTransactions";
+import { useP2PTransactions } from "@/hooks/useP2PTransactions";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,8 +10,12 @@ import SendMoneySheet from "@/components/SendMoneySheet";
 import Avatar from "@/components/Avatar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useTranslation } from "react-i18next";
 
 export default function PersonalSpace() {
+    const { t } = useTranslation();
+    const { formatAmount } = useCurrency();
     const navigate = useNavigate();
     const { user } = useFirebaseAuth();
     const {
@@ -41,9 +45,9 @@ export default function PersonalSpace() {
                     <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="-ml-2">
                         <ArrowLeft className="w-6 h-6 text-gray-700" />
                     </Button>
-                    <h1 className="text-2xl font-bold text-gray-900">Money Transfers</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">{t('money_transfer.title')}</h1>
                 </div>
-                <p className="text-gray-500 text-sm ml-10">Send loans or split costs with friends</p>
+                <p className="text-gray-500 text-sm ml-10">{t('money_transfer.subtitle')}</p>
             </div>
 
             <div className="p-4 space-y-6 max-w-md mx-auto">
@@ -52,7 +56,7 @@ export default function PersonalSpace() {
                 {pendingIncoming.length > 0 && (
                     <div className="space-y-3 animate-in slide-in-from-bottom-2">
                         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                            <Clock className="w-4 h-4" /> Pending Requests
+                            <Clock className="w-4 h-4" /> {t('money_transfer.pending_requests')}
                         </h2>
                         {pendingIncoming.map((tx) => (
                             <Card key={tx.id} className="border-l-4 border-l-blue-500 shadow-sm overflow-hidden">
@@ -62,13 +66,13 @@ export default function PersonalSpace() {
                                             <Avatar name={tx.senderName} size="sm" />
                                             <div>
                                                 <p className="font-medium text-gray-900 line-clamp-1">
-                                                    Received from <span className="font-bold">{tx.senderName}</span>
+                                                    {t('money_transfer.received_from')} <span className="font-bold">{tx.senderName}</span>
                                                 </p>
                                                 <p className="text-xs text-gray-500">{format(tx.timestamp, 'MMM d, h:mm a')}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <span className="block text-lg font-bold text-green-600">+Rs {tx.amount.toLocaleString()}</span>
+                                            <span className="block text-lg font-bold text-green-600">+{formatAmount(tx.amount)}</span>
                                         </div>
                                     </div>
 
@@ -86,7 +90,7 @@ export default function PersonalSpace() {
                                             onClick={() => handleResponse(tx.id, false)}
                                             disabled={!!processingId}
                                         >
-                                            {processingId === tx.id ? "..." : <><X className="w-4 h-4 mr-1" /> Reject</>}
+                                            {processingId === tx.id ? "..." : <><X className="w-4 h-4 mr-1" /> {t('money_transfer.reject')}</>}
                                         </Button>
                                         <Button
                                             size="sm"
@@ -94,7 +98,7 @@ export default function PersonalSpace() {
                                             onClick={() => handleResponse(tx.id, true)}
                                             disabled={!!processingId}
                                         >
-                                            {processingId === tx.id ? "Processing..." : <><Check className="w-4 h-4 mr-1" /> Accept Money</>}
+                                            {processingId === tx.id ? t('money_transfer.processing') : <><Check className="w-4 h-4 mr-1" /> {t('money_transfer.accept')}</>}
                                         </Button>
                                     </div>
                                 </CardContent>
@@ -107,7 +111,7 @@ export default function PersonalSpace() {
                 {pendingOutgoing.length > 0 && (
                     <div className="space-y-3">
                         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                            <Clock className="w-4 h-4" /> Sent Requests (Waiting)
+                            <Clock className="w-4 h-4" /> {t('money_transfer.sent_requests')}
                         </h2>
                         {pendingOutgoing.map((tx) => (
                             <Card key={tx.id} className="border-l-4 border-l-yellow-400 shadow-sm opacity-90">
@@ -116,14 +120,14 @@ export default function PersonalSpace() {
                                         <Avatar name={tx.receiverName} size="sm" />
                                         <div>
                                             <p className="font-medium text-gray-900">
-                                                To <span className="font-bold">{tx.receiverName}</span>
+                                                {t('money_transfer.to')} <span className="font-bold">{tx.receiverName}</span>
                                             </p>
                                             <p className="text-xs text-gray-500">{format(tx.timestamp, 'MMM d')}</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <span className="block font-bold text-gray-900">Rs {tx.amount.toLocaleString()}</span>
-                                        <span className="text-xs text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full inline-block mt-1">Pending</span>
+                                        <span className="block font-bold text-gray-900">{formatAmount(tx.amount)}</span>
+                                        <span className="text-xs text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full inline-block mt-1">{t('money_transfer.pending')}</span>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -134,23 +138,23 @@ export default function PersonalSpace() {
                 {/* Recent History */}
                 <div className="space-y-3 pt-4">
                     <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                        <History className="w-4 h-4" /> Recent History
+                        <History className="w-4 h-4" /> {t('money_transfer.recent_history')}
                     </h2>
 
                     {loading ? (
-                        <div className="text-center py-8 text-gray-400 text-sm">Loading transactions...</div>
+                        <div className="text-center py-8 text-gray-400 text-sm">{t('money_transfer.loading')}</div>
                     ) : completedHistory.length === 0 && pendingIncoming.length === 0 && pendingOutgoing.length === 0 ? (
                         <div className="text-center py-12 bg-white rounded-3xl border-2 border-dashed border-gray-100">
                             <Banknote className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                            <p className="text-gray-500">No transactions yet</p>
+                            <p className="text-gray-500">{t('money_transfer.no_tx')}</p>
                             <Button variant="link" onClick={() => setIsSendMoneyOpen(true)} className="text-[#4a6850]">
-                                Send your first payment
+                                {t('money_transfer.send_first')}
                             </Button>
                         </div>
                     ) : (
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50">
                             {completedHistory.length === 0 && !loading && (
-                                <div className="p-4 text-center text-sm text-gray-400 italic">No completed transactions</div>
+                                <div className="p-4 text-center text-sm text-gray-400 italic">{t('money_transfer.no_completed')}</div>
                             )}
                             {completedHistory.map((tx) => {
                                 const isReceived = tx.to === user.uid;
@@ -169,7 +173,7 @@ export default function PersonalSpace() {
                                                 </p>
                                                 <p className="text-xs text-gray-400">
                                                     {format(tx.timestamp, 'MMM d, h:mm a')}
-                                                    {tx.status === 'rejected' && <span className="ml-2 text-red-500">(Rejected)</span>}
+                                                    {tx.status === 'rejected' && <span className="ml-2 text-red-500">({t('money_transfer.rejected')})</span>}
                                                 </p>
                                             </div>
                                         </div>
@@ -178,7 +182,7 @@ export default function PersonalSpace() {
                                             isReceived ? "text-green-600" : "text-gray-900",
                                             tx.status === 'rejected' && "line-through opacity-50"
                                         )}>
-                                            {isReceived ? "+" : "-"} Rs {tx.amount.toLocaleString()}
+                                            {isReceived ? "+" : "-"}{formatAmount(tx.amount)}
                                         </div>
                                     </div>
                                 );

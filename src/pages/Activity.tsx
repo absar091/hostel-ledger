@@ -18,12 +18,16 @@ import { Input } from "@/components/ui/input";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useTranslation } from "react-i18next";
 
 const Activity = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { getAllTransactions, groups } = useFirebaseData();
   const { user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
+  const { formatAmount } = useCurrency();
 
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("activity");
   const [searchQuery, setSearchQuery] = useState("");
@@ -128,7 +132,7 @@ const Activity = () => {
       expenseCount: expenses.length,
       paymentCount: payments.length,
     };
-  }, [filteredTransactions]);
+  }, [filteredTransactions, user?.uid]);
 
   const handleTabChange = (tab: typeof activeTab) => {
     if (tab === "home") {
@@ -168,20 +172,15 @@ const Activity = () => {
 
   return (
     <>
-      {/* Desktop Sidebar */}
       <Sidebar />
 
       <AppContainer className="bg-white pb-24">
-        {/* Desktop Header */}
         <DesktopHeader />
 
-        {/* iPhone-style top accent border - Mobile only */}
         <div className="lg:hidden fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
 
-        {/* App Header - iPhone Style Enhanced with #4a6850 */}
         <div className="bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
           <div className="flex items-center justify-between">
-            {/* App Logo and Name - Enhanced */}
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
                 <img
@@ -193,7 +192,6 @@ const Activity = () => {
               <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
             </div>
 
-            {/* Header Actions - Enhanced */}
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl flex items-center justify-center shadow-lg">
                 <ActivityIcon className="w-7 h-7 text-white font-bold" />
@@ -202,52 +200,47 @@ const Activity = () => {
           </div>
         </div>
 
-        {/* Header - iPhone Style Enhanced */}
         <div className="px-6 pt-8 pb-6">
           <div className="flex items-center gap-4 mb-6 lg:mb-8">
             <div>
-              <h1 className="text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">Activity Center</h1>
+              <h1 className="text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">{t('activity.title')}</h1>
               <p className="text-xs lg:text-sm text-[#4a6850]/80 font-bold">Track all your transactions</p>
             </div>
           </div>
 
-          {/* Statistics Cards - iPhone Style Enhanced */}
           <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-6 lg:mb-8">
             <div className="bg-white rounded-3xl p-4 lg:p-5 border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
-              <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-1.5 lg:mb-2 font-black uppercase tracking-widest">Total Transactions</div>
+              <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-1.5 lg:mb-2 font-black uppercase tracking-widest">{t('group.expenses_count')}</div>
               <div className="text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">{stats.totalTransactions}</div>
             </div>
 
             <div className="bg-white rounded-3xl p-4 lg:p-5 border border-red-500/10 shadow-[0_20px_60px_rgba(239,68,68,0.08)]">
-              <div className="text-[10px] lg:text-xs text-red-500/70 mb-1.5 lg:mb-2 font-black uppercase tracking-widest">Total Spent</div>
-              <div className="text-2xl lg:text-3xl font-black text-red-600 tracking-tight tabular-nums">Rs {stats.totalSpent.toLocaleString()}</div>
+              <div className="text-[10px] lg:text-xs text-red-500/70 mb-1.5 lg:mb-2 font-black uppercase tracking-widest">{t('activity.stats.total_spent')}</div>
+              <div className="text-2xl lg:text-3xl font-black text-red-600 tracking-tight tabular-nums">{formatAmount(stats.totalSpent)}</div>
             </div>
 
             <div className="bg-white rounded-3xl p-4 lg:p-5 border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
-              <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-1.5 lg:mb-2 font-black uppercase tracking-widest">Total Received</div>
-              <div className="text-2xl lg:text-3xl font-black text-[#4a6850] tracking-tight tabular-nums">Rs {stats.totalReceived.toLocaleString()}</div>
+              <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-1.5 lg:mb-2 font-black uppercase tracking-widest">{t('activity.stats.total_received')}</div>
+              <div className="text-2xl lg:text-3xl font-black text-[#4a6850] tracking-tight tabular-nums">{formatAmount(stats.totalReceived)}</div>
             </div>
 
             <div className="bg-white rounded-3xl p-4 lg:p-5 border border-blue-500/10 shadow-[0_20px_60px_rgba(59,130,246,0.08)]">
-              <div className="text-[10px] lg:text-xs text-blue-500/70 mb-1.5 lg:mb-2 font-black uppercase tracking-widest">Money Added</div>
-              <div className="text-2xl lg:text-3xl font-black text-blue-600 tracking-tight tabular-nums">Rs {stats.totalAdded.toLocaleString()}</div>
+              <div className="text-[10px] lg:text-xs text-blue-500/70 mb-1.5 lg:mb-2 font-black uppercase tracking-widest">{t('activity.stats.total_added')}</div>
+              <div className="text-2xl lg:text-3xl font-black text-blue-600 tracking-tight tabular-nums">{formatAmount(stats.totalAdded)}</div>
             </div>
           </div>
 
-          {/* Search - iPhone Style Enhanced */}
           <div className="relative mb-6">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
             <Input
-              placeholder="Search transactions..."
+              placeholder={t('activity.search_placeholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-14 h-14 bg-white rounded-3xl border-[#4a6850]/10 shadow-[0_8px_32px_rgba(74,104,80,0.06)] font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850]/30 focus:shadow-[0_12px_40px_rgba(74,104,80,0.1)]"
             />
           </div>
 
-          {/* Filters - iPhone Style Enhanced */}
           <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide mb-4">
-            {/* Type Filter */}
             <button
               onClick={() => setFilterType("all")}
               className={`px-5 py-3 rounded-2xl text-sm font-black whitespace-nowrap transition-all shadow-lg ${filterType === "all"
@@ -255,7 +248,7 @@ const Activity = () => {
                 : "bg-white text-[#4a6850]/80 hover:bg-[#4a6850]/5 border border-[#4a6850]/10"
                 }`}
             >
-              All
+              {t('activity.filters.all')}
             </button>
             <button
               onClick={() => setFilterType("expense")}
@@ -264,7 +257,7 @@ const Activity = () => {
                 : "bg-white text-red-600/80 hover:bg-red-50 border border-red-500/10"
                 }`}
             >
-              Expenses ({stats.expenseCount})
+              {t('activity.filters.expense')} ({stats.expenseCount})
             </button>
             <button
               onClick={() => setFilterType("payment")}
@@ -273,7 +266,7 @@ const Activity = () => {
                 : "bg-white text-[#4a6850]/80 hover:bg-[#4a6850]/5 border border-[#4a6850]/10"
                 }`}
             >
-              Payments ({stats.paymentCount})
+              {t('activity.filters.payment')} ({stats.paymentCount})
             </button>
             <button
               onClick={() => setFilterType("wallet")}
@@ -282,11 +275,10 @@ const Activity = () => {
                 : "bg-white text-blue-600/80 hover:bg-blue-50 border border-blue-500/10"
                 }`}
             >
-              Wallet
+              {t('activity.filters.wallet')}
             </button>
           </div>
 
-          {/* Date Filter - iPhone Style Enhanced */}
           <div className="flex gap-3 mt-3 overflow-x-auto pb-3 scrollbar-hide">
             <Calendar className="w-5 h-5 text-[#4a6850]/60 flex-shrink-0 mt-3" />
             <button
@@ -296,7 +288,7 @@ const Activity = () => {
                 : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
                 }`}
             >
-              All Time
+              {t('activity.date_filters.all')}
             </button>
             <button
               onClick={() => setFilterDate("today")}
@@ -305,7 +297,7 @@ const Activity = () => {
                 : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
                 }`}
             >
-              Today
+              {t('activity.date_filters.today')}
             </button>
             <button
               onClick={() => setFilterDate("week")}
@@ -314,7 +306,7 @@ const Activity = () => {
                 : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
                 }`}
             >
-              This Week
+              {t('activity.date_filters.week')}
             </button>
             <button
               onClick={() => setFilterDate("month")}
@@ -323,12 +315,11 @@ const Activity = () => {
                 : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
                 }`}
             >
-              This Month
+              {t('activity.date_filters.month')}
             </button>
           </div>
         </div>
 
-        {/* Transactions List - iPhone Style Enhanced */}
         <div className="px-6">
           {filteredTransactions.length > 0 ? (
             <div className="space-y-4">
@@ -376,7 +367,7 @@ const Activity = () => {
                           : transaction.type === "payment" ? "text-[#4a6850]" : "text-blue-600"
                           }`}>
                           {transaction.type === "expense" && !isPayer && !isParticipant ? "" : (transaction.type === "expense" ? "-" : "+")}
-                          {transaction.type === "expense" && !isPayer && !isParticipant ? "-" : `Rs ${displayAmount.toLocaleString()}`}
+                          {transaction.type === "expense" && !isPayer && !isParticipant ? "-" : formatAmount(displayAmount)}
                         </div>
                         {transaction.method && (
                           <div className="text-[10px] lg:text-xs text-gray-500 mt-0.5 lg:mt-1 font-bold capitalize">{transaction.method}</div>
@@ -392,7 +383,7 @@ const Activity = () => {
               <div className="w-16 lg:w-20 h-16 lg:h-20 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-4 lg:mb-6">
                 <ActivityIcon className="w-8 lg:w-10 h-8 lg:h-10 text-[#4a6850] font-bold" />
               </div>
-              <h3 className="text-lg lg:text-xl font-black text-gray-900 mb-2 lg:mb-3 tracking-tight">No transactions found</h3>
+              <h3 className="text-lg lg:text-xl font-black text-gray-900 mb-2 lg:mb-3 tracking-tight">{t('activity.no_activity')}</h3>
               <p className="text-[#4a6850]/80 font-bold max-w-sm mx-auto text-sm lg:text-base px-4">
                 {searchQuery || filterType !== "all" || filterDate !== "all"
                   ? "Try adjusting your filters or search terms"
@@ -402,21 +393,19 @@ const Activity = () => {
           )}
         </div>
 
-        {/* Activity Page Guide */}
         <PageGuide
-          title="Activity History"
-          description="See all your transactions, payments, and expense history in one place. Track your financial activity across all groups."
+          title={t('activity.guide.title')}
+          description={t('activity.guide.description')}
           tips={[
-            "Use filters to find specific transactions quickly",
-            "Search by description, amount, or group name",
-            "Tap any transaction to see detailed information"
+            t('activity.guide.tip1'),
+            t('activity.guide.tip2'),
+            t('activity.guide.tip3')
           ]}
           emoji="📊"
           show={showActivityGuide}
           onClose={handleActivityGuideClose}
         />
 
-        {/* Transaction Detail Modal */}
         {selectedTransaction && (
           <TransactionDetailModal
             transaction={selectedTransaction}
@@ -426,7 +415,6 @@ const Activity = () => {
           />
         )}
 
-        {/* Bottom Navigation */}
         <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
       </AppContainer>
     </>

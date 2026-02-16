@@ -6,6 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 
 interface BottomNavProps {
   activeTab: "home" | "groups" | "add" | "activity" | "profile";
@@ -14,39 +15,40 @@ interface BottomNavProps {
   ) => void;
 }
 
-const tabDescriptions = {
-  home: "View your dashboard with wallet balance and quick actions",
-  groups: "Manage your expense sharing groups",
-  add: "Add a new expense to split with your group",
-  activity: "View recent transactions and payment history",
-  profile: "Manage your profile and payment details",
-};
-
 const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
+  const { t } = useTranslation();
   const { count: pendingInvites } = useInvitations();
 
+  const tabDescriptions = {
+    home: t('navigation.home_desc'),
+    groups: t('navigation.groups_desc'),
+    add: t('navigation.add_desc'),
+    activity: t('navigation.activity_desc'),
+    profile: t('navigation.profile_desc'),
+  };
+
   const tabs = [
-    { id: "home" as const, icon: Home, label: "Home", shortLabel: "Home", badge: pendingInvites },
+    { id: "home" as const, icon: Home, label: t('navigation.home'), shortLabel: t('navigation.home_short'), badge: pendingInvites },
     {
       id: "groups" as const,
       icon: Users,
-      label: "Groups",
-      shortLabel: "Groups",
+      label: t('navigation.groups'),
+      shortLabel: t('navigation.groups_short'),
     },
     {
       id: "add" as const,
       icon: Plus,
-      label: "Add",
-      shortLabel: "Add",
+      label: t('navigation.add'),
+      shortLabel: t('navigation.add_short'),
       isMain: true,
     },
     {
       id: "activity" as const,
       icon: Clock,
-      label: "Activity",
-      shortLabel: "History",
+      label: t('navigation.activity'),
+      shortLabel: t('navigation.activity_short'),
     },
-    { id: "profile" as const, icon: User, label: "Profile", shortLabel: "Me" },
+    { id: "profile" as const, icon: User, label: t('navigation.profile'), shortLabel: t('navigation.profile_short') },
   ];
 
   return (

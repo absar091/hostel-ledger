@@ -1,6 +1,7 @@
 import { AlertCircle, Wifi, DollarSign, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface ErrorAlertProps {
   type: "insufficient_funds" | "network_error" | "invalid_amount" | "validation_error" | "general";
@@ -12,22 +13,23 @@ interface ErrorAlertProps {
   onDismiss?: () => void;
 }
 
-const ErrorAlert = ({ 
-  type, 
-  message, 
-  amount, 
-  availableAmount, 
-  onRetry, 
-  onAddMoney, 
-  onDismiss 
+const ErrorAlert = ({
+  type,
+  message,
+  amount,
+  availableAmount,
+  onRetry,
+  onAddMoney,
+  onDismiss
 }: ErrorAlertProps) => {
+  const { formatAmount, symbol } = useCurrency();
   const getErrorContent = () => {
     switch (type) {
       case "insufficient_funds":
         return {
           icon: <DollarSign className="w-5 h-5 text-red-600" />,
           title: "💰 Insufficient Available Budget",
-          description: `You need Rs ${amount?.toLocaleString()} but only have Rs ${availableAmount?.toLocaleString()} available`,
+          description: `You need ${formatAmount(amount || 0)} but only have ${formatAmount(availableAmount || 0)} available`,
           actions: (
             <div className="flex gap-2 mt-3">
               {onAddMoney && (
@@ -43,7 +45,7 @@ const ErrorAlert = ({
             </div>
           )
         };
-      
+
       case "network_error":
         return {
           icon: <Wifi className="w-5 h-5 text-red-600" />,
@@ -64,19 +66,19 @@ const ErrorAlert = ({
             </div>
           )
         };
-      
+
       case "invalid_amount":
         return {
           icon: <AlertCircle className="w-5 h-5 text-red-600" />,
           title: "❌ Invalid Amount",
-          description: message || "Please enter a valid amount greater than Rs 0",
+          description: message || `Please enter a valid amount greater than ${symbol} 0`,
           actions: onDismiss && (
             <Button size="sm" variant="outline" onClick={onDismiss} className="mt-3">
               OK
             </Button>
           )
         };
-      
+
       case "validation_error":
         return {
           icon: <AlertCircle className="w-5 h-5 text-red-600" />,
@@ -88,7 +90,7 @@ const ErrorAlert = ({
             </Button>
           )
         };
-      
+
       default:
         return {
           icon: <AlertCircle className="w-5 h-5 text-red-600" />,

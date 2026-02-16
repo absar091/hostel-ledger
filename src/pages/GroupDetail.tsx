@@ -12,7 +12,9 @@ import MemberDetailSheet from "@/components/MemberDetailSheet";
 import MemberSettlementSheet from "@/components/MemberSettlementSheet";
 import GroupSettingsSheet from "@/components/GroupSettingsSheet";
 import { toast } from "sonner";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
@@ -23,8 +25,10 @@ import {
 } from "@/components/ui/tooltip";
 
 const GroupDetail = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { formatAmount } = useCurrency();
   const { getGroupById, fetchGroupDetail, getTransactionsByGroup, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup, mergeMembers } = useFirebaseData();
   const { getSettlements, user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
@@ -196,8 +200,8 @@ const GroupDetail = () => {
 
         <div className="text-center px-6">
           <div className="text-6xl mb-4">🔍</div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Group not found</h2>
-          <Button onClick={() => navigate("/")} className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">Go Back</Button>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('group.group_not_found')}</h2>
+          <Button onClick={() => navigate("/")} className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">{t('group.go_back')}</Button>
         </div>
       </div>
     );
@@ -207,8 +211,8 @@ const GroupDetail = () => {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
         <div className="w-16 h-16 border-4 border-emerald-100 border-t-emerald-500 rounded-full animate-spin mb-6"></div>
-        <h2 className="text-xl font-bold text-gray-800">Loading Group Details</h2>
-        <p className="text-gray-500 mt-2">Getting the latest balances for you...</p>
+        <h2 className="text-xl font-bold text-gray-800">{t('group.loading_details')}</h2>
+        <p className="text-gray-500 mt-2">{t('group.getting_balances')}</p>
       </div>
     );
   }
@@ -262,7 +266,7 @@ const GroupDetail = () => {
       });
 
       if (result.success) {
-        toast.success(`Added expense of Rs ${data.amount.toLocaleString()}`);
+        toast.success(`Added expense of ${formatAmount(data.amount)}`);
         if (result.transaction) {
           navigate("/receipt", { state: { transaction: result.transaction, type: "expense" } });
         }
@@ -294,7 +298,7 @@ const GroupDetail = () => {
 
     if (result.success) {
       const memberName = group.members.find((m) => m.id === data.fromMember)?.name;
-      toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
+      toast.success(`Recorded ${formatAmount(data.amount)} from ${memberName}`);
       if (result.transaction) {
         navigate("/receipt", { state: { transaction: result.transaction, type: "payment" } });
       }
@@ -352,7 +356,7 @@ const GroupDetail = () => {
                 <h1 className="text-xl font-black text-gray-900 tracking-tight truncate">{group.name}</h1>
               </div>
               <p className="text-xs text-[#4a6850]/80 font-bold mt-1">
-                {group.memberCount || group.members.length} members {totalPending > 0 && `• Rs ${totalPending.toLocaleString()} pending`}
+                {group.memberCount || group.members.length} {t('group.member_count')} {totalPending > 0 && `• ${formatAmount(totalPending)} ${t('group.pending')}`}
               </p>
             </div>
 
@@ -369,9 +373,9 @@ const GroupDetail = () => {
         {!group.isPersonal ? (
           <div className="flex gap-2 px-4 pb-4">
             {[
-              { id: "ledger", label: "Ledger" },
-              { id: "members", label: "Members" },
-              { id: "summary", label: "Summary" },
+              { id: "ledger", label: t('group.tabs.ledger') },
+              { id: "members", label: t('group.tabs.members') },
+              { id: "summary", label: t('group.tabs.summary') },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -390,10 +394,10 @@ const GroupDetail = () => {
           personalStats && (
             <div className="px-4 pb-4">
               <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-6 text-white shadow-xl">
-                <div className="text-xs font-black uppercase tracking-wider text-white/70 mb-1">Lifetime Spent</div>
-                <div className="text-3xl font-black mb-1">Rs {personalStats.totalSpent.toLocaleString()}</div>
+                <div className="text-xs font-black uppercase tracking-wider text-white/70 mb-1">{t('group.lifetime_spent')}</div>
+                <div className="text-3xl font-black mb-1">{formatAmount(personalStats.totalSpent)}</div>
                 <div className="text-xs font-bold text-white/60">
-                  Over {personalStats.count} {personalStats.count === 1 ? 'expense' : 'expenses'}
+                  {t('group.expense_count_plural', { count: personalStats.count })}
                 </div>
               </div>
             </div>
@@ -421,8 +425,8 @@ const GroupDetail = () => {
                       paidBy={item.type === "expense" ? (
                         (() => {
                           // Use consistent naming logic
-                          if (item.paidBy === user?.uid) return "You";
-                          if (item.paidBy === group.createdBy) return "Group Owner";
+                          if (item.paidBy === user?.uid) return t('group.you_label');
+                          if (item.paidBy === group.createdBy) return t('group.owner');
                           const member = group.members.find(m => m.id === item.paidBy);
                           return member?.name || item.paidByName;
                         })()
@@ -430,8 +434,8 @@ const GroupDetail = () => {
                       participants={item.type === "expense" ? item.participants?.map(p => ({
                         ...p,
                         name: (() => {
-                          if (p.id === user?.uid) return "You"; // Your share
-                          if (p.id === group.createdBy) return "Group Owner"; // Owner's share
+                          if (p.id === user?.uid) return t('group.you_label'); // Your share
+                          if (p.id === group.createdBy) return t('group.owner'); // Owner's share
                           const member = group.members.find(m => m.id === p.id); // Valid member name
                           return member?.name || p.name;
                         })()
@@ -450,9 +454,9 @@ const GroupDetail = () => {
                 <div className="w-14 h-14 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-3 border border-[#4a6850]/20">
                   <Plus className="w-7 h-7 text-[#4a6850] font-bold" />
                 </div>
-                <h3 className="text-base font-black text-gray-900 mb-1.5 tracking-tight">No transactions yet</h3>
+                <h3 className="text-base font-black text-gray-900 mb-1.5 tracking-tight">{t('group.no_transactions')}</h3>
                 <p className="text-[#4a6850]/80 text-xs font-bold">
-                  Add an expense to get started
+                  {t('group.add_expense_started')}
                 </p>
               </div>
             )}
@@ -502,30 +506,30 @@ const GroupDetail = () => {
                       <div className="flex items-center gap-2">
                         <div className="font-black text-gray-900 tracking-tight text-base">{member.name}</div>
                         {member.isTemporary && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                          <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">{t('group.temp')}</span>
                         )}
                         {member.isPending && !isYou && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-600 text-[10px] font-black uppercase tracking-wider">Pending</span>
+                          <span className="px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-600 text-[10px] font-black uppercase tracking-wider">{t('common.pending')}</span>
                         )}
                         {(member.userId === group.createdBy || member.id === group.createdBy) && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                          <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">{t('group.owner')}</span>
                         )}
                       </div>
                       <div className="text-xs mt-1">
                         {isYou ? (
-                          <span className="text-[#4a6850] font-black">You</span>
+                          <span className="text-[#4a6850] font-black">{t('group.you_label')}</span>
                         ) : isSettled ? (
-                          <span className="text-[#4a6850] font-black">✅ All settled</span>
+                          <span className="text-[#4a6850] font-black">✅ {t('group.all_settled')}</span>
                         ) : (
                           <div className="space-y-0.5">
                             {thisMemberOwesYou && (
                               <div className="text-[#4a6850] font-black">
-                                Owes you Rs {memberSettlement.toReceive.toLocaleString()}
+                                {t('group.owes_you')} {formatAmount(memberSettlement.toReceive)}
                               </div>
                             )}
                             {youOweThisMember && (
                               <div className="text-red-500 font-black">
-                                You owe Rs {memberSettlement.toPay.toLocaleString()}
+                                {t('group.you_owe')} {formatAmount(memberSettlement.toPay)}
                               </div>
                             )}
                           </div>
@@ -540,7 +544,7 @@ const GroupDetail = () => {
                           size="sm"
                           className="bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white text-xs hover:from-[#3d5643] hover:to-[#2f4336] font-black shadow-lg hover:shadow-xl transition-all"
                         >
-                          Settle Up
+                          {t('group.settle_up')}
                         </Button>
                       </div>
                     )}
@@ -575,22 +579,22 @@ const GroupDetail = () => {
                   <span className="text-xl">💰</span>
                 </div>
                 <div>
-                  <div className="text-xs text-white/90 font-black tracking-wide uppercase">Group Stats</div>
-                  <div className="text-[10px] text-white/80 font-bold">Total activity overview</div>
+                  <div className="text-xs text-white/90 font-black tracking-wide uppercase">{t('group.stats_title')}</div>
+                  <div className="text-[10px] text-white/80 font-bold">{t('group.stats_overview')}</div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-3xl font-black text-white mb-1.5 tracking-tighter tabular-nums drop-shadow-sm">
-                    Rs {totalSpent.toLocaleString()}
+                    {formatAmount(totalSpent)}
                   </div>
-                  <div className="text-xs text-white/90 font-bold">Total Spent</div>
+                  <div className="text-xs text-white/90 font-bold">{t('group.total_spent')}</div>
                 </div>
                 <div>
                   <div className="text-3xl font-black text-white mb-1.5 tracking-tighter tabular-nums drop-shadow-sm">
                     {expenseCount}
                   </div>
-                  <div className="text-xs text-white/90 font-bold">Expenses</div>
+                  <div className="text-xs text-white/90 font-bold">{t('group.expenses_count')}</div>
                 </div>
               </div>
             </div>
@@ -601,16 +605,18 @@ const GroupDetail = () => {
                 <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-2xl flex items-center justify-center">
                   <span className="text-base">🏆</span>
                 </div>
-                <h3 className="font-black text-gray-900 text-base tracking-tight">Top Contributor</h3>
+                <h3 className="font-black text-gray-900 text-base tracking-tight">{t('group.top_contributor')}</h3>
               </div>
               <div className="flex items-center gap-4">
                 <Avatar name={topSpender.name} size="lg" />
                 <div className="flex-1 min-w-0">
-                  <div className="font-black text-gray-900 text-base mb-1 tracking-tight truncate">{topSpender.name}</div>
+                  <div className="font-black text-gray-900 text-base mb-1 tracking-tight truncate">
+                    {topSpender.isCurrentUser ? t('group.you_label') : topSpender.name}
+                  </div>
                   <div className="text-xs text-[#4a6850] font-bold">
                     {topSpender.totalPaid > 0
-                      ? `Paid Rs ${topSpender.totalPaid.toLocaleString()} in expenses`
-                      : `No expenses paid yet`}
+                      ? t('group.paid_amount', { amount: formatAmount(topSpender.totalPaid) })
+                      : t('group.no_expenses_paid')}
                   </div>
                 </div>
               </div>
@@ -622,7 +628,7 @@ const GroupDetail = () => {
                 <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-2xl flex items-center justify-center">
                   <Users className="w-4 h-4 text-[#4a6850] font-bold" />
                 </div>
-                <h3 className="font-black text-gray-900 text-base tracking-tight">Members</h3>
+                <h3 className="font-black text-gray-900 text-base tracking-tight">{t('group.members_title')}</h3>
               </div>
               <div className="flex -space-x-3 mb-3">
                 {group.members.slice(0, 5).map((member) => (
@@ -635,7 +641,7 @@ const GroupDetail = () => {
                 )}
               </div>
               <div className="text-xs text-[#4a6850]/80 font-bold">
-                {group.memberCount || group.members.length} members in this group
+                {t('group.how_many_members', { count: group.members.length })}
               </div>
             </div>
           </div>
@@ -658,7 +664,7 @@ const GroupDetail = () => {
               )}
             >
               <HandCoins className="w-4 h-4 mr-2 font-bold" />
-              Record Payment
+              {t('group.record_payment')}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800">
@@ -678,7 +684,7 @@ const GroupDetail = () => {
               className="flex-1 h-12 rounded-2xl text-sm font-black bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all border-t-2 border-[#5a7860]/40"
             >
               <Plus className="w-4 h-4 mr-2 font-bold" />
-              Add Expense
+              {t('group.add_expense')}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800">
@@ -742,7 +748,7 @@ const GroupDetail = () => {
             const amountYouOwe = settlements[selectedMember.id]?.toPay || 0;
             if (amountYouOwe > 0) {
               payMyDebt(group.id, selectedMember.id, amountYouOwe);
-              toast.success(`Paid Rs ${amountYouOwe} to ${selectedMember.name}`);
+              toast.success(`Paid ${formatAmount(amountYouOwe)} to ${selectedMember.name}`);
               setShowMemberDetail(false);
               setSelectedMember(null);
             }

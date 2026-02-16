@@ -7,8 +7,11 @@ import { Mail, ArrowLeft, Send } from "lucide-react";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import PageGuide from "@/components/PageGuide";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { useTranslation } from "react-i18next";
+import LanguageSelector from "@/components/LanguageSelector";
 
 const ForgotPassword = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { sendPasswordResetEmail, checkEmailExists, user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
@@ -32,14 +35,14 @@ const ForgotPassword = () => {
     e.preventDefault();
 
     if (!email) {
-      toast.error("Please enter your email address");
+      toast.error(t('common.error'), { description: "Please enter your email address" });
       return;
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      toast.error("Please enter a valid email address");
+      toast.error(t('common.error'), { description: "Please enter a valid email address" });
       return;
     }
 
@@ -53,7 +56,7 @@ const ForgotPassword = () => {
 
       if (result.success) {
         setEmailSent(true);
-        toast.success("Password reset email sent! Check your inbox.");
+        toast.success(t('auth.reset_instructions_sent'), { description: "Password reset email sent! Check your inbox." });
       } else {
         // Handle specific Firebase errors
         if (result.error?.includes('user-not-found')) {
@@ -68,7 +71,7 @@ const ForgotPassword = () => {
             // Genuine non-existent user
             // Security: Don't reveal if user exists or not. Show success message (fake success).
             setEmailSent(true);
-            toast.success("Password reset email sent! Check your inbox.");
+            toast.success(t('auth.reset_instructions_sent'));
           }
         } else if (result.error?.includes('too-many-requests')) {
           toast.error("Too many reset attempts. Please wait a few minutes before trying again.");
@@ -79,7 +82,7 @@ const ForgotPassword = () => {
 
     } catch (error: any) {
       console.error("Password reset error:", error);
-      toast.error("Failed to send reset email. Please try again.");
+      toast.error(t('common.error'), { description: "Failed to send reset email. Please try again." });
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +96,8 @@ const ForgotPassword = () => {
 
         {/* App Header - iPhone Style Enhanced with #4a6850 */}
         <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-between max-w-sm mx-auto">
+            <div className="w-10" />
             {/* App Logo and Name - Enhanced */}
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
@@ -105,15 +109,16 @@ const ForgotPassword = () => {
               </div>
               <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
             </div>
+            <LanguageSelector />
           </div>
         </div>
 
         <div className="w-full max-w-md pt-20">
           {/* Success State - iPhone Style */}
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Check Your Email</h2>
+            <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">{t('auth.reset_instructions_sent')}</h2>
             <p className="text-[#4a6850]/80 font-bold mb-2">
-              We've sent password reset instructions to
+              {t('auth.reset_email_body')}
             </p>
             <p className="text-[#4a6850] font-black">{email}</p>
           </div>
@@ -124,17 +129,15 @@ const ForgotPassword = () => {
                 <Send className="w-10 h-10 text-white font-bold" />
               </div>
 
-              <h3 className="text-2xl font-black text-gray-900 tracking-tight">Email Sent!</h3>
+              <h3 className="text-2xl font-black text-gray-900 tracking-tight">{t('auth.email_sent_title')}</h3>
 
               <p className="text-[#4a6850]/80 font-bold leading-relaxed">
-                Click the link in your email to reset your password.
+                {t('auth.reset_link_help')}
               </p>
 
               <div className="bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 border border-[#4a6850]/20 rounded-3xl p-6 shadow-lg">
                 <p className="text-sm text-[#4a6850] font-bold">
-                  <span className="font-black">Don't Forget To</span>
-                  <br />
-                  Check your spam folder if you don't see it within a few minutes.
+                  {t('auth.check_spam_instructions')}
                 </p>
               </div>
 
@@ -145,7 +148,7 @@ const ForgotPassword = () => {
                   onClick={() => setEmailSent(false)}
                   className="flex-1 h-14 rounded-3xl border-2 border-[#4a6850]/20 text-[#4a6850] hover:bg-[#4a6850]/5 font-black shadow-lg hover:shadow-xl transition-all"
                 >
-                  Try Different Email
+                  {t('auth.try_different_email')}
                 </Button>
 
                 <Button
@@ -153,7 +156,7 @@ const ForgotPassword = () => {
                   onClick={() => navigate("/login")}
                   className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all"
                 >
-                  Back to Login
+                  {t('auth.back_to_login')}
                 </Button>
               </div>
             </div>
@@ -170,7 +173,8 @@ const ForgotPassword = () => {
 
       {/* App Header - iPhone Style Enhanced with #4a6850 */}
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-between max-w-sm mx-auto">
+          <div className="w-10" />
           {/* App Logo and Name - Enhanced */}
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
@@ -182,9 +186,10 @@ const ForgotPassword = () => {
             </div>
             <div>
               <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
-              <p className="text-xs text-[#4a6850]/80 font-bold">Split expenses with ease</p>
+              <p className="text-xs text-[#4a6850]/80 font-bold">{t('sidebar.motto')}</p>
             </div>
           </div>
+          <LanguageSelector />
         </div>
       </div>
 
@@ -205,13 +210,13 @@ const ForgotPassword = () => {
       <div className="w-full max-w-md pt-20">
         {/* Header - iPhone Style */}
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Forgot Password?</h2>
+          <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">{t('auth.forgot_password_title')}</h2>
           <p className="text-[#4a6850]/80 font-bold leading-relaxed">
-            No worries! Enter your email and we'll send you reset instructions.
+            {t('auth.forgot_password_subtitle')}
           </p>
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-2xl">
             <p className="text-sm text-blue-800 font-bold">
-              💡 <span className="font-black">Note:</span> We can only send reset instructions to registered email addresses.
+              💡 {t('auth.reset_note')}
             </p>
           </div>
         </div>
@@ -222,13 +227,13 @@ const ForgotPassword = () => {
           <form onSubmit={handleSubmit} className="space-y-8">
             <div>
               <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
-                Email Address
+                {t('auth.email')}
               </label>
               <div className="relative">
                 <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
                   type="email"
-                  placeholder="Enter your email address"
+                  placeholder={t('auth.email')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-14 pl-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl bg-white transition-all"
@@ -246,12 +251,12 @@ const ForgotPassword = () => {
               {isLoading ? (
                 <div className="flex items-center gap-3">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Sending...
+                  {t('common.loading')}
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
                   <Send className="w-5 h-5" />
-                  Send Reset Instructions
+                  {t('auth.send_reset_link')}
                 </div>
               )}
             </Button>
@@ -264,14 +269,14 @@ const ForgotPassword = () => {
               className="inline-flex items-center gap-3 text-[#4a6850]/80 hover:text-[#4a6850] transition-colors font-bold"
             >
               <ArrowLeft className="w-5 h-5" />
-              Back to Login
+              {t('auth.back_to_login')}
             </Link>
           </div>
         </div>
 
         {/* Help Text - iPhone Style */}
         <div className="mt-10 pt-8 border-t border-[#4a6850]/20 text-center text-sm text-[#4a6850]/80 font-bold">
-          <p>Remember your password? <Link to="/login" className="text-[#4a6850] hover:underline font-black">Sign in</Link></p>
+          <p>{t('auth.already_have_account')} <Link to="/login" className="text-[#4a6850] hover:underline font-black">{t('auth.back_to_login')}</Link></p>
         </div>
       </div>
     </div>

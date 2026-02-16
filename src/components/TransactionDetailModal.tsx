@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { ArrowUpRight, ArrowDownLeft, CreditCard, Users, User, X, Share2, Copy, Download, Image } from "lucide-react";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface TransactionDetailModalProps {
     transaction: any;
@@ -11,6 +12,7 @@ interface TransactionDetailModalProps {
 }
 
 const TransactionDetailModal = ({ transaction, onClose, groups, user }: TransactionDetailModalProps) => {
+    const { formatAmount } = useCurrency();
     const receiptRef = useRef<HTMLDivElement>(null);
     const [isGenerating, setIsGenerating] = useState(false);
 
@@ -111,7 +113,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                 try {
                     await navigator.share({
                         title: 'Transaction Receipt - Hostel Ledger',
-                        text: `Receipt for Rs ${transaction.amount.toLocaleString()}`,
+                        text: `Receipt for ${formatAmount(transaction.amount)}`,
                         files: [file],
                     });
                     toast.success("Receipt shared! 🧾");
@@ -202,7 +204,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                         <div className="text-center mb-6 lg:mb-8">
                             <h3 className="text-lg lg:text-2xl font-bold text-gray-900 mb-2 lg:mb-3 tracking-tight truncate px-2">{transaction.title}</h3>
                             <div className="text-3xl lg:text-5xl font-black text-gray-900 mb-1.5 lg:mb-2 tracking-tighter tabular-nums">
-                                Rs {transaction.amount.toLocaleString()}
+                                {formatAmount(transaction.amount)}
                             </div>
 
                             {/* Transaction ID - New addition */}
@@ -226,7 +228,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                         if (userPart) {
                                             return (
                                                 <div className="inline-flex items-center px-3 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100 shadow-sm">
-                                                    <span className="text-xs font-black uppercase tracking-wider">Your Share: Rs {userPart.amount.toLocaleString()}</span>
+                                                    <span className="text-xs font-black uppercase tracking-wider">Your Share: {formatAmount(userPart.amount)}</span>
                                                 </div>
                                             );
                                         } else {
@@ -345,7 +347,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                             <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
                                                         )}
                                                     </div>
-                                                    <span className="text-xs lg:text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">Rs {participant.amount.toLocaleString()}</span>
+                                                    <span className="text-xs lg:text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">{formatAmount(participant.amount)}</span>
                                                 </div>
                                             );
                                         })}
@@ -408,7 +410,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                 <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 text-gray-500 flex-shrink-0" />
                                                 <div className="flex-1 min-w-0">
                                                     <div className="text-[10px] lg:text-xs text-gray-500 font-semibold uppercase tracking-wide">Wallet Balance Before</div>
-                                                    <div className="font-bold text-gray-900 text-sm lg:text-base tracking-tight tabular-nums">Rs {balanceBefore.toLocaleString()}</div>
+                                                    <div className="font-bold text-gray-900 text-sm lg:text-base tracking-tight tabular-nums">{formatAmount(balanceBefore)}</div>
                                                 </div>
                                             </div>
                                         )}
@@ -420,7 +422,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                     <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Wallet Balance After</div>
                                                     <div className={`font-bold text-sm lg:text-base tracking-tight tabular-nums ${(balanceAfter > (balanceBefore || 0)) ? 'text-green-600' : 'text-gray-900'
                                                         }`}>
-                                                        Rs {balanceAfter.toLocaleString()}
+                                                        {formatAmount(balanceAfter)}
                                                     </div>
                                                 </div>
                                             </div>
@@ -488,7 +490,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             {transaction.title}
                         </div>
                         <div style={{ fontSize: '42px', fontWeight: 900, color: '#111827', letterSpacing: '-2px', lineHeight: 1.1 }}>
-                            Rs {transaction.amount.toLocaleString()}
+                            {formatAmount(transaction.amount)}
                         </div>
                         <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '8px', fontWeight: 500 }}>
                             {receiptDate}
@@ -568,7 +570,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                         borderBottom: i < transaction.participants.length - 1 ? '1px solid #F3F4F6' : 'none'
                                     }}>
                                         <span style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>{p.name}</span>
-                                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#4a6850' }}>Rs {p.amount.toLocaleString()}</span>
+                                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#4a6850' }}>{formatAmount(p.amount)}</span>
                                     </div>
                                 ))}
                             </div>
@@ -635,7 +637,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                             <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>💳</div>
                                             <div>
                                                 <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Wallet Before</div>
-                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>Rs {balanceBefore.toLocaleString()}</div>
+                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{formatAmount(balanceBefore)}</div>
                                             </div>
                                         </div>
                                     )}
@@ -649,7 +651,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                             <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>💳</div>
                                             <div>
                                                 <div style={{ fontSize: '10px', color: '#16A34A', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Wallet After</div>
-                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>Rs {balanceAfter.toLocaleString()}</div>
+                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{formatAmount(balanceAfter)}</div>
                                             </div>
                                         </div>
                                     )}

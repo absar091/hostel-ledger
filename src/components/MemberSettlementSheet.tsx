@@ -6,6 +6,7 @@ import Avatar from "@/components/Avatar";
 import { ArrowDownLeft, ArrowUpRight, CheckCircle, DollarSign, Edit3 } from "lucide-react";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface MemberSettlementSheetProps {
   open: boolean;
@@ -24,6 +25,7 @@ interface MemberSettlementSheetProps {
 
 const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlementSheetProps) => {
   const { getSettlements, markPaymentReceived, markDebtPaid } = useFirebaseAuth();
+  const { formatAmount } = useCurrency();
   const [isProcessing, setIsProcessing] = useState(false);
   const [customReceiveAmount, setCustomReceiveAmount] = useState("");
   const [customPayAmount, setCustomPayAmount] = useState("");
@@ -87,7 +89,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
       return;
     }
     if (amount > memberSettlement.toReceive) {
-      toast.error(`Amount exceeds ${member.name}'s debt (Rs ${memberSettlement.toReceive.toLocaleString()})`);
+      toast.error(`Amount exceeds ${member.name}'s debt (${formatAmount(memberSettlement.toReceive)})`);
       return;
     }
     handleMarkReceived(amount);
@@ -100,7 +102,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
       return;
     }
     if (amount > memberSettlement.toPay) {
-      toast.error(`Amount exceeds your debt (Rs ${memberSettlement.toPay.toLocaleString()})`);
+      toast.error(`Amount exceeds your debt (${formatAmount(memberSettlement.toPay)})`);
       return;
     }
     handleMarkPaid(amount);
@@ -173,7 +175,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                   </div>
 
                   <div className="text-3xl font-black text-[#4a6850] mb-4 tracking-tight tabular-nums">
-                    Rs {memberSettlement.toReceive.toLocaleString()}
+                    {formatAmount(memberSettlement.toReceive)}
                   </div>
 
                   {!showCustomReceive ? (
@@ -260,7 +262,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                   </div>
 
                   <div className="text-3xl font-black text-red-700 mb-4 tracking-tight tabular-nums">
-                    Rs {memberSettlement.toPay.toLocaleString()}
+                    {formatAmount(memberSettlement.toPay)}
                   </div>
 
                   {!showCustomPay ? (

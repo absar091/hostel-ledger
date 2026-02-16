@@ -34,6 +34,7 @@ import ShareButton from "@/components/ShareButton";
 import TransactionDetailModal from "@/components/TransactionDetailModal";
 import UsernameMigration from "@/components/UsernameMigration";
 import { toast } from "sonner";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import {
   Tooltip,
   TooltipContent,
@@ -50,9 +51,12 @@ import { useSync } from "@/hooks/useSync";
 import { useOneSignalPush } from "@/hooks/useOneSignalPush";
 import { usePendingGroupJoin } from "@/hooks/usePendingGroupJoin";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { formatAmount } = useCurrency();
   const {
     user,
     getWalletBalance,
@@ -130,8 +134,8 @@ const Dashboard = () => {
   useEffect(() => {
     const shouldShowRefreshTip = sessionStorage.getItem("showPostLoginRefreshTip");
     if (shouldShowRefreshTip === "1") {
-      toast.info("Tip", {
-        description: "Please refresh once after login to access the app smoothly.",
+      toast.info(t('common.tip'), {
+        description: "Please refresh once after login to access the app smoothly.", // Keeping English technical tip as requested by app logic sometimes, but could localize if needed. 
       });
       sessionStorage.removeItem("showPostLoginRefreshTip");
     }
@@ -173,7 +177,7 @@ const Dashboard = () => {
       if (success) {
         setShowNotificationPrompt(false);
         localStorage.setItem("hasSeenNotificationPrompt", "true");
-        toast.success("Notifications enabled! 🔔");
+        toast.success(t('settings.push_enabled'));
       }
     } finally {
       setIsEnablingNotifications(false);
@@ -189,37 +193,32 @@ const Dashboard = () => {
   const onboardingSteps = [
     {
       id: "welcome",
-      title: "Welcome to Hostel Ledger! 🎉",
-      description:
-        "Your smart companion for splitting expenses with friends, roommates, and groups. Let's get you started!",
+      title: t('dashboard.onboarding.welcome_title'),
+      description: t('dashboard.onboarding.welcome_desc'),
       emoji: "👋",
     },
     {
       id: "wallet",
-      title: "Your Digital Wallet 💰",
-      description:
-        "This shows your available balance. Add money here and track what you can spend right now.",
+      title: t('dashboard.onboarding.wallet_title'),
+      description: t('dashboard.onboarding.wallet_desc'),
       emoji: "💳",
     },
     {
       id: "settlements",
-      title: "Smart Settlements 🧮",
-      description:
-        "See who owes you money and who you need to pay. We calculate everything automatically!",
+      title: t('dashboard.onboarding.settlements_title'),
+      description: t('dashboard.onboarding.settlements_desc'),
       emoji: "⚖️",
     },
     {
       id: "actions",
-      title: "Quick Actions ⚡",
-      description:
-        "Add expenses, record payments, and create groups with just a tap. Everything you need is here!",
+      title: t('dashboard.onboarding.actions_title'),
+      description: t('dashboard.onboarding.actions_desc'),
       emoji: "🚀",
     },
     {
       id: "ready",
-      title: "You're All Set! ✨",
-      description:
-        "Start by creating your first group and adding your friends. Happy expense splitting!",
+      title: t('dashboard.onboarding.ready_title'),
+      description: t('dashboard.onboarding.ready_desc'),
       emoji: "🎯",
     },
   ];
@@ -227,7 +226,7 @@ const Dashboard = () => {
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
     markOnboardingComplete();
-    toast.success("Welcome aboard! 🎉");
+    toast.success(t('dashboard.onboarding.ready_title'));
   };
 
   const handleDashboardGuideClose = () => {
@@ -240,7 +239,7 @@ const Dashboard = () => {
 
   // Calculate time since last transaction
   const getTimeSinceLastTransaction = () => {
-    if (allTransactions.length === 0) return "No transactions yet";
+    if (allTransactions.length === 0) return t('dashboard.no_tx_yet');
 
     const lastTransaction = allTransactions[0]; // Most recent transaction
     const lastTransactionTime = new Date(
@@ -249,17 +248,17 @@ const Dashboard = () => {
     const now = new Date().getTime();
     const diffInMinutes = Math.floor((now - lastTransactionTime) / (1000 * 60));
 
-    if (diffInMinutes < 1) return "Updated just now";
-    if (diffInMinutes === 1) return "Updated 1 min ago";
-    if (diffInMinutes < 60) return `Updated ${diffInMinutes} mins ago`;
+    if (diffInMinutes < 1) return t('dashboard.updated_now');
+    if (diffInMinutes === 1) return t('dashboard.updated_min');
+    if (diffInMinutes < 60) return t('dashboard.updated_mins', { count: diffInMinutes });
 
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours === 1) return "Updated 1 hour ago";
-    if (diffInHours < 24) return `Updated ${diffInHours} hours ago`;
+    if (diffInHours === 1) return t('dashboard.updated_hour');
+    if (diffInHours < 24) return t('dashboard.updated_hours', { count: diffInHours });
 
     const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays === 1) return "Updated 1 day ago";
-    return `Updated ${diffInDays} days ago`;
+    if (diffInDays === 1) return t('dashboard.updated_day');
+    return t('dashboard.updated_days', { count: diffInDays });
   };
 
   const lastTransactionTime = getTimeSinceLastTransaction();
@@ -267,15 +266,15 @@ const Dashboard = () => {
   const dashboardHighlights = useMemo(() => {
     return [
       {
-        label: "Groups",
+        label: t('dashboard.groups'),
         value: groups.length,
       },
       {
-        label: "Transactions",
+        label: t('dashboard.transactions'),
         value: allTransactions.length,
       },
       {
-        label: offline ? "Offline queue" : "Sync queue",
+        label: offline ? t('dashboard.offline_queue') : t('dashboard.sync_queue'),
         value: pendingCount,
       },
     ];
@@ -416,7 +415,7 @@ const Dashboard = () => {
   const handleTabChange = (tab: typeof activeTab) => {
     if (tab === "add") {
       if (groups.length === 0) {
-        toast.error("Create a group first to add expenses");
+        toast.error(t('group.group_not_found'), { description: "Create a group first to add expenses" });
         navigate("/create-group");
       } else {
         setShowAddExpense(true);
@@ -455,7 +454,7 @@ const Dashboard = () => {
 
   const handleReceivedMoney = () => {
     if (offline) {
-      toast.error("Internet required for recording payments", {
+      toast.error(t('common.offline'), {
         description: "This feature needs an active connection",
         icon: "📴",
       });
@@ -475,7 +474,7 @@ const Dashboard = () => {
 
   const handleNewGroup = () => {
     if (offline) {
-      toast.error("Internet required for creating groups", {
+      toast.error(t('common.offline'), {
         description: "This feature needs an active connection",
         icon: "📴",
       });
@@ -504,7 +503,7 @@ const Dashboard = () => {
       });
 
       if (result.success) {
-        toast.success(`Added expense of Rs ${data.amount.toLocaleString()}`);
+        toast.success(t('common.success'), { description: `Added expense of ${formatAmount(data.amount)}` });
         if (result.transaction) {
           navigate("/receipt", { state: { transaction: result.transaction, type: "expense" } });
         }
@@ -541,7 +540,7 @@ const Dashboard = () => {
           (m) => m.id === data.fromMember,
         )?.name;
         toast.success(
-          `Recorded Rs ${data.amount.toLocaleString()} from ${memberName}`,
+          t('common.success'), { description: `Recorded ${formatAmount(data.amount)} from ${memberName}` }
         );
         if (result.transaction) {
           navigate("/receipt", { state: { transaction: result.transaction, type: "payment" } });
@@ -591,7 +590,7 @@ const Dashboard = () => {
     const result = await createGroup(groupData);
 
     if (result.success) {
-      toast.success(`Created group "${data.name}"`);
+      toast.success(t('common.success'), { description: `Created group "${data.name}"` });
 
       // Handle Email Invites (External)
       if (
@@ -601,7 +600,7 @@ const Dashboard = () => {
       ) {
         data.invitedEmails.forEach((email) => {
           sendExternalInvitation(result.groupId!, email)
-            .then(() => toast.success(`Invitation sent to ${email}`))
+            .then(() => toast.success(t('common.success'), { description: `Invitation sent to ${email}` }))
             .catch((err) => console.error("Failed to send email invite", err));
         });
       }
@@ -613,7 +612,7 @@ const Dashboard = () => {
   const handleAddMoney = async (amount: number, note?: string) => {
     const result = await addMoneyToWallet(amount, note);
     if (result.success) {
-      toast.success(`Added Rs ${amount} to wallet`);
+      toast.success(t('common.success'), { description: `Added ${formatAmount(amount)} to wallet` });
     } else {
       toast.error(result.error || "Failed to add money");
     }
@@ -642,7 +641,7 @@ const Dashboard = () => {
 
     const result = await payMyDebt(targetGroup.id, memberId, amount);
     if (result.success) {
-      toast.success(`Paid Rs ${amount} to ${targetMember.name}`);
+      toast.success(t('common.success'), { description: `Paid ${formatAmount(amount)} to ${targetMember.name}` });
     } else {
       toast.error(result.error || "Payment failed");
     }
@@ -652,9 +651,9 @@ const Dashboard = () => {
   // Get greeting based on time with emoji
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return { text: "Good morning", emoji: "" };
-    if (hour < 17) return { text: "Good afternoon", emoji: "☀️" };
-    return { text: "Good evening", emoji: "🌙" };
+    if (hour < 12) return { text: t('dashboard.greeting_morning'), emoji: "" };
+    if (hour < 17) return { text: t('dashboard.greeting_afternoon'), emoji: "☀️" };
+    return { text: t('dashboard.greeting_evening'), emoji: "🌙" };
   };
 
   const greeting = getGreeting();
@@ -688,7 +687,7 @@ const Dashboard = () => {
               <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 rounded-full px-3 py-1.5">
                 <WifiOff className="w-3.5 h-3.5 text-orange-600" />
                 <span className="text-xs font-bold text-orange-700">
-                  Offline
+                  {t('common.offline')}
                 </span>
                 {pendingCount > 0 && (
                   <span className="ml-1 bg-orange-600 text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center">
@@ -700,7 +699,7 @@ const Dashboard = () => {
               <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1.5">
                 <RefreshCw className="w-3.5 h-3.5 text-blue-600 animate-spin" />
                 <span className="text-xs font-bold text-blue-700">
-                  Syncing...
+                  {t('common.syncing')}
                 </span>
               </div>
             ) : pendingCount > 0 ? (
@@ -743,14 +742,14 @@ const Dashboard = () => {
 
           {/* Greeting Section - Moved further down with more spacing */}
           <section className="mt-16 lg:mt-20 mb-10 lg:mb-12">
-            <p className="text-gray-500 font-semibold text-sm">Welcome back,</p>
+            <p className="text-gray-500 font-semibold text-sm">{t('dashboard.welcome_back')}</p>
             <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-gray-900">
               {user?.name || "User"}
             </h2>
             <div className="mt-4 flex flex-wrap gap-2.5">
               <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1.5 shadow-sm">
                 <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-                  Groups
+                  {t('dashboard.groups')}
                 </span>
                 <span className="text-xs font-black text-slate-800 tabular-nums">
                   {groups.length}
@@ -758,19 +757,18 @@ const Dashboard = () => {
               </div>
               <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1.5 shadow-sm">
                 <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-                  Pending payments
+                  {t('dashboard.pending_payments')}
                 </span>
                 <span className="text-xs font-black text-slate-800 tabular-nums">
                   {pendingPaymentCounts.total}
                 </span>
                 <span className="text-[10px] font-bold text-slate-500">
-                  (pay {pendingPaymentCounts.toPayCount} • receive{" "}
-                  {pendingPaymentCounts.toReceiveCount})
+                  ({t('dashboard.pay_receive', { pay: pendingPaymentCounts.toPayCount, receive: pendingPaymentCounts.toReceiveCount })})
                 </span>
               </div>
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1.5 shadow-sm">
                 <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600">
-                  Last transaction
+                  {t('dashboard.last_transaction')}
                 </span>
                 <span className="text-xs font-black text-emerald-700">
                   {lastTransactionTime}
@@ -788,11 +786,10 @@ const Dashboard = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-black text-blue-900 text-base mb-1.5 tracking-tight">
-                    Stay Updated!
+                    {t('dashboard.notification_prompt_title')}
                   </h3>
                   <p className="text-sm text-blue-700 font-medium leading-relaxed mb-4">
-                    Get instant notifications when expenses are added or
-                    payments are received. Never miss an update!
+                    {t('dashboard.notification_prompt_desc')}
                   </p>
                   <div className="flex gap-2">
                     <button
@@ -801,7 +798,7 @@ const Dashboard = () => {
                       className="flex-1 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 text-sm"
                     >
                       {isEnablingNotifications
-                        ? "Enabling..."
+                        ? t('common.loading')
                         : "Enable Notifications"}
                     </button>
                     <button
@@ -835,7 +832,7 @@ const Dashboard = () => {
                       onClick={() => setShowBalanceTooltip(!showBalanceTooltip)}
                       className="text-white/70 text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5 active:text-white transition-colors"
                     >
-                      Available Balance
+                      {t('dashboard.available_balance')}
                       <span className="w-4 h-4 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[10px] active:bg-white/30 active:scale-95 transition-all">
                         ?
                       </span>
@@ -855,12 +852,10 @@ const Dashboard = () => {
                             </div>
                             <div>
                               <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                                Available Balance
+                                {t('dashboard.available_balance')}
                               </h4>
                               <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                                Your current wallet balance that you can spend
-                                right now. This doesn't include pending
-                                settlements.
+                                {t('dashboard.available_balance_desc', "Your current wallet balance that you can spend right now. This doesn't include pending settlements.")}
                               </p>
                             </div>
                           </div>
@@ -868,7 +863,7 @@ const Dashboard = () => {
                             onClick={() => setShowBalanceTooltip(false)}
                             className="mt-4 w-full py-2 bg-[#4a6850] text-white rounded-xl font-bold text-sm"
                           >
-                            Got it
+                            {t('common.got_it', 'Got it')}
                           </button>
                         </div>
                       </div>
@@ -894,12 +889,10 @@ const Dashboard = () => {
                           </div>
                           <div>
                             <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                              Available Balance
+                              {t('dashboard.available_balance')}
                             </h4>
                             <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                              Your current wallet balance that you can spend
-                              right now. This doesn't include pending
-                              settlements.
+                              {t('dashboard.available_balance_desc', "Your current wallet balance that you can spend right now. This doesn't include pending settlements.")}
                             </p>
                           </div>
                         </div>
@@ -907,7 +900,7 @@ const Dashboard = () => {
                     </Tooltip>
                   </div>
                   <h3 className="text-3xl lg:text-4xl font-black mt-1 tracking-tighter text-white tabular-nums">
-                    Rs {walletBalance.toLocaleString()}
+                    {formatAmount(walletBalance)}
                   </h3>
                   {/* Last transaction time - smaller on mobile */}
                   <p className="text-white/40 text-[10px] lg:text-xs mt-1.5 lg:mt-2 font-semibold">
@@ -941,7 +934,7 @@ const Dashboard = () => {
                       }
                       className="text-white/60 text-[9px] uppercase font-black mb-1 inline-flex items-center gap-1 active:text-white transition-colors"
                     >
-                      After settlements
+                      {t('dashboard.after_settlements')}
                       <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] active:bg-white/30 active:scale-95 transition-all">
                         ?
                       </span>
@@ -984,7 +977,7 @@ const Dashboard = () => {
                     <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
                         <button className="text-white/60 text-[10px] uppercase font-black mb-1 cursor-help inline-flex items-center gap-1 hover:text-white/80 transition-colors">
-                          After settlements
+                          {t('dashboard.after_settlements')}
                           <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] hover:bg-white/25 hover:scale-110 transition-all">
                             ?
                           </span>
@@ -1504,14 +1497,14 @@ const Dashboard = () => {
             <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
               <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <h3 className="font-black tracking-tighter text-sm">
-                  Recent Activity
+                  {t('dashboard.recent_activity')}
                 </h3>
                 {allTransactions.length > 3 && (
                   <button
                     onClick={() => navigate("/activity")}
                     className="text-xs font-black text-primary dark:text-emerald-400"
                   >
-                    View All
+                    {t('dashboard.view_all')}
                   </button>
                 )}
               </div>
@@ -1523,7 +1516,7 @@ const Dashboard = () => {
                     <div className="mb-4">
                       <div className="px-3 py-2">
                         <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">
-                          Today
+                          {t('common.today')}
                         </h4>
                       </div>
                       {todayTransactions.slice(0, 3).map((transaction) => {
@@ -1610,7 +1603,7 @@ const Dashboard = () => {
                                   !isPayer &&
                                   !isParticipant
                                   ? "-"
-                                  : `Rs ${displayAmount.toLocaleString()}`}
+                                  : formatAmount(displayAmount)}
                               </p>
                             </div>
                           </button>
@@ -1624,7 +1617,7 @@ const Dashboard = () => {
                     <div className="mb-4">
                       <div className="px-3 py-2 border-t border-slate-100 dark:border-slate-800">
                         <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">
-                          Yesterday
+                          {t('common.yesterday')}
                         </h4>
                       </div>
                       {yesterdayTransactions.slice(0, 2).map((transaction) => {
@@ -1711,7 +1704,7 @@ const Dashboard = () => {
                                   !isPayer &&
                                   !isParticipant
                                   ? "-"
-                                  : `Rs ${displayAmount.toLocaleString()}`}
+                                  : formatAmount(displayAmount)}
                               </p>
                             </div>
                           </button>
@@ -1818,7 +1811,7 @@ const Dashboard = () => {
                                       !isPayer &&
                                       !isParticipant
                                       ? "-"
-                                      : `Rs ${displayAmount.toLocaleString()}`}
+                                      : formatAmount(displayAmount)}
                                   </p>
                                 </div>
                               </button>
@@ -1962,7 +1955,7 @@ const Dashboard = () => {
                                   !isPayer &&
                                   !isParticipant
                                   ? "-"
-                                  : `Rs ${displayAmount.toLocaleString()}`}
+                                  : formatAmount(displayAmount)}
                               </p>
                               <p className="text-xs text-slate-400">
                                 {transaction.type === "expense"
@@ -2075,7 +2068,7 @@ const Dashboard = () => {
                                   !isPayer &&
                                   !isParticipant
                                   ? "-"
-                                  : `Rs ${displayAmount.toLocaleString()}`}
+                                  : formatAmount(displayAmount)}
                               </p>
                               <p className="text-xs text-slate-400">
                                 {transaction.type === "expense"
@@ -2194,7 +2187,7 @@ const Dashboard = () => {
                                       !isPayer &&
                                       !isParticipant
                                       ? "-"
-                                      : `Rs ${displayAmount.toLocaleString()}`}
+                                      : formatAmount(displayAmount)}
                                   </p>
                                   <p className="text-xs text-slate-400">
                                     {transaction.type === "expense"

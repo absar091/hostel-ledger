@@ -20,6 +20,7 @@ import LogoutConfirmDialog from "@/components/LogoutConfirmDialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Tooltip from "@/components/Tooltip";
+import { useTranslation } from "react-i18next";
 
 const BANKS = [
   "Allied Bank",
@@ -38,6 +39,7 @@ const BANKS = [
 ];
 
 const Profile = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, updateUserProfile, logout, uploadProfilePicture, removeProfilePicture } = useFirebaseAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -70,10 +72,10 @@ const Profile = () => {
   const handleSaveProfile = async () => {
     const result = await updateUserProfile({ name: editName, phone: editPhone || null });
     if (result.success) {
-      toast.success("Profile updated");
+      toast.success(t('profile.profile_updated'));
       setShowEditSheet(false);
     } else {
-      toast.error(result.error || "Failed to update profile");
+      toast.error(result.error || t('common.error'));
     }
   };
 
@@ -87,17 +89,17 @@ const Profile = () => {
 
     const result = await updateUserProfile({ paymentDetails });
     if (result.success) {
-      toast.success("Payment details updated");
+      toast.success(t('profile.payment_details_updated'));
       setShowPaymentSheet(false);
     } else {
-      toast.error(result.error || "Failed to update payment details");
+      toast.error(result.error || t('common.error'));
     }
   };
 
   const handleLogout = () => {
     logout();
     navigate("/login");
-    toast.success("Logged out successfully");
+    toast.success(t('settings.logout_success'));
   };
 
   const handleLogoutClick = () => {
@@ -130,18 +132,18 @@ const Profile = () => {
     }
 
     setIsUploadingPhoto(true);
-    toast.loading("Uploading profile picture...", { id: "upload-photo" });
+    toast.loading(t('profile.uploading_photo'), { id: "upload-photo" });
 
     try {
       const result = await uploadProfilePicture(file);
 
       if (result.success) {
-        toast.success("Profile picture updated!", { id: "upload-photo" });
+        toast.success(t('profile.photo_updated'), { id: "upload-photo" });
       } else {
-        toast.error(result.error || "Failed to upload picture", { id: "upload-photo" });
+        toast.error(result.error || t('common.error'), { id: "upload-photo" });
       }
     } catch (error) {
-      toast.error("Failed to upload picture", { id: "upload-photo" });
+      toast.error(t('common.error'), { id: "upload-photo" });
     } finally {
       setIsUploadingPhoto(false);
       // Reset file input
@@ -155,18 +157,18 @@ const Profile = () => {
     if (!user?.photoURL) return;
 
     setShowPhotoOptionsSheet(false);
-    toast.loading("Removing profile picture...", { id: "remove-photo" });
+    toast.loading(t('profile.removing_photo'), { id: "remove-photo" });
 
     try {
       const result = await removeProfilePicture();
 
       if (result.success) {
-        toast.success("Profile picture removed", { id: "remove-photo" });
+        toast.success(t('profile.photo_removed'), { id: "remove-photo" });
       } else {
-        toast.error(result.error || "Failed to remove picture", { id: "remove-photo" });
+        toast.error(result.error || t('common.error'), { id: "remove-photo" });
       }
     } catch (error) {
-      toast.error("Failed to remove picture", { id: "remove-photo" });
+      toast.error(t('common.error'), { id: "remove-photo" });
     }
   };
 
@@ -212,7 +214,7 @@ const Profile = () => {
         {/* Header - iPhone Style Enhanced */}
         <header className="px-4 pt-6 lg:pt-8 pb-4 lg:pb-6">
           <div className="flex items-center justify-between mb-4 lg:mb-6">
-            <h1 className="text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">Profile</h1>
+            <h1 className="text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">{t('profile.title')}</h1>
             <div className="flex items-center gap-2 lg:gap-3">
               <ShareButton variant="icon" />
               <PWAInstallButton />
@@ -277,19 +279,19 @@ const Profile = () => {
               {/* Stats Row */}
               <div className="grid grid-cols-3 gap-3 mt-6 pt-5 border-t border-[#4a6850]/10">
                 <div className="text-center">
-                  <p className="text-[#4a6850]/50 text-[10px] font-bold uppercase tracking-widest">Member Since</p>
+                  <p className="text-[#4a6850]/50 text-[10px] font-bold uppercase tracking-widest">{t('profile.member_since')}</p>
                   <p className="text-gray-900 font-black text-sm mt-1">{memberSince}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[#4a6850]/50 text-[10px] font-bold uppercase tracking-widest">Email</p>
+                  <p className="text-[#4a6850]/50 text-[10px] font-bold uppercase tracking-widest">{t('profile.verified')}</p>
                   <p className="text-[#4a6850] font-black text-sm mt-1 flex items-center justify-center gap-1">
-                    <Check className="w-3.5 h-3.5" /> Verified
+                    <Check className="w-3.5 h-3.5" /> {t('profile.verified')}
                   </p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[#4a6850]/50 text-[10px] font-bold uppercase tracking-widest">Payments</p>
+                  <p className="text-[#4a6850]/50 text-[10px] font-bold uppercase tracking-widest">{t('profile.payments_added')}</p>
                   <p className="text-gray-900 font-black text-sm mt-1">
-                    {hasPaymentDetails ? Object.keys(user?.paymentDetails || {}).length : 0} Added
+                    {t('profile.added_plural', { count: hasPaymentDetails ? Object.keys(user?.paymentDetails || {}).length : 0 })}
                   </p>
                 </div>
               </div>
@@ -300,7 +302,7 @@ const Profile = () => {
         <main className="px-4 space-y-6">
           {/* Account Section - iPhone Grouped Style */}
           <div className="space-y-3">
-            <h3 className="text-[12px] font-black text-[#4a6850]/70 uppercase tracking-[0.2em] px-5">Account</h3>
+            <h3 className="text-[12px] font-black text-[#4a6850]/70 uppercase tracking-[0.2em] px-5">{t('profile.account')}</h3>
 
             <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
               {/* Edit Profile */}
@@ -317,8 +319,8 @@ const Profile = () => {
                     <User className="w-5 h-5 text-[#4a6850]" />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-[15px] font-black tracking-tight text-gray-900">Edit Profile</p>
-                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">Update your name and phone</p>
+                    <p className="text-[15px] font-black tracking-tight text-gray-900">{t('profile.edit_profile')}</p>
+                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">{t('profile.update_profile_desc')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
@@ -342,7 +344,7 @@ const Profile = () => {
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <div className="flex items-center gap-2">
-                      <p className="text-[15px] font-black tracking-tight text-gray-900">Payment Details</p>
+                      <p className="text-[15px] font-black tracking-tight text-gray-900">{t('profile.payment_methods')}</p>
                       {hasPaymentDetails && (
                         <div className="w-5 h-5 rounded-full bg-[#4a6850] flex items-center justify-center">
                           <Check className="w-3 h-3 text-white" />
@@ -350,7 +352,7 @@ const Profile = () => {
                       )}
                     </div>
                     <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">
-                      {hasPaymentDetails ? `${Object.keys(user?.paymentDetails || {}).length} methods added` : "Add payment methods"}
+                      {hasPaymentDetails ? t('profile.methods_added_plural', { count: Object.keys(user?.paymentDetails || {}).length }) : t('profile.payment_methods_desc')}
                     </p>
                   </div>
                 </div>
@@ -362,7 +364,7 @@ const Profile = () => {
 
           {/* Preferences Section - iPhone Grouped Style */}
           <div className="space-y-3">
-            <h3 className="text-[12px] font-black text-[#4a6850]/70 uppercase tracking-[0.2em] px-5">Preferences</h3>
+            <h3 className="text-[12px] font-black text-[#4a6850]/70 uppercase tracking-[0.2em] px-5">{t('profile.preferences')}</h3>
 
             <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
               <button
@@ -374,8 +376,8 @@ const Profile = () => {
                     <Settings className="w-5 h-5 text-[#4a6850]" />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-[15px] font-black tracking-tight text-gray-900">General Settings</p>
-                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">Privacy, notifications, and more</p>
+                    <p className="text-[15px] font-black tracking-tight text-gray-900">{t('profile.general_settings')}</p>
+                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">{t('profile.general_settings_desc')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
@@ -390,8 +392,8 @@ const Profile = () => {
                     <Shield className="w-5 h-5 text-orange-600" />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-[15px] font-black tracking-tight text-gray-900">Security & Privacy</p>
-                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">Password, data export, delete account</p>
+                    <p className="text-[15px] font-black tracking-tight text-gray-900">{t('profile.security')}</p>
+                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">{t('profile.security_desc')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
@@ -401,7 +403,7 @@ const Profile = () => {
 
           {/* Support Section - iPhone Grouped Style */}
           <div className="space-y-3">
-            <h3 className="text-[12px] font-black text-[#4a6850]/70 uppercase tracking-[0.2em] px-5">Support</h3>
+            <h3 className="text-[12px] font-black text-[#4a6850]/70 uppercase tracking-[0.2em] px-5">{t('profile.support')}</h3>
 
             <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
               <button
@@ -413,8 +415,8 @@ const Profile = () => {
                     <Info className="w-5 h-5 text-[#4a6850]" />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-[15px] font-black tracking-tight text-gray-900">About</p>
-                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">Version, terms, privacy policy</p>
+                    <p className="text-[15px] font-black tracking-tight text-gray-900">{t('profile.about')}</p>
+                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">{t('profile.about_desc')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
@@ -429,8 +431,8 @@ const Profile = () => {
                     <HelpCircle className="w-5 h-5 text-teal-600" />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-[15px] font-black tracking-tight text-gray-900">Help & Support</p>
-                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">Contact us for assistance</p>
+                    <p className="text-[15px] font-black tracking-tight text-gray-900">{t('profile.help_support')}</p>
+                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">{t('profile.help_support_desc')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
@@ -465,8 +467,8 @@ const Profile = () => {
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-[15px] font-black tracking-tight text-gray-900">Clear Cache</p>
-                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">Fix loading issues and get latest version</p>
+                    <p className="text-[15px] font-black tracking-tight text-gray-900">{t('profile.clear_cache')}</p>
+                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">{t('profile.clear_cache_desc')}</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
@@ -489,7 +491,7 @@ const Profile = () => {
               <div className="w-10 h-10 rounded-2xl bg-red-50 flex items-center justify-center shadow-sm">
                 <LogOut className="w-5 h-5 text-red-500" />
               </div>
-              <p className="text-[15px] font-black tracking-tight text-red-500">Log Out</p>
+              <p className="text-[15px] font-black tracking-tight text-red-500">{t('profile.logout')}</p>
             </button>
           </div>
 
@@ -533,9 +535,9 @@ const Profile = () => {
             <SheetHeader className="flex-shrink-0 mb-6 pt-2">
               {/* Handle Bar */}
               <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
-              <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">Edit Profile</SheetTitle>
+              <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">{t('profile.edit_profile')}</SheetTitle>
               <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
-                Update your personal information
+                {t('profile.update_profile_desc')}
               </SheetDescription>
             </SheetHeader>
 
@@ -543,12 +545,12 @@ const Profile = () => {
               {/* Personal Info Card */}
               <div className="bg-white rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] p-5 space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">Full Name</label>
+                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">{t('profile.account')}</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                     <Input
                       type="text"
-                      placeholder="Your name"
+                      placeholder={t('common.loading')}
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       className="h-14 pl-12 rounded-2xl bg-gray-50 border-[#4a6850]/10 font-bold text-gray-900 focus:border-[#4a6850] focus:ring-[#4a6850]/20"
@@ -557,7 +559,7 @@ const Profile = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">Phone Number</label>
+                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">{t('personal_space.phone')}</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                     <Input
@@ -577,7 +579,7 @@ const Profile = () => {
                 onClick={handleSaveProfile}
                 className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white font-black text-base shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] hover:from-[#3d5643] hover:to-[#2f4336] transition-all"
               >
-                Save Changes
+                {t('profile.save_changes')}
               </Button>
             </div>
           </SheetContent>
@@ -589,19 +591,19 @@ const Profile = () => {
             <SheetHeader className="flex-shrink-0 mb-6 pt-2">
               {/* Handle Bar */}
               <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
-              <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">Payment Details</SheetTitle>
+              <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">{t('sheets.payment_details.title')}</SheetTitle>
               <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
-                Add your payment methods for group settlements
+                {t('sheets.payment_details.subtitle')}
               </SheetDescription>
             </SheetHeader>
 
             <div className="flex-1 overflow-y-auto space-y-4 pb-4">
               <div className="flex items-center gap-2 justify-center mb-2">
                 <p className="text-xs text-[#4a6850]/60 text-center font-bold">
-                  These details are visible to group members when they pay you
+                  {t('sheets.payment_details.visibility_notice')}
                 </p>
                 <Tooltip
-                  content="These details will be visible to your group members when they need to pay you back for shared expenses."
+                  content={t('sheets.payment_details.visibility_tooltip')}
                   position="top"
                 />
               </div>
@@ -612,11 +614,11 @@ const Profile = () => {
                   <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center">
                     <Phone className="w-4 h-4 text-[#4a6850]" />
                   </div>
-                  Mobile Wallets
+                  {t('sheets.payment_details.mobile_wallets')}
                 </h3>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">JazzCash Number</label>
+                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">{t('sheets.payment_details.jazzcash_label')}</label>
                   <Input
                     type="tel"
                     placeholder="03XX-XXXXXXX"
@@ -627,7 +629,7 @@ const Profile = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">Easypaisa Number</label>
+                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">{t('sheets.payment_details.easypaisa_label')}</label>
                   <Input
                     type="tel"
                     placeholder="03XX-XXXXXXX"
@@ -644,14 +646,14 @@ const Profile = () => {
                   <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center">
                     <Building2 className="w-4 h-4 text-[#4a6850]" />
                   </div>
-                  Bank Account
+                  {t('sheets.payment_details.bank_account')}
                 </h3>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">Bank Name</label>
+                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">{t('sheets.payment_details.bank_name_label')}</label>
                   <Select value={bankName} onValueChange={setBankName}>
                     <SelectTrigger className="h-14 rounded-2xl bg-gray-50 border-[#4a6850]/10 font-bold text-gray-900">
-                      <SelectValue placeholder="Select your bank" />
+                      <SelectValue placeholder={t('sheets.payment_details.bank_placeholder')} />
                     </SelectTrigger>
                     <SelectContent>
                       {BANKS.map((bank) => (
@@ -664,12 +666,12 @@ const Profile = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">Account Number / IBAN</label>
+                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">{t('sheets.payment_details.account_iban_label')}</label>
                   <div className="relative">
                     <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                     <Input
                       type="text"
-                      placeholder="Enter account number"
+                      placeholder={t('sheets.payment_details.account_placeholder')}
                       value={accountNumber}
                       onChange={(e) => setAccountNumber(e.target.value)}
                       className="h-14 pl-12 rounded-2xl bg-gray-50 border-[#4a6850]/10 font-bold text-gray-900 focus:border-[#4a6850] focus:ring-[#4a6850]/20"
@@ -684,14 +686,14 @@ const Profile = () => {
                   <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center">
                     <CreditCard className="w-4 h-4 text-[#4a6850]" />
                   </div>
-                  Raast
+                  {t('sheets.payment_details.raast')}
                 </h3>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">Raast ID</label>
+                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">{t('sheets.payment_details.raast_id_label')}</label>
                   <Input
                     type="text"
-                    placeholder="Your Raast ID (phone/CNIC)"
+                    placeholder={t('sheets.payment_details.raast_placeholder')}
                     value={raastId}
                     onChange={(e) => setRaastId(e.target.value)}
                     className="h-14 rounded-2xl bg-gray-50 border-[#4a6850]/10 font-bold text-gray-900 focus:border-[#4a6850] focus:ring-[#4a6850]/20"
@@ -705,7 +707,7 @@ const Profile = () => {
                 onClick={handleSavePaymentDetails}
                 className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white font-black text-base shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] hover:from-[#3d5643] hover:to-[#2f4336] transition-all"
               >
-                Save Payment Details
+                {t('sheets.payment_details.save_btn')}
               </Button>
             </div>
           </SheetContent>
@@ -717,9 +719,9 @@ const Profile = () => {
             <SheetHeader className="mb-6 pt-2">
               {/* Handle Bar */}
               <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
-              <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">Profile Picture</SheetTitle>
+              <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">{t('profile.choose_option')}</SheetTitle>
               <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
-                Choose an option
+                {t('profile.choose_option')}
               </SheetDescription>
             </SheetHeader>
 
@@ -729,7 +731,7 @@ const Profile = () => {
                 className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white font-black text-base shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] hover:from-[#3d5643] hover:to-[#2f4336] transition-all flex items-center justify-center gap-3"
               >
                 <Camera className="w-5 h-5" />
-                {user?.photoURL ? "Change Picture" : "Upload Picture"}
+                {user?.photoURL ? t('profile.change_picture') : t('profile.upload_picture')}
               </Button>
 
               {user?.photoURL && (
@@ -739,7 +741,7 @@ const Profile = () => {
                   className="w-full h-14 rounded-3xl border-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-black text-base flex items-center justify-center gap-3 transition-all"
                 >
                   <X className="w-5 h-5" />
-                  Remove Picture
+                  {t('profile.remove_picture')}
                 </Button>
               )}
 
@@ -748,7 +750,7 @@ const Profile = () => {
                 variant="secondary"
                 className="w-full h-14 rounded-3xl font-black text-base"
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
             </div>
           </SheetContent>

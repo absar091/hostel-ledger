@@ -5,9 +5,11 @@ import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useInvitations } from "@/hooks/useInvitations";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import Logo from "./Logo";
 
 const Sidebar = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useFirebaseAuth();
@@ -17,18 +19,18 @@ const Sidebar = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success("Logged out successfully");
+      toast.success(t('sidebar.logout_success'));
       navigate("/login");
     } catch (error) {
-      toast.error("Failed to logout");
+      toast.error(t('sidebar.logout_failed'));
     }
   };
 
   const navItems = [
-    { id: "dashboard", icon: Home, label: "Dashboard", path: "/", badge: pendingInvites },
-    { id: "groups", icon: Users, label: "Groups", path: "/groups" },
-    { id: "activity", icon: Clock, label: "Activity", path: "/activity" },
-    { id: "settings", icon: Settings, label: "Settings", path: "/settings" },
+    { id: "dashboard", icon: Home, label: t('navigation.home'), path: "/", badge: pendingInvites },
+    { id: "groups", icon: Users, label: t('navigation.groups'), path: "/groups" },
+    { id: "activity", icon: Clock, label: t('navigation.activity'), path: "/activity" },
+    { id: "settings", icon: Settings, label: t('settings.title'), path: "/settings" },
   ];
 
   const isActive = (path: string) => {
@@ -52,7 +54,7 @@ const Sidebar = () => {
             </div>
             <div className="min-w-0">
               <h1 className="text-lg font-black text-gray-900 tracking-tight truncate">Hostel Ledger</h1>
-              <p className="text-xs text-gray-500 font-medium truncate">Split expenses easily</p>
+              <p className="text-xs text-gray-500 font-medium truncate">{t('sidebar.motto')}</p>
             </div>
           </div>
         ) : (
@@ -79,7 +81,7 @@ const Sidebar = () => {
         {/* Section Label */}
         {isOpen && (
           <div className="px-4 py-2 mb-2">
-            <span className="text-xs font-black uppercase tracking-widest text-gray-400">Main</span>
+            <span className="text-xs font-black uppercase tracking-widest text-gray-400">{t('sidebar.main_label')}</span>
           </div>
         )}
 
@@ -141,7 +143,7 @@ const Sidebar = () => {
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200 font-medium"
             >
               <LogOut className="w-5 h-5" />
-              <span>Logout</span>
+              <span>{t('sidebar.logout')}</span>
             </button>
           </>
         ) : (
@@ -158,7 +160,7 @@ const Sidebar = () => {
             <button
               onClick={handleLogout}
               className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200"
-              title="Logout"
+              title={t('sidebar.logout')}
             >
               <LogOut className="w-5 h-5" />
             </button>

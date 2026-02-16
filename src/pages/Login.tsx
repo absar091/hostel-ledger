@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, Wallet, Loader2 } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import PageGuide from "@/components/PageGuide";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { useTranslation } from "react-i18next";
+import LanguageSelector from "@/components/LanguageSelector";
 
 const Login = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
@@ -39,7 +42,7 @@ const Login = () => {
     e.preventDefault();
 
     if (!email || !password) {
-      toast.error("Please fill in all fields");
+      toast.error(t('common.error'), { description: "Please fill in all fields" });
       return;
     }
 
@@ -49,7 +52,7 @@ const Login = () => {
     // On error, we turn it off
 
     if (result.success) {
-      toast.success("Welcome back!");
+      toast.success(t('common.success'), { description: "Welcome back!" });
       navigate("/", { replace: true });
     } else {
       setIsLoading(false);
@@ -64,7 +67,10 @@ const Login = () => {
 
       {/* App Header - iPhone Style Enhanced with #4a6850 */}
       <div className="bg-white border-b border-[#4a6850]/10 pt-4 pb-5 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-between max-w-sm mx-auto">
+          {/* Invisible spacer to center logo section */}
+          <div className="w-10" />
+
           {/* App Logo and Name - Enhanced */}
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl flex items-center justify-center shadow-lg">
@@ -76,9 +82,11 @@ const Login = () => {
             </div>
             <div>
               <h1 className="text-2xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
-              <p className="text-sm text-[#4a6850]/80 font-bold">Split expenses with ease</p>
+              <p className="text-sm text-[#4a6850]/80 font-bold">{t('sidebar.motto')}</p>
             </div>
           </div>
+
+          <LanguageSelector />
         </div>
       </div>
 
@@ -100,20 +108,20 @@ const Login = () => {
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
         {/* Page Description */}
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Welcome Back</h2>
-          <p className="text-[#4a6850]/80 font-bold text-lg">Login as user to access your dashboard</p>
+          <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">{t('auth.login_title')}</h2>
+          <p className="text-[#4a6850]/80 font-bold text-lg">{t('dashboard.welcome_back')}</p>
         </div>
 
         {/* Form - iPhone Style */}
         <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6 animate-slide-up">
           <div>
-            <label htmlFor="email" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Email</label>
+            <label htmlFor="email" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.email')}</label>
             <div className="relative">
               <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" aria-hidden="true" />
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder={t('auth.email')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-14 pl-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl bg-white transition-all"
@@ -123,13 +131,13 @@ const Login = () => {
           </div>
 
           <div>
-            <label htmlFor="password" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Password</label>
+            <label htmlFor="password" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.password')}</label>
             <div className="relative">
               <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" aria-hidden="true" />
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
+                placeholder={t('auth.password')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-14 pl-14 pr-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl bg-white transition-all"
@@ -155,26 +163,26 @@ const Login = () => {
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {user ? "Redirecting..." : "Signing in..."}
+                {user ? t('common.loading') : t('common.loading')}
               </>
             ) : (
-              "Sign In"
+              t('auth.login_btn')
             )}
           </Button>
         </form>
 
         {/* Sign up link - iPhone Style */}
         <p className="mt-8 text-center text-[#4a6850]/80 animate-fade-in font-bold">
-          Don't have an account?{" "}
+          {t('auth.no_account')}{" "}
           <Link to="/signup" className="text-[#4a6850] font-black hover:underline transition-all">
-            Sign up
+            {t('auth.signup')}
           </Link>
         </p>
 
         {/* Forgot password link - iPhone Style */}
         <p className="mt-4 text-center text-[#4a6850]/80 animate-fade-in font-bold">
           <Link to="/forgot-password" className="text-[#4a6850] font-black hover:underline transition-all">
-            Forgot your password?
+            {t('auth.forgot_password')}
           </Link>
         </p>
       </div>

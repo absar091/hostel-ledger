@@ -12,7 +12,9 @@ import { toast } from "sonner";
 import { calculateExpenseSplit } from "@/lib/expenseLogic";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { getDatabase, ref, get } from "firebase/database";
+import { useTranslation } from "react-i18next";
 // import { validateExpenseData, sanitizeString, sanitizeAmount } from "@/lib/validation";
 
 interface Member {
@@ -73,6 +75,8 @@ const PERSONAL_CATEGORIES = [
 ];
 
 const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initialGroupId }: AddExpenseSheetProps) => {
+  const { t } = useTranslation();
+  const { formatAmount } = useCurrency();
   const [step, setStep] = useState(1);
   const [selectedGroup, setSelectedGroup] = useState(initialGroupId || "");
   const [amount, setAmount] = useState("");
@@ -179,7 +183,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
     const invalidParticipants = participants.filter(p => !members.some(m => String(m.id) === String(p)));
     if (invalidParticipants.length > 0) {
       console.error("Invalid participants detected:", { invalidParticipants, availableMembers: members.map(m => m.id) });
-      toast.error("Some selected participants are not valid members of this group");
+      toast.error(t('common.error'));
       return;
     }
 
@@ -204,14 +208,14 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
       try {
         await saveOfflineExpense(offlineExpense);
         updatePendingCount();
-        toast.success("Expense saved offline", {
-          description: "Will sync when you're back online"
+        toast.success(t('sheets.add_expense.offline_saved'), {
+          description: t('sheets.add_expense.offline_sync_notice')
         });
         setIsSubmitting(false);
         onClose();
       } catch (error) {
         console.error("Failed to save offline expense:", error);
-        toast.error("Failed to save expense locally");
+        toast.error(t('sheets.add_expense.offline_save_failed'));
         setIsSubmitting(false);
       }
     } else {
@@ -231,7 +235,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
         onClose();
       } catch (error) {
         console.error("Failed to submit expense:", error);
-        toast.error("Failed to submit expense");
+        toast.error(t('sheets.add_expense.submit_failed'));
         setIsSubmitting(false);
       }
     }
@@ -295,11 +299,11 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
         toast.success(`${tempMemberName.trim()} added and selected for split`);
       } else {
         toast.dismiss(loadingToast);
-        toast.error("Failed to add member to group. Please try again.");
+        toast.error(t('common.error'));
       }
     } catch (error) {
       toast.dismiss(loadingToast);
-      toast.error("An error occurred while adding the member.");
+      toast.error(t('common.error'));
     }
   };
 
@@ -334,7 +338,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
           {isSubmitting && (
             <div className="absolute inset-0 z-[150] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-200">
               <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
-              <h3 className="text-lg font-black text-slate-900">Processing...</h3>
+              <h3 className="text-lg font-black text-slate-900">{t('sheets.add_expense.processing')}</h3>
             </div>
           )}
 
@@ -345,20 +349,20 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
             {/* Offline Indicator */}
             {offline && (
               <div className="mx-auto mb-4 inline-flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-full px-4 py-2">
-                <WifiOff className="w-4 h-4 text-orange-600" />
-                <span className="text-xs font-bold text-orange-700">Offline Mode - Will sync later</span>
+                <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                <span className="text-xs font-bold text-orange-700">{t('sheets.add_expense.offline_indicator')}</span>
               </div>
             )}
 
             <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">
-              {step === 1 && "Select Group"}
-              {step === 2 && "Enter Amount"}
-              {step === 3 && "Who Paid?"}
-              {step === 4 && "Split Between"}
-              {step === 5 && (selectedGroupData?.isPersonal ? "Review & Note" : "Add Details")}
+              {step === 1 && t('sheets.add_expense.step_select_group')}
+              {step === 2 && t('sheets.add_expense.step_amount')}
+              {step === 3 && t('sheets.add_expense.step_who_paid')}
+              {step === 4 && t('sheets.add_expense.step_split')}
+              {step === 5 && (selectedGroupData?.isPersonal ? t('sheets.add_expense.step_review') : t('sheets.add_expense.step_details'))}
             </SheetTitle>
             <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
-              Add a new expense to split between group members
+              {t('sheets.add_expense.details_prompt')}
             </SheetDescription>
           </SheetHeader>
 
@@ -368,7 +372,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
               <div className="mb-6 p-4 bg-red-50 border border-red-200/50 rounded-3xl shadow-sm">
                 <div className="flex items-center gap-3 mb-3">
                   <AlertCircle className="w-5 h-5 text-red-600" />
-                  <span className="text-sm font-black text-red-800">Please fix the following errors:</span>
+                  <span className="text-sm font-black text-red-800">{t('sheets.add_expense.fix_errors')}</span>
                 </div>
                 <ul className="text-sm text-red-700 space-y-2">
                   {validationErrors.map((error, index) => (
@@ -382,7 +386,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
             {step === 1 && (
               <div className="space-y-3 animate-fade-in">
                 <p className="text-sm text-[#4a6850]/80 mb-4 text-center font-bold">
-                  Which group is this expense for?
+                  {t('sheets.add_expense.group_prompt')}
                 </p>
                 {groups.map((group) => (
                   <button
@@ -402,7 +406,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                       <span className="font-black text-gray-900 tracking-tight block truncate">{group.name}</span>
                       {(group.memberCount || group.members.length) > 0 && (
                         <p className="text-xs text-[#4a6850]/80 font-bold">
-                          {group.memberCount || group.members.length} members
+                          {t('sheets.add_expense.member_count', { count: group.memberCount || group.members.length })}
                         </p>
                       )}
                     </div>
@@ -425,12 +429,13 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                     <span className="text-sm font-black text-[#4a6850]">{selectedGroupData.name}</span>
                   </div>
                 )}
+                <p className="text-[#4a6850]/60 text-sm font-bold mb-4">{t('sheets.add_expense.amount_prompt')}</p>
                 <div className="text-4xl font-black text-gray-900 mb-8 tracking-tighter tabular-nums">
-                  Rs {amount || "0"}
+                  {formatAmount(parseFloat(amount) || 0)}
                 </div>
                 <Input
                   type="number"
-                  placeholder="Enter amount"
+                  placeholder={t('sheets.add_expense.amount_label')}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-2 border-[#4a6850]/30 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:ring-0 focus:shadow-xl"
@@ -443,16 +448,16 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
             {step === 3 && (
               <div className="space-y-3 animate-fade-in">
                 <div className="flex items-center gap-2 justify-center mb-4">
-                  <p className="text-sm text-[#4a6850]/80 font-bold text-center">Select who paid</p>
+                  <p className="text-sm text-[#4a6850]/80 font-bold text-center">{t('sheets.add_expense.who_paid_prompt')}</p>
                   <Tooltip
-                    content="Choose who paid the money upfront"
+                    content={t('sheets.add_expense.who_paid_prompt')}
                     position="bottom"
                   />
                 </div>
                 {isLoadingMembers ? (
                   <div className="flex flex-col items-center justify-center py-8 space-y-3 animate-fade-in">
                     <div className="w-8 h-8 border-4 border-[#4a6850]/20 border-t-[#4a6850] rounded-full animate-spin"></div>
-                    <p className="text-sm text-[#4a6850]/70 font-bold">Loading members...</p>
+                    <p className="text-sm text-[#4a6850]/70 font-bold">{t('common.loading')}</p>
                   </div>
                 ) : (
                   <>
@@ -472,22 +477,22 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                           <div className="flex items-center gap-2">
                             <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
                             {(member.id === fullGroupData?.createdBy || (member as any).userId === fullGroupData?.createdBy) && (
-                              <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                              <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.owner')}</span>
                             )}
                             {member.isPending && !member.isCurrentUser && (
-                              <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited (Email)</span>
+                              <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.invited')}</span>
                             )}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             {member.balance !== undefined && member.balance !== null && (
                               <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-lg border border-emerald-100">
-                                Rs {member.balance.toLocaleString()}
+                                {formatAmount(member.balance)}
                               </span>
                             )}
                             {member.isTemporary && (
                               <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600">
                                 {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
-                                <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
+                                <span>{t('sheets.add_expense.temp')} • {member.deletionCondition === 'TIME_LIMIT' ? t('sheets.add_expense.seven_days') : t('sheets.add_expense.until_settled')}</span>
                               </div>
                             )}
                           </div>
@@ -509,17 +514,17 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
               <div className="space-y-3 animate-fade-in">
                 <div className="flex items-center gap-2 justify-center mb-4">
                   <p className="text-sm text-[#4a6850]/80 font-bold text-center">
-                    Select everyone who shared this expense
+                    {t('sheets.add_expense.split_prompt')}
                   </p>
                   <Tooltip
-                    content="Choose all people who should split this cost"
+                    content={t('sheets.add_expense.split_prompt')}
                     position="bottom"
                   />
                 </div>
                 {isLoadingMembers ? (
                   <div className="flex flex-col items-center justify-center py-8 space-y-3 animate-fade-in">
                     <div className="w-8 h-8 border-4 border-[#4a6850]/20 border-t-[#4a6850] rounded-full animate-spin"></div>
-                    <p className="text-sm text-[#4a6850]/70 font-bold">Loading members...</p>
+                    <p className="text-sm text-[#4a6850]/70 font-bold">{t('common.loading')}</p>
                   </div>
                 ) : (
                   <>
@@ -542,31 +547,31 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                             <div className="flex items-center gap-2">
                               <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
                               {member.isTemporary && (
-                                <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                                <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.temp')}</span>
                               )}
                               {(member.id === fullGroupData?.createdBy || (member as any).userId === fullGroupData?.createdBy) && (
-                                <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                                <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.owner')}</span>
                               )}
                               {member.isPending && !member.isCurrentUser && (
-                                <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited (Email)</span>
+                                <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.invited')}</span>
                               )}
                             </div>
                             <div className="flex items-center gap-2 mt-0.5">
                               {member.balance !== undefined && member.balance !== null && (
                                 <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-lg border border-emerald-100">
-                                  Rs {member.balance.toLocaleString()}
+                                  {formatAmount(member.balance)}
                                 </span>
                               )}
                               {member.isTemporary && (
                                 <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600">
                                   {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
-                                  <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
+                                  <span>{t('sheets.add_expense.temp')} • {member.deletionCondition === 'TIME_LIMIT' ? t('sheets.add_expense.seven_days') : t('sheets.add_expense.until_settled')}</span>
                                 </div>
                               )}
                             </div>
                             {isSelected && (
                               <div className="text-xs text-[#4a6850] font-bold">
-                                Rs {splitDetails.perPerson} share
+                                {t('sheets.add_expense.share_label', { amount: formatAmount(splitDetails.perPerson) })}
                               </div>
                             )}
                           </div>
@@ -587,24 +592,24 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                   className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl border-2 border-dashed border-[#4a6850]/30 text-[#4a6850] font-bold hover:bg-[#4a6850]/5 transition-all mt-3"
                 >
                   <UserPlus className="w-4 h-4" />
-                  <span className="text-sm">Add Temporary Member</span>
+                  <span className="text-sm">{t('sheets.add_expense.add_temp_member_btn')}</span>
                 </button>
 
                 {/* Split Summary - Compact - Only show when 2+ participants */}
                 {participants.length > 1 && paidBy && (
                   <div className="bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl p-4 mt-4 border border-[#4a6850]/20 shadow-md">
-                    <div className="text-xs text-[#4a6850]/80 mb-2 font-black uppercase tracking-wide">Split Summary</div>
+                    <div className="text-xs text-[#4a6850]/80 mb-2 font-black uppercase tracking-wide">{t('sheets.add_expense.split_summary')}</div>
                     <div className="text-lg font-black text-gray-900 tracking-tight">
-                      Rs {splitDetails.perPerson} per person
+                      {formatAmount(splitDetails.perPerson)} {t('sheets.add_expense.per_person')}
                     </div>
                     {splitDetails.toReceive > 0 && (
                       <div className="text-[#4a6850] font-black mt-2 text-sm">
-                        You'll receive Rs {splitDetails.toReceive} from {splitDetails.othersCount} {splitDetails.othersCount === 1 ? 'person' : 'people'}
+                        {t('sheets.add_expense.you_will_receive', { amount: formatAmount(splitDetails.toReceive), count: splitDetails.othersCount, people: splitDetails.othersCount === 1 ? t('sheets.add_expense.person') : t('sheets.add_expense.people') })}
                       </div>
                     )}
                     {splitDetails.toGive > 0 && (
                       <div className="text-red-600 font-black mt-2 text-sm">
-                        You owe Rs {splitDetails.toGive} to {paidByName}
+                        {t('sheets.add_expense.you_owe', { amount: formatAmount(splitDetails.toGive), name: paidByName })}
                       </div>
                     )}
                   </div>
@@ -619,7 +624,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                 {selectedGroupData?.isPersonal && (
                   <div>
                     <label className="text-sm font-black text-[#4a6850]/80 mb-4 block uppercase tracking-wide">
-                      Select Category
+                      {t('sheets.add_expense.select_category')}
                     </label>
                     <div className="grid grid-cols-4 gap-3">
                       {PERSONAL_CATEGORIES.map((cat) => (
@@ -643,10 +648,10 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
 
                 <div>
                   <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
-                    {selectedGroupData?.isPersonal ? "Add a note" : "What was it for? (optional)"}
+                    {selectedGroupData?.isPersonal ? t('sheets.add_expense.add_note') : t('sheets.add_expense.optional_note')}
                   </label>
                   <Input
-                    placeholder={selectedGroupData?.isPersonal ? "e.g. My dinner, Gym subscription" : "e.g., Dinner, Chai, Groceries"}
+                    placeholder={selectedGroupData?.isPersonal ? t('sheets.add_expense.note_placeholder') : t('sheets.add_expense.optional_note_placeholder')}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
@@ -657,10 +662,10 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                 {!selectedGroupData?.isPersonal && (
                   <div>
                     <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
-                      Where? (optional)
+                      {t('sheets.add_expense.where')}
                     </label>
                     <Input
-                      placeholder="e.g., Student Café"
+                      placeholder={t('sheets.add_expense.where_placeholder')}
                       value={place}
                       onChange={(e) => setPlace(e.target.value)}
                       className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
@@ -672,13 +677,13 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                 {/* Final Summary - iPhone Style */}
                 <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-6 mt-8 shadow-[0_25px_70px_rgba(74,104,80,0.3)] text-white">
                   <div className="text-sm text-white/90 mb-3 font-black uppercase tracking-wide">
-                    {selectedGroupData?.isPersonal ? "Personal Expense" : "Final Summary"}
+                    {selectedGroupData?.isPersonal ? t('sheets.add_expense.personal_expense') : t('sheets.add_expense.final_summary')}
                   </div>
-                  <div className="font-black text-2xl tracking-tight mb-2">Rs {amount}</div>
+                  <div className="font-black text-2xl tracking-tight mb-2">{formatAmount(parseFloat(amount) || 0)}</div>
 
                   {selectedGroupData?.isPersonal ? (
                     <div className="flex items-center gap-2 text-sm text-white/90 font-bold">
-                      <span>Category:</span>
+                      <span>{t('sheets.add_expense.category')}</span>
                       <span className="bg-white/20 px-2 py-1 rounded-lg">
                         {PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.emoji} {PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.label}
                       </span>
@@ -686,19 +691,19 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                   ) : (
                     <>
                       <div className="text-sm text-white/90 font-bold">
-                        Paid by {paidByName} • Split {participants.length} ways
+                        {t('sheets.add_expense.paid_by_label')} {paidByName} • {t('sheets.add_expense.participants_label')} {participants.length}
                       </div>
                       <div className="text-sm text-white/90 font-bold">
-                        Rs {splitDetails.perPerson} per person
+                        {formatAmount(splitDetails.perPerson)} {t('sheets.add_expense.per_person')}
                       </div>
                       {splitDetails.toReceive > 0 && (
                         <div className="text-emerald-200 font-black mt-3 text-lg">
-                          You will receive Rs {splitDetails.toReceive}
+                          You will receive {formatAmount(splitDetails.toReceive)}
                         </div>
                       )}
                       {splitDetails.toGive > 0 && (
                         <div className="text-orange-200 font-black mt-3 text-lg">
-                          You owe Rs {splitDetails.toGive}
+                          You owe {formatAmount(splitDetails.toGive)}
                         </div>
                       )}
                     </>
@@ -722,7 +727,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                   }}
                   className="flex-1 h-14 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black border-0 shadow-lg hover:shadow-xl transition-all"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
               )}
               {step < 5 ? (
@@ -737,14 +742,14 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                   disabled={!canProceed()}
                   className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Continue <ChevronRight className="w-5 h-5 ml-2 font-bold" />
+                  {t('common.continue')} <ChevronRight className="w-5 h-5 ml-2 font-bold" />
                 </Button>
               ) : (
                 <Button
                   onClick={handleSubmit}
                   className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all"
                 >
-                  Add Expense
+                  {t('sheets.add_expense.submit_btn')}
                 </Button>
               )}
             </div>
@@ -756,9 +761,9 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
       <Dialog open={showTempMemberInput} onOpenChange={setShowTempMemberInput}>
         <DialogContent className="rounded-3xl p-6 z-[110] bg-white border border-[#4a6850]/20 shadow-[0_25px_70px_rgba(74,104,80,0.2)]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black text-gray-900 tracking-tight">Add Temporary Member</DialogTitle>
+            <DialogTitle className="text-xl font-black text-gray-900 tracking-tight">{t('sheets.add_expense.dialog_title')}</DialogTitle>
             <DialogDescription className="text-sm text-[#4a6850]/80 font-bold">
-              Add a member for one-off expenses. They will be automatically removed when settled or after a time limit.
+              {t('sheets.add_expense.dialog_desc')}
             </DialogDescription>
           </DialogHeader>
 
@@ -775,7 +780,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
             </div>
 
             <div className="space-y-3">
-              <Label className="text-sm font-black text-[#4a6850]/80 uppercase tracking-wide">Auto-delete condition:</Label>
+              <Label className="text-sm font-black text-[#4a6850]/80 uppercase tracking-wide">{t('sheets.add_expense.auto_delete')}</Label>
               <RadioGroup
                 value={tempMemberCondition}
                 onValueChange={(v) => setTempMemberCondition(v as any)}
@@ -791,10 +796,10 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                   <div className="grid gap-1.5 leading-none">
                     <Label htmlFor="time" className="font-black text-gray-900 flex items-center gap-2 cursor-pointer">
                       <Clock className="w-4 h-4 text-orange-500" />
-                      After 1 Week
+                      {t('sheets.add_expense.after_1_week')}
                     </Label>
                     <span className="text-xs text-[#4a6850]/70 font-bold leading-normal">
-                      Member will be removed automatically after 7 days. You'll get an email reminder.
+                      {t('sheets.add_expense.after_1_week_desc')}
                     </span>
                   </div>
                 </div>
@@ -809,10 +814,10 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                   <div className="grid gap-1.5 leading-none">
                     <Label htmlFor="settled" className="font-black text-gray-900 flex items-center gap-2 cursor-pointer">
                       <Ban className="w-4 h-4 text-[#4a6850]" />
-                      When Settled
+                      {t('sheets.add_expense.when_settled')}
                     </Label>
                     <span className="text-xs text-[#4a6850]/70 font-bold leading-normal">
-                      Member will be removed when their balance reaches zero.
+                      {t('sheets.add_expense.when_settled_desc')}
                     </span>
                   </div>
                 </div>
@@ -826,13 +831,13 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
               onClick={() => setShowTempMemberInput(false)}
               className="flex-1 h-12 rounded-2xl border-[#4a6850]/30 text-[#4a6850] font-black hover:bg-[#4a6850]/10"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleAddTempMember}
               className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black shadow-lg"
             >
-              Add Member
+              {t('sheets.add_expense.add_temp_member_btn')}
             </Button>
           </DialogFooter>
         </DialogContent>

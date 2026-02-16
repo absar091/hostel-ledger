@@ -6,12 +6,15 @@ import { toast } from "sonner";
 import { Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { validatePasswordStrength } from "@/lib/validation";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useTranslation } from "react-i18next";
+import LanguageSelector from "@/components/LanguageSelector";
 
 const ResetPassword = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { confirmPasswordReset } = useFirebaseAuth();
-  
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -25,9 +28,9 @@ const ResetPassword = () => {
   useEffect(() => {
     const mode = searchParams.get('mode');
     const oobCode = searchParams.get('oobCode');
-    
+
     if (mode !== 'resetPassword' || !oobCode) {
-      toast.error("Invalid password reset link. Please request a new password reset.");
+      toast.error(t('auth.invalid_link'));
       navigate("/forgot-password");
       return;
     }
@@ -46,14 +49,14 @@ const ResetPassword = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!password || !confirmPassword) {
-      toast.error("Please fill in all fields");
+      toast.error(t('common.error'), { description: "Please fill in all fields" });
       return;
     }
 
     if (password !== confirmPassword) {
-      toast.error("Passwords don't match");
+      toast.error(t('auth.passwords_dont_match'));
       return;
     }
 
@@ -67,12 +70,12 @@ const ResetPassword = () => {
     try {
       // Use Firebase's confirmPasswordReset with the reset code
       const result = await confirmPasswordReset(resetCode, password);
-      
+
       if (result.success) {
-        toast.success("Password reset successfully! You can now sign in with your new password.");
+        toast.success(t('auth.reset_success'));
         navigate("/login");
       } else {
-        toast.error(result.error || "Failed to reset password. Please try again.");
+        toast.error(result.error || t('common.error'));
       }
 
     } catch (error: any) {
@@ -90,9 +93,9 @@ const ResetPassword = () => {
   };
 
   const getPasswordStrengthText = (score: number) => {
-    if (score <= 2) return "Weak";
-    if (score <= 4) return "Medium";
-    return "Strong";
+    if (score <= 2) return t('common.weak');
+    if (score <= 4) return t('common.medium');
+    return t('common.strong');
   };
 
   if (!isValidToken) {
@@ -100,10 +103,10 @@ const ResetPassword = () => {
       <div className="min-h-screen bg-white flex items-center justify-center p-4">
         {/* iPhone-style top accent border */}
         <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
-        
+
         <div className="text-center">
           <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Verifying reset link...</p>
+          <p className="text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -113,7 +116,7 @@ const ResetPassword = () => {
     <div className="min-h-screen bg-white flex flex-col">
       {/* iPhone-style top accent border */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
-      
+
       {/* App Header - iPhone Style Enhanced with #4a6850 */}
       <div className="bg-white border-b border-[#4a6850]/10 pt-4 pb-5 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
         <div className="flex items-center justify-center">
@@ -128,23 +131,24 @@ const ResetPassword = () => {
             </div>
             <div>
               <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
-              <p className="text-xs text-[#4a6850]/80 font-bold">Split expenses with ease</p>
+              <p className="text-xs text-[#4a6850]/80 font-bold">{t('sidebar.motto')}</p>
             </div>
           </div>
+          <LanguageSelector />
         </div>
       </div>
-      
+
       {/* Header */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
         {/* Form - iPhone Style */}
         <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6 animate-slide-up">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Reset Password</h2>
-            <p className="text-[#4a6850]/80 font-bold">Create a new password for your account</p>
+            <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">{t('auth.reset_password')}</h2>
+            <p className="text-[#4a6850]/80 font-bold">{t('auth.set_password_subtitle')}</p>
           </div>
 
           <div>
-            <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">New Password</label>
+            <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.new_password')}</label>
             <div className="relative">
               <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
               <Input
@@ -163,17 +167,16 @@ const ResetPassword = () => {
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
-            
+
             {/* Password Strength Indicator - iPhone Style */}
             {password && (
               <div className="mt-3">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="flex-1 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        passwordStrength.score <= 2 ? 'bg-red-500' :
+                    <div
+                      className={`h-2 rounded-full transition-all duration-300 ${passwordStrength.score <= 2 ? 'bg-red-500' :
                         passwordStrength.score <= 4 ? 'bg-yellow-500' : 'bg-[#4a6850]'
-                      }`}
+                        }`}
                       style={{ width: `${(passwordStrength.score / 6) * 100}%` }}
                     />
                   </div>
@@ -186,7 +189,7 @@ const ResetPassword = () => {
           </div>
 
           <div>
-            <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Confirm New Password</label>
+            <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.confirm_new_password')}</label>
             <div className="relative">
               <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
               <Input
@@ -205,19 +208,19 @@ const ResetPassword = () => {
                 {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
-            
+
             {/* Password Match Indicator - iPhone Style */}
             {confirmPassword && (
               <div className="mt-3 flex items-center gap-3">
                 {password === confirmPassword ? (
                   <>
                     <CheckCircle className="w-4 h-4 text-[#4a6850]" />
-                    <span className="text-xs text-[#4a6850] font-black">Passwords match</span>
+                    <span className="text-xs text-[#4a6850] font-black">{t('auth.passwords_match')}</span>
                   </>
                 ) : (
                   <>
                     <div className="w-4 h-4 rounded-full border-2 border-red-500" />
-                    <span className="text-xs text-red-600 font-black">Passwords don't match</span>
+                    <span className="text-xs text-red-600 font-black">{t('auth.passwords_dont_match')}</span>
                   </>
                 )}
               </div>
@@ -229,15 +232,15 @@ const ResetPassword = () => {
             disabled={isLoading || !passwordStrength.isStrong || password !== confirmPassword}
             className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
           >
-            {isLoading ? "Resetting Password..." : "Reset Password"}
+            {isLoading ? t('auth.resetting_password') : t('auth.reset_password')}
           </Button>
         </form>
 
         {/* Back to login link - iPhone Style */}
         <p className="mt-8 text-center text-[#4a6850]/80 animate-fade-in font-bold">
-          Remember your password?{" "}
+          {t('auth.already_have_account')}{" "}
           <Link to="/login" className="text-[#4a6850] font-black hover:underline transition-all">
-            Sign in here
+            {t('auth.back_to_login')}
           </Link>
         </p>
       </div>

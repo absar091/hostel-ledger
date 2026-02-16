@@ -1,6 +1,7 @@
 import { memo } from "react";
 import Avatar from "./Avatar";
 import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car, Wallet, Plus } from "lucide-react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Participant {
   name: string;
@@ -47,6 +48,7 @@ const TimelineItemBase = ({
   isPayerOwner,
   onClick,
 }: TimelineItemProps) => {
+  const { formatAmount } = useCurrency();
   const Icon = type === "payment" ? HandCoins :
     type === "wallet_add" ? Plus :
       type === "wallet_deduct" ? Wallet :
@@ -70,7 +72,7 @@ const TimelineItemBase = ({
           </div>
 
           <div className="text-right shrink-0">
-            <div className="font-black text-[#4a6850] text-xl tracking-tight tabular-nums">+Rs {amount.toLocaleString()}</div>
+            <div className="font-black text-[#4a6850] text-xl tracking-tight tabular-nums">+{formatAmount(amount)}</div>
             <div className="text-xs text-[#4a6850]/60 font-bold">{date}</div>
           </div>
         </div>
@@ -95,7 +97,7 @@ const TimelineItemBase = ({
           </div>
 
           <div className="text-right shrink-0">
-            <div className="font-black text-red-600 text-xl tracking-tight tabular-nums">-Rs {amount.toLocaleString()}</div>
+            <div className="font-black text-red-600 text-xl tracking-tight tabular-nums">-{formatAmount(amount)}</div>
             <div className="text-xs text-red-500/60 font-bold">{date}</div>
           </div>
         </div>
@@ -135,7 +137,7 @@ const TimelineItemBase = ({
 
           <div className="text-right shrink-0">
             <div className={`font-black text-xl tracking-tight tabular-nums ${isPayer ? 'text-red-600' : 'text-emerald-600'}`}>
-              {isPayer ? '-' : '+'}Rs {amount.toLocaleString()}
+              {isPayer ? '-' : '+'}{formatAmount(amount)}
             </div>
             <div className={`text-xs font-bold ${isPayer ? 'text-red-500/60' : 'text-emerald-500/60'}`}>{date}</div>
           </div>
@@ -193,7 +195,7 @@ const TimelineItemBase = ({
                     {isPayer ? (
                       <span className="text-[#4a6850]/80 font-bold">paid</span>
                     ) : (
-                      <span className="text-red-600 font-bold whitespace-nowrap">owes Rs {p.amount}</span>
+                      <span className="text-red-600 font-bold whitespace-nowrap">owes {formatAmount(p.amount)}</span>
                     )}
                   </span>
                 );
@@ -203,7 +205,7 @@ const TimelineItemBase = ({
         </div>
 
         <div className="text-right shrink-0">
-          <div className="font-black text-gray-900 text-xl tracking-tight tabular-nums">Rs {amount.toLocaleString()}</div>
+          <div className="font-black text-gray-900 text-xl tracking-tight tabular-nums">{formatAmount(amount)}</div>
           <div className="text-xs text-gray-500 font-bold">{date}</div>
         </div>
       </div>

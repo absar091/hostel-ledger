@@ -25,10 +25,18 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { useOneSignalPush } from '@/hooks/useOneSignalPush';
 import { cn } from '@/lib/utils';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { getCurrency, DEFAULT_CURRENCY } from '@/lib/currency';
+import { getLanguage, DEFAULT_LANGUAGE } from '@/lib/languages';
+import CurrencySelectionSheet from '@/components/CurrencySelectionSheet';
+import LanguageSelectionSheet from '@/components/LanguageSelectionSheet';
+import { Globe, DollarSign } from 'lucide-react';
 
 const Settings = () => {
+    const { t, i18n } = useTranslation();
     const { user, updateUserProfile, logout } = useFirebaseAuth();
     const navigate = useNavigate();
     const {
@@ -44,7 +52,18 @@ const Settings = () => {
     const [preferences, setPreferences] = useState({
         emailEnabled: true,
     });
+    const [isCurrencySheetOpen, setIsCurrencySheetOpen] = useState(false);
+    const [isLanguageSheetOpen, setIsLanguageSheetOpen] = useState(false);
+    const { currencyCode } = useCurrency();
+    const currentCurrency = getCurrency(user?.currency || DEFAULT_CURRENCY);
+    const currentLanguage = getLanguage(user?.language || DEFAULT_LANGUAGE);
     const [activeTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("profile");
+
+    useEffect(() => {
+        if (user?.language && user.language !== i18n.language) {
+            i18n.changeLanguage(user.language);
+        }
+    }, [user?.language, i18n]);
 
     useEffect(() => {
         const fetchPreferences = async () => {
@@ -73,11 +92,11 @@ const Settings = () => {
         setPreferences(prev => ({ ...prev, emailEnabled: value }));
         try {
             const prefRef = doc(db, `users/${user.uid}/preferences/notifications`);
-            await setDoc(prefRef, { emailEnabled: value }, { merge: true });
-            toast.success(`Email notifications ${value ? 'enabled' : 'disabled'}`);
+            setPreferences(snap.data() as any);
+            toast.success(value ? t('settings.email_enabled_toast') : t('settings.email_disabled_toast'));
         } catch (error) {
             console.error("Error updating preference:", error);
-            toast.error("Failed to update preference");
+            toast.error(t('common.error'));
             setPreferences(prev => ({ ...prev, emailEnabled: !value }));
         }
     };
@@ -86,31 +105,31 @@ const Settings = () => {
         try {
             if (checked) {
                 const success = await subscribePush();
-                if (success) toast.success("Push notifications enabled!");
+                if (success) toast.success(t('settings.push_enabled'));
             } else {
                 await unsubscribePush();
-                toast.success("Push notifications disabled");
+                toast.success(t('settings.push_disabled'));
             }
         } catch (error) {
             console.error("Push toggle error:", error);
-            toast.error("Failed to update push settings");
+            toast.error(t('settings.push_error'));
         }
     };
 
     const handleLogout = async () => {
-        if (confirm("Are you sure you want to log out?")) {
+        if (confirm(t('settings.logout_confirm'))) {
             try {
                 await logout();
-                toast.success("Logged out successfully");
+                toast.success(t('settings.logout_success'));
                 navigate("/login", { replace: true });
             } catch (error) {
-                toast.error("Failed to logout");
+                toast.error(t('settings.logout_failed'));
             }
         }
     };
 
     const handleClearCache = async () => {
-        if (confirm('Clear app cache? This will refresh the app with the latest version.')) {
+        if (confirm(t('settings.clear_cache') + ' ' + t('settings.clear_cache_desc'))) {
             try {
                 if ('caches' in window) {
                     const cacheNames = await caches.keys();
@@ -120,10 +139,10 @@ const Settings = () => {
                     const registrations = await navigator.serviceWorker.getRegistrations();
                     await Promise.all(registrations.map(reg => reg.unregister()));
                 }
-                toast.success("Cache cleared! Reloading app...");
+                toast.success(t('settings.cache_cleared'));
                 setTimeout(() => window.location.reload(), 1000);
             } catch (error) {
-                toast.error("Failed to clear cache");
+                toast.error(t('common.error'));
             }
         }
     };
@@ -189,16 +208,16 @@ const Settings = () => {
                             <ArrowLeft className="w-5 h-5" />
                         </button>
                     </div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Settings</h1>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">{t('settings.title')}</h1>
                 </div>
 
                 <main className="max-w-2xl mx-auto pt-6 sm:pt-10 px-4 pb-32">
                     {/* Simplified Preferences Section */}
-                    <Section title="Preferences">
+                    <Section title={t('settings.preferences')}>
                         <SettingItem
                             icon={Smartphone}
-                            label="Push Notifications"
-                            description={pushSupported ? (isPushSubscribed ? "Enabled" : "Receive instant alerts") : "Not supported"}
+                            label={t('settings.push_notifications')}
+                            description={pushSupported ? (isPushSubscribed ? t('common.enabled') : t('settings.push_desc')) : t('settings.push_not_supported')}
                             iconBg="bg-[#4a6850]/10"
                             iconColor="text-[#4a6850]"
                             action={
@@ -211,8 +230,8 @@ const Settings = () => {
                         />
                         <SettingItem
                             icon={Mail}
-                            label="Email Notifications"
-                            description="Daily summaries and alerts"
+                            label={t('settings.email_notifications')}
+                            description={t('settings.email_desc')}
                             iconBg="bg-[#4a6850]/10"
                             iconColor="text-[#4a6850]"
                             action={
@@ -225,8 +244,8 @@ const Settings = () => {
                         />
                         <SettingItem
                             icon={Eye}
-                            label="Show Wallet Balance"
-                            description="Visible to group members"
+                            label={t('settings.show_balance')}
+                            description={t('settings.balance_desc')}
                             iconBg="bg-[#4a6850]/10"
                             iconColor="text-[#4a6850]"
                             action={
@@ -237,13 +256,13 @@ const Settings = () => {
                                         try {
                                             const result = await updateUserProfile({ showBalanceToOthers: checked });
                                             if (result.success) {
-                                                toast.success(`Balance visibility ${checked ? 'enabled' : 'disabled'}`);
+                                                toast.success(t('settings.privacy_success', { status: checked ? t('common.enabled') : t('common.disabled') }));
                                             } else {
-                                                toast.error(result.error || "Failed to update visibility");
+                                                toast.error(result.error || t('settings.privacy_error'));
                                             }
                                         } catch (error) {
                                             console.error("Privacy update error:", error);
-                                            toast.error("An error occurred");
+                                            toast.error(t('common.error'));
                                         } finally {
                                             setUpdatingPrivacy(false);
                                         }
@@ -252,7 +271,72 @@ const Settings = () => {
                                 />
                             }
                         />
+                        <SettingItem
+                            icon={DollarSign}
+                            label={t('settings.currency')}
+                            description={`${currentCurrency.name} (${currentCurrency.symbol})`}
+                            iconBg="bg-blue-100"
+                            iconColor="text-blue-600"
+                            showChevron={true}
+                            onClick={() => setIsCurrencySheetOpen(true)}
+                        />
+                        <SettingItem
+                            icon={Globe}
+                            label={t('settings.language')}
+                            description={`${currentLanguage.name} (${currentLanguage.nativeName})`}
+                            iconBg="bg-purple-100"
+                            iconColor="text-purple-600"
+                            showChevron={true}
+                            onClick={() => setIsLanguageSheetOpen(true)}
+                        />
+
+                        {/* Language support info */}
+                        <div className="bg-blue-50/50 p-4 border-t border-blue-100 flex gap-3">
+                            <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                            <p className="text-[11px] text-blue-700 font-bold leading-relaxed italic">
+                                "{t('settings.language_support_notice')}"
+                            </p>
+                        </div>
                     </Section>
+
+                    <CurrencySelectionSheet
+                        open={isCurrencySheetOpen}
+                        onClose={() => setIsCurrencySheetOpen(false)}
+                        selectedCurrency={user?.currency || DEFAULT_CURRENCY}
+                        onSelect={async (code) => {
+                            try {
+                                const result = await updateUserProfile({ currency: code });
+                                if (result.success) {
+                                    toast.success(`Currency updated to ${code}`);
+                                } else {
+                                    toast.error(result.error || "Failed to update currency");
+                                }
+                            } catch (error) {
+                                console.error("Currency update error:", error);
+                                toast.error("An error occurred");
+                            }
+                        }}
+                    />
+
+                    <LanguageSelectionSheet
+                        open={isLanguageSheetOpen}
+                        onClose={() => setIsLanguageSheetOpen(false)}
+                        selectedLanguage={user?.language || DEFAULT_LANGUAGE}
+                        onSelect={async (code) => {
+                            try {
+                                const result = await updateUserProfile({ language: code });
+                                if (result.success) {
+                                    i18n.changeLanguage(code);
+                                    toast.success(`Language updated to ${getLanguage(code).name}`);
+                                } else {
+                                    toast.error(result.error || "Failed to update language");
+                                }
+                            } catch (error) {
+                                console.error("Language update error:", error);
+                                toast.error("An error occurred");
+                            }
+                        }}
+                    />
 
                     {/* Footer Info */}
                     <div className="mt-8 mb-12 text-center px-4">

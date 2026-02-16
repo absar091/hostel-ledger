@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useTranslation } from "react-i18next";
 
 interface Member {
   id: string;
@@ -33,6 +35,7 @@ interface Group {
   emoji: string;
   members: Member[];
   createdBy?: string;
+  memberCount?: number;
 }
 
 interface RecordPaymentSheetProps {
@@ -49,6 +52,8 @@ interface RecordPaymentSheetProps {
 }
 
 const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSheetProps) => {
+  const { t } = useTranslation();
+  const { formatAmount } = useCurrency();
   const { getSettlements } = useFirebaseAuth();
   const { fetchGroupDetail } = useFirebaseData();
   const [step, setStep] = useState(1);
@@ -164,17 +169,17 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
 
     const settlement = settlements[fromMember] || { toReceive: 0, toPay: 0 };
     if (settlement.toReceive <= 0) {
-      toast.error(`${selectedMemberName} doesn't owe any money in this group.`);
+      toast.error(t('sheets.record_payment.not_owe_error', { name: selectedMemberName }));
       return;
     }
 
     if (isNaN(amountValue) || amountValue <= 0) {
-      toast.error("Please enter a valid amount");
+      toast.error(t('sheets.record_payment.enter_valid_amount'));
       return;
     }
 
     if (amountValue > settlement.toReceive) {
-      toast.error(`Amount exceeds ${selectedMemberName}'s debt (Rs ${settlement.toReceive.toLocaleString()})`);
+      toast.error(t('sheets.record_payment.amount_exceeds', { name: selectedMemberName, amount: formatAmount(settlement.toReceive) }));
       return;
     }
 
@@ -222,12 +227,12 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
 
           <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">
-            {step === 1 && "Select Group"}
-            {step === 2 && "Who Paid You?"}
-            {step === 3 && "Payment Details"}
+            {step === 1 && t('sheets.record_payment.step_select_group')}
+            {step === 2 && t('sheets.record_payment.step_who_paid_you')}
+            {step === 3 && t('sheets.record_payment.step_payment_details')}
           </SheetTitle>
           <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
-            Record a payment received from a group member
+            {t('sheets.record_payment.subtitle')}
           </SheetDescription>
         </SheetHeader>
 
@@ -236,7 +241,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
           {step === 1 && (
             <div className="space-y-3 animate-fade-in">
               <p className="text-sm text-[#4a6850]/80 mb-4 text-center font-bold">
-                Which group is this payment from?
+                {t('sheets.record_payment.group_prompt')}
               </p>
               {groups.map((group) => (
                 <button
@@ -256,7 +261,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     <span className="font-black text-gray-900 tracking-tight block truncate">{group.name}</span>
                     {(group.memberCount || group.members.length) > 0 && (
                       <p className="text-xs text-[#4a6850]/80 font-bold">
-                        {group.memberCount || group.members.length} members
+                        {t('sheets.add_expense.member_count', { count: group.memberCount || group.members.length })}
                       </p>
                     )}
                   </div>
@@ -282,17 +287,17 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 </div>
               )}
               <p className="text-sm text-[#4a6850]/80 mb-4 text-center font-bold">
-                Who sent you money?
+                {t('sheets.record_payment.who_sent_prompt')}
               </p>
               <div className="space-y-3">
                 {isLoadingMembers ? (
                   <div className="flex flex-col items-center justify-center py-12 space-y-4 animate-fade-in">
                     <div className="w-12 h-12 border-4 border-[#4a6850]/20 border-t-[#4a6850] rounded-full animate-spin"></div>
-                    <p className="text-sm text-[#4a6850]/70 font-black">Finding members...</p>
+                    <p className="text-sm text-[#4a6850]/70 font-black">{t('sheets.record_payment.finding_members')}</p>
                   </div>
                 ) : otherMembers.length === 0 ? (
                   <div className="text-center py-12 px-6 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
-                    <p className="text-gray-500 font-bold">No other members found who owe money in this group.</p>
+                    <p className="text-gray-500 font-bold">{t('sheets.record_payment.no_members_found')}</p>
                   </div>
                 ) : (
                   otherMembers.map((member) => {
@@ -319,27 +324,27 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                           <div className="flex items-center gap-2">
                             <div className="font-black text-gray-900 tracking-tight truncate">{member.name}</div>
                             {(member.id === selectedGroupData?.createdBy || (member as any).userId === selectedGroupData?.createdBy) && (
-                              <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                              <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.owner')}</span>
                             )}
                             {(member as any).isPending && (
-                              <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited (Email)</span>
+                              <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.invited')}</span>
                             )}
                             {member.isTemporary && (
-                              <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                              <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.temp')}</span>
                             )}
                             {!owesYou && (
-                              <span className="px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-wider">No Debt</span>
+                              <span className="px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-wider">{t('common.no_debt')}</span>
                             )}
                           </div>
                           <div className="text-xs font-bold truncate">
                             {isSettled ? (
-                              <span className="text-emerald-600 font-black">✅ All settled</span>
+                              <span className="text-emerald-600 font-black">✅ {t('common.all_settled')}</span>
                             ) : owesYou ? (
-                              <span className="text-[#4a6850] font-black">Owes Rs {settlement.toReceive.toLocaleString()}</span>
+                              <span className="text-[#4a6850] font-black">{t('sheets.record_payment.owe_amount', { amount: formatAmount(settlement.toReceive) })}</span>
                             ) : youOwe ? (
-                              <span className="text-red-500 font-black">You owe Rs {settlement.toPay.toLocaleString()}</span>
+                              <span className="text-red-500 font-black">{t('sheets.add_expense.you_owe', { amount: formatAmount(settlement.toPay), name: '' }).replace(' to ', '')}</span>
                             ) : (
-                              <span className="text-gray-500">No pending</span>
+                              <span className="text-gray-500">{t('common.no_pending')}</span>
                             )}
                           </div>
                         </div>
@@ -368,23 +373,23 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                       <div className="flex items-center gap-2">
                         <h3 className="font-black text-gray-900 text-base tracking-tight truncate">{selectedMemberData.name}</h3>
                         {(selectedMemberData.id === selectedGroupData?.createdBy || (selectedMemberData as any).userId === selectedGroupData?.createdBy) && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                          <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.owner')}</span>
                         )}
                         {(selectedMemberData as any).isPending && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited (Email)</span>
+                          <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.invited')}</span>
                         )}
                       </div>
                       <div className="text-xs font-bold truncate">
                         {selectedMemberData.settlement.toReceive > 0 ? (
                           <span className="text-[#4a6850]">
-                            💰 Owes Rs {selectedMemberData.settlement.toReceive.toLocaleString()}
+                            💰 {t('sheets.record_payment.owe_amount', { amount: formatAmount(selectedMemberData.settlement.toReceive) })}
                           </span>
                         ) : selectedMemberData.settlement.toPay > 0 ? (
                           <span className="text-red-500">
-                            💸 You owe Rs {selectedMemberData.settlement.toPay.toLocaleString()}
+                            💸 {t('sheets.add_expense.you_owe', { amount: formatAmount(selectedMemberData.settlement.toPay), name: '' }).replace(' to ', '')}
                           </span>
                         ) : (
-                          <span className="text-[#4a6850]">✅ All settled</span>
+                          <span className="text-[#4a6850]">✅ {t('common.all_settled')}</span>
                         )}
                       </div>
                     </div>
@@ -395,30 +400,30 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     <div className="mt-3 pt-3 border-t border-[#4a6850]/20">
                       <div className="flex items-center gap-2 mb-2">
                         <CreditCard className="w-4 h-4 text-[#4a6850]" />
-                        <span className="text-xs font-black text-[#4a6850] uppercase tracking-wide">Payment Info</span>
+                        <span className="text-xs font-black text-[#4a6850] uppercase tracking-wide">{t('common.payment_info')}</span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         {selectedMemberData.paymentDetails.jazzCash && (
                           <div className="bg-white rounded-xl p-2 border border-[#4a6850]/10">
-                            <span className="text-[#4a6850]/70 font-bold block">JazzCash</span>
+                            <span className="text-[#4a6850]/70 font-bold block">{t('common.jazzcash')}</span>
                             <div className="font-black text-gray-900 font-mono text-xs truncate">{selectedMemberData.paymentDetails.jazzCash}</div>
                           </div>
                         )}
                         {selectedMemberData.paymentDetails.easypaisa && (
                           <div className="bg-white rounded-xl p-2 border border-[#4a6850]/10">
-                            <span className="text-[#4a6850]/70 font-bold block">Easypaisa</span>
+                            <span className="text-[#4a6850]/70 font-bold block">{t('common.easypaisa')}</span>
                             <div className="font-black text-gray-900 font-mono text-xs truncate">{selectedMemberData.paymentDetails.easypaisa}</div>
                           </div>
                         )}
                         {selectedMemberData.paymentDetails.bankName && (
                           <div className="bg-white rounded-xl p-2 border border-[#4a6850]/10">
-                            <span className="text-[#4a6850]/70 font-bold block">Bank</span>
+                            <span className="text-[#4a6850]/70 font-bold block">{t('common.bank')}</span>
                             <div className="font-black text-gray-900 font-mono text-xs truncate">{selectedMemberData.paymentDetails.bankName}</div>
                           </div>
                         )}
                         {selectedMemberData.paymentDetails.accountNumber && (
                           <div className="bg-white rounded-xl p-2 border border-[#4a6850]/10">
-                            <span className="text-[#4a6850]/70 font-bold block">Account</span>
+                            <span className="text-[#4a6850]/70 font-bold block">{t('common.account')}</span>
                             <div className="font-black text-gray-900 font-mono text-xs truncate">{selectedMemberData.paymentDetails.accountNumber}</div>
                           </div>
                         )}
@@ -431,13 +436,13 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     <div className="mt-3 pt-3 border-t border-[#4a6850]/20">
                       <div className="flex items-center gap-2 mb-2">
                         <Info className="w-4 h-4 text-[#4a6850]" />
-                        <span className="text-xs font-black text-[#4a6850] uppercase tracking-wide">Quick Fill</span>
+                        <span className="text-xs font-black text-[#4a6850] uppercase tracking-wide">{t('common.quick_fill')}</span>
                       </div>
                       <button
                         onClick={() => setAmount(selectedMemberData.settlement.toReceive.toString())}
                         className="w-full bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white px-4 py-2 rounded-xl transition-all font-black shadow-md hover:shadow-lg text-sm"
                       >
-                        Full Amount: Rs {selectedMemberData.settlement.toReceive.toLocaleString()}
+                        {t('common.full_amount')}: {formatAmount(selectedMemberData.settlement.toReceive)}
                       </button>
                     </div>
                   )}
@@ -447,15 +452,15 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
               {/* Amount - Compact */}
               <div>
                 <label className="text-xs font-black text-[#4a6850]/80 mb-2 block uppercase tracking-wide">
-                  Amount from {selectedMemberName}
+                  {t('sheets.record_payment.amount_label')}
                 </label>
                 <div className="text-center mb-4">
                   <div className="text-4xl font-black text-gray-900 mb-4 tracking-tighter tabular-nums">
-                    Rs {amount || "0"}
+                    {formatAmount(parseFloat(amount) || 0)}
                   </div>
                   <Input
                     type="number"
-                    placeholder="Enter amount"
+                    placeholder={t('sheets.record_payment.amount_label')}
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-2 border-[#4a6850]/30 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:ring-0 focus:shadow-xl"
@@ -468,10 +473,10 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide">
-                    Payment method
+                    {t('sheets.record_payment.method_label')}
                   </label>
                   <Tooltip
-                    content="Select how you received the payment"
+                    content={t('sheets.record_payment.method_label')}
                     position="top"
                   />
                 </div>
@@ -519,10 +524,10 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
               {/* Note - Compact */}
               <div>
                 <label className="text-xs font-black text-[#4a6850]/80 mb-2 block uppercase tracking-wide">
-                  Note (optional)
+                  {t('sheets.record_payment.note_label')}
                 </label>
                 <Input
-                  placeholder="e.g., Mess payment, Monthly dues"
+                  placeholder={t('sheets.record_payment.note_label')}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
@@ -537,10 +542,10 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     <Avatar name={selectedMemberName || ""} size="sm" />
                     <div className="flex-1 min-w-0">
                       <div className="font-black text-lg tracking-tight text-white truncate">
-                        +Rs {amount}
+                        +{formatAmount(parseFloat(amount) || 0)}
                       </div>
                       <div className="text-xs text-white/90 font-bold truncate">
-                        from {selectedMemberName} • {method}
+                        {t('sheets.record_payment.received_from', { name: selectedMemberName })} • {method === 'cash' ? t('sheets.record_payment.method_cash') : t('sheets.record_payment.method_online')}
                       </div>
                     </div>
                   </div>
@@ -558,7 +563,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 onClick={() => setStep((s) => s - 1)}
                 className="flex-1 h-14 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black border-0 shadow-lg hover:shadow-xl transition-all"
               >
-                Back
+                {t('common.back')}
               </Button>
             )}
             {step < 3 ? (
@@ -567,7 +572,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 disabled={!canProceed()}
                 className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
               >
-                Continue <ChevronRight className="w-5 h-5 ml-2 font-bold" />
+                {t('common.continue')} <ChevronRight className="w-5 h-5 ml-2 font-bold" />
               </Button>
             ) : (
               <Button
@@ -575,7 +580,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 disabled={!canProceed()}
                 className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
               >
-                Record Payment
+                {t('sheets.record_payment.submit_btn')}
               </Button>
             )}
           </div>

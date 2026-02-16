@@ -1,13 +1,14 @@
 import React, { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Share2, Download, CheckCircle2, ArrowRight, Home, ChevronLeft } from "lucide-react";
+import { Share2, Download, CheckCircle2, Home, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import confetti from "canvas-confetti";
 import html2canvas from "html2canvas";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import AppContainer from "@/components/AppContainer";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useTranslation } from "react-i18next";
 
 // Success Chime using Web Audio API for maximum reliability
 const playSuccessChime = () => {
@@ -20,7 +21,6 @@ const playSuccessChime = () => {
             const osc = context.createOscillator();
             const gain = context.createGain();
 
-            osc.className = "chime-osc";
             osc.type = "sine";
             osc.frequency.setValueAtTime(frequency, startTime);
 
@@ -46,9 +46,11 @@ const playSuccessChime = () => {
 };
 
 const ReceiptPage = () => {
+    const { t } = useTranslation();
     const location = useLocation();
     const navigate = useNavigate();
     const { user: currentUser } = useFirebaseAuth();
+    const { formatAmount } = useCurrency();
     const receiptRef = useRef<HTMLDivElement>(null);
 
     const { transaction, type } = location.state || {};
@@ -84,8 +86,8 @@ const ReceiptPage = () => {
     if (!transaction) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50">
-                <p className="text-slate-500 font-bold mb-4">No transaction details found</p>
-                <Button onClick={() => navigate("/")} className="rounded-2xl">Go to Dashboard</Button>
+                <p className="text-slate-500 font-bold mb-4">{t('receipt.no_details')}</p>
+                <Button onClick={() => navigate("/")} className="rounded-2xl">{t('receipt.go_to_dashboard')}</Button>
             </div>
         );
     }
@@ -94,7 +96,7 @@ const ReceiptPage = () => {
         if (!receiptRef.current) return;
 
         try {
-            toast.loading("Generating receipt...", { id: "receipt-gen" });
+            toast.loading(t('receipt.generating'), { id: "receipt-gen" });
             const canvas = await html2canvas(receiptRef.current, {
                 scale: 2,
                 backgroundColor: "#ffffff",
@@ -109,11 +111,11 @@ const ReceiptPage = () => {
             link.click();
 
             toast.dismiss("receipt-gen");
-            toast.success("Receipt downloaded!");
+            toast.success(t('receipt.download_success'));
         } catch (err) {
             console.error("Download failed:", err);
             toast.dismiss("receipt-gen");
-            toast.error("Failed to generate receipt image");
+            toast.error(t('receipt.gen_failed'));
         }
     };
 
@@ -122,7 +124,7 @@ const ReceiptPage = () => {
 
         try {
             if (navigator.share) {
-                toast.loading("Preparing to share...", { id: "share-gen" });
+                toast.loading(t('receipt.preparing_share'), { id: "share-gen" });
 
                 try {
                     const canvas = await html2canvas(receiptRef.current, {
@@ -136,7 +138,7 @@ const ReceiptPage = () => {
                         if (blob) {
                             const file = new File([blob], "receipt.png", { type: "image/png" });
                             const shareData = {
-                                title: 'Transaction Receipt',
+                                title: t('receipt.share_receipt'),
                                 text: `Receipt for ${transaction.title || 'Transaction'}`,
                                 files: [file]
                             };
@@ -152,16 +154,16 @@ const ReceiptPage = () => {
                 } catch (fileShareErr) {
                     const shareText = `🧾 Hostel Ledger Receipt\n\n` +
                         `Title: ${transaction.title}\n` +
-                        `Amount: Rs ${transaction.amount.toLocaleString()}\n` +
+                        `Amount: ${formatAmount(transaction.amount)}\n` +
                         `Date: ${new Date(transaction.timestamp || transaction.date).toLocaleString()}\n` +
                         `${type === "expense" ? `Paid by: ${transaction.paidByName}` : `From: ${transaction.fromName} To: ${transaction.toName}`}\n\n` +
                         `Shared via Hostel Ledger 🚀`;
 
-                    await navigator.share({ title: 'Transaction Receipt', text: shareText });
+                    await navigator.share({ title: t('receipt.share_receipt'), text: shareText });
                     toast.dismiss("share-gen");
                 }
             } else {
-                toast.success("Receipt details copied to clipboard!");
+                toast.success(t('receipt.copied'));
             }
         } catch (err) {
             console.error('Error sharing:', err);
@@ -184,7 +186,7 @@ const ReceiptPage = () => {
                         >
                             <ChevronLeft className="w-5 h-5" />
                         </button>
-                        <h1 className="text-sm font-black uppercase tracking-widest text-slate-400">Transaction Receipt</h1>
+                        <h1 className="text-sm font-black uppercase tracking-widest text-slate-400">{t('receipt.title')}</h1>
                         <div className="w-10 h-10" /> {/* Spacer */}
                     </header>
                 </div>
@@ -195,8 +197,8 @@ const ReceiptPage = () => {
                         <div className="w-16 h-16 rounded-[1.5rem] bg-emerald-500 shadow-[0_15px_40px_rgba(16,185,129,0.3)] flex items-center justify-center mb-4 transform rotate-3">
                             <CheckCircle2 className="w-8 h-8 text-white" strokeWidth={3} />
                         </div>
-                        <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1">Success!</h2>
-                        <p className="text-slate-500 font-bold text-sm">Your transaction has been recorded.</p>
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1">{t('receipt.success')}</h2>
+                        <p className="text-slate-500 font-bold text-sm">{t('receipt.success_recorded')}</p>
                     </div>
 
                     {/* THE RECEIPT */}
@@ -227,10 +229,9 @@ const ReceiptPage = () => {
 
                             {/* Hero Amount */}
                             <div className="py-6 text-center bg-slate-50/30">
-                                <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] block mb-2">Amount {type === 'expense' ? 'Spent' : 'Received'}</span>
+                                <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] block mb-2">{type === 'expense' ? t('receipt.amount_spent') : t('receipt.amount_received')}</span>
                                 <div className="text-4xl font-black text-emerald-600 tabular-nums tracking-tighter flex justify-center items-end gap-1">
-                                    <span className="text-xl mb-1 opacity-40 font-bold">Rs</span>
-                                    {transaction.amount.toLocaleString()}
+                                    {formatAmount(transaction.amount)}
                                 </div>
                             </div>
 
@@ -238,22 +239,22 @@ const ReceiptPage = () => {
                             <div className="p-6 space-y-4">
                                 <div className="grid grid-cols-2 gap-y-4">
                                     <div className="space-y-1">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Transaction ID</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('receipt.transaction_id')}</p>
                                         <p className="font-mono text-[10px] font-bold text-slate-900">{transaction.id.substring(0, 16).toUpperCase()}</p>
                                     </div>
                                     <div className="space-y-1 text-right">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Type</p>
-                                        <p className="font-black text-[10px] text-slate-900 uppercase tracking-tight">{type === 'expense' ? 'Group Expense' : 'Settlement Payment'}</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('receipt.type')}</p>
+                                        <p className="font-black text-[10px] text-slate-900 uppercase tracking-tight">{type === 'expense' ? t('receipt.group_expense') : t('receipt.settlement')}</p>
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? "Paid By" : "From"}</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? t('receipt.paid_by') : t('receipt.from')}</p>
                                         <p className="font-black text-xs text-slate-900">{type === "expense" ? transaction.paidByName : transaction.fromName}</p>
                                     </div>
                                     <div className="space-y-1 text-right">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? "Split With" : "To"}</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? t('receipt.split_with') : t('receipt.to')}</p>
                                         <p className="font-black text-xs text-slate-900">
                                             {type === "expense"
-                                                ? `${transaction.participants?.length || 0} People`
+                                                ? `${transaction.participants?.length || 0} ${t('receipt.people')}`
                                                 : transaction.toName || currentUser?.name}
                                         </p>
                                     </div>
@@ -261,7 +262,7 @@ const ReceiptPage = () => {
 
                                 {transaction.note && (
                                     <div className="pt-3 border-t border-slate-100">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Note</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{t('receipt.note')}</p>
                                         <div className="bg-slate-50 rounded-xl p-3 text-xs font-bold text-slate-700 italic border border-slate-100">
                                             "{transaction.note}"
                                         </div>
@@ -270,12 +271,12 @@ const ReceiptPage = () => {
 
                                 {type === "expense" && transaction.participants && (
                                     <div className="pt-4 border-t border-slate-100">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Breakdown</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">{t('receipt.breakdown')}</p>
                                         <div className="space-y-2">
                                             {transaction.participants.map((p: any, i: number) => (
                                                 <div key={i} className="flex justify-between items-center text-xs">
                                                     <span className="text-slate-500 font-bold">{p.name || `Member ${i + 1}`}</span>
-                                                    <span className="text-slate-900 font-black">Rs {p.amount.toLocaleString()}</span>
+                                                    <span className="text-slate-900 font-black">{formatAmount(p.amount)}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -285,7 +286,7 @@ const ReceiptPage = () => {
 
                             {/* Barcode & Footer - Compacted */}
                             <div className="p-6 bg-slate-900 text-white text-center pb-8">
-                                <div className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Fully Settled • No Returns</div>
+                                <div className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">{t('receipt.footer_motto')}</div>
                             </div>
                         </div>
                     </div>
@@ -298,14 +299,14 @@ const ReceiptPage = () => {
                             className="h-14 rounded-3xl bg-white border-slate-200 text-slate-900 font-black text-xs uppercase tracking-wider shadow-md hover:bg-slate-50 border-2"
                         >
                             <Download className="w-4 h-4 mr-2" />
-                            Download
+                            {t('receipt.download')}
                         </Button>
                         <Button
                             onClick={handleShare}
                             className="h-14 rounded-3xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider shadow-[0_10px_20px_rgba(16,185,129,0.2)] border-0"
                         >
                             <Share2 className="w-4 h-4 mr-2" />
-                            Share
+                            {t('receipt.share')}
                         </Button>
                     </div>
 
@@ -315,20 +316,10 @@ const ReceiptPage = () => {
                         className="mt-4 text-slate-400 hover:text-slate-900 font-black uppercase tracking-widest text-[10px]"
                     >
                         <Home className="w-3.5 h-3.5 mr-1.5" />
-                        Back to Dashboard
+                        {t('receipt.back_to_dashboard')}
                     </Button>
                 </main>
             </div>
-
-            <style>{`
-                .animate-bounce-subtle {
-                    animation: bounce-subtle 3s ease-in-out infinite;
-                }
-                @keyframes bounce-subtle {
-                    0%, 100% { transform: translateY(0) rotate(3deg); }
-                    50% { transform: translateY(-8px) rotate(5deg); }
-                }
-            `}</style>
         </AppContainer>
     );
 };

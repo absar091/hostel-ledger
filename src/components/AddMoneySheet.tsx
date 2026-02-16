@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Wallet, PiggyBank } from "lucide-react";
 import Tooltip from "./Tooltip";
 import { toast } from "sonner";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useTranslation } from "react-i18next";
 
 interface AddMoneySheetProps {
   open: boolean;
@@ -13,6 +15,8 @@ interface AddMoneySheetProps {
 }
 
 const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
+  const { t } = useTranslation();
+  const { formatAmount } = useCurrency();
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
 
@@ -26,7 +30,7 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
     const amountValue = parseFloat(amount);
 
     if (isNaN(amountValue) || amountValue <= 0) {
-      toast.error("Please enter a valid amount greater than zero");
+      toast.error(t('sheets.add_money.error_valid_amount'));
       return;
     }
 
@@ -51,15 +55,15 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
           <div className="flex items-center justify-center gap-3">
             <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight flex items-center justify-center gap-3">
               <PiggyBank className="w-7 h-7 text-[#4a6850]" />
-              Add to Available Budget
+              {t('sheets.add_money.title')}
             </SheetTitle>
             <Tooltip
-              content="Add money to your wallet balance. This represents actual money you have available to spend on group expenses."
+              content={t('sheets.add_money.tooltip')}
               position="bottom"
             />
           </div>
           <SheetDescription className="text-sm text-[#4a6850]/80 text-center font-bold">
-            Add actual money to your wallet for expense tracking
+            {t('sheets.add_money.subtitle')}
           </SheetDescription>
         </SheetHeader>
 
@@ -67,11 +71,11 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
           {/* Amount Input - iPhone Style */}
           <div className="text-center py-8">
             <div className="text-4xl font-black text-gray-900 mb-6 tracking-tighter tabular-nums">
-              Rs {amount || "0"}
+              {formatAmount(parseFloat(amount) || 0)}
             </div>
             <Input
               type="number"
-              placeholder="Enter amount"
+              placeholder={t('sheets.add_money.amount_placeholder')}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-[#4a6850]/20 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
@@ -82,7 +86,7 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
           {/* Quick Amount Buttons - iPhone Style */}
           <div className="mb-8">
             <label className="text-sm font-black text-[#4a6850]/80 mb-4 block uppercase tracking-wide">
-              Quick amounts
+              {t('sheets.add_money.quick_amounts_label')}
             </label>
             <div className="grid grid-cols-3 gap-3">
               {quickAmounts.map((quickAmount) => (
@@ -91,7 +95,7 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
                   onClick={() => setAmount(quickAmount.toString())}
                   className="p-4 rounded-3xl bg-white hover:bg-[#4a6850]/5 transition-all text-center border border-[#4a6850]/10 shadow-lg hover:shadow-xl hover:border-[#4a6850]/20"
                 >
-                  <div className="font-black text-gray-900 tracking-tight">Rs {quickAmount.toLocaleString()}</div>
+                  <div className="font-black text-gray-900 tracking-tight">{formatAmount(quickAmount)}</div>
                 </button>
               ))}
             </div>
@@ -100,10 +104,10 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
           {/* Note - iPhone Style */}
           <div className="mb-8">
             <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
-              Note (optional)
+              {t('sheets.add_money.note_label')}
             </label>
             <Input
-              placeholder="e.g., Monthly allowance, Salary, Pocket money"
+              placeholder={t('sheets.add_money.note_placeholder')}
               value={note}
               onChange={(e) => setNote(e.target.value)}
               className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
@@ -116,10 +120,9 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
             <div className="flex items-start gap-4">
               <Wallet className="w-6 h-6 text-[#4a6850] mt-1 flex-shrink-0" />
               <div>
-                <h4 className="font-black text-gray-900 mb-2 tracking-tight">Available Budget Tracking</h4>
+                <h4 className="font-black text-gray-900 mb-2 tracking-tight">{t('sheets.add_money.info_title')}</h4>
                 <p className="text-sm text-[#4a6850]/80 font-bold leading-relaxed">
-                  This adds to your Available Budget (real money). When you pay for group expenses,
-                  the full amount will be deducted from this balance.
+                  {t('sheets.add_money.info_text')}
                 </p>
               </div>
             </div>
@@ -131,10 +134,10 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-black text-white text-xl tracking-tight tabular-nums">
-                    +Rs {parseFloat(amount).toLocaleString()}
+                    +{formatAmount(parseFloat(amount) || 0)}
                   </div>
                   <div className="text-sm text-white/90 font-bold">
-                    Added to Available Budget
+                    {t('sheets.add_money.summary_title')}
                   </div>
                 </div>
                 <PiggyBank className="w-10 h-10 text-white/90" />
@@ -150,14 +153,14 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
               onClick={handleClose}
               className="flex-1 h-14 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black border-0 shadow-lg hover:shadow-xl transition-all"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={!canSubmit()}
               className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
             >
-              Add to Available Budget
+              {t('sheets.add_money.submit_btn')}
             </Button>
           </div>
         </div>
