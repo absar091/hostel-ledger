@@ -25,6 +25,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import Budget from "./pages/Budget";
+import PersonalSpace from "./pages/PersonalSpace";
 import Activity from "./pages/Activity";
 import DownloadApp from "./pages/DownloadApp";
 import InstallApp from "./pages/InstallApp";
@@ -209,6 +210,7 @@ const AppRoutes = () => (
     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
     <Route path="/terms-of-service" element={<TermsOfService />} />
     <Route path="/join/:id" element={<JoinGroup />} />
+    <Route path="/personal-space" element={<ProtectedRoute><PersonalSpace /></ProtectedRoute>} />
     <Route path="/receipt" element={<ProtectedRoute><ReceiptPage /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>

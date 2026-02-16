@@ -55,3 +55,11 @@ export const getValidUserDetails = async (username: string) => {
 export const claimEmailInvite = async (groupId: string) => {
     return await callSecureApi('/api/claim-email-invite', { groupId });
 };
+
+export const sendMoney = async (recipientUsername: string, amount: number, note?: string) => {
+    return await callSecureApi('/api/send-money', { recipientUsername, amount, note });
+};
+
+export const respondToMoneyRequest = async (transactionId: string, accept: boolean) => {
+    return await callSecureApi('/api/respond-money-request', { transactionId, accept });
+};

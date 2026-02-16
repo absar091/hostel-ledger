@@ -2607,6 +2607,235 @@ app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
   }
 });
 
+
+
+// --- P2P Lending / Send Money Endpoints ---
+
+/**
+ * Send Money / Request Repayment Endpoint
+ * Creates a pending P2P transaction. 
+ * Money does NOT move until the receiver accepts.
+ */
+app.post('/api/send-money', authenticate, async (req, res) => {
+  const { recipientUsername, amount, note } = req.body;
+  const senderUid = req.user.uid;
+
+  if (!recipientUsername || !amount) {
+    return res.status(400).json({ success: false, error: 'Recipient and amount are required' });
+  }
+
+  if (amount <= 0) {
+    return res.status(400).json({ success: false, error: 'Amount must be positive' });
+  }
+
+  try {
+    const db = admin.database();
+
+    // 1. Resolve Recipient
+    // We reuse the existing username index
+    const cleanUsername = recipientUsername.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
+    const usernameRef = db.ref(`usernames/${cleanUsername}`);
+    const usernameSnap = await usernameRef.get();
+
+    if (!usernameSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const uidData = usernameSnap.val();
+    const recipientUid = typeof uidData === 'string' ? uidData : (uidData?.uid || uidData?.userId);
+
+    if (!recipientUid) {
+      return res.status(404).json({ success: false, error: 'User ID resolution failed' });
+    }
+
+    if (recipientUid === senderUid) {
+      return res.status(400).json({ success: false, error: 'You cannot send money to yourself' });
+    }
+
+    // 2. Get User Details for Metadata
+    const [senderSnap, recipientSnap] = await Promise.all([
+      db.ref(`users/${senderUid}`).get(),
+      db.ref(`users/${recipientUid}`).get()
+    ]);
+
+    const sender = senderSnap.val();
+    const recipient = recipientSnap.val();
+
+    if (!sender || !recipient) {
+      return res.status(404).json({ success: false, error: 'User profile not found' });
+    }
+
+    // 3. Create Pending Transaction
+    const transactionId = db.ref('p2p_transactions').push().key;
+    const now = new Date().toISOString();
+
+    // We store this in a root collection "p2p_transactions"
+    const p2pTransaction = {
+      id: transactionId,
+      from: senderUid,
+      to: recipientUid,
+      amount: Number(amount),
+      status: 'pending', // pending_approval
+      note: note || '',
+      type: 'p2p_transfer',
+      senderName: sender.name || 'Unknown',
+      senderUsername: sender.username || '',
+      receiverName: recipient.name || 'Unknown',
+      receiverUsername: recipient.username || '',
+      createdAt: now,
+      timestamp: Date.now()
+    };
+
+    // Atomic update
+    const updates = {};
+    updates[`p2p_transactions/${transactionId}`] = p2pTransaction;
+    updates[`user_p2p_transactions/${senderUid}/${transactionId}`] = p2pTransaction;
+    updates[`user_p2p_transactions/${recipientUid}/${transactionId}`] = p2pTransaction;
+
+    await db.ref().update(updates);
+
+    // 4. Send Notification to Recipient
+    try {
+      const notificationPromises = [];
+
+      // Push Notification
+      if (process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY) {
+        notificationPromises.push(
+          sendOneSignalNotificationInternal({
+            userIds: [recipientUid],
+            title: `💰 Money Received from ${sender.name}`,
+            body: `${sender.name} wants to send you Rs ${Number(amount).toLocaleString()}. Tap to accept.`,
+            data: { type: 'p2p_request', transactionId }
+          }).catch(e => console.error('P2P Push failed:', e.message))
+        );
+      }
+
+      // Email Notification (Optional - keeping it minimal for now)
+
+      await Promise.allSettled(notificationPromises);
+    } catch (e) {
+      console.error('Notification error', e);
+    }
+
+    res.json({ success: true, transactionId, message: 'Money sent! Waiting for acceptance.' });
+
+  } catch (error) {
+    console.error('Send money error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * Respond to Money Request
+ * Accepts or Rejects a P2P transaction.
+ * If accepted, updates wallet balances atomically.
+ */
+app.post('/api/respond-money-request', authenticate, async (req, res) => {
+  const { transactionId, accept } = req.body;
+  const responderUid = req.user.uid;
+
+  if (!transactionId) {
+    return res.status(400).json({ success: false, error: 'Transaction ID required' });
+  }
+
+  try {
+    const db = admin.database();
+    const txRef = db.ref(`p2p_transactions/${transactionId}`);
+    const txSnap = await txRef.get();
+
+    if (!txSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Transaction not found' });
+    }
+
+    const tx = txSnap.val();
+
+    // Verify the responder is the RECEIVER of the money
+    // Only the receiver can "Accept" the money (and thus increase their wallet).
+    if (tx.to !== responderUid) {
+      return res.status(403).json({ success: false, error: 'Only the receiver can accept this transaction' });
+    }
+
+    if (tx.status !== 'pending') {
+      return res.status(400).json({ success: false, error: `Transaction is already ${tx.status}` });
+    }
+
+    const updates = {};
+    const now = new Date().toISOString();
+
+    if (!accept) {
+      // REJECT
+      updates[`p2p_transactions/${transactionId}/status`] = 'rejected';
+      updates[`p2p_transactions/${transactionId}/rejectedAt`] = now;
+      updates[`user_p2p_transactions/${tx.from}/${transactionId}/status`] = 'rejected';
+      updates[`user_p2p_transactions/${tx.from}/${transactionId}/rejectedAt`] = now;
+      updates[`user_p2p_transactions/${tx.to}/${transactionId}/status`] = 'rejected';
+      updates[`user_p2p_transactions/${tx.to}/${transactionId}/rejectedAt`] = now;
+
+      await db.ref().update(updates);
+
+      return res.json({ success: true, status: 'rejected' });
+    }
+
+    // ACCEPT -> Update Wallets
+    // 1. Get current balances
+    const [senderSnap, receiverSnap] = await Promise.all([
+      db.ref(`users/${tx.from}`).get(),
+      db.ref(`users/${tx.to}`).get()
+    ]);
+
+    if (!senderSnap.exists() || !receiverSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'User profiles not found' });
+    }
+
+    const sender = senderSnap.val();
+    const receiver = receiverSnap.val();
+    const amount = Number(tx.amount);
+
+    const senderBalanceBefore = sender.walletBalance || 0;
+    const receiverBalanceBefore = receiver.walletBalance || 0;
+
+    // 2. Calculate new balances
+    // Sender LOSES money (they sent it)
+    const senderBalanceAfter = senderBalanceBefore - amount;
+    // Receiver GAINS money (they accepted it)
+    const receiverBalanceAfter = receiverBalanceBefore + amount;
+
+    // 3. Batched Updates
+    updates[`p2p_transactions/${transactionId}/status`] = 'completed';
+    updates[`p2p_transactions/${transactionId}/completedAt`] = now;
+
+    // Update Denormalized Copies
+    updates[`user_p2p_transactions/${tx.from}/${transactionId}/status`] = 'completed';
+    updates[`user_p2p_transactions/${tx.from}/${transactionId}/completedAt`] = now;
+    updates[`user_p2p_transactions/${tx.to}/${transactionId}/status`] = 'completed';
+    updates[`user_p2p_transactions/${tx.to}/${transactionId}/completedAt`] = now;
+
+    // Update Wallets
+    updates[`users/${tx.from}/walletBalance`] = senderBalanceAfter;
+    updates[`users/${tx.to}/walletBalance`] = receiverBalanceAfter;
+
+    await db.ref().update(updates);
+
+    // 4. Notify Sender
+    try {
+      if (process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY) {
+        sendOneSignalNotificationInternal({
+          userIds: [tx.from],
+          title: `✅ Money Accepted`,
+          body: `${receiver.name} accepted your Rs ${amount.toLocaleString()}.`,
+          data: { type: 'p2p_accepted', transactionId }
+        }).catch(e => console.error('P2P Push failed:', e.message));
+      }
+    } catch (e) { }
+
+    res.json({ success: true, status: 'completed', message: 'Transaction completed and wallets updated' });
+
+  } catch (error) {
+    console.error('Respond money request error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 // 404 handler - MUST BE LAST
 app.use('*', (req, res) => {
   res.status(404).json({

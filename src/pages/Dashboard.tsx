@@ -1362,6 +1362,18 @@ const Dashboard = () => {
               </button>
 
               <button
+                onClick={() => navigate("/personal-space")}
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
+              >
+                <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
+                  <Send className="w-6 h-6 text-slate-600 dark:text-slate-400" />
+                </div>
+                <span className="text-xs font-black text-slate-900 dark:text-white text-center">
+                  Send
+                </span>
+              </button>
+
+              <button
                 onClick={handleReceivedMoney}
                 disabled={totalToReceive <= 0}
                 className={`flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all ${totalToReceive <= 0 ? "opacity-50" : ""}`}
@@ -1430,6 +1442,23 @@ const Dashboard = () => {
                   </h5>
                   <p className="text-emerald-700 dark:text-emerald-300 text-sm font-semibold">
                     Easily split a new bill with friends or groups.
+                  </p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => navigate("/personal-space")}
+                className="group cursor-pointer bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-blue-400/50 hover:shadow-xl hover:shadow-blue-900/5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 text-left relative overflow-hidden"
+              >
+                <div className="relative z-10">
+                  <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <Send className="w-8 h-8 font-bold" />
+                  </div>
+                  <h5 className="text-xl font-black mb-2 tracking-tighter">
+                    Send Money
+                  </h5>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold">
+                    Send money to friends directly.
                   </p>
                 </div>
               </button>
