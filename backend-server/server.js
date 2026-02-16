@@ -7,7 +7,6 @@ const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
-const { loadEmailTemplate } = require('./utils/email');
 const { validateCreateGroup } = require('./utils/validation');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
@@ -874,59 +873,31 @@ app.use('/api', (req, res, next) => {
   authenticate(req, res, next);
 });
 
-// Generic email sending endpoint
-// Generic email sending endpoint
-app.post('/api/send-email', emailLimiter, async (req, res) => {
+// Temporary Member Alert Endpoint (Secure)
+app.post('/api/send-temp-member-alert', authenticate, async (req, res) => {
   try {
-    const { to, subject, html, text } = req.body;
+    const { email, memberName, groupName, expiresAt } = req.body;
 
     // Validate input
-    if (!to || !subject || !html) {
+    if (!email || !memberName || !groupName || !expiresAt) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: to, subject, html'
+        error: 'Missing required fields'
       });
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(to)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid email address'
-      });
-    }
-
-    // Send email using emailService
-    console.log('📧 Sending email via emailService...');
-    const result = await emailService.sendEmailSafe({
-      to,
-      subject,
-      html,
-      text: text || ''
-    });
+    const result = await emailService.sendTempMemberAlert(email, memberName, groupName, expiresAt);
 
     if (result.success) {
-      console.log('✅ Email sent successfully:', result.messageId);
-      res.json({
-        success: true,
-        messageId: result.messageId,
-        provider: result.provider
-      });
+      console.log('✅ Temporary member alert email sent');
+      res.json({ success: true, message: 'Alert email sent successfully' });
     } else {
-      console.error('❌ Failed to send email:', result.error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to send email: ' + result.error
-      });
+      console.error('❌ Failed to send alert email:', result.error);
+      res.status(500).json({ success: false, error: 'Failed to send alert email' });
     }
-
   } catch (error) {
-    console.error('❌ Email sending error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to send email: ' + error.message
-    });
+    console.error('❌ Alert email error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
   }
 });
 
