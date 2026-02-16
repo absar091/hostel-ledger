@@ -727,24 +727,12 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       if (member.isTemporary && member.deletionCondition === 'TIME_LIMIT' && user.email) {
         // Send email notification about auto-deletion
         try {
-          const response = await fetch('/api/send-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: user.email,
-              subject: `Temporary Member Alert: ${newMember.name}`,
-              html: `
-                 <div style="font-family: sans-serif; padding: 20px;">
-                   <h2>Temporary Member Added</h2>
-                   <p>You added <b>${newMember.name}</b> as a temporary member to group <b>${group.name}</b>.</p>
-                   <p>This member is scheduled to be automatically removed on <b>${new Date(newMember.expiresAt!).toLocaleDateString()}</b>.</p>
-                   <p>Please ensure all debts are settled before this date.</p>
-                 </div>
-               `
-            })
+          await callSecureApi('/api/send-temp-member-alert', {
+            email: user.email,
+            memberName: newMember.name,
+            groupName: group.name,
+            expiresAt: new Date(newMember.expiresAt!).toLocaleDateString()
           });
-
-          if (!response.ok) console.warn("Failed to send temp member notification");
         } catch (e) {
           console.error("Error sending email", e);
         }
