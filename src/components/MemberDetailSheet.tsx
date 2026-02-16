@@ -134,7 +134,9 @@ const MemberDetailSheet = ({
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white shadow-[0_25px_70px_rgba(74,104,80,0.3)] border-t-2 border-[#4a6850]/20 z-[100]">
-        <SheetHeader className="flex-shrink-0 mb-6 bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-3xl border-b border-[#4a6850]/10">
+        <SheetHeader className="flex-shrink-0 mb-6 bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 -mx-6 -mt-6 px-6 pt-4 pb-4 rounded-t-3xl border-b border-[#4a6850]/10">
+          {/* Handle Bar */}
+          <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-3"></div>
           <SheetTitle className="text-center text-gray-900 font-black text-xl tracking-tight">Balance History</SheetTitle>
           <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
             View transaction history and settlement details with this member

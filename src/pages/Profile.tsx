@@ -529,67 +529,76 @@ const Profile = () => {
 
         {/* Edit Profile Sheet */}
         <Sheet open={showEditSheet} onOpenChange={setShowEditSheet}>
-
-          <SheetContent side="bottom" className="h-auto rounded-t-3xl flex flex-col">
-            <SheetHeader className="flex-shrink-0 mb-4">
-              <SheetTitle className="text-center">Edit Profile</SheetTitle>
-              <SheetDescription className="text-center text-sm text-gray-500">
+          <SheetContent side="bottom" className="h-auto rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
+            <SheetHeader className="flex-shrink-0 mb-6 pt-2">
+              {/* Handle Bar */}
+              <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
+              <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">Edit Profile</SheetTitle>
+              <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
                 Update your personal information
               </SheetDescription>
             </SheetHeader>
 
             <div className="space-y-4 pb-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Full Name</label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Your name"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="h-12 pl-12"
-                  />
+              {/* Personal Info Card */}
+              <div className="bg-white rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] p-5 space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
+                    <Input
+                      type="text"
+                      placeholder="Your name"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="h-14 pl-12 rounded-2xl bg-gray-50 border-[#4a6850]/10 font-bold text-gray-900 focus:border-[#4a6850] focus:ring-[#4a6850]/20"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Phone Number</label>
-                <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type="tel"
-                    placeholder="03XX-XXXXXXX"
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
-                    className="h-12 pl-12"
-                  />
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">Phone Number</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
+                    <Input
+                      type="tel"
+                      placeholder="03XX-XXXXXXX"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      className="h-14 pl-12 rounded-2xl bg-gray-50 border-[#4a6850]/10 font-bold text-gray-900 focus:border-[#4a6850] focus:ring-[#4a6850]/20"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex-shrink-0 pt-4 border-t bg-background">
-              <Button onClick={handleSaveProfile} className="w-full h-12">
+            <div className="flex-shrink-0 pt-4 border-t border-[#4a6850]/10">
+              <Button
+                onClick={handleSaveProfile}
+                className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white font-black text-base shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] hover:from-[#3d5643] hover:to-[#2f4336] transition-all"
+              >
                 Save Changes
               </Button>
             </div>
           </SheetContent>
-        </Sheet >
+        </Sheet>
 
         {/* Payment Details Sheet */}
-        < Sheet open={showPaymentSheet} onOpenChange={setShowPaymentSheet} >
-          <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col">
-            <SheetHeader className="flex-shrink-0 mb-4">
-              <SheetTitle className="text-center">Payment Details</SheetTitle>
-              <SheetDescription className="text-center text-sm text-gray-500">
+        <Sheet open={showPaymentSheet} onOpenChange={setShowPaymentSheet}>
+          <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
+            <SheetHeader className="flex-shrink-0 mb-6 pt-2">
+              {/* Handle Bar */}
+              <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
+              <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">Payment Details</SheetTitle>
+              <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
                 Add your payment methods for group settlements
               </SheetDescription>
             </SheetHeader>
 
-            <div className="flex-1 overflow-y-auto space-y-6 pb-4">
-              <div className="flex items-center gap-2 justify-center">
-                <p className="text-sm text-muted-foreground text-center">
-                  Add your payment details so group members know how to settle expenses with you
+            <div className="flex-1 overflow-y-auto space-y-4 pb-4">
+              <div className="flex items-center gap-2 justify-center mb-2">
+                <p className="text-xs text-[#4a6850]/60 text-center font-bold">
+                  These details are visible to group members when they pay you
                 </p>
                 <Tooltip
                   content="These details will be visible to your group members when they need to pay you back for shared expenses."
@@ -597,41 +606,51 @@ const Profile = () => {
                 />
               </div>
 
-              {/* Mobile Wallets */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-foreground">Mobile Wallets</h3>
+              {/* Mobile Wallets Card */}
+              <div className="bg-white rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] p-5 space-y-4">
+                <h3 className="text-sm font-black text-gray-900 tracking-tight flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center">
+                    <Phone className="w-4 h-4 text-[#4a6850]" />
+                  </div>
+                  Mobile Wallets
+                </h3>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">JazzCash Number</label>
+                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">JazzCash Number</label>
                   <Input
                     type="tel"
                     placeholder="03XX-XXXXXXX"
                     value={jazzCash}
                     onChange={(e) => setJazzCash(e.target.value)}
-                    className="h-12"
+                    className="h-14 rounded-2xl bg-gray-50 border-[#4a6850]/10 font-bold text-gray-900 focus:border-[#4a6850] focus:ring-[#4a6850]/20"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">Easypaisa Number</label>
+                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">Easypaisa Number</label>
                   <Input
                     type="tel"
                     placeholder="03XX-XXXXXXX"
                     value={easypaisa}
                     onChange={(e) => setEasypaisa(e.target.value)}
-                    className="h-12"
+                    className="h-14 rounded-2xl bg-gray-50 border-[#4a6850]/10 font-bold text-gray-900 focus:border-[#4a6850] focus:ring-[#4a6850]/20"
                   />
                 </div>
               </div>
 
-              {/* Bank Account */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-foreground">Bank Account</h3>
+              {/* Bank Account Card */}
+              <div className="bg-white rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] p-5 space-y-4">
+                <h3 className="text-sm font-black text-gray-900 tracking-tight flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center">
+                    <Building2 className="w-4 h-4 text-[#4a6850]" />
+                  </div>
+                  Bank Account
+                </h3>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">Bank Name</label>
+                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">Bank Name</label>
                   <Select value={bankName} onValueChange={setBankName}>
-                    <SelectTrigger className="h-12">
+                    <SelectTrigger className="h-14 rounded-2xl bg-gray-50 border-[#4a6850]/10 font-bold text-gray-900">
                       <SelectValue placeholder="Select your bank" />
                     </SelectTrigger>
                     <SelectContent>
@@ -645,51 +664,61 @@ const Profile = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">Account Number / IBAN</label>
+                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">Account Number / IBAN</label>
                   <div className="relative">
-                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                     <Input
                       type="text"
                       placeholder="Enter account number"
                       value={accountNumber}
                       onChange={(e) => setAccountNumber(e.target.value)}
-                      className="h-12 pl-12"
+                      className="h-14 pl-12 rounded-2xl bg-gray-50 border-[#4a6850]/10 font-bold text-gray-900 focus:border-[#4a6850] focus:ring-[#4a6850]/20"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Raast */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-foreground">Raast</h3>
+              {/* Raast Card */}
+              <div className="bg-white rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] p-5 space-y-4">
+                <h3 className="text-sm font-black text-gray-900 tracking-tight flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center">
+                    <CreditCard className="w-4 h-4 text-[#4a6850]" />
+                  </div>
+                  Raast
+                </h3>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">Raast ID</label>
+                  <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide ml-1">Raast ID</label>
                   <Input
                     type="text"
                     placeholder="Your Raast ID (phone/CNIC)"
                     value={raastId}
                     onChange={(e) => setRaastId(e.target.value)}
-                    className="h-12"
+                    className="h-14 rounded-2xl bg-gray-50 border-[#4a6850]/10 font-bold text-gray-900 focus:border-[#4a6850] focus:ring-[#4a6850]/20"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex-shrink-0 pt-4 border-t bg-background">
-              <Button onClick={handleSavePaymentDetails} className="w-full h-12">
+            <div className="flex-shrink-0 pt-4 border-t border-[#4a6850]/10">
+              <Button
+                onClick={handleSavePaymentDetails}
+                className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white font-black text-base shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] hover:from-[#3d5643] hover:to-[#2f4336] transition-all"
+              >
                 Save Payment Details
               </Button>
             </div>
           </SheetContent>
-        </Sheet >
+        </Sheet>
 
         {/* Photo Options Sheet */}
-        < Sheet open={showPhotoOptionsSheet} onOpenChange={setShowPhotoOptionsSheet} >
-          <SheetContent side="bottom" className="h-auto rounded-t-3xl">
-            <SheetHeader className="mb-6">
-              <SheetTitle className="text-center">Profile Picture</SheetTitle>
-              <SheetDescription className="text-center text-sm text-gray-500">
+        <Sheet open={showPhotoOptionsSheet} onOpenChange={setShowPhotoOptionsSheet}>
+          <SheetContent side="bottom" className="h-auto rounded-t-3xl bg-white border-t border-[#4a6850]/10 z-[100]">
+            <SheetHeader className="mb-6 pt-2">
+              {/* Handle Bar */}
+              <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
+              <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">Profile Picture</SheetTitle>
+              <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
                 Choose an option
               </SheetDescription>
             </SheetHeader>
@@ -697,7 +726,7 @@ const Profile = () => {
             <div className="space-y-3 pb-4">
               <Button
                 onClick={handleChangePhoto}
-                className="w-full h-14 bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center gap-3"
+                className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white font-black text-base shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] hover:from-[#3d5643] hover:to-[#2f4336] transition-all flex items-center justify-center gap-3"
               >
                 <Camera className="w-5 h-5" />
                 {user?.photoURL ? "Change Picture" : "Upload Picture"}
@@ -707,7 +736,7 @@ const Profile = () => {
                 <Button
                   onClick={handleRemovePhoto}
                   variant="outline"
-                  className="w-full h-14 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 flex items-center justify-center gap-3"
+                  className="w-full h-14 rounded-3xl border-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 font-black text-base flex items-center justify-center gap-3 transition-all"
                 >
                   <X className="w-5 h-5" />
                   Remove Picture
@@ -717,13 +746,13 @@ const Profile = () => {
               <Button
                 onClick={() => setShowPhotoOptionsSheet(false)}
                 variant="secondary"
-                className="w-full h-14"
+                className="w-full h-14 rounded-3xl font-black text-base"
               >
                 Cancel
               </Button>
             </div>
           </SheetContent>
-        </Sheet >
+        </Sheet>
       </AppContainer >
     </>
   );

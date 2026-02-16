@@ -246,7 +246,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
                     selectedGroup === group.id
                       ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
-                      : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5"
+                      : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
                   )}
                 >
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center text-xl shadow-sm flex-shrink-0">
@@ -254,9 +254,11 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   </div>
                   <div className="flex-1 text-left min-w-0">
                     <span className="font-black text-gray-900 tracking-tight block truncate">{group.name}</span>
-                    <p className="text-xs text-[#4a6850]/80 font-bold">
-                      {group.members.length} members
-                    </p>
+                    {(group.memberCount || group.members.length) > 0 && (
+                      <p className="text-xs text-[#4a6850]/80 font-bold">
+                        {group.memberCount || group.members.length} members
+                      </p>
+                    )}
                   </div>
                   {selectedGroup === group.id && (
                     <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
@@ -308,7 +310,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                           "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
                           fromMember === member.id
                             ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
-                            : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5",
+                            : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5",
                           !owesYou && "opacity-50 grayscale cursor-not-allowed border-dashed bg-gray-50"
                         )}
                       >
@@ -448,7 +450,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   Amount from {selectedMemberName}
                 </label>
                 <div className="text-center mb-4">
-                  <div className="text-3xl font-black text-gray-900 mb-3 tracking-tighter tabular-nums">
+                  <div className="text-4xl font-black text-gray-900 mb-4 tracking-tighter tabular-nums">
                     Rs {amount || "0"}
                   </div>
                   <Input
@@ -456,7 +458,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     placeholder="Enter amount"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="text-center text-lg h-12 max-w-sm mx-auto rounded-2xl border-[#4a6850]/20 shadow-md font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-lg"
+                    className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-2 border-[#4a6850]/30 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:ring-0 focus:shadow-xl"
                     autoFocus
                   />
                 </div>
@@ -520,10 +522,11 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   Note (optional)
                 </label>
                 <Input
-                  placeholder="e.g., Mess payment"
+                  placeholder="e.g., Mess payment, Monthly dues"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="h-12 rounded-2xl border-[#4a6850]/20 shadow-md font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-lg"
+                  className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
+                  maxLength={100}
                 />
               </div>
 

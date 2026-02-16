@@ -70,6 +70,9 @@ export default function CreateGroupPage() {
     // Terms Agreement
     const [agreedToTerms, setAgreedToTerms] = useState(false);
 
+    // Creating State
+    const [isCreating, setIsCreating] = useState(false);
+
     const handleSearch = async () => {
         if (!searchQuery.trim()) return;
         setIsSearching(true);
@@ -157,6 +160,8 @@ export default function CreateGroupPage() {
             return;
         }
 
+        setIsCreating(true);
+
         // Transform members
         const manualList = members.filter(m => m.type === 'manual').map(m => ({
             name: (m as ManualMember).name,
@@ -182,21 +187,23 @@ export default function CreateGroupPage() {
                 if (emailsList.length > 0) {
                     toast.info(`Sent ${emailsList.length} email invitation${emailsList.length > 1 ? 's' : ''}`);
                 }
-                navigate('/dashboard');
+                navigate('/');
             } else {
                 toast.error(result.error || "Failed to create group");
             }
         } catch (error) {
             console.error("Create group error:", error);
             toast.error("Something went wrong");
+        } finally {
+            setIsCreating(false);
         }
     };
 
     return (
         <AppContainer>
-            <div className="min-h-screen bg-gray-50 pb-20 flex flex-col items-center">
+            <div className="min-h-screen bg-gray-50 pb-20">
                 {/* Header Container */}
-                <div className="w-full max-w-lg bg-white sticky top-0 z-10 border-b border-gray-100">
+                <div className="w-full max-w-2xl mx-auto bg-white sticky top-0 z-10 border-b border-gray-100">
                     <div className="px-4 py-4 flex items-center gap-3">
                         <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full">
                             <ArrowLeft className="w-6 h-6 text-gray-700" />
@@ -205,7 +212,7 @@ export default function CreateGroupPage() {
                     </div>
                 </div>
 
-                <div className="p-4 max-w-lg mx-auto">
+                <div className="p-4 w-full max-w-2xl mx-auto">
                     {/* Progress */}
                     <div className="flex gap-2 mb-8">
                         {[1, 2, 3].map(s => (
@@ -480,10 +487,10 @@ export default function CreateGroupPage() {
 
                             <Button
                                 onClick={handleCreate}
-                                disabled={!agreedToTerms}
+                                disabled={!agreedToTerms || isCreating}
                                 className="w-full h-14 rounded-2xl bg-[#4a6850] text-lg font-bold shadow-xl shadow-green-900/10 hover:shadow-green-900/20 transform hover:-translate-y-1 transition-all disabled:opacity-50 disabled:transform-none"
                             >
-                                Create Group 🚀
+                                {isCreating ? "Creating..." : "Create Group 🚀"}
                             </Button>
                         </div>
                     )}
