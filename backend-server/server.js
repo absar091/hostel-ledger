@@ -7,7 +7,6 @@ const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
-const { loadEmailTemplate } = require('./utils/email');
 const { validateCreateGroup } = require('./utils/validation');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
@@ -123,6 +122,7 @@ app.options('*', cors());
 app.use(express.json());
 
 const emailService = require('./services/emailService');
+const expenseLogic = require('./utils/expenseLogic');
 
 // Rate limiting for email endpoints - very generous limits for testing
 const emailLimiter = rateLimit({
@@ -196,6 +196,10 @@ app.get('/health', (req, res) => {
     deployedAt: '2026-01-22T13:00:00Z'
   });
 });
+
+// Silently handle favicon requests (eliminates 404 noise in logs)
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+app.get('/favicon.png', (req, res) => res.status(204).end());
 
 // Test endpoint to verify push routes are loaded
 app.get('/api/push-test', (req, res) => {
@@ -301,6 +305,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
   const { name, emoji, members, invitedUsernames, invitedEmails, coverPhoto } = req.body;
   const userId = req.user.uid;
+  const notificationPromises = [];
 
   try {
     const groupsRef = admin.database().ref('groups');
@@ -311,6 +316,22 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     const userSnap = await admin.database().ref(`users/${userId}`).get();
     const userName = userSnap.exists() ? userSnap.val().name : "User";
 
+    // 1b. Resolve Invited Usernames (Existing Users)
+    const resolvedUsers = [];
+    if (invitedUsernames && invitedUsernames.length > 0) {
+      const resolved = await Promise.all(invitedUsernames.map(async (username) => {
+        const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
+        const s = await admin.database().ref(`usernames/${cleanUsername}`).get();
+        if (s.exists()) {
+          const uidData = s.val();
+          const inviteeUid = typeof uidData === 'string' ? uidData : (uidData?.uid || uidData?.userId || null);
+          if (inviteeUid) return { username, inviteeUid };
+        }
+        return null;
+      }));
+      resolvedUsers.push(...resolved.filter(u => u !== null));
+    }
+
     // 1. Create Group Object
     const newGroup = {
       id: groupId,
@@ -320,22 +341,44 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
       members: [
         {
           id: userId,
-          name: userName, // Store real name, not "You"
+          name: userName,
           isCurrentUser: true,
           userId: userId,
           paymentDetails: {},
           isAdmin: true
         },
+        // Existing Users (by username)
+        ...resolvedUsers.map(u => ({
+          id: u.inviteeUid, // Real UID
+          name: u.username,
+          userId: u.inviteeUid,
+          username: u.username,
+          type: 'invited', // Changed from 'manual' to 'invited' so they excluded from expenses
+          isPending: true,
+          invitedAt: new Date().toISOString()
+        })),
+        // Manual Members from array
         ...members.map(m => ({
           id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
           name: m.name,
-          userId: m.uid || null, // If real user
+          userId: m.uid || null,
           username: m.username || null,
           type: m.type || 'manual',
-          email: m.email || null, // Persist email for pending status
-          isPending: !!m.email,   // Mark as pending if email exists
+          email: m.email || null,
+          isPending: !!m.email,
           invitedAt: m.email ? new Date().toISOString() : null
-        }))
+        })),
+        // Invited Emails (pure string array) - DEDUPLICATED
+        ...(invitedEmails || [])
+          .filter(email => !members.some(m => m.email && m.email.toLowerCase() === email.toLowerCase()))
+          .map(email => ({
+            id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            name: email.split('@')[0],
+            email: email,
+            type: 'manual',
+            isPending: true,
+            invitedAt: new Date().toISOString()
+          }))
       ],
       createdBy: userId,
       createdAt: new Date().toISOString()
@@ -355,55 +398,47 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     });
 
     // 4. Handle Invited Usernames (send invitations to existing users)
-    if (invitedUsernames && invitedUsernames.length > 0) {
-      // Optimization: reused fetched name
+    if (resolvedUsers.length > 0) {
       const senderName = userName;
       const updates = {};
       const emailNotifications = [];
 
-      // Parallel Resolve Usernames
-      const resolvedUsers = await Promise.all(invitedUsernames.map(async (username) => {
-        // Sanitize username to prevent path traversal
-        const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
-        const usernameRef = admin.database().ref(`usernames/${cleanUsername}`);
-        const s = await usernameRef.get();
-        if (s.exists()) {
-          const uidData = s.val();
-          const inviteeUid = typeof uidData === 'string' ? uidData : (uidData?.uid || uidData?.userId || null);
-          return { username, inviteeUid };
-        }
-        return null;
-      }));
-
-      // Build Updates
       resolvedUsers.forEach(user => {
-        if (!user || !user.inviteeUid) return;
         const { username, inviteeUid } = user;
 
-        // Create invitation
+        // Create invitation record
         const invRef = admin.database().ref('invitations').push();
         const invitationData = {
           id: invRef.key,
-          invitationId: invRef.key, // Alias for frontend compatibility
+          invitationId: invRef.key,
           groupId,
           groupName: newGroup.name,
           groupEmoji: newGroup.emoji,
           senderId: userId,
           senderName,
-          invitedBy: senderName, // Alias for frontend
+          invitedBy: senderName,
           receiverId: inviteeUid,
-          receiverName: username, // Username of the invited user
+          receiverName: username,
           status: 'pending',
           createdAt: new Date().toISOString()
         };
 
-        // Batch updates
         updates[`invitations/${invRef.key}`] = invitationData;
         updates[`userInvitations/${inviteeUid}/${invRef.key}`] = invitationData;
 
-        console.log(`✅ Invitation prepared for user ${inviteeUid} to group ${groupId}`);
+        // GRANT READ ACCESS: Add to userGroups with status 'invited'
+        updates[`userGroups/${inviteeUid}/${groupId}`] = {
+          name: newGroup.name,
+          emoji: newGroup.emoji,
+          coverPhoto: newGroup.coverPhoto || null,
+          memberCount: newGroup.members.length, // Initial count
+          createdBy: userId,
+          createdAt: newGroup.createdAt,
+          status: 'invited', // Access Key
+          invitedAt: new Date().toISOString()
+        };
 
-        // Queue for email
+        console.log(`✅ Invitation prepared for user ${inviteeUid} (existing app user)`);
         emailNotifications.push({ inviteeUid, username });
       });
 
@@ -412,60 +447,66 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
         await admin.database().ref().update(updates);
       }
 
-      // Process Emails in Background
-      setImmediate(async () => {
-        console.log('📧 Processing username invites...');
-        const results = await Promise.allSettled(emailNotifications.map(async ({ inviteeUid, username }) => {
-          try {
-            // We need to fetch email from Auth or DB. DB is safer if we have it in users node.
-            // But existing code used admin.database().ref... let's stick to that but cleaner.
-            const inviteeSnap = await admin.database().ref(`users/${inviteeUid}`).get();
-            if (inviteeSnap.exists()) {
-              const inviteeData = inviteeSnap.val();
-              if (inviteeData.email) {
-                return emailService.sendInvitation(
-                  inviteeData.email,
-                  senderName,
-                  newGroup.name,
-                  "https://app.hostelledger.aarx.online"
-                );
-              }
+      // Collect Email Promises
+      const usernameInvitePromises = emailNotifications.map(async ({ inviteeUid, username }) => {
+        try {
+          const inviteeSnap = await admin.database().ref(`users/${inviteeUid}`).get();
+          if (inviteeSnap.exists()) {
+            const inviteeData = inviteeSnap.val();
+            if (inviteeData.email) {
+              return emailService.sendInvitation(
+                inviteeData.email,
+                senderName,
+                newGroup.name,
+                `https://app.hostelledger.aarx.online/join/${groupId}`
+              );
             }
-            // Fallback to Auth if not in DB? No, stick to existing logic for consistency.
-          } catch (err) {
-            console.error(`❌ Failed to send invite to ${username}:`, err.message);
           }
-        }));
-        const successCount = results.filter(r => r.status === 'fulfilled' && r.value && r.value.success).length;
-        console.log(`✅ Sent ${successCount}/${emailNotifications.length} username invites`);
+        } catch (err) {
+          console.error(`❌ Failed to send invite to ${username}:`, err.message);
+        }
       });
+      notificationPromises.push(...usernameInvitePromises);
     }
 
-    // 5. Handle Email Invites (Manual members with emails)
-    const emailMembers = newGroup.members.filter(m => m.email && m.type === 'manual');
+    // 5. Handle Email Invites (Manual members with emails + invitedEmails array)
+    const emailMembers = [
+      ...newGroup.members.filter(m => m.email && m.type === 'manual'),
+      ...(invitedEmails || []).map(email => ({
+        email,
+        name: email.split('@')[0], // Fallback name
+        type: 'manual'
+      }))
+    ];
 
     if (emailMembers.length > 0) {
-      console.log(`📧 Sending ${emailMembers.length} email invites...`);
+      console.log(`📧 Preparing ${emailMembers.length} manual email invites...`);
       const senderName = userName;
 
-      // Send emails in parallel (Non-blocking)
-      setImmediate(async () => {
-        console.log('📧 Processing manual email invites...');
-        const results = await Promise.allSettled(emailMembers.map(member =>
-          emailService.sendInvitation(
-            member.email,
-            senderName,
-            newGroup.name,
-            `https://app.hostelledger.aarx.online/join/${groupId}?email=${encodeURIComponent(member.email)}`
-          )
-        ));
-
-        const successCount = results.filter(r => r.status === 'fulfilled' && r.value && r.value.success).length;
-        console.log(`✅ Sent ${successCount}/${emailMembers.length} manual invites`);
+      const manualInvitePromises = emailMembers.map(member => {
+        const joinLink = `https://app.hostelledger.aarx.online/join/${groupId}?email=${encodeURIComponent(member.email)}`;
+        return emailService.sendInvitation(
+          member.email,
+          senderName,
+          newGroup.name,
+          joinLink,
+          true // isNewUser = true for manual email invites
+        );
       });
+      notificationPromises.push(...manualInvitePromises);
     }
 
-
+    // 6. Await all notifications (Critical for Vercel)
+    if (notificationPromises.length > 0) {
+      try {
+        console.log(`🚀 Awaiting ${notificationPromises.length} group creation notifications...`);
+        const globalTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Invite timeout')), 8000));
+        await Promise.race([Promise.allSettled(notificationPromises), globalTimeout])
+          .catch(e => console.warn("⚠️ Group invites partially timed out:", e.message));
+      } catch (notifErr) {
+        console.error("❌ Notification awaiting failed:", notifErr);
+      }
+    }
 
     res.json({ success: true, groupId, message: 'Group created successfully' });
 
@@ -504,27 +545,7 @@ const calculateExpenseSplit = (totalAmount, participants, payerId) => {
   });
 };
 
-const calculateExpenseSettlements = (splits, payerId) => {
-  const debts = [];
-  const payerSplit = splits.find(s => s.participantId === payerId);
-
-  if (!payerSplit) {
-    throw new Error("Payer must be a participant");
-  }
-
-  splits.forEach(split => {
-    if (split.participantId !== payerId) {
-      // Participant owes Payer
-      debts.push({
-        debtorId: split.participantId,
-        creditorId: payerId,
-        amount: split.amount
-      });
-    }
-  });
-
-  return debts;
-};
+const calculateExpenseSettlements = expenseLogic.calculateExpenseSettlements;
 
 // --- New Endpoint: Get Valid User Details ---
 app.post('/api/get-valid-user-details', authenticate, async (req, res) => {
@@ -629,57 +650,111 @@ app.post('/api/respond-invitation', authenticate, async (req, res) => {
     const now = new Date().toISOString();
 
     if (accept) {
-      // === ACCEPT: Add user to group ===
+      // === ACCEPT: Add/Update user in group ===
       const groupId = invitation.groupId;
 
       // Get user data
       const userSnap = await admin.database().ref(`users/${userId}`).get();
       const userData = userSnap.val() || {};
 
-      // Create member entry
-      const memberData = {
-        oderId: Date.now(), // ordering
-        name: userData.name || 'Member',
+      // Get group members
+      const groupRef = admin.database().ref(`groups/${groupId}`);
+      const groupSnap = await groupRef.get();
+      const groupData = groupSnap.val() || {};
+      let members = groupData.members || [];
+
+      const isArray = Array.isArray(members);
+      const membersArray = normalizeMembers(members);
+
+      // Find existing member entry for this user
+      // PRIORITY 1: Match by userId (Already joined/linked)
+      let memberIndex = membersArray.findIndex(m => m.userId === userId);
+
+      // PRIORITY 2: Match by Email (Manual member invited by email)
+      if (memberIndex === -1 && userData.email) {
+        memberIndex = membersArray.findIndex(m =>
+          (m.type === 'manual' || m.type === 'invited') &&
+          m.email &&
+          m.email.toLowerCase() === userData.email.toLowerCase()
+        );
+        if (memberIndex !== -1) console.log(`🔗 Found matching member by EMAIL for merge: ${userData.email}`);
+      }
+
+      // PRIORITY 3: Match by Username (Manual member invited by username)
+      if (memberIndex === -1 && userData.username) {
+        memberIndex = membersArray.findIndex(m =>
+          (m.type === 'manual' || m.type === 'invited') &&
+          m.username &&
+          m.username.toLowerCase() === userData.username.toLowerCase()
+        );
+        if (memberIndex !== -1) console.log(`🔗 Found matching member by USERNAME for merge: ${userData.username}`);
+      }
+
+      const memberEntry = {
+        id: memberIndex !== -1 ? membersArray[memberIndex].id : `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        name: userData.name || (memberIndex !== -1 ? membersArray[memberIndex].name : 'Member'),
         isRegistered: true,
+        type: 'registered',
         userId: userId,
+        joinedAt: now,
+        isPending: false,
+        photoURL: userData.photoURL || null
+      };
+
+      if (memberIndex !== -1) {
+        // Update existing entry
+        if (isArray) {
+          members[memberIndex] = memberEntry;
+        } else {
+          // It's an object, we need to find the key
+          const memberKey = Object.keys(members).find(key => members[key].userId === userId || members[key].id === membersArray[memberIndex].id);
+          if (memberKey) {
+            members[memberKey] = memberEntry;
+          } else {
+            // Fallback: use userId as key
+            members[userId] = memberEntry;
+          }
+        }
+      } else {
+        // Add new entry
+        if (isArray) {
+          members.push(memberEntry);
+        } else {
+          members[userId] = memberEntry;
+        }
+      }
+
+      // Update group members and memberCount
+      const updates = {};
+      updates[`groups/${groupId}/members`] = members;
+
+      // Calculate member count
+      const finalMemberCount = isArray ? members.length : Object.keys(members).length;
+      updates[`groups/${groupId}/memberCount`] = finalMemberCount;
+
+      // Add to userGroups (REQUIRED for Firebase rules to grant access)
+      updates[`userGroups/${userId}/${groupId}`] = {
+        name: groupData.name,
+        emoji: groupData.emoji || '👥',
+        coverPhoto: groupData.coverPhoto || null,
+        memberCount: finalMemberCount,
+        createdBy: groupData.createdBy || '',
+        createdAt: groupData.createdAt || now,
         joinedAt: now
       };
 
-      // Add user to group members
-      await admin.database().ref(`groups/${groupId}/members/${userId}`).set(memberData);
+      // Also add to users/{uid}/groups for backwards compatibility
+      updates[`users/${userId}/groups/${groupId}`] = {
+        name: groupData.name,
+        emoji: groupData.emoji || '👥',
+        coverPhoto: groupData.coverPhoto || null,
+        memberCount: finalMemberCount,
+        role: 'member',
+        joinedAt: now
+      };
 
-      // Add group to user's groups list
-      const groupSnap = await admin.database().ref(`groups/${groupId}`).get();
-      const groupData = groupSnap.val();
-
-      if (groupData) {
-        // Add to userGroups (REQUIRED for Firebase rules to grant access)
-        await admin.database().ref(`userGroups/${userId}/${groupId}`).set({
-          name: groupData.name,
-          emoji: groupData.emoji || '👥',
-          coverPhoto: groupData.coverPhoto || null,
-          memberCount: (groupData.memberCount || 0) + 1,
-          createdBy: groupData.createdBy || '',
-          createdAt: groupData.createdAt || now,
-          joinedAt: now
-        });
-
-        // Also add to users/{uid}/groups for backwards compatibility
-        await admin.database().ref(`users/${userId}/groups/${groupId}`).set({
-          name: groupData.name,
-          emoji: groupData.emoji || '👥',
-          coverPhoto: groupData.coverPhoto || null,
-          memberCount: (groupData.memberCount || 0) + 1,
-          role: 'member',
-          joinedAt: now
-        });
-
-        // Update group member count
-        const currentCount = groupData.memberCount || 0;
-        await admin.database().ref(`groups/${groupId}/memberCount`).set(currentCount + 1);
-      }
-
-      console.log(`✅ User ${userId} joined group ${groupId}`);
+      await admin.database().ref().update(updates);
+      console.log(`✅ User ${userId} joined group ${groupId} (Updated ${memberIndex !== -1 ? 'existing' : 'new'} member)`);
     }
 
     // Update invitation status in both locations
@@ -802,59 +877,31 @@ app.use('/api', (req, res, next) => {
   authenticate(req, res, next);
 });
 
-// Generic email sending endpoint
-// Generic email sending endpoint
-app.post('/api/send-email', emailLimiter, async (req, res) => {
+// Temporary Member Alert Endpoint (Secure)
+app.post('/api/send-temp-member-alert', authenticate, async (req, res) => {
   try {
-    const { to, subject, html, text } = req.body;
+    const { email, memberName, groupName, expiresAt } = req.body;
 
     // Validate input
-    if (!to || !subject || !html) {
+    if (!email || !memberName || !groupName || !expiresAt) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: to, subject, html'
+        error: 'Missing required fields'
       });
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(to)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid email address'
-      });
-    }
-
-    // Send email using emailService
-    console.log('📧 Sending email via emailService...');
-    const result = await emailService.sendEmailSafe({
-      to,
-      subject,
-      html,
-      text: text || ''
-    });
+    const result = await emailService.sendTempMemberAlert(email, memberName, groupName, expiresAt);
 
     if (result.success) {
-      console.log('✅ Email sent successfully:', result.messageId);
-      res.json({
-        success: true,
-        messageId: result.messageId,
-        provider: result.provider
-      });
+      console.log('✅ Temporary member alert email sent');
+      res.json({ success: true, message: 'Alert email sent successfully' });
     } else {
-      console.error('❌ Failed to send email:', result.error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to send email: ' + result.error
-      });
+      console.error('❌ Failed to send alert email:', result.error);
+      res.status(500).json({ success: false, error: 'Failed to send alert email' });
     }
-
   } catch (error) {
-    console.error('❌ Email sending error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to send email: ' + error.message
-    });
+    console.error('❌ Alert email error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
   }
 });
 
@@ -1123,7 +1170,7 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${oneSignalApiKey}`
+        'Authorization': `Key ${oneSignalApiKey.trim()}`
       },
       body: JSON.stringify(notificationData)
     });
@@ -1228,7 +1275,7 @@ const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, b
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Basic ${oneSignalApiKey}`
+      'Authorization': `Key ${oneSignalApiKey.trim()}`
     },
     body: JSON.stringify(notificationData)
   });
@@ -1555,125 +1602,92 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     // 6. Execute Atomic Update
     await db.ref().update(updates);
 
-    // 7. Success Response
-    res.json({
-      success: true,
-      transactionId,
-      transaction: newTransaction
-    });
+    // 7. Await Notifications (CRITICAL for Vercel/Serverless)
+    // Run them BEFORE res.json to ensure the process isn't killed before they finish
+    console.log('🚀 Triggering Notifications for Transaction:', transactionId);
 
-    // 8. Notifications (Async - Fire and Forget)
-    setImmediate(async () => {
-      console.log('🚀 Starting Async Notifications for Transaction:', transactionId);
-
-      // Run Push and Email in parallel so one doesn't block the other
-      const notifications = [];
+    try {
+      // Run Push and Email in parallel
+      const notificationPromises = [];
 
       // A. Push Notifications (OneSignal)
       const membersWithUserId = membersArray.filter(m => m.userId);
       if (membersWithUserId.length > 0) {
-        console.log(`🔔 Queuing Push Notifications for ${membersWithUserId.length} users`);
         const userIds = membersWithUserId.map(m => m.userId);
-        notifications.push(
+        notificationPromises.push(
           sendOneSignalNotificationInternal({
             userIds,
             title: `New Expense in ${group.name}`,
             body: `${payer.name} paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`,
             data: { type: 'expense', transactionId, groupId, amount }
           })
-            .then(() => console.log('✅ Push Notifications Sent Successfully'))
+            .then(() => console.log('✅ Push Notifications Promise Resolved'))
             .catch(err => console.error('⚠️ OneSignal Push failed:', err.message))
         );
       }
 
       // B. Email Notifications
-      // Modified: Send to ALL members with email (including payer) per user request
-      const participantsWithEmail = membersArray.filter(m => m.email);
-
-      console.log('🔍 Debug: All Group Members:', membersArray.map(m => ({ name: m.name, email: m.email || 'No Email' })));
-
-      // Filter out users who have disabled email notifications
-      const recipientsWithPreference = [];
-
+      const participantsWithEmail = membersArray.filter(m => m.email && !m.isPending);
       if (participantsWithEmail.length > 0) {
-        console.log(`📧 Checking preferences for ${participantsWithEmail.length} potential recipients...`);
-
-        for (const participant of participantsWithEmail) {
-          try {
-            // Check user preference
-            let emailEnabled = true; // Default to true
-            if (participant.userId) {
-              console.log(`   🔸 Checking for ${participant.email}...`);
-
-              // Wrap Firestore call in a timeout to prevent hanging
-              const getPreferences = async () => {
-                return admin.firestore().doc(`users/${participant.userId}/preferences/notifications`).get();
+        notificationPromises.push((async () => {
+          // Fetch all preferences in parallel
+          const preferencePromises = participantsWithEmail.map(async (participant) => {
+            if (!participant.userId) return { participant, emailEnabled: true };
+            try {
+              const getPref = admin.firestore().doc(`users/${participant.userId}/preferences/notifications`).get();
+              const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 3000));
+              const prefSnap = await Promise.race([getPref, timeout]);
+              return {
+                participant,
+                emailEnabled: prefSnap.exists ? prefSnap.data().emailEnabled !== false : true
               };
-
-              const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 5000));
-
-              try {
-                const prefSnap = await Promise.race([getPreferences(), timeout]);
-
-                if (prefSnap.exists) {
-                  const prefs = prefSnap.data();
-                  if (prefs.emailEnabled === false) {
-                    emailEnabled = false;
-                    console.log(`   🔕 User ${participant.name} (${participant.email}) has disabled email notifications.`);
-                  } else {
-                    console.log(`   ✅ User ${participant.name} has enabled email notifications (explicit or default).`);
-                  }
-                } else {
-                  console.log(`   ℹ️ No preferences found for ${participant.name}, defaulting to ENABLED.`);
-                }
-              } catch (err) {
-                console.warn(`   ⚠️ Preference check failed/timed out for ${participant.email}: ${err.message}. Defaulting to ENABLED.`);
-              }
-            } else {
-              console.log(`   ℹ️ User ${participant.name} has no userId, defaulting to ENABLED.`);
+            } catch (err) {
+              console.warn(`⚠️ Preference check failed for ${participant.email}: ${err.message}. Defaulting to ENABLED.`);
+              return { participant, emailEnabled: true };
             }
+          });
 
-            if (emailEnabled) {
-              recipientsWithPreference.push(participant);
-            }
-          } catch (prefErr) {
-            console.error(`⚠️ Error checking preferences for ${participant.email}, defaulting to ENABLED:`, prefErr.message);
-            recipientsWithPreference.push(participant);
+          const results = await Promise.allSettled(preferencePromises);
+          const recipientsWithPreference = results
+            .filter(r => r.status === 'fulfilled')
+            .map(r => r.value)
+            .filter(v => v.emailEnabled)
+            .map(v => v.participant);
+
+          if (recipientsWithPreference.length > 0) {
+            console.log(`📧 Sending emails to ${recipientsWithPreference.length} recipients...`);
+            const emailResults = await Promise.allSettled(recipientsWithPreference.map(recipient => {
+              const split = splits.find(s => s.participantId === recipient.id);
+              return emailService.sendExpenseNotification(recipient.email, {
+                payerName: payer.name,
+                amount: amount.toLocaleString(),
+                title: note || 'Expense',
+                splitAmount: split ? split.amount.toLocaleString() : '0',
+                date: new Date(newTransaction.date).toLocaleDateString(),
+                groupName: group.name,
+                groupId: groupId,
+                note: note || ''
+              });
+            }));
+            const successCount = emailResults.filter(r => r.status === 'fulfilled' && r.value?.success).length;
+            console.log(`✅ Sent ${successCount}/${recipientsWithPreference.length} expense emails`);
           }
-        }
+        })());
       }
 
-      console.log(`📧 Found ${recipientsWithPreference.length} valid email recipients (Preferences checked)`);
+      // Wait for all notifications (or at least attempt them) with a global timeout for safety
+      const globalTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Global notification timeout')), 8000));
+      await Promise.race([Promise.allSettled(notificationPromises), globalTimeout]).catch(e => console.warn('⚠️ Notifications timed out or failed partially:', e.message));
 
-      if (recipientsWithPreference.length > 0) {
-        notifications.push((async () => {
-          console.log(`📧 Starting email sending loop for ${recipientsWithPreference.length} members...`);
+    } catch (notifErr) {
+      console.error('⚠️ Notification process failed:', notifErr.message);
+    }
 
-          const results = await Promise.allSettled(recipientsWithPreference.map(recipient => {
-            const split = splits.find(s => s.participantId === recipient.id);
-            const shareAmount = split ? split.amount : 0;
-            const isParticipant = participants.includes(recipient.id);
-
-            return emailService.sendExpenseNotification(recipient.email, {
-              payerName: payer.name,
-              amount: amount.toLocaleString(),
-              title: note || 'Expense',
-              splitAmount: isParticipant ? `Rs ${shareAmount.toLocaleString()}` : 'Rs 0',
-              date: new Date(newTransaction.date).toLocaleDateString(),
-              groupName: group.name,
-              groupId: groupId,
-              note: note || ''
-            });
-          }));
-
-          const successCount = results.filter(r => r.status === 'fulfilled' && r.value && r.value.success).length;
-          console.log(`✅ Sent ${successCount}/${recipientsWithPreference.length} expense emails`);
-        })().catch(err => console.error('⚠️ Critical Email sending process failed:', err.message)));
-      }
-
-
-      await Promise.allSettled(notifications);
-      console.log('🏁 All Async Notifications Processed');
+    // 8. Success Response
+    res.json({
+      success: true,
+      transactionId,
+      transaction: newTransaction
     });
 
   } catch (error) {
@@ -1850,6 +1864,8 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
       groupId,
       timestamp,
       paidBy: fromMember,
+      from: fromMember, // Alignment with Transaction interface
+      to: toMember,     // Alignment with Transaction interface
       paidByName: fromPerson.name,
       fromName: fromPerson.name,
       toName: toPerson.name,
@@ -1896,40 +1912,42 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     // 5. Execute Atomic Update
     await db.ref().update(updates);
 
-    // 6. Success Response
-    res.json({
-      success: true,
-      transactionId,
-      transaction: newTransaction
-    });
+    // 7. Notifications (Awaited for Vercel/Serverless)
+    console.log('🚀 Triggering Notifications for Payment:', transactionId);
+    try {
+      const notificationPromises = [];
 
-    // 7. Notifications (Async - Send to ALL group members)
-    setImmediate(async () => {
-      try {
-        // A. Push Notifications (OneSignal)
-        const membersWithUserId = membersArray.filter(m => m.userId);
-        if (membersWithUserId.length > 0) {
-          const userIds = membersWithUserId.map(m => m.userId);
-          await sendOneSignalNotificationInternal({
+      // A. Push Notifications (OneSignal)
+      const membersWithUserId = membersArray.filter(m => m.userId);
+      if (membersWithUserId.length > 0) {
+        const userIds = membersWithUserId.map(m => m.userId);
+        notificationPromises.push(
+          sendOneSignalNotificationInternal({
             userIds,
             title: `Payment Recorded in ${group.name}`,
             body: isPaying
               ? `${user.name} paid Rs ${amount.toLocaleString()} to ${toPerson.name}`
               : `${fromPerson.name} paid Rs ${amount.toLocaleString()} to ${user.name}`,
-            data: {
-              type: 'payment',
-              transactionId,
-              groupId,
-              amount
-            }
-          });
-        }
+            data: { type: 'payment', transactionId, groupId, amount }
+          })
+            .catch(err => console.error('⚠️ Payment Push failed:', err.message))
+        );
+      }
 
-        // B. Email Notifications (Send to counterparty)
-        if (otherPerson && otherPerson.email) {
-          console.log(`📧 Sending payment email to counterparty: ${otherPerson.email}`);
+      // B. Email Notifications (Send to counterparty)
+      if (otherPerson && otherPerson.email) {
+        notificationPromises.push((async () => {
+          let emailEnabled = true;
+          if (otherPerson.userId) {
+            try {
+              const getPref = admin.firestore().doc(`users/${otherPerson.userId}/preferences/notifications`).get();
+              const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 3000));
+              const prefSnap = await Promise.race([getPref, timeout]);
+              if (prefSnap.exists && prefSnap.data().emailEnabled === false) emailEnabled = false;
+            } catch (err) { /* default to enabled on timeout/error */ }
+          }
 
-          try {
+          if (emailEnabled) {
             await emailService.sendTransactionAlert({
               email: otherPerson.email,
               name: otherPerson.name,
@@ -1942,13 +1960,22 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
                 : `You paid Rs ${amount.toLocaleString()} to ${user.name}.`
             });
             console.log(`📧 Payment notification sent via emailService to ${otherPerson.email}`);
-          } catch (emailErr) {
-            console.error(`❌ Failed to send payment email to ${otherPerson.email}:`, emailErr.message);
           }
-        }
-      } catch (notifyError) {
-        console.error('⚠️ Async notification failed:', notifyError);
+        })().catch(err => console.error('⚠️ Payment Email failed:', err.message)));
       }
+
+      // Wait for notifications with a timeout
+      const globalTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Notification timeout')), 8000));
+      await Promise.race([Promise.allSettled(notificationPromises), globalTimeout]).catch(e => console.warn('⚠️ Notifications took too long:', e.message));
+    } catch (notifErr) {
+      console.error('⚠️ Payment Notification process failed:', notifErr.message);
+    }
+
+    // 8. Success Response
+    res.json({
+      success: true,
+      transactionId,
+      transaction: newTransaction
     });
 
   } catch (error) {
@@ -2183,6 +2210,8 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
     }
 
     const inviteeUid = usernameSnap.val().uid;
+    const inviteeUserSnap = await db.ref(`users/${inviteeUid}`).get();
+    const inviteeEmail = inviteeUserSnap.exists() ? (inviteeUserSnap.val().email || '').toLowerCase() : '';
 
     if (inviteeUid === senderUid) {
       return res.status(400).json({ success: false, error: 'You cannot invite yourself' });
@@ -2204,8 +2233,16 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
       return res.status(403).json({ success: false, error: 'You must be a member of the group to invite others' });
     }
 
-    // 3. Check if Invitee is already in group
-    const isInviteeAlreadyMember = normalizeMembers(group.members).some(m => m.userId === inviteeUid);
+    // 3. Check if Invitee is already in group (by UID)
+    const currentMembers = normalizeMembers(group.members);
+    const isInviteeAlreadyMember = currentMembers.some(m => m.userId === inviteeUid);
+
+    // Check if invitee is already in group as Manual Member (by Email)
+    let existingManualMemberIndex = -1;
+    if (inviteeEmail && !isInviteeAlreadyMember) {
+      existingManualMemberIndex = currentMembers.findIndex(m => m.email && m.email.toLowerCase() === inviteeEmail && m.type === 'manual');
+    }
+
     if (isInviteeAlreadyMember) {
       return res.status(400).json({ success: false, error: 'User is already a member of this group' });
     }
@@ -2221,9 +2258,15 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
 
     const invitationData = {
       id: invitationId,
+      invitationId, // Add alias
       groupId,
       groupName: group.name,
-      invitedBy: {
+      senderName, // New: Support legacy frontend
+      invitedBy: senderName, // New: Simple string for frontend
+      senderId: senderUid, // Simple field
+      receiverId: inviteeUid, // Simple field for filtering
+      receiverName: inviteeUsername || normalizedUsername, // CRITICAL: Fix for "Invited User" display
+      invitedByDetail: { // Preserve the object in a subfield if needed
         uid: senderUid,
         name: senderName,
         username: senderUsername
@@ -2243,42 +2286,94 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
       invitationId,
       groupId,
       groupName: group.name,
+      senderName,
       invitedBy: senderName,
       createdAt: now,
       status: 'pending'
     };
 
+    // SYNC: Add or Update member in group list
+    if (existingManualMemberIndex !== -1) {
+      // MERGE: Update existing manual member
+      // We modify the copy in the currentMembers array and save the whole array back
+      // This is safe because normalizeMembers preserves structure mostly, but writing it back as array standardizes it.
+      const memberToUpdate = { ...currentMembers[existingManualMemberIndex] };
+      memberToUpdate.userId = inviteeUid;
+      memberToUpdate.isPending = true; // Mark as pending acceptance
+      memberToUpdate.invitedAt = now;
+      memberToUpdate.username = normalizedUsername; // Add username if missing
+
+      // Update the array
+      currentMembers[existingManualMemberIndex] = memberToUpdate;
+
+      updates[`groups/${groupId}/members`] = currentMembers;
+      console.log(`🔄 Merging invitation with existing manual member (Index: ${existingManualMemberIndex})`);
+    } else {
+      // ADD NEW: Add pending member to group list for visibility to owner
+      // Use type: 'invited' so they are excluded from expense splitting until they accept
+      const newMember = {
+        id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        name: inviteeUsername || normalizedUsername,
+        userId: inviteeUid,
+        username: normalizedUsername,
+        type: 'invited', // Changed from 'manual' to 'invited'
+        isPending: true,
+        invitedAt: now
+      };
+
+      const updatedMembers = [...currentMembers, newMember];
+      updates[`groups/${groupId}/members`] = updatedMembers;
+      // Also update index count for owner
+      updates[`userGroups/${senderUid}/${groupId}/memberCount`] = updatedMembers.length;
+
+      // GRANT READ ACCESS: Add to userGroups of the invitee
+      updates[`userGroups/${inviteeUid}/${groupId}`] = {
+        name: group.name,
+        emoji: group.emoji,
+        coverPhoto: group.coverPhoto || null,
+        memberCount: updatedMembers.length,
+        createdBy: group.createdBy || '',
+        createdAt: group.createdAt || now,
+        status: 'invited', // Access Key
+        invitedAt: now
+      };
+
+      console.log(`➕ Adding new pending member (type: invited) to group list`);
+    }
+
     await db.ref().update(updates);
 
-    // 5. Send Notification (Async)
-    setImmediate(async () => {
-      try {
-        // Send Push Notification
-        await sendOneSignalNotificationInternal({
+    // 5. Send Notification (Awaited for Vercel/Serverless)
+    try {
+      const notificationPromises = [];
+
+      // Push Notification
+      notificationPromises.push(
+        sendOneSignalNotificationInternal({
           userIds: [inviteeUid],
           title: "New Group Invitation! 🏠",
           body: `${senderName} invited you to join "${group.name}"`,
           data: { type: 'invitation', invitationId, groupId }
-        });
-      } catch (err) {
-        console.error("Failed to send invitation push:", err.message);
-      }
+        })
+          .catch(err => console.error("Invitation push failed:", err.message))
+      );
 
-      // Send Email Invitation
-      try {
-        const userRecord = await admin.auth().getUser(inviteeUid);
-        if (userRecord.email) {
-          await emailService.sendInvitation(
-            userRecord.email,
-            senderName,
-            group.name,
-            "https://app.hostelledger.aarx.online"
-          );
-        }
-      } catch (emailError) {
-        console.error("Failed to send invitation email:", emailError.message);
-      }
-    });
+      // Email Invitation
+      notificationPromises.push((async () => {
+        try {
+          const userRecord = await admin.auth().getUser(inviteeUid);
+          if (userRecord.email) {
+            const joinLink = `https://app.hostelledger.aarx.online/join/${groupId}`;
+            await emailService.sendInvitation(userRecord.email, senderName, group.name, joinLink);
+          }
+        } catch (e) { console.error("Invitations email inner failed:", e.message); }
+      })());
+
+      const globalTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Invite timeout')), 8000));
+      await Promise.race([Promise.allSettled(notificationPromises), globalTimeout]).catch(e => console.warn("Invitation notifications timed out"));
+    } catch (notifErr) {
+      console.error("Invitation notifications failed overall:", notifErr.message);
+    }
 
     res.json({ success: true, message: 'Invitation sent successfully' });
 
@@ -2328,12 +2423,51 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
     const senderSnap = await db.ref(`users/${senderUid}`).get();
     const senderName = senderSnap.exists() ? senderSnap.val().name : "A friend";
 
+    // 2b. Add Manual Member to Group (so they can be added to expenses immediately)
+    const currentMembers = normalizeMembers(group.members);
+    const existingMember = currentMembers.find(m => m.email && m.email.toLowerCase() === email.toLowerCase());
+
+    if (!existingMember) {
+      const newMember = {
+        id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        name: email.split('@')[0],
+        email: email,
+        type: 'manual', // Correctly set as manual so they can be split with
+        isPending: true,
+        invitedAt: new Date().toISOString()
+      };
+
+      const updatedMembers = [...currentMembers, newMember];
+
+      const updates = {};
+      updates[`groups/${groupId}/members`] = updatedMembers;
+      updates[`userGroups/${senderUid}/${groupId}/memberCount`] = updatedMembers.length;
+
+      await db.ref().update(updates);
+      console.log(`➕ Added manual member for email invite: ${email}`);
+    } else {
+      console.log(`ℹ️ Member with email ${email} already exists, skipping add.`);
+    }
+
     // 3. Send Email
+    // Determine if this is a new user or existing user
+    let isNewUser = true;
+    try {
+      await admin.auth().getUserByEmail(email);
+      isNewUser = false; // User exists!
+    } catch (e) {
+      // User not found, so they are new
+      isNewUser = true;
+    }
+
+    const joinLink = `https://app.hostelledger.aarx.online/join/${groupId}?email=${encodeURIComponent(email)}`;
+
     await emailService.sendInvitation(
       email,
       senderName,
       group.name,
-      `https://app.hostelledger.aarx.online/join/${groupId}`
+      joinLink,
+      isNewUser
     );
     console.log('📧 External invitation email sent');
 
@@ -2342,6 +2476,389 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
   } catch (error) {
     console.error('❌ Send external invitation error:', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// Delete Image Endpoint (Cloudinary)
+app.post('/api/delete-image', authenticate, async (req, res) => {
+  try {
+    const { publicId } = req.body;
+
+    if (!publicId) {
+      return res.status(400).json({ success: false, error: 'Public ID is required' });
+    }
+
+    if (!process.env.CLOUDINARY_API_KEY) {
+      console.warn('⚠️ Cloudinary not configured, skipping deletion');
+      return res.json({ success: true, message: 'Cloudinary not configured (Mock delete)' });
+    }
+
+    // Call Cloudinary API
+    const result = await cloudinary.uploader.destroy(publicId);
+
+    if (result.result !== 'ok' && result.result !== 'not found') {
+      console.warn('⚠️ Cloudinary delete result:', result);
+    } else {
+      console.log('✅ Image deleted from Cloudinary:', publicId);
+    }
+
+    res.json({ success: true, message: 'Image deleted' });
+
+  } catch (error) {
+    console.error('❌ Delete image error:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete image: ' + error.message });
+  }
+});
+
+// ============================================
+// DELETE GROUP
+// ============================================
+app.post('/api/delete-group', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { groupId } = req.body;
+
+    if (!groupId) {
+      return res.status(400).json({ success: false, error: 'Group ID is required' });
+    }
+
+    const db = admin.database();
+    const groupRef = db.ref(`groups/${groupId}`);
+    const groupSnap = await groupRef.get();
+
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const groupData = groupSnap.val();
+
+    // Only the creator can delete
+    if (groupData.createdBy !== userId) {
+      return res.status(403).json({ success: false, error: 'Only the group creator can delete this group' });
+    }
+
+    // Check for pending settlements via transactions
+    // We check if any transactions exist — if they do, we warn but still allow delete
+    // (The frontend already checks settlements before calling this)
+
+    const members = normalizeMembers(groupData.members);
+    const updates = {};
+
+    // 1. Delete the group itself
+    updates[`groups/${groupId}`] = null;
+
+    // 2. Remove from all members' userGroups
+    for (const member of members) {
+      const memberUserId = member.userId || member.id;
+      if (memberUserId) {
+        updates[`userGroups/${memberUserId}/${groupId}`] = null;
+        updates[`users/${memberUserId}/groups/${groupId}`] = null;
+      }
+    }
+
+    // Also ensure the creator's entry is removed
+    updates[`userGroups/${userId}/${groupId}`] = null;
+    updates[`users/${userId}/groups/${groupId}`] = null;
+
+    await db.ref().update(updates);
+
+    console.log(`✅ Group ${groupId} deleted by ${userId}`);
+    res.json({ success: true, message: 'Group deleted successfully' });
+
+  } catch (error) {
+    console.error('❌ Delete group error:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete group: ' + error.message });
+  }
+});
+
+// ============================================
+// REMOVE MEMBER FROM GROUP
+// ============================================
+app.post('/api/remove-member', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { groupId, memberId } = req.body;
+
+    if (!groupId || !memberId) {
+      return res.status(400).json({ success: false, error: 'Group ID and Member ID are required' });
+    }
+
+    const db = admin.database();
+    const groupRef = db.ref(`groups/${groupId}`);
+    const groupSnap = await groupRef.get();
+
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const groupData = groupSnap.val();
+
+    // Only the creator can remove members (except self-leave)
+    const isSelfLeave = memberId === userId;
+    if (!isSelfLeave && groupData.createdBy !== userId) {
+      return res.status(403).json({ success: false, error: 'Only the group creator can remove members' });
+    }
+
+    // Cannot remove the creator
+    if (memberId === groupData.createdBy && !isSelfLeave) {
+      return res.status(400).json({ success: false, error: 'Cannot remove the group creator' });
+    }
+
+    const members = normalizeMembers(groupData.members);
+    const memberToRemove = members.find(m => m.id === memberId || m.userId === memberId);
+
+    if (!memberToRemove) {
+      return res.status(404).json({ success: false, error: 'Member not found in group' });
+    }
+
+    // Filter out the member
+    const updatedMembers = members.filter(m => m.id !== memberId && m.userId !== memberId);
+
+    const updates = {};
+    updates[`groups/${groupId}/members`] = updatedMembers;
+    updates[`groups/${groupId}/memberCount`] = updatedMembers.length;
+
+    // Update denormalized count for the requester
+    updates[`userGroups/${userId}/${groupId}/memberCount`] = updatedMembers.length;
+
+    // If the removed member had a userId, remove their userGroups entry too
+    const removedUserId = memberToRemove.userId;
+    if (removedUserId) {
+      updates[`userGroups/${removedUserId}/${groupId}`] = null;
+      updates[`users/${removedUserId}/groups/${groupId}`] = null;
+    }
+
+    await db.ref().update(updates);
+
+    console.log(`✅ Member ${memberId} removed from group ${groupId} by ${userId}`);
+    res.json({ success: true, message: 'Member removed successfully' });
+
+  } catch (error) {
+    console.error('❌ Remove member error:', error);
+    res.status(500).json({ success: false, error: 'Failed to remove member: ' + error.message });
+  }
+});
+
+// ============================================
+// UPDATE GROUP (Name, Emoji, etc.)
+// ============================================
+app.post('/api/update-group', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { groupId, name, emoji } = req.body;
+
+    if (!groupId) {
+      return res.status(400).json({ success: false, error: 'Group ID is required' });
+    }
+
+    if (!name && !emoji) {
+      return res.status(400).json({ success: false, error: 'Nothing to update' });
+    }
+
+    const db = admin.database();
+    const groupRef = db.ref(`groups/${groupId}`);
+    const groupSnap = await groupRef.get();
+
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const groupData = groupSnap.val();
+
+    // Only the creator can update group details
+    if (groupData.createdBy !== userId) {
+      return res.status(403).json({ success: false, error: 'Only the group creator can update group details' });
+    }
+
+    // Sanitize and build updates
+    const sanitized = {};
+    if (name) {
+      const cleanName = name.trim().replace(/[<>"'&]/g, '').substring(0, 50);
+      if (!cleanName) return res.status(400).json({ success: false, error: 'Invalid group name' });
+      sanitized.name = cleanName;
+    }
+    if (emoji) {
+      sanitized.emoji = emoji.trim().substring(0, 10);
+    }
+
+    const updates = {};
+
+    // Update group itself
+    for (const [key, value] of Object.entries(sanitized)) {
+      updates[`groups/${groupId}/${key}`] = value;
+    }
+
+    // Update denormalized metadata for ALL members who have this in userGroups
+    const members = normalizeMembers(groupData.members);
+    for (const member of members) {
+      const memberUserId = member.userId;
+      if (memberUserId) {
+        for (const [key, value] of Object.entries(sanitized)) {
+          updates[`userGroups/${memberUserId}/${groupId}/${key}`] = value;
+        }
+      }
+    }
+
+    // Also update for creator (in case they're not in members array somehow)
+    for (const [key, value] of Object.entries(sanitized)) {
+      updates[`userGroups/${userId}/${groupId}/${key}`] = value;
+    }
+
+    await db.ref().update(updates);
+
+    console.log(`✅ Group ${groupId} updated by ${userId}:`, sanitized);
+    res.json({ success: true, message: 'Group updated successfully' });
+
+  } catch (error) {
+    console.error('❌ Update group error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update group: ' + error.message });
+  }
+});
+
+// ============================================
+// MERGE MEMBERS (Combine duplicate profiles)
+// ============================================
+app.post('/api/merge-members', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { groupId, fromMemberId, toMemberId } = req.body;
+
+    if (!groupId || !fromMemberId || !toMemberId) {
+      return res.status(400).json({ success: false, error: 'groupId, fromMemberId, and toMemberId are required' });
+    }
+
+    if (fromMemberId === toMemberId) {
+      return res.status(400).json({ success: false, error: 'Cannot merge a member into themselves' });
+    }
+
+    const db = admin.database();
+
+    // 1. Get group
+    const groupSnap = await db.ref(`groups/${groupId}`).get();
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const groupData = groupSnap.val();
+    const members = normalizeMembers(groupData.members);
+
+    const fromMember = members.find(m => m.id === fromMemberId);
+    const toMember = members.find(m => m.id === toMemberId);
+
+    if (!fromMember || !toMember) {
+      return res.status(404).json({ success: false, error: 'One or both members not found' });
+    }
+
+    // 2. Get all transactions for this group
+    const txSnap = await db.ref('transactions').orderByChild('groupId').equalTo(groupId).get();
+    const allTransactions = txSnap.exists() ? txSnap.val() : {};
+
+    const updates = {};
+    const txToDelete = []; // self-payments to delete
+
+    // 3. Update transactions
+    for (const [txId, tx] of Object.entries(allTransactions)) {
+      const txUpdates = {};
+      let needsUpdate = false;
+
+      // Update paidBy
+      if (tx.paidBy === fromMemberId) {
+        txUpdates.paidBy = toMemberId;
+        txUpdates.paidByName = toMember.name;
+        needsUpdate = true;
+      }
+
+      // Update from/to for payments
+      if (tx.type === 'payment') {
+        if (tx.from === fromMemberId) {
+          txUpdates.from = toMemberId;
+          txUpdates.fromName = toMember.name;
+          needsUpdate = true;
+        }
+        if (tx.to === fromMemberId) {
+          txUpdates.to = toMemberId;
+          txUpdates.toName = toMember.name;
+          needsUpdate = true;
+        }
+
+        // Check for self-payment after merge
+        const finalFrom = txUpdates.from || tx.from;
+        const finalTo = txUpdates.to || tx.to;
+        if (finalFrom === finalTo) {
+          txToDelete.push(txId);
+          continue; // Skip normal update
+        }
+      }
+
+      // Update participants for expenses  
+      if (tx.type === 'expense' && Array.isArray(tx.participants)) {
+        const fromIdx = tx.participants.findIndex(p => p.id === fromMemberId);
+        if (fromIdx !== -1) {
+          const newParticipants = [...tx.participants];
+          const toIdx = newParticipants.findIndex(p => p.id === toMemberId);
+
+          if (toIdx !== -1) {
+            // Both present: merge amounts
+            newParticipants[toIdx] = {
+              ...newParticipants[toIdx],
+              amount: (newParticipants[toIdx].amount || 0) + (newParticipants[fromIdx].amount || 0)
+            };
+            newParticipants.splice(fromIdx, 1);
+          } else {
+            // Only from present: rename
+            newParticipants[fromIdx] = {
+              ...newParticipants[fromIdx],
+              id: toMemberId,
+              name: toMember.name
+            };
+          }
+
+          txUpdates.participants = newParticipants;
+          needsUpdate = true;
+        }
+      }
+
+      if (needsUpdate) {
+        for (const [key, value] of Object.entries(txUpdates)) {
+          updates[`transactions/${txId}/${key}`] = value;
+        }
+      }
+    }
+
+    // 4. Delete self-payment transactions
+    for (const txId of txToDelete) {
+      updates[`transactions/${txId}`] = null;
+      updates[`userTransactions/${userId}/${txId}`] = null;
+    }
+
+    // 5. Remove fromMember from members array
+    const updatedMembers = members.filter(m => m.id !== fromMemberId);
+    updates[`groups/${groupId}/members`] = updatedMembers;
+    updates[`groups/${groupId}/memberCount`] = updatedMembers.length;
+
+    // Update denormalized count
+    updates[`userGroups/${userId}/${groupId}/memberCount`] = updatedMembers.length;
+
+    // Remove fromMember's userGroups entry if they had a userId
+    if (fromMember.userId) {
+      updates[`userGroups/${fromMember.userId}/${groupId}`] = null;
+    }
+
+    await db.ref().update(updates);
+
+    const mergedTxCount = Object.keys(updates).filter(k => k.startsWith('transactions/')).length;
+    console.log(`✅ Merged member "${fromMember.name}" into "${toMember.name}" in group ${groupId}. Updated ${mergedTxCount} transaction paths, deleted ${txToDelete.length} self-payments.`);
+
+    res.json({
+      success: true,
+      message: `Merged "${fromMember.name}" into "${toMember.name}" successfully`,
+      mergedTransactions: mergedTxCount,
+      deletedSelfPayments: txToDelete.length
+    });
+
+  } catch (error) {
+    console.error('❌ Merge members error:', error);
+    res.status(500).json({ success: false, error: 'Failed to merge members: ' + error.message });
   }
 });
 
@@ -2445,6 +2962,235 @@ app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
   } catch (error) {
     console.error('❌ Cleanup unverified users error:', error);
     res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+  }
+});
+
+
+
+// --- P2P Lending / Send Money Endpoints ---
+
+/**
+ * Send Money / Request Repayment Endpoint
+ * Creates a pending P2P transaction. 
+ * Money does NOT move until the receiver accepts.
+ */
+app.post('/api/send-money', authenticate, async (req, res) => {
+  const { recipientUsername, amount, note } = req.body;
+  const senderUid = req.user.uid;
+
+  if (!recipientUsername || !amount) {
+    return res.status(400).json({ success: false, error: 'Recipient and amount are required' });
+  }
+
+  if (amount <= 0) {
+    return res.status(400).json({ success: false, error: 'Amount must be positive' });
+  }
+
+  try {
+    const db = admin.database();
+
+    // 1. Resolve Recipient
+    // We reuse the existing username index
+    const cleanUsername = recipientUsername.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
+    const usernameRef = db.ref(`usernames/${cleanUsername}`);
+    const usernameSnap = await usernameRef.get();
+
+    if (!usernameSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const uidData = usernameSnap.val();
+    const recipientUid = typeof uidData === 'string' ? uidData : (uidData?.uid || uidData?.userId);
+
+    if (!recipientUid) {
+      return res.status(404).json({ success: false, error: 'User ID resolution failed' });
+    }
+
+    if (recipientUid === senderUid) {
+      return res.status(400).json({ success: false, error: 'You cannot send money to yourself' });
+    }
+
+    // 2. Get User Details for Metadata
+    const [senderSnap, recipientSnap] = await Promise.all([
+      db.ref(`users/${senderUid}`).get(),
+      db.ref(`users/${recipientUid}`).get()
+    ]);
+
+    const sender = senderSnap.val();
+    const recipient = recipientSnap.val();
+
+    if (!sender || !recipient) {
+      return res.status(404).json({ success: false, error: 'User profile not found' });
+    }
+
+    // 3. Create Pending Transaction
+    const transactionId = db.ref('p2p_transactions').push().key;
+    const now = new Date().toISOString();
+
+    // We store this in a root collection "p2p_transactions"
+    const p2pTransaction = {
+      id: transactionId,
+      from: senderUid,
+      to: recipientUid,
+      amount: Number(amount),
+      status: 'pending', // pending_approval
+      note: note || '',
+      type: 'p2p_transfer',
+      senderName: sender.name || 'Unknown',
+      senderUsername: sender.username || '',
+      receiverName: recipient.name || 'Unknown',
+      receiverUsername: recipient.username || '',
+      createdAt: now,
+      timestamp: Date.now()
+    };
+
+    // Atomic update
+    const updates = {};
+    updates[`p2p_transactions/${transactionId}`] = p2pTransaction;
+    updates[`user_p2p_transactions/${senderUid}/${transactionId}`] = p2pTransaction;
+    updates[`user_p2p_transactions/${recipientUid}/${transactionId}`] = p2pTransaction;
+
+    await db.ref().update(updates);
+
+    // 4. Send Notification to Recipient
+    try {
+      const notificationPromises = [];
+
+      // Push Notification
+      if (process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY) {
+        notificationPromises.push(
+          sendOneSignalNotificationInternal({
+            userIds: [recipientUid],
+            title: `💰 Money Received from ${sender.name}`,
+            body: `${sender.name} wants to send you Rs ${Number(amount).toLocaleString()}. Tap to accept.`,
+            data: { type: 'p2p_request', transactionId }
+          }).catch(e => console.error('P2P Push failed:', e.message))
+        );
+      }
+
+      // Email Notification (Optional - keeping it minimal for now)
+
+      await Promise.allSettled(notificationPromises);
+    } catch (e) {
+      console.error('Notification error', e);
+    }
+
+    res.json({ success: true, transactionId, message: 'Money sent! Waiting for acceptance.' });
+
+  } catch (error) {
+    console.error('Send money error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * Respond to Money Request
+ * Accepts or Rejects a P2P transaction.
+ * If accepted, updates wallet balances atomically.
+ */
+app.post('/api/respond-money-request', authenticate, async (req, res) => {
+  const { transactionId, accept } = req.body;
+  const responderUid = req.user.uid;
+
+  if (!transactionId) {
+    return res.status(400).json({ success: false, error: 'Transaction ID required' });
+  }
+
+  try {
+    const db = admin.database();
+    const txRef = db.ref(`p2p_transactions/${transactionId}`);
+    const txSnap = await txRef.get();
+
+    if (!txSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Transaction not found' });
+    }
+
+    const tx = txSnap.val();
+
+    // Verify the responder is the RECEIVER of the money
+    // Only the receiver can "Accept" the money (and thus increase their wallet).
+    if (tx.to !== responderUid) {
+      return res.status(403).json({ success: false, error: 'Only the receiver can accept this transaction' });
+    }
+
+    if (tx.status !== 'pending') {
+      return res.status(400).json({ success: false, error: `Transaction is already ${tx.status}` });
+    }
+
+    const updates = {};
+    const now = new Date().toISOString();
+
+    if (!accept) {
+      // REJECT
+      updates[`p2p_transactions/${transactionId}/status`] = 'rejected';
+      updates[`p2p_transactions/${transactionId}/rejectedAt`] = now;
+      updates[`user_p2p_transactions/${tx.from}/${transactionId}/status`] = 'rejected';
+      updates[`user_p2p_transactions/${tx.from}/${transactionId}/rejectedAt`] = now;
+      updates[`user_p2p_transactions/${tx.to}/${transactionId}/status`] = 'rejected';
+      updates[`user_p2p_transactions/${tx.to}/${transactionId}/rejectedAt`] = now;
+
+      await db.ref().update(updates);
+
+      return res.json({ success: true, status: 'rejected' });
+    }
+
+    // ACCEPT -> Update Wallets
+    // 1. Get current balances
+    const [senderSnap, receiverSnap] = await Promise.all([
+      db.ref(`users/${tx.from}`).get(),
+      db.ref(`users/${tx.to}`).get()
+    ]);
+
+    if (!senderSnap.exists() || !receiverSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'User profiles not found' });
+    }
+
+    const sender = senderSnap.val();
+    const receiver = receiverSnap.val();
+    const amount = Number(tx.amount);
+
+    const senderBalanceBefore = sender.walletBalance || 0;
+    const receiverBalanceBefore = receiver.walletBalance || 0;
+
+    // 2. Calculate new balances
+    // Sender LOSES money (they sent it)
+    const senderBalanceAfter = senderBalanceBefore - amount;
+    // Receiver GAINS money (they accepted it)
+    const receiverBalanceAfter = receiverBalanceBefore + amount;
+
+    // 3. Batched Updates
+    updates[`p2p_transactions/${transactionId}/status`] = 'completed';
+    updates[`p2p_transactions/${transactionId}/completedAt`] = now;
+
+    // Update Denormalized Copies
+    updates[`user_p2p_transactions/${tx.from}/${transactionId}/status`] = 'completed';
+    updates[`user_p2p_transactions/${tx.from}/${transactionId}/completedAt`] = now;
+    updates[`user_p2p_transactions/${tx.to}/${transactionId}/status`] = 'completed';
+    updates[`user_p2p_transactions/${tx.to}/${transactionId}/completedAt`] = now;
+
+    // Update Wallets
+    updates[`users/${tx.from}/walletBalance`] = senderBalanceAfter;
+    updates[`users/${tx.to}/walletBalance`] = receiverBalanceAfter;
+
+    await db.ref().update(updates);
+
+    // 4. Notify Sender
+    try {
+      if (process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY) {
+        sendOneSignalNotificationInternal({
+          userIds: [tx.from],
+          title: `✅ Money Accepted`,
+          body: `${receiver.name} accepted your Rs ${amount.toLocaleString()}.`,
+          data: { type: 'p2p_accepted', transactionId }
+        }).catch(e => console.error('P2P Push failed:', e.message));
+      }
+    } catch (e) { }
+
+    res.json({ success: true, status: 'completed', message: 'Transaction completed and wallets updated' });
+
+  } catch (error) {
+    console.error('Respond money request error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 

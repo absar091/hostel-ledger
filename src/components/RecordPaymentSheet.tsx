@@ -22,6 +22,9 @@ interface Member {
   };
   phone?: string;
   isTemporary?: boolean;
+  isCurrentUser?: boolean;
+  isPending?: boolean;
+  userId?: string;
 }
 
 interface Group {
@@ -29,6 +32,7 @@ interface Group {
   name: string;
   emoji: string;
   members: Member[];
+  createdBy?: string;
 }
 
 interface RecordPaymentSheetProps {
@@ -53,23 +57,32 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<"cash" | "online">("cash");
   const [note, setNote] = useState("");
+  const [fullGroupData, setFullGroupData] = useState<Group | null>(null);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
 
   // Get members from selected group (exclude "You") and sort by those who owe money
   const otherMembers = useMemo(() => {
-    const group = groups.find((g) => g.id === selectedGroup);
-    if (!group) return [];
+    let allMembers: Member[] = [];
+    if (fullGroupData && fullGroupData.id === selectedGroup) {
+      allMembers = fullGroupData.members;
+    } else {
+      const group = groups.find((g) => g.id === selectedGroup);
+      allMembers = group?.members || [];
+    }
 
-    // Filter out "You"
-    const members = group.members.filter((m) => m.name !== "You");
+    if (allMembers.length === 0) return [];
+
+    // Filter out "You" and "Invited" user-types (who haven't joined yet)
+    const filteredMembers = allMembers.filter((m) => !m.isCurrentUser && (m as any).type !== 'invited');
 
     // Sort by amount they owe (toReceive) descending
     const groupSettlements = getSettlements(selectedGroup);
-    return [...members].sort((a, b) => {
+    return [...filteredMembers].sort((a, b) => {
       const oweA = groupSettlements[a.id]?.toReceive || 0;
       const oweB = groupSettlements[b.id]?.toReceive || 0;
       return oweB - oweA;
     });
-  }, [groups, selectedGroup, getSettlements]);
+  }, [groups, selectedGroup, getSettlements, fullGroupData]);
 
   // Get settlement data for selected group
   const settlements = selectedGroup ? getSettlements(selectedGroup) : {};
@@ -96,16 +109,26 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
   // Auto-select group if only one exists
   // ... existing state ...
 
-  // Fetch full group details when a group is selected if members are missing
+  // Fetch full group details when a group is selected to ensure members are loaded
   useEffect(() => {
-    if (selectedGroup && step > 1) {
-      const group = groups.find(g => g.id === selectedGroup);
-      if (group && group.members.length === 0) {
-        // Trigger fetch to populate members
-        fetchGroupDetail(selectedGroup);
+    const loadGroupDetails = async () => {
+      if (selectedGroup && open) {
+        setIsLoadingMembers(true);
+        try {
+          const result = await fetchGroupDetail(selectedGroup);
+          if (result && result.id === selectedGroup) {
+            setFullGroupData(result as any);
+          }
+        } catch (error) {
+          console.error("Failed to fetch group details:", error);
+        } finally {
+          setIsLoadingMembers(false);
+        }
       }
-    }
-  }, [selectedGroup]); // Only depend on selectedGroup, not groups (to avoid loop)
+    };
+
+    loadGroupDetails();
+  }, [selectedGroup, open, fetchGroupDetail]);
 
   // Auto-select group if only one exists (only on initial open)
   useEffect(() => {
@@ -223,7 +246,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
                     selectedGroup === group.id
                       ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
-                      : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5"
+                      : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
                   )}
                 >
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center text-xl shadow-sm flex-shrink-0">
@@ -231,9 +254,11 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   </div>
                   <div className="flex-1 text-left min-w-0">
                     <span className="font-black text-gray-900 tracking-tight block truncate">{group.name}</span>
-                    <p className="text-xs text-[#4a6850]/80 font-bold">
-                      {group.members.length} members
-                    </p>
+                    {(group.memberCount || group.members.length) > 0 && (
+                      <p className="text-xs text-[#4a6850]/80 font-bold">
+                        {group.memberCount || group.members.length} members
+                      </p>
+                    )}
                   </div>
                   {selectedGroup === group.id && (
                     <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
@@ -260,56 +285,73 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 Who sent you money?
               </p>
               <div className="space-y-3">
-                {otherMembers.map((member) => {
-                  const settlement = settlements[member.id] || { toReceive: 0, toPay: 0 };
-                  const owesYou = settlement.toReceive > 0;
-                  const youOwe = settlement.toPay > 0;
-                  const isSettled = settlement.toReceive === 0 && settlement.toPay === 0;
+                {isLoadingMembers ? (
+                  <div className="flex flex-col items-center justify-center py-12 space-y-4 animate-fade-in">
+                    <div className="w-12 h-12 border-4 border-[#4a6850]/20 border-t-[#4a6850] rounded-full animate-spin"></div>
+                    <p className="text-sm text-[#4a6850]/70 font-black">Finding members...</p>
+                  </div>
+                ) : otherMembers.length === 0 ? (
+                  <div className="text-center py-12 px-6 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                    <p className="text-gray-500 font-bold">No other members found who owe money in this group.</p>
+                  </div>
+                ) : (
+                  otherMembers.map((member) => {
+                    const settlement = settlements[member.id] || { toReceive: 0, toPay: 0 };
+                    const owesYou = settlement.toReceive > 0;
+                    const youOwe = settlement.toPay > 0;
+                    const isSettled = settlement.toReceive === 0 && settlement.toPay === 0;
 
-                  return (
-                    <button
-                      key={member.id}
-                      onClick={() => setFromMember(member.id)}
-                      disabled={!owesYou}
-                      className={cn(
-                        "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
-                        fromMember === member.id
-                          ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
-                          : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5",
-                        !owesYou && "opacity-50 grayscale cursor-not-allowed border-dashed bg-gray-50"
-                      )}
-                    >
-                      <Avatar name={member.name} size="sm" />
-                      <div className="flex-1 text-left min-w-0">
-                        <div className="flex items-center gap-2">
-                          <div className="font-black text-gray-900 tracking-tight truncate">{member.name}</div>
-                          {member.isTemporary && (
-                            <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
-                          )}
-                          {!owesYou && (
-                            <span className="px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-wider">No Debt</span>
-                          )}
+                    return (
+                      <button
+                        key={member.id}
+                        onClick={() => setFromMember(member.id)}
+                        disabled={!owesYou}
+                        className={cn(
+                          "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
+                          fromMember === member.id
+                            ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
+                            : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5",
+                          !owesYou && "opacity-50 grayscale cursor-not-allowed border-dashed bg-gray-50"
+                        )}
+                      >
+                        <Avatar name={member.name} size="sm" />
+                        <div className="flex-1 text-left min-w-0">
+                          <div className="flex items-center gap-2">
+                            <div className="font-black text-gray-900 tracking-tight truncate">{member.name}</div>
+                            {(member.id === selectedGroupData?.createdBy || (member as any).userId === selectedGroupData?.createdBy) && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                            )}
+                            {(member as any).isPending && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited (Email)</span>
+                            )}
+                            {member.isTemporary && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                            )}
+                            {!owesYou && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-wider">No Debt</span>
+                            )}
+                          </div>
+                          <div className="text-xs font-bold truncate">
+                            {isSettled ? (
+                              <span className="text-emerald-600 font-black">✅ All settled</span>
+                            ) : owesYou ? (
+                              <span className="text-[#4a6850] font-black">Owes Rs {settlement.toReceive.toLocaleString()}</span>
+                            ) : youOwe ? (
+                              <span className="text-red-500 font-black">You owe Rs {settlement.toPay.toLocaleString()}</span>
+                            ) : (
+                              <span className="text-gray-500">No pending</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-xs font-bold truncate">
-                          {isSettled ? (
-                            <span className="text-emerald-600 font-black">✅ All settled</span>
-                          ) : owesYou ? (
-                            <span className="text-[#4a6850] font-black">Owes Rs {settlement.toReceive.toLocaleString()}</span>
-                          ) : youOwe ? (
-                            <span className="text-red-500 font-black">You owe Rs {settlement.toPay.toLocaleString()}</span>
-                          ) : (
-                            <span className="text-gray-500">No pending</span>
-                          )}
-                        </div>
-                      </div>
-                      {fromMember === member.id && (
-                        <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
-                          <Check className="w-3.5 h-3.5 text-white font-bold" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
+                        {fromMember === member.id && (
+                          <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
+                            <Check className="w-3.5 h-3.5 text-white font-bold" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })
+                )}
               </div>
             </div>
           )}
@@ -323,7 +365,15 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   <div className="flex items-center gap-3 mb-3">
                     <Avatar name={selectedMemberData.name} size="sm" />
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-black text-gray-900 text-base tracking-tight truncate">{selectedMemberData.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-black text-gray-900 text-base tracking-tight truncate">{selectedMemberData.name}</h3>
+                        {(selectedMemberData.id === selectedGroupData?.createdBy || (selectedMemberData as any).userId === selectedGroupData?.createdBy) && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                        )}
+                        {(selectedMemberData as any).isPending && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited (Email)</span>
+                        )}
+                      </div>
                       <div className="text-xs font-bold truncate">
                         {selectedMemberData.settlement.toReceive > 0 ? (
                           <span className="text-[#4a6850]">
@@ -400,7 +450,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   Amount from {selectedMemberName}
                 </label>
                 <div className="text-center mb-4">
-                  <div className="text-3xl font-black text-gray-900 mb-3 tracking-tighter tabular-nums">
+                  <div className="text-4xl font-black text-gray-900 mb-4 tracking-tighter tabular-nums">
                     Rs {amount || "0"}
                   </div>
                   <Input
@@ -408,7 +458,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     placeholder="Enter amount"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="text-center text-lg h-12 max-w-sm mx-auto rounded-2xl border-[#4a6850]/20 shadow-md font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-lg"
+                    className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-2 border-[#4a6850]/30 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:ring-0 focus:shadow-xl"
                     autoFocus
                   />
                 </div>
@@ -472,10 +522,11 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   Note (optional)
                 </label>
                 <Input
-                  placeholder="e.g., Mess payment"
+                  placeholder="e.g., Mess payment, Monthly dues"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="h-12 rounded-2xl border-[#4a6850]/20 shadow-md font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-lg"
+                  className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
+                  maxLength={100}
                 />
               </div>
 

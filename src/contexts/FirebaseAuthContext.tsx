@@ -51,6 +51,7 @@ export interface UserProfile {
   createdAt: string;
   emailVerified?: boolean; // Email verification status
   favoriteGroups?: string[]; // Array of favorite group IDs
+  showBalanceToOthers: boolean; // Privacy setting for wallet balance visibility
 }
 
 interface FirebaseAuthContextType {
@@ -136,6 +137,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Safety timeout: on some devices/networks Firebase auth callback can hang,
     // leaving the app stuck on splash forever. Fallback to cached session.
+    // Safety timeout: on some devices/networks Firebase auth callback can hang,
+    // leaving the app stuck on splash forever. Fallback to cached session.
+    // OPTIMIZATION: Reduced timeout from 5000ms to 2500ms
     const authTimeout = window.setTimeout(() => {
       if (authResolved) return;
 
@@ -145,7 +149,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       if (!loadCachedUser('auth timeout fallback')) {
         setIsLoading(false);
       }
-    }, 5000);
+    }, 2500);
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (authResolved) return;
@@ -195,11 +199,12 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       logger.debug("Setting up real-time profile listener", { uid });
 
       try {
-        // Added Safety Timeout: If profile fetch hangs, force app entry after 5s
+        // Added Safety Timeout: If profile fetch hangs, force app entry after 3s
+        // OPTIMIZATION: Reduced timeout from 5000ms to 3000ms
         const profileTimeout = setTimeout(() => {
           console.warn('⏱️ Profile load timeout - forcing app entry (offline/partial state)');
           setIsLoading(false);
-        }, 5000);
+        }, 3000);
 
         // User Profile Listener
         unsubscribeUser = onValue(userRef, async (snapshot) => {
@@ -224,11 +229,22 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
             // Simplified approach: Just fetch verification status once on profile update.
             // Real-time verification status is less critical than profile.
 
-            let isVerified = false;
-            try {
-              const vSnap = await get(verificationRef);
-              isVerified = vSnap.exists() && vSnap.val().emailVerified;
-            } catch (e) { console.warn("Failed to fetch verification", e); }
+            // Get verification status (async/non-blocking for performance)
+            // OPTIMIZATION: Don't await this call to prevent blocking app load
+            get(verificationRef).then((vSnap) => {
+              if (vSnap.exists() && vSnap.val().emailVerified) {
+                // If verified in emailVerification but NOT in user profile, fix the mismatch
+                if (!userData.emailVerified) {
+                  // Self-healing: persist the fix to user profile so gate works on next load
+                  update(ref(database, `users/${uid}`), { emailVerified: true })
+                    .catch(e => console.warn("Failed to persist emailVerified fix", e));
+                }
+                setUser(prev => prev && !prev.emailVerified ? ({ ...prev, emailVerified: true }) : prev);
+              }
+            }).catch(e => console.warn("Failed to fetch verification", e));
+
+            // Use profile data immediately (optimistic)
+            const isVerified = userData.emailVerified || false;
 
             const userProfile: UserProfile = {
               uid,
@@ -243,7 +259,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
               settlements: userData.settlements || {},
               createdAt: userData.createdAt,
               emailVerified: isVerified,
-              favoriteGroups: userData.favoriteGroups || []
+              favoriteGroups: userData.favoriteGroups || [],
+              showBalanceToOthers: userData.showBalanceToOthers ?? false
             };
 
             setUser(userProfile);
@@ -255,6 +272,14 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
               localStorage.setItem('cachedUser', JSON.stringify(userProfile));
             } catch (error) {
               console.error('Failed to cache user profile:', error);
+            }
+
+            // DEFERRED: Sync balance to groups ONLY when showBalanceToOthers is enabled
+            // This was previously blocking initial load with N+1 queries
+            if (userProfile.showBalanceToOthers) {
+              // NOTE: Balance-to-groups sync is DISABLED because Firebase security rules
+              // block direct writes to groups/{gid}/members/ from the frontend.
+              // If "show balance to others" needs to work, move this sync to a backend API endpoint.
             }
           } else {
             // Profile doesn't exist - Create it
@@ -270,7 +295,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
               walletBalance: 0,
               settlements: {},
               createdAt: new Date().toISOString(),
-              emailVerified: false
+              emailVerified: false,
+              showBalanceToOthers: false
             };
 
             try {
@@ -431,7 +457,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           paymentDetails: {},
           walletBalance: 0,
           settlements: {},
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          showBalanceToOthers: false
         };
 
         const userRef = ref(database, `users/${firebaseUser.uid}`);
@@ -451,6 +478,46 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           createdAt: new Date().toISOString(),
           email: sanitizedEmail
         });
+
+        // --- NEW: Create Personal Space ---
+        try {
+          const groupId = `personal_${firebaseUser.uid}`;
+          const personalGroup = {
+            id: groupId,
+            name: "Personal Space",
+            emoji: "👤",
+            isPersonal: true,
+            members: [
+              {
+                id: firebaseUser.uid,
+                name: "You",
+                userId: firebaseUser.uid,
+                isAdmin: true
+              }
+            ],
+            createdBy: firebaseUser.uid,
+            createdAt: new Date().toISOString()
+          };
+
+          // 1. Create the group entry
+          await set(ref(database, `groups/${groupId}`), personalGroup);
+
+          // 2. Add to user's group index
+          await set(ref(database, `userGroups/${firebaseUser.uid}/${groupId}`), {
+            name: "Personal Space",
+            emoji: "👤",
+            isPersonal: true,
+            memberCount: 1,
+            role: 'admin',
+            createdAt: personalGroup.createdAt
+          });
+
+          logger.info('Personal Space created for new user', { uid: firebaseUser.uid });
+        } catch (personalError: any) {
+          logger.error("Failed to create Personal Space during signup", personalError);
+          // Don't fail the whole signup if just personal space creation fails
+        }
+        // ---------------------------------
 
         return { success: true };
 
@@ -702,19 +769,22 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
   const markEmailAsVerified = async (uid: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      // Update email verification status in database
-      const verificationRef = ref(database, `emailVerification/${uid}`);
-      await update(verificationRef, {
-        emailVerified: true,
-        verifiedAt: new Date().toISOString()
-      });
+      // Update email verification status in BOTH locations atomically
+      const db = database;
+      const updates: Record<string, any> = {};
+      updates[`emailVerification/${uid}/emailVerified`] = true;
+      updates[`emailVerification/${uid}/verifiedAt`] = new Date().toISOString();
+      updates[`users/${uid}/emailVerified`] = true; // <-- THIS WAS MISSING! Gate reads from here
 
-      // Update user profile in memory
+      await update(ref(db), updates);
+
+      // Update user profile in memory + cache
       if (user && user.uid === uid) {
-        setUser({
-          ...user,
-          emailVerified: true
-        });
+        const updatedUser = { ...user, emailVerified: true };
+        setUser(updatedUser);
+        try {
+          localStorage.setItem('cachedUser', JSON.stringify(updatedUser));
+        } catch (e) { /* ignore cache error */ }
       }
 
       logger.info('Email marked as verified', { uid });

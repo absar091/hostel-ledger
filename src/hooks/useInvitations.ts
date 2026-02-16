@@ -31,6 +31,15 @@ export const useInvitations = () => {
                 const data = snapshot.val();
                 const pendingInvitations = Object.values(data)
                     .filter((inv: any) => inv.status === 'pending')
+                    .map((inv: any) => ({
+                        ...inv,
+                        // Fallback: If invitedBy is missing, try senderName
+                        // If invitedBy is an object (legacy send-invitation), extract name
+                        invitedBy: typeof inv.invitedBy === 'object'
+                            ? (inv.invitedBy.name || inv.senderName || 'Someone')
+                            : (inv.invitedBy || inv.senderName || 'Someone'),
+                        invitationId: inv.invitationId || inv.id // Ensure we have invitationId
+                    }))
                     .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as Invitation[];
 
                 setInvitations(pendingInvitations);

@@ -11,6 +11,7 @@ import { useSync } from "@/hooks/useSync";
 import { toast } from "sonner";
 import { calculateExpenseSplit } from "@/lib/expenseLogic";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { getDatabase, ref, get } from "firebase/database";
 // import { validateExpenseData, sanitizeString, sanitizeAmount } from "@/lib/validation";
 
@@ -21,6 +22,8 @@ interface Member {
   deletionCondition?: 'SETTLED' | 'TIME_LIMIT' | null;
   expiresAt?: number | null;
   isPending?: boolean;
+  isCurrentUser?: boolean;
+  balance?: number; // Wallet balance if shared
 }
 
 interface Group {
@@ -29,6 +32,8 @@ interface Group {
   emoji: string;
   members: Member[];
   createdBy?: string;
+  memberCount?: number;
+  isPersonal?: boolean;
 }
 interface AddExpenseSheetProps {
   open: boolean;
@@ -43,6 +48,7 @@ interface AddExpenseSheetProps {
     place: string;
   }) => void;
   onAddMember?: (groupId: string, data: { name: string; isTemporary: boolean; deletionCondition: 'SETTLED' | 'TIME_LIMIT' }) => Promise<{ success: boolean; memberId?: string }>;
+  initialGroupId?: string;
 }
 
 import {
@@ -56,17 +62,32 @@ import {
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddExpenseSheetProps) => {
+const PERSONAL_CATEGORIES = [
+  { id: 'food', label: 'Food', emoji: '🍕' },
+  { id: 'transport', label: 'Transport', emoji: '🚗' },
+  { id: 'shopping', label: 'Shopping', emoji: '🛍️' },
+  { id: 'rent', label: 'Rent', emoji: '🏠' },
+  { id: 'bills', label: 'Bills', emoji: '💸' },
+  { id: 'entertainment', label: 'Entertainment', emoji: '🎬' },
+  { id: 'others', label: 'Others', emoji: '✨' },
+];
+
+const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initialGroupId }: AddExpenseSheetProps) => {
   const [step, setStep] = useState(1);
-  const [selectedGroup, setSelectedGroup] = useState("");
+  const [selectedGroup, setSelectedGroup] = useState(initialGroupId || "");
   const [amount, setAmount] = useState("");
   const [paidBy, setPaidBy] = useState("");
   const [participants, setParticipants] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [place, setPlace] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('others');
+
+  // Hooks
   const { isOnline, updatePendingCount } = useSync();
   const offline = !isOnline;
+  const { fetchGroupDetail } = useFirebaseData();
+  const { user } = useFirebaseAuth();
 
   // Temp member state
   const [showTempMemberInput, setShowTempMemberInput] = useState(false);
@@ -75,8 +96,48 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
   const [localTempMembers, setLocalTempMembers] = useState<Member[]>([]);
   const [fullGroupData, setFullGroupData] = useState<Group | null>(null);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
-  const { fetchGroupDetail } = useFirebaseData();
-  const [memberBalances, setMemberBalances] = useState<Record<string, number>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Pre-select group if there's only one and it hasn't been set
+  useEffect(() => {
+    if (open && groups.length === 1 && !selectedGroup) {
+      setSelectedGroup(groups[0].id);
+      setStep(2);
+    }
+  }, [open, groups, selectedGroup]);
+
+  // Handle auto-population for personal groups
+  useEffect(() => {
+    if (selectedGroup && user) {
+      const groupData = groups.find(g => g.id === selectedGroup);
+      if (groupData?.isPersonal) {
+        setPaidBy(user.uid);
+        setParticipants([user.uid]);
+      }
+    }
+  }, [selectedGroup, user, groups]);
+
+  // Reset state when sheet opens
+  useEffect(() => {
+    if (open) {
+      // Don't reset if it was already pre-selected or initialGroupId provided
+      if (groups.length !== 1 && !initialGroupId) {
+        setStep(1);
+        setSelectedGroup("");
+      } else {
+        setSelectedGroup(initialGroupId || (groups.length === 1 ? groups[0].id : ""));
+        setStep(2);
+      }
+      setAmount("");
+      setPaidBy("");
+      setParticipants([]);
+      setNote("");
+      setPlace("");
+      setValidationErrors([]);
+      setIsSubmitting(false);
+      setSelectedCategory('others');
+    }
+  }, [open, groups.length, initialGroupId]);
 
   // Get members from selected group
   const members = useMemo(() => {
@@ -93,59 +154,87 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
     const newLocalMembers = localTempMembers.filter(m => !existingIds.has(m.id));
     allMembers = [...allMembers, ...newLocalMembers];
 
-    // Filter out pending members (invited but not joined), but keep temp members
-    return allMembers.filter(m => !m.isPending || m.isTemporary);
+    // Allow pending manual members (invited via email) but EXCLUDE existing app users who haven't joined yet (type='invited')
+    return allMembers.filter(m => (m as any).type !== 'invited');
   }, [groups, selectedGroup, fullGroupData, localTempMembers]);
+
+  // Fetch full group details when a group is selected to ensure members are loaded
+  useEffect(() => {
+    if (selectedGroup && isOnline) {
+      setIsLoadingMembers(true);
+      fetchGroupDetail(selectedGroup)
+        .then((data) => {
+          if (data) {
+            setFullGroupData(data);
+          }
+        })
+        .finally(() => {
+          setIsLoadingMembers(false);
+        });
+    }
+  }, [selectedGroup, isOnline, fetchGroupDetail]);
 
   // Handle expense submission
   const handleSubmit = async () => {
     const invalidParticipants = participants.filter(p => !members.some(m => String(m.id) === String(p)));
     if (invalidParticipants.length > 0) {
       console.error("Invalid participants detected:", { invalidParticipants, availableMembers: members.map(m => m.id) });
-      setValidationErrors(["Some selected participants are not valid"]);
+      toast.error("Some selected participants are not valid members of this group");
       return;
     }
 
-    // Clear errors
-    setValidationErrors([]);
+    setIsSubmitting(true);
 
-    // OFFLINE MODE: Save to IndexedDB
     if (offline) {
+      // Save for later sync
+      const offlineExpense = {
+        groupId: selectedGroup,
+        groupName: selectedGroupData?.name || "Unknown Group",
+        amount: parseFloat(amount),
+        paidBy,
+        participants,
+        note: selectedGroupData?.isPersonal
+          ? `${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.emoji} ${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.label}${note ? ': ' + note : ''}`
+          : note,
+        place,
+        timestamp: Date.now(),
+        synced: false
+      };
+
       try {
-        await saveOfflineExpense({
+        await saveOfflineExpense(offlineExpense);
+        updatePendingCount();
+        toast.success("Expense saved offline", {
+          description: "Will sync when you're back online"
+        });
+        setIsSubmitting(false);
+        onClose();
+      } catch (error) {
+        console.error("Failed to save offline expense:", error);
+        toast.error("Failed to save expense locally");
+        setIsSubmitting(false);
+      }
+    } else {
+      // Online submission
+      try {
+        await onSubmit({
           groupId: selectedGroup,
-          amount: Math.max(0, Math.min(parseFloat(amount), 1000000)),
+          amount: parseFloat(amount),
           paidBy,
           participants,
-          note: note.trim().substring(0, 200),
-          place: place.trim().substring(0, 100),
+          note: selectedGroupData?.isPersonal
+            ? `${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.emoji} ${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.label}${note ? ': ' + note : ''}`
+            : note,
+          place
         });
-
-        await updatePendingCount();
-        toast.success("Saved offline — will sync when online", {
-          description: "Your expense is saved locally and will sync automatically",
-          icon: "📴",
-        });
-        handleClose();
-      } catch (error: any) {
-        toast.error("Failed to save offline", {
-          description: error.message || "Please try again",
-        });
+        setIsSubmitting(false);
+        onClose();
+      } catch (error) {
+        console.error("Failed to submit expense:", error);
+        toast.error("Failed to submit expense");
+        setIsSubmitting(false);
       }
-      return;
     }
-
-    // ONLINE MODE: Submit normally
-    onSubmit({
-      groupId: selectedGroup,
-      amount: Math.max(0, Math.min(parseFloat(amount), 1000000)),
-      paidBy,
-      participants,
-      note: note.trim().substring(0, 200),
-      place: place.trim().substring(0, 100),
-      // No longer need stagedMembers here
-    });
-    handleClose();
   };
 
   const toggleParticipant = (id: string) => {
@@ -217,10 +306,38 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
   const paidByName = members.find((m) => m.id === paidBy)?.name;
   const selectedGroupData = groups.find((g) => g.id === selectedGroup);
 
+  // Calculate split details for display
+  const splitDetails = useMemo(() => {
+    const totalAmount = parseFloat(amount) || 0;
+    const count = participants.length || 1;
+    const perPerson = count > 0 ? Math.round((totalAmount / count) * 100) / 100 : 0;
+
+    // Logic: 
+    // If I paid (paidBy === me), I receive (Total - MyShare)
+    // If someone else paid, I owe MyShare
+
+    // Ideally we'd use calculateExpenseSplit here, but for display simplicity:
+    return {
+      perPerson,
+      toReceive: (totalAmount - perPerson), // Rough estimate for UI
+      toGive: perPerson,
+      othersCount: Math.max(0, count - 1)
+    };
+  }, [amount, participants]);
+
   return (
     <>
-      <Sheet open={open} onOpenChange={handleClose}>
+      <Sheet open={open} onOpenChange={(open) => !open && onClose()}>
         <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
+
+          {/* Loading Overlay */}
+          {isSubmitting && (
+            <div className="absolute inset-0 z-[150] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-200">
+              <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
+              <h3 className="text-lg font-black text-slate-900">Processing...</h3>
+            </div>
+          )}
+
           <SheetHeader className="flex-shrink-0 mb-6 pt-2">
             {/* Handle Bar */}
             <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
@@ -238,7 +355,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
               {step === 2 && "Enter Amount"}
               {step === 3 && "Who Paid?"}
               {step === 4 && "Split Between"}
-              {step === 5 && "Add Details"}
+              {step === 5 && (selectedGroupData?.isPersonal ? "Review & Note" : "Add Details")}
             </SheetTitle>
             <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
               Add a new expense to split between group members
@@ -283,9 +400,11 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                     </div>
                     <div className="flex-1 text-left min-w-0">
                       <span className="font-black text-gray-900 tracking-tight block truncate">{group.name}</span>
-                      <p className="text-xs text-[#4a6850]/80 font-bold">
-                        {group.members.length} members
-                      </p>
+                      {(group.memberCount || group.members.length) > 0 && (
+                        <p className="text-xs text-[#4a6850]/80 font-bold">
+                          {group.memberCount || group.members.length} members
+                        </p>
+                      )}
                     </div>
                     {selectedGroup === group.id && (
                       <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
@@ -330,49 +449,58 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                     position="bottom"
                   />
                 </div>
-                {members.filter(m => !m.isTemporary).map((member) => (
-                  <button
-                    key={member.id}
-                    onClick={() => setPaidBy(member.id)}
-                    className={cn(
-                      "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
-                      paidBy === member.id
-                        ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
-                        : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
-                    )}
-                  >
-                    <Avatar name={member.name} size="sm" />
-                    <div className="flex-1 text-left min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
-                        {(member.id === fullGroupData?.createdBy || (member as any).userId === fullGroupData?.createdBy) && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                {isLoadingMembers ? (
+                  <div className="flex flex-col items-center justify-center py-8 space-y-3 animate-fade-in">
+                    <div className="w-8 h-8 border-4 border-[#4a6850]/20 border-t-[#4a6850] rounded-full animate-spin"></div>
+                    <p className="text-sm text-[#4a6850]/70 font-bold">Loading members...</p>
+                  </div>
+                ) : (
+                  <>
+                    {members.filter(m => !m.isTemporary).map((member) => (
+                      <button
+                        key={member.id}
+                        onClick={() => setPaidBy(member.id)}
+                        className={cn(
+                          "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
+                          paidBy === member.id
+                            ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
+                            : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
                         )}
-                      </div>
-                      {member.isTemporary && (
-                        <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600 mt-0.5">
-                          {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
-                          <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
+                      >
+                        <Avatar name={member.name} size="sm" />
+                        <div className="flex-1 text-left min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
+                            {(member.id === fullGroupData?.createdBy || (member as any).userId === fullGroupData?.createdBy) && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                            )}
+                            {member.isPending && !member.isCurrentUser && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited (Email)</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {member.balance !== undefined && member.balance !== null && (
+                              <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-lg border border-emerald-100">
+                                Rs {member.balance.toLocaleString()}
+                              </span>
+                            )}
+                            {member.isTemporary && (
+                              <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600">
+                                {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                                <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
-
-                      {/* Wallet Balance Display */}
-                      {memberBalances[member.id] !== undefined && (
-                        <div className={cn(
-                          "text-xs font-bold mt-0.5",
-                          memberBalances[member.id] < 0 ? "text-red-500" : "text-[#4a6850]"
-                        )}>
-                          Wallet: Rs {memberBalances[member.id]}
-                        </div>
-                      )}
-                    </div>
-                    {paidBy === member.id && (
-                      <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
-                        <Check className="w-3.5 h-3.5 text-white font-bold" />
-                      </div>
-                    )}
-                  </button>
-                ))}
+                        {paidBy === member.id && (
+                          <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
+                            <Check className="w-3.5 h-3.5 text-white font-bold" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </>
+                )}
               </div>
             )}
 
@@ -388,51 +516,70 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                     position="bottom"
                   />
                 </div>
-                {members.map((member) => {
-                  const isSelected = participants.includes(member.id);
+                {isLoadingMembers ? (
+                  <div className="flex flex-col items-center justify-center py-8 space-y-3 animate-fade-in">
+                    <div className="w-8 h-8 border-4 border-[#4a6850]/20 border-t-[#4a6850] rounded-full animate-spin"></div>
+                    <p className="text-sm text-[#4a6850]/70 font-bold">Loading members...</p>
+                  </div>
+                ) : (
+                  <>
+                    {members.map((member) => {
+                      const isSelected = participants.includes(member.id);
 
-                  return (
-                    <button
-                      key={member.id}
-                      onClick={() => toggleParticipant(member.id)}
-                      className={cn(
-                        "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
-                        isSelected
-                          ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
-                          : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
-                      )}
-                    >
-                      <Avatar name={member.name} size="sm" />
-                      <div className="flex-1 text-left min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
-                          {member.isTemporary && (
-                            <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                      return (
+                        <button
+                          key={member.id}
+                          onClick={() => toggleParticipant(member.id)}
+                          className={cn(
+                            "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
+                            isSelected
+                              ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
+                              : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
                           )}
-                          {(member.id === fullGroupData?.createdBy || (member as any).userId === fullGroupData?.createdBy) && (
-                            <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                        >
+                          <Avatar name={member.name} size="sm" />
+                          <div className="flex-1 text-left min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
+                              {member.isTemporary && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                              )}
+                              {(member.id === fullGroupData?.createdBy || (member as any).userId === fullGroupData?.createdBy) && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">Owner</span>
+                              )}
+                              {member.isPending && !member.isCurrentUser && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited (Email)</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {member.balance !== undefined && member.balance !== null && (
+                                <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-lg border border-emerald-100">
+                                  Rs {member.balance.toLocaleString()}
+                                </span>
+                              )}
+                              {member.isTemporary && (
+                                <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600">
+                                  {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                                  <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
+                                </div>
+                              )}
+                            </div>
+                            {isSelected && (
+                              <div className="text-xs text-[#4a6850] font-bold">
+                                Rs {splitDetails.perPerson} share
+                              </div>
+                            )}
+                          </div>
+                          {isSelected && (
+                            <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
+                              <Check className="w-3.5 h-3.5 text-white font-bold" />
+                            </div>
                           )}
-                        </div>
-                        {member.isTemporary && (
-                          <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600 mt-0.5">
-                            {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
-                            <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
-                          </div>
-                        )}
-                        {isSelected && (
-                          <div className="text-xs text-[#4a6850] font-bold">
-                            Rs {splitDetails.perPerson} share
-                          </div>
-                        )}
-                      </div>
-                      {isSelected && (
-                        <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
-                          <Check className="w-3.5 h-3.5 text-white font-bold" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
+                        </button>
+                      );
+                    })}
+                  </>
+                )}
 
                 {/* Add Temp Member Button */}
                 <button
@@ -468,50 +615,93 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
             {/* Step 5: Add Details - iPhone Style */}
             {step === 5 && (
               <div className="space-y-6 animate-fade-in">
+                {/* Category Selection for Personal/Self tracking */}
+                {selectedGroupData?.isPersonal && (
+                  <div>
+                    <label className="text-sm font-black text-[#4a6850]/80 mb-4 block uppercase tracking-wide">
+                      Select Category
+                    </label>
+                    <div className="grid grid-cols-4 gap-3">
+                      {PERSONAL_CATEGORIES.map((cat) => (
+                        <button
+                          key={cat.id}
+                          onClick={() => setSelectedCategory(cat.id)}
+                          className={cn(
+                            "flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border-2",
+                            selectedCategory === cat.id
+                              ? "bg-[#4a6850]/10 border-[#4a6850] scale-105 shadow-md"
+                              : "bg-white border-gray-100 hover:border-[#4a6850]/30"
+                          )}
+                        >
+                          <span className="text-2xl">{cat.emoji}</span>
+                          <span className="text-[10px] font-black uppercase text-[#4a6850]">{cat.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
-                    What was it for? (optional)
+                    {selectedGroupData?.isPersonal ? "Add a note" : "What was it for? (optional)"}
                   </label>
                   <Input
-                    placeholder="e.g., Dinner, Chai, Groceries"
+                    placeholder={selectedGroupData?.isPersonal ? "e.g. My dinner, Gym subscription" : "e.g., Dinner, Chai, Groceries"}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
                     maxLength={100}
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
-                    Where? (optional)
-                  </label>
-                  <Input
-                    placeholder="e.g., Student Café"
-                    value={place}
-                    onChange={(e) => setPlace(e.target.value)}
-                    className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
-                    maxLength={100}
-                  />
-                </div>
+
+                {!selectedGroupData?.isPersonal && (
+                  <div>
+                    <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
+                      Where? (optional)
+                    </label>
+                    <Input
+                      placeholder="e.g., Student Café"
+                      value={place}
+                      onChange={(e) => setPlace(e.target.value)}
+                      className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
+                      maxLength={100}
+                    />
+                  </div>
+                )}
 
                 {/* Final Summary - iPhone Style */}
                 <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-6 mt-8 shadow-[0_25px_70px_rgba(74,104,80,0.3)] text-white">
-                  <div className="text-sm text-white/90 mb-3 font-black uppercase tracking-wide">Final Summary</div>
-                  <div className="font-black text-xl tracking-tight mb-2">Rs {amount}</div>
-                  <div className="text-sm text-white/90 font-bold">
-                    Paid by {paidByName} • Split {participants.length} ways
+                  <div className="text-sm text-white/90 mb-3 font-black uppercase tracking-wide">
+                    {selectedGroupData?.isPersonal ? "Personal Expense" : "Final Summary"}
                   </div>
-                  <div className="text-sm text-white/90 font-bold">
-                    Rs {splitDetails.perPerson} per person
-                  </div>
-                  {splitDetails.toReceive > 0 && (
-                    <div className="text-emerald-200 font-black mt-3 text-lg">
-                      You will receive Rs {splitDetails.toReceive}
+                  <div className="font-black text-2xl tracking-tight mb-2">Rs {amount}</div>
+
+                  {selectedGroupData?.isPersonal ? (
+                    <div className="flex items-center gap-2 text-sm text-white/90 font-bold">
+                      <span>Category:</span>
+                      <span className="bg-white/20 px-2 py-1 rounded-lg">
+                        {PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.emoji} {PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.label}
+                      </span>
                     </div>
-                  )}
-                  {splitDetails.toGive > 0 && (
-                    <div className="text-orange-200 font-black mt-3 text-lg">
-                      You owe Rs {splitDetails.toGive}
-                    </div>
+                  ) : (
+                    <>
+                      <div className="text-sm text-white/90 font-bold">
+                        Paid by {paidByName} • Split {participants.length} ways
+                      </div>
+                      <div className="text-sm text-white/90 font-bold">
+                        Rs {splitDetails.perPerson} per person
+                      </div>
+                      {splitDetails.toReceive > 0 && (
+                        <div className="text-emerald-200 font-black mt-3 text-lg">
+                          You will receive Rs {splitDetails.toReceive}
+                        </div>
+                      )}
+                      {splitDetails.toGive > 0 && (
+                        <div className="text-orange-200 font-black mt-3 text-lg">
+                          You owe Rs {splitDetails.toGive}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -523,7 +713,13 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
               {step > 1 && (
                 <Button
                   variant="secondary"
-                  onClick={() => setStep((s) => s - 1)}
+                  onClick={() => {
+                    if (step === 5 && selectedGroupData?.isPersonal) {
+                      setStep(2);
+                    } else {
+                      setStep((s) => s - 1);
+                    }
+                  }}
                   className="flex-1 h-14 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black border-0 shadow-lg hover:shadow-xl transition-all"
                 >
                   Back
@@ -531,7 +727,13 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
               )}
               {step < 5 ? (
                 <Button
-                  onClick={() => setStep((s) => s + 1)}
+                  onClick={() => {
+                    if (step === 2 && selectedGroupData?.isPersonal) {
+                      setStep(5);
+                    } else {
+                      setStep((s) => s + 1);
+                    }
+                  }}
                   disabled={!canProceed()}
                   className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >

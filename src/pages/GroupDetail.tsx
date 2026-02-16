@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { ArrowLeft, Settings, ChevronRight, Plus, HandCoins, Users, Share2 } from "lucide-react";
 import GroupPendingInvitations from "@/components/GroupPendingInvitations";
-import TransactionSuccessSheet from "@/components/TransactionSuccessSheet";
 import { Button } from "@/components/ui/button";
 import TimelineItem from "@/components/TimelineItem";
 import Avatar from "@/components/Avatar";
@@ -41,11 +40,6 @@ const GroupDetail = () => {
   const [showGroupGuide, setShowGroupGuide] = useState(false);
   const [fullGroup, setFullGroup] = useState<any>(null);
   const [isGroupLoading, setIsGroupLoading] = useState(true);
-
-  // Success Sheet states
-  const [showSuccessSheet, setShowSuccessSheet] = useState(false);
-  const [successTransaction, setSuccessTransaction] = useState<any>(null);
-  const [successType, setSuccessType] = useState<"expense" | "payment">("expense");
 
   // Check if we should show page guide
   useEffect(() => {
@@ -90,6 +84,25 @@ const GroupDetail = () => {
   const groupTotalToReceive = Object.values(settlements).reduce((total, settlement) => {
     return total + (settlement.toReceive || 0);
   }, 0);
+
+  // NOTE: These useMemo hooks MUST be before the early returns below to maintain
+  // consistent hook count across renders (React Rules of Hooks)
+  const personalStats = useMemo(() => {
+    if (!group?.isPersonal) return null;
+    const totalSpentValue = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
+    return {
+      totalSpent: totalSpentValue,
+      count: transactions.filter(t => t.type === 'expense').length
+    };
+  }, [group, transactions]);
+
+  const totalSpent = useMemo(() => transactions
+    .filter((t) => t.type === "expense")
+    .reduce((sum, t) => sum + t.amount, 0), [transactions]);
+
+  const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
 
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
@@ -251,9 +264,7 @@ const GroupDetail = () => {
       if (result.success) {
         toast.success(`Added expense of Rs ${data.amount.toLocaleString()}`);
         if (result.transaction) {
-          setSuccessTransaction(result.transaction);
-          setSuccessType("expense");
-          setShowSuccessSheet(true);
+          navigate("/receipt", { state: { transaction: result.transaction, type: "expense" } });
         }
       } else {
         toast.error(result.error || "Failed to add expense");
@@ -285,9 +296,7 @@ const GroupDetail = () => {
       const memberName = group.members.find((m) => m.id === data.fromMember)?.name;
       toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
       if (result.transaction) {
-        setSuccessTransaction(result.transaction);
-        setSuccessType("payment");
-        setShowSuccessSheet(true);
+        navigate("/receipt", { state: { transaction: result.transaction, type: "payment" } });
       }
     } else {
       toast.error(result.error || "Failed to record payment");
@@ -302,11 +311,7 @@ const GroupDetail = () => {
     members: members,
   }];
 
-  // Calculate summary data
-  const totalSpent = transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
-  const expenseCount = transactions.filter((t) => t.type === "expense").length;
+  // personalStats, totalSpent, and expenseCount are defined before early returns above
 
   // Find the member who has paid the most in expenses (actual top contributor)
   const memberExpenseContributions = group.members.map(member => {
@@ -362,29 +367,40 @@ const GroupDetail = () => {
           </div>
         </div>
 
-        {/* Tabs - iPhone Style Enhanced */}
-        <div className="flex gap-2 px-4 pb-4" role="tablist" aria-label="Group details tabs">
-          {[
-            { id: "ledger", label: "Ledger" },
-            { id: "members", label: "Members" },
-            { id: "summary", label: "Summary" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              aria-controls={`panel-${tab.id}`}
-              id={`tab-${tab.id}`}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`flex-1 py-3 px-4 rounded-2xl text-sm font-black transition-all duration-200 ${activeTab === tab.id
-                ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] scale-105"
-                : "bg-white/80 text-[#4a6850]/80 hover:bg-white border border-[#4a6850]/10 hover:scale-102"
-                }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Tabs - iPhone Style Enhanced - Only for multi-member groups */}
+        {!group.isPersonal ? (
+          <div className="flex gap-2 px-4 pb-4">
+            {[
+              { id: "ledger", label: "Ledger" },
+              { id: "members", label: "Members" },
+              { id: "summary", label: "Summary" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                className={`flex-1 py-3 px-4 rounded-2xl text-sm font-black transition-all duration-200 ${activeTab === tab.id
+                  ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] scale-105"
+                  : "bg-white/80 text-[#4a6850]/80 hover:bg-white border border-[#4a6850]/10 hover:scale-102"
+                  }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          /* Personal Stats Summary for Personal groups */
+          personalStats && (
+            <div className="px-4 pb-4">
+              <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-6 text-white shadow-xl">
+                <div className="text-xs font-black uppercase tracking-wider text-white/70 mb-1">Lifetime Spent</div>
+                <div className="text-3xl font-black mb-1">Rs {personalStats.totalSpent.toLocaleString()}</div>
+                <div className="text-xs font-bold text-white/60">
+                  Over {personalStats.count} {personalStats.count === 1 ? 'expense' : 'expenses'}
+                </div>
+              </div>
+            </div>
+          )
+        )}
       </header>
 
       {/* Content */}
@@ -473,6 +489,7 @@ const GroupDetail = () => {
                 setSettlementMember({
                   id: member.id,
                   name: member.name,
+                  avatar: undefined,
                   isTemporary: member.isTemporary,
                 });
                 setShowMemberSettlement(true);
@@ -499,7 +516,7 @@ const GroupDetail = () => {
                         {member.isTemporary && (
                           <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
                         )}
-                        {member.isPending && (
+                        {member.isPending && !isYou && (
                           <span className="px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-600 text-[10px] font-black uppercase tracking-wider">Pending</span>
                         )}
                         {(member.userId === group.createdBy || member.id === group.createdBy) && (
@@ -779,23 +796,43 @@ const GroupDetail = () => {
           })),
         }}
         isOwner={user?.uid === group.createdBy}
-        onAddMember={(name) => {
-          addMemberToGroup(group.id, { name });
-          toast.success(`Added ${name} to the group`);
+        onAddMember={async (name) => {
+          const result = await addMemberToGroup(group.id, { name });
+          if (result.success) {
+            toast.success(`Added ${name} to the group`);
+            fetchGroupDetail(group.id);
+          } else {
+            toast.error(result.error || "Failed to add member");
+          }
         }}
-        onRemoveMember={(memberId) => {
+        onRemoveMember={async (memberId) => {
           const memberName = group.members.find((m) => m.id === memberId)?.name;
-          removeMemberFromGroup(group.id, memberId);
-          toast.success(`Removed ${memberName} from the group`);
+          const result = await removeMemberFromGroup(group.id, memberId);
+          if (result.success) {
+            toast.success(`Removed ${memberName} from the group`);
+            fetchGroupDetail(group.id);
+          } else {
+            toast.error(result.error || "Failed to remove member");
+          }
         }}
-        onUpdateGroup={(data) => {
-          updateGroup(group.id, data);
-          toast.success("Group updated");
+        onUpdateGroup={async (data) => {
+          const result = await updateGroup(group.id, data);
+          if (result.success) {
+            toast.success("Group updated");
+            fetchGroupDetail(group.id);
+          } else {
+            toast.error(result.error || "Failed to update group");
+          }
         }}
-        onDeleteGroup={() => {
-          deleteGroup(group.id);
-          toast.success("Group deleted");
-          navigate("/");
+        onDeleteGroup={async () => {
+          const result = await deleteGroup(group.id);
+          if (result.success) {
+            toast.success("Group deleted");
+            setShowGroupSettings(false);
+            navigate("/");
+          } else {
+            toast.error(result.error || "Failed to delete group");
+          }
         }}
       />
 
@@ -826,15 +863,6 @@ const GroupDetail = () => {
         onClose={handleGroupGuideClose}
       />
 
-      <TransactionSuccessSheet
-        open={showSuccessSheet}
-        onClose={() => {
-          setShowSuccessSheet(false);
-          setSuccessTransaction(null);
-        }}
-        transaction={successTransaction}
-        type={successType}
-      />
     </div>
   );
 };

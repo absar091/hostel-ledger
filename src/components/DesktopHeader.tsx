@@ -1,4 +1,4 @@
-import { Search, Bell } from "lucide-react";
+import { Search, Bell, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import NotificationIcon from "./NotificationIcon";
@@ -25,6 +25,15 @@ const DesktopHeader = () => {
       <div className="flex items-center gap-4 ml-6">
         {/* Notifications */}
         <NotificationIcon />
+
+        {/* Settings */}
+        <button
+          onClick={() => navigate("/settings")}
+          className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"
+          title="App Settings"
+        >
+          <Settings className="w-5 h-5" />
+        </button>
 
         {/* Profile */}
         <button

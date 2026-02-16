@@ -15,7 +15,6 @@ import {
   Share2,
 } from "@/lib/icons";
 import { sendExternalInvitation } from "@/lib/api";
-import TransactionSuccessSheet from "@/components/TransactionSuccessSheet";
 import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
@@ -96,6 +95,7 @@ const Dashboard = () => {
   const [showRecordPayment, setShowRecordPayment] = useState(false);
   const [showAddMoney, setShowAddMoney] = useState(false);
   const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
+  const [initialGroupIdForSheet, setInitialGroupIdForSheet] = useState("");
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [selectedMemberForPayment, setSelectedMemberForPayment] = useState<{
     id: string;
@@ -111,13 +111,6 @@ const Dashboard = () => {
   // Notification prompt state
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [isEnablingNotifications, setIsEnablingNotifications] = useState(false);
-
-  // Success Sheet states
-  const [showSuccessSheet, setShowSuccessSheet] = useState(false);
-  const [successTransaction, setSuccessTransaction] = useState<any>(null);
-  const [successType, setSuccessType] = useState<"expense" | "payment">(
-    "expense",
-  );
 
   // Tooltip states for mobile
   const [showBalanceTooltip, setShowBalanceTooltip] = useState(false);
@@ -406,12 +399,16 @@ const Dashboard = () => {
       id: g.id,
       name: g.name,
       emoji: g.emoji,
+      isPersonal: (g as any).isPersonal,
+      createdBy: (g as any).createdBy,
       members: g.members.map((m) => ({
         id: m.id,
         name: m.name,
         isTemporary: m.isTemporary,
-        deletionCondition: m.deletionCondition,
-        expiresAt: m.expiresAt,
+        deletionCondition: (m as any).deletionCondition,
+        expiresAt: (m as any).expiresAt,
+        type: (m as any).type,
+        userId: (m as any).userId,
       })),
     }));
   }, [groups]);
@@ -440,7 +437,19 @@ const Dashboard = () => {
       toast.error("Create a group first to add expenses");
       navigate("/create-group");
     } else {
+      setInitialGroupIdForSheet("");
       setShowAddExpense(true);
+    }
+  };
+
+  const handlePersonalExpense = () => {
+    const personalGroup = groups.find((g) => (g as any).isPersonal);
+    if (personalGroup) {
+      setInitialGroupIdForSheet(personalGroup.id);
+      setShowAddExpense(true);
+    } else {
+      // Fallback if no personal group found (shouldn't happen with migration logic)
+      handleAddExpense();
     }
   };
 
@@ -497,9 +506,7 @@ const Dashboard = () => {
       if (result.success) {
         toast.success(`Added expense of Rs ${data.amount.toLocaleString()}`);
         if (result.transaction) {
-          setSuccessTransaction(result.transaction);
-          setSuccessType("expense");
-          setShowSuccessSheet(true);
+          navigate("/receipt", { state: { transaction: result.transaction, type: "expense" } });
         }
       } else {
         toast.error(result.error || "Failed to add expense");
@@ -537,9 +544,7 @@ const Dashboard = () => {
           `Recorded Rs ${data.amount.toLocaleString()} from ${memberName}`,
         );
         if (result.transaction) {
-          setSuccessTransaction(result.transaction);
-          setSuccessType("payment");
-          setShowSuccessSheet(true);
+          navigate("/receipt", { state: { transaction: result.transaction, type: "payment" } });
         }
       } else {
         toast.error(result.error || "Failed to record payment");
@@ -1321,6 +1326,18 @@ const Dashboard = () => {
             </div>
             <div className="grid grid-cols-4 gap-3">
               <button
+                onClick={handlePersonalExpense}
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-100 dark:border-emerald-800/50 active:scale-95 transition-all shadow-sm"
+              >
+                <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-md">
+                  <Plus className="w-6 h-6 font-bold" />
+                </div>
+                <span className="text-xs font-black text-emerald-900 dark:text-emerald-100 text-center">
+                  Log Solo
+                </span>
+              </button>
+
+              <button
                 onClick={handleAddExpense}
                 className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
               >
@@ -1341,6 +1358,18 @@ const Dashboard = () => {
                 </div>
                 <span className="text-xs font-black text-slate-900 dark:text-white text-center">
                   New Group
+                </span>
+              </button>
+
+              <button
+                onClick={() => navigate("/personal-space")}
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
+              >
+                <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
+                  <Send className="w-6 h-6 text-slate-600 dark:text-slate-400" />
+                </div>
+                <span className="text-xs font-black text-slate-900 dark:text-white text-center">
+                  Send
                 </span>
               </button>
 
@@ -1379,6 +1408,24 @@ const Dashboard = () => {
               </h3>
             </div>
             <div className="grid grid-cols-3 gap-6">
+              {/* Personal Expense - NEW ACTION */}
+              <button
+                onClick={handlePersonalExpense}
+                className="group cursor-pointer bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-emerald-400/50 hover:shadow-xl hover:shadow-emerald-900/5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 text-left relative overflow-hidden"
+              >
+                <div className="relative z-10">
+                  <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <Plus className="w-8 h-8 font-bold" />
+                  </div>
+                  <h5 className="text-xl font-black mb-2 tracking-tighter">
+                    Log Personal
+                  </h5>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold">
+                    Quickly record your own private expenses.
+                  </p>
+                </div>
+              </button>
+
               {/* Add Expense - PRIMARY ACTION with enhanced styling */}
               <button
                 onClick={handleAddExpense}
@@ -1391,10 +1438,27 @@ const Dashboard = () => {
                     <Plus className="w-9 h-9 font-bold" />
                   </div>
                   <h5 className="text-xl font-black mb-2 tracking-tighter text-emerald-900 dark:text-emerald-100">
-                    Add Expense
+                    Split Bill
                   </h5>
                   <p className="text-emerald-700 dark:text-emerald-300 text-sm font-semibold">
                     Easily split a new bill with friends or groups.
+                  </p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => navigate("/personal-space")}
+                className="group cursor-pointer bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-blue-400/50 hover:shadow-xl hover:shadow-blue-900/5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 text-left relative overflow-hidden"
+              >
+                <div className="relative z-10">
+                  <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <Send className="w-8 h-8 font-bold" />
+                  </div>
+                  <h5 className="text-xl font-black mb-2 tracking-tighter">
+                    Send Money
+                  </h5>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold">
+                    Send money to friends directly.
                   </p>
                 </div>
               </button>
@@ -2216,8 +2280,12 @@ const Dashboard = () => {
         {groups.length > 0 && (
           <AddExpenseSheet
             open={showAddExpense}
-            onClose={() => setShowAddExpense(false)}
+            onClose={() => {
+              setShowAddExpense(false);
+              setInitialGroupIdForSheet("");
+            }}
             groups={groupsForSheets}
+            initialGroupId={initialGroupIdForSheet}
             onSubmit={handleExpenseSubmit}
             onAddMember={async (groupId, data) => {
               const result = await addMemberToGroup(groupId, data);
@@ -2254,16 +2322,6 @@ const Dashboard = () => {
           }}
           member={selectedMemberForPayment}
           onConfirmPayment={handlePaymentConfirmation}
-        />
-
-        <TransactionSuccessSheet
-          open={showSuccessSheet}
-          onClose={() => {
-            setShowSuccessSheet(false);
-            setSuccessTransaction(null);
-          }}
-          transaction={successTransaction}
-          type={successType}
         />
       </AppContainer>
     </>

@@ -5,24 +5,30 @@ const SMTP_CONFIG = {
     primary: { // Zoho (Best for Auth/OTP)
         host: (process.env.SMTP_HOST || 'smtp.zoho.in').trim(),
         port: parseInt(process.env.SMTP_PORT) || 465,
-        secure: true,
+        secure: process.env.SMTP_SECURE === 'false' ? false : true, // Support explict false
         auth: {
             user: (process.env.SMTP_USER || '').trim(),
             pass: (process.env.SMTP_PASS || '').replace(/\s+/g, '')
         },
-        connectionTimeout: 10000, // Faster timeout for OTP
-        greetingTimeout: 5000
+        tls: {
+            rejectUnauthorized: false // Often needed for proxies/various environments
+        },
+        connectionTimeout: 15000,
+        greetingTimeout: 10000
     },
     transactional: { // SendPulse (Best for Notifications)
         host: (process.env.SENDPULSE_SMTP_HOST || 'smtp-pulse.com').trim(),
-        port: parseInt(process.env.SENDPULSE_SMTP_PORT) || 2525, // 2525 is often better for avoiding blocks
-        secure: (parseInt(process.env.SENDPULSE_SMTP_PORT) === 465), // True for 465, False for 587/2525
+        port: parseInt(process.env.SENDPULSE_SMTP_PORT) || 2525,
+        secure: (parseInt(process.env.SENDPULSE_SMTP_PORT) === 465),
         auth: {
             user: (process.env.SENDPULSE_SMTP_USER || '').trim(),
             pass: (process.env.SENDPULSE_SMTP_PASS || '').replace(/\s+/g, '')
         },
-        connectionTimeout: 15000,
-        greetingTimeout: 10000
+        tls: {
+            rejectUnauthorized: false
+        },
+        connectionTimeout: 20000,
+        greetingTimeout: 15000
     },
     fallback: { // Gmail (Universal Backup)
         host: (process.env.FALLBACK_SMTP_HOST || 'smtp.gmail.com').trim(),
@@ -31,7 +37,11 @@ const SMTP_CONFIG = {
         auth: {
             user: (process.env.FALLBACK_SMTP_USER || '').trim(),
             pass: (process.env.FALLBACK_SMTP_PASS || '').replace(/\s+/g, '')
-        }
+        },
+        tls: {
+            rejectUnauthorized: false
+        },
+        connectionTimeout: 20000
     }
 };
 
@@ -100,7 +110,8 @@ const sendEmailByType = async (type, mailOptions) => {
     if (type === 'transactional' && isConfigValid(SMTP_CONFIG.transactional)) {
         primaryProvider = 'transactional';
         primaryGetFn = getTransactionalTransporter;
-        fromAddress = `Hostel Ledger <${SMTP_CONFIG.transactional.auth.user}>`;
+        // Use verified sender address from env (e.g. hostelledger@aarx.online) instead of login email
+        fromAddress = process.env.EMAIL_FROM || 'Hostel Ledger <hostelledger@aarx.online>';
     }
 
     // Prepare Options
@@ -109,11 +120,10 @@ const sendEmailByType = async (type, mailOptions) => {
         from: fromAddress, // Set correct FROM address for the provider
         headers: {
             ...mailOptions.headers,
-            // Add List-Unsubscribe header for transactional emails (Gmail/Outlook support)
-            // Note: List-Unsubscribe-Post is removed because our settings page is a frontend route
-            // and doesn't support the POST request required by RFC 8058 for 'One-Click'.
+            // Add List-Unsubscribe header (RFC 2369)
+            // Including both mailto and https increases chance of Gmail/Outlook showing the button
             ...(type === 'transactional' ? {
-                'List-Unsubscribe': '<https://app.hostelledger.aarx.online/settings>'
+                'List-Unsubscribe': '<mailto:hostelledger@aarx.online?subject=Unsubscribe>, <https://app.hostelledger.aarx.online/settings>'
             } : {})
         }
     };
@@ -222,7 +232,7 @@ const getCommonTemplate = (title, content, actionButton = '', showUnsubscribe = 
         <a href="https://app.hostelledger.aarx.online/terms-of-service">Terms</a> • 
         <a href="https://app.hostelledger.aarx.online/privacy-policy">Privacy</a> • 
         <a href="https://app.hostelledger.aarx.online/settings">Preferences</a>
-        ${showUnsubscribe ? `• <a href="https://app.hostelledger.aarx.online/settings" style="color: #666;">Unsubscribe</a>` : ''}
+        ${showUnsubscribe ? `• <a href="https://app.hostelledger.aarx.online/settings" style="color: #666; font-weight: bold; text-decoration: underline;">Unsubscribe</a>` : ''}
       </p>
       <p>Copyright© ${new Date().getFullYear()} Hostel Ledger. All rights reserved.
       </p>
@@ -244,36 +254,55 @@ const emailService = {
     verifyConnection: async () => {
         try {
             console.log('🧪 Verifying SMTP Configurations...');
+            let allGood = true;
 
             // Primary (Zoho)
             try {
-                const primary = getPrimaryTransporter();
-                await primary.verify();
-                console.log('✅ SMTP Connection Verified (Zoho)');
+                if (isConfigValid(SMTP_CONFIG.primary)) {
+                    const primary = getPrimaryTransporter();
+                    await primary.verify();
+                    console.log('✅ SMTP Connection Verified (Zoho)');
+                } else {
+                    console.warn('⚠️ Primary SMTP (Zoho) not configured.');
+                    allGood = false;
+                }
             } catch (err) {
                 console.warn('⚠️ Primary SMTP Connection Failed (Zoho):', err.message);
+                allGood = false;
             }
 
             // Transactional (SendPulse)
             try {
-                const transactional = getTransactionalTransporter();
-                await transactional.verify();
-                console.log('✅ SMTP Connection Verified (SendPulse)');
+                if (isConfigValid(SMTP_CONFIG.transactional)) {
+                    const transactional = getTransactionalTransporter();
+                    await transactional.verify();
+                    console.log('✅ SMTP Connection Verified (SendPulse)');
+                } else {
+                    console.warn('⚠️ Transactional SMTP (SendPulse) not configured.');
+                    allGood = false;
+                }
             } catch (err) {
                 console.warn('⚠️ Transactional SMTP Connection Failed (SendPulse):', err.message);
                 console.warn('   Ensure port 2525 is open and credentials in .env are correct.');
+                allGood = false;
             }
 
             // Fallback (Gmail)
             try {
-                const fallback = getFallbackTransporter();
-                await fallback.verify();
-                console.log('✅ SMTP Connection Verified (Gmail)');
+                if (isConfigValid(SMTP_CONFIG.fallback)) {
+                    const fallback = getFallbackTransporter();
+                    await fallback.verify();
+                    console.log('✅ SMTP Connection Verified (Gmail)');
+                } else {
+                    console.warn('⚠️ Fallback SMTP (Gmail) not configured.');
+                    allGood = false;
+                }
             } catch (err) {
                 console.warn('⚠️ Fallback SMTP Connection Failed (Gmail):', err.message);
+                allGood = false;
             }
 
-            return true;
+            return allGood;
         } catch (fatalError) {
             console.error('❌ unexpected error during SMTP verification:', fatalError);
             return false;
@@ -306,12 +335,16 @@ const emailService = {
     /**
      * Send Invitation Email
      */
-    sendInvitation: async (email, senderName, groupName, link) => {
+    sendInvitation: async (email, senderName, groupName, link, isNewUser = false) => {
+        const title = isNewUser ? 'You\'ve been invited to Hostel Ledger!' : 'You\'re invited!';
+        const buttonText = isNewUser ? 'Sign Up & Join' : 'Join Group';
+
         const html = getCommonTemplate(
-            'You\'re invited! 🏠',
+            title,
             `<p><strong>${senderName}</strong> invited you to join the group <strong>${groupName}</strong> on Hostel Ledger.</p>
-             <p>Track expenses, settle debts, and manage shared costs easily.</p>`,
-            `<a href="${link}" class="button">Join Group</a>`,
+             <p>Track expenses, settle debts, and manage shared costs easily.</p>
+             ${isNewUser ? '<p>Create an account to accept the invitation and start tracking.</p>' : ''}`,
+            `<a href="${link}" class="button">${buttonText}</a>`,
             true // Allow unsubscribe
         );
 
@@ -395,35 +428,35 @@ const emailService = {
         const html = getCommonTemplate(
             `New Expense Added`,
             `
-        <div style="text-align: center; margin-bottom: 20px;">
-          <p style="margin: 0; color: #888;">Total Amount</p>
+        <div style="text-align: center; margin-bottom: 30px;">
+          <p style="margin: 0; color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Total Amount</p>
           <div class="amount-large">Rs ${data.amount}</div>
           <p style="margin: 5px 0 0 0; color: #555;">Paid by <strong>${data.payerName}</strong></p>
         </div>
 
-        <div style="border-top: 1px solid #eee; margin: 20px 0;"></div>
-
-        <div class="detail-row">
-            <span class="detail-label">For</span>
-            <span class="detail-value">"${data.title}"</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Your Share</span>
-            <span class="detail-value" style="color: #d32f2f;">Rs ${data.splitAmount}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Group</span>
-            <span class="detail-value">${data.groupName}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Date</span>
-            <span class="detail-value">${data.date}</span>
-        </div>
-        ${data.note ? `
-        <div class="detail-row">
-            <span class="detail-label">Note</span>
-            <span class="detail-value">"${data.note}"</span>
-        </div>` : ''}
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top: 1px solid #eeeeee; margin: 20px 0;">
+          <tr>
+            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #888; font-size: 14px;">For</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: 600; color: #333;">${data.title}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #888; font-size: 14px;">Your Share</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: 600; color: #d32f2f;">${data.splitAmount}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #888; font-size: 14px;">Group</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: 600; color: #333;">${data.groupName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #888; font-size: 14px;">Date</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: 600; color: #333;">${data.date}</td>
+          </tr>
+          ${data.note ? `
+          <tr>
+            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #888; font-size: 14px;">Note</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: 600; color: #333;">${data.note}</td>
+          </tr>` : ''}
+        </table>
       `,
             `<a href="https://app.hostelledger.aarx.online/groups/${data.groupId}" class="button">View Expense</a>`,
             true // Allow unsubscribe
@@ -432,6 +465,42 @@ const emailService = {
         return sendEmailSafe({
             to: email,
             subject: `New Expense: ${data.title} (Rs ${data.amount})`,
+            html
+        });
+    },
+
+    /**
+     * Send Temporary Member Alert
+     */
+    sendTempMemberAlert: async (email, memberName, groupName, expiresAt) => {
+        const escapeHtml = (unsafe) => {
+            return String(unsafe)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        };
+
+        const safeMemberName = escapeHtml(memberName);
+        const safeGroupName = escapeHtml(groupName);
+        const safeExpiresAt = escapeHtml(expiresAt);
+
+        const html = getCommonTemplate(
+            'Temporary Member Added',
+            `<div style="font-family: sans-serif; padding: 20px;">
+               <h2>Temporary Member Added</h2>
+               <p>You added <b>${safeMemberName}</b> as a temporary member to group <b>${safeGroupName}</b>.</p>
+               <p>This member is scheduled to be automatically removed on <b>${safeExpiresAt}</b>.</p>
+               <p>Please ensure all debts are settled before this date.</p>
+             </div>`,
+            '',
+            false
+        );
+
+        return sendEmailSafe({
+            to: email,
+            subject: `Temporary Member Alert: ${safeMemberName}`,
             html
         });
     }

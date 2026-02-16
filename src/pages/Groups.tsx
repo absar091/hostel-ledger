@@ -134,15 +134,24 @@ const Groups = () => {
       filtered = filtered.filter(group => favoriteGroups.includes(group.id));
     }
 
+    // Sort: Personal space ALWAYS at the top, then others
+    filtered.sort((a, b) => {
+      if (a.isPersonal && !b.isPersonal) return -1;
+      if (!a.isPersonal && b.isPersonal) return 1;
+      return 0;
+    });
+
     return filtered;
   }, [groups, searchQuery, activeFilter, groupSettlementsMap, favoriteGroups]);
 
   // Get gradient colors for group cards
-  const getGroupGradient = (index: number) => {
+  const getGroupGradient = (group: any, index: number) => {
+    if (group.isPersonal) {
+      return "from-[#4a6850] to-[#2f4336]"; // Stronger green for personal
+    }
     const gradients = [
-      "from-[#4a6850] to-[#3d5643]",
-      "from-orange-400 to-red-500",
       "from-blue-400 to-indigo-600",
+      "from-orange-400 to-red-500",
       "from-teal-400 to-emerald-600",
       "from-purple-400 to-pink-500",
       "from-yellow-400 to-orange-500",
@@ -265,7 +274,7 @@ const Groups = () => {
                   className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-slate-100 cursor-pointer"
                 >
                   {/* Header with gradient or cover photo */}
-                  <div className={`h-24 lg:h-32 w-full relative overflow-hidden ${!group.coverPhoto ? `bg-gradient-to-br ${getGroupGradient(index)}` : ''}`}>
+                  <div className={`h-24 lg:h-32 w-full relative overflow-hidden ${!group.coverPhoto ? `bg-gradient-to-br ${getGroupGradient(group, index)}` : ''}`}>
                     {group.coverPhoto && (
                       <img
                         src={group.coverPhoto}
@@ -296,82 +305,88 @@ const Groups = () => {
 
                   {/* Content */}
                   <div className="p-4 lg:p-5">
-                    <div className="flex justify-between items-start mb-3 lg:mb-4">
-                      <div className="flex-1 min-w-0 mr-2">
-                        <h3 className="text-base lg:text-lg font-bold text-gray-900 truncate">{group.name}</h3>
-                        <p className="text-slate-500 text-[10px] lg:text-xs font-medium">
-                          {group.memberCount !== undefined && group.members.length === 0
-                            ? `${group.memberCount} members`
-                            : `${group.members.length} members`}
-                        </p>
-                      </div>
+                    <div className="flex-1 min-w-0 mr-2">
+                      <h3 className="text-base lg:text-lg font-black text-gray-900 truncate flex items-center gap-2">
+                        {group.name}
+                        {group.isPersonal && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-[#4a6850]/10 text-[#4a6850] text-[9px] font-black uppercase tracking-wider">Private</span>
+                        )}
+                      </h3>
+                      <p className="text-slate-500 text-[10px] lg:text-xs font-medium">
+                        {group.isPersonal ? "Your individual expenses" : (group.memberCount !== undefined && group.members.length === 0
+                          ? `${group.memberCount} members`
+                          : `${group.members.length} members`)}
+                      </p>
+                    </div>
+                    {!group.isPersonal && (
                       <div className="text-xs text-[#4a6850] font-bold">
                         {group.memberCount || group.members.length} members
                       </div>
-                      <div className="flex -space-x-1.5 lg:-space-x-2 flex-shrink-0">
-                        {group.members.length > 0 ? (
-                          <>
-                            {group.members.slice(0, 3).map((member, idx) => (
-                              <div
-                                key={member.id}
-                                className="w-7 lg:w-8 h-7 lg:h-8 rounded-full border-2 border-white bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center text-white text-[10px] lg:text-xs font-bold shadow-sm"
-                              >
-                                {member.name.charAt(0).toUpperCase()}
-                              </div>
-                            ))}
-                            {group.members.length > 3 && (
-                              <div className="w-7 lg:w-8 h-7 lg:h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[9px] lg:text-[10px] font-bold text-slate-500 shadow-sm">
-                                +{group.members.length - 3}
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <div className="w-7 lg:w-8 h-7 lg:h-8 rounded-full border-2 border-slate-50 bg-slate-50 flex items-center justify-center text-slate-300">
-                            <Users className="w-3 lg:w-4 h-3 lg:h-4" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Status */}
-                    <div className="mb-3 lg:mb-4">
-                      <p className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
-                      {isSettled ? (
-                        <p className="text-slate-400 font-bold text-sm lg:text-lg">No pending dues</p>
+                    )}
+                    <div className="flex -space-x-1.5 lg:-space-x-2 flex-shrink-0">
+                      {group.members.length > 0 ? (
+                        <>
+                          {group.members.slice(0, 3).map((member, idx) => (
+                            <div
+                              key={member.id}
+                              className="w-7 lg:w-8 h-7 lg:h-8 rounded-full border-2 border-white bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center text-white text-[10px] lg:text-xs font-bold shadow-sm"
+                            >
+                              {member.name.charAt(0).toUpperCase()}
+                            </div>
+                          ))}
+                          {group.members.length > 3 && (
+                            <div className="w-7 lg:w-8 h-7 lg:h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[9px] lg:text-[10px] font-bold text-slate-500 shadow-sm">
+                              +{group.members.length - 3}
+                            </div>
+                          )}
+                        </>
                       ) : (
-                        <div className="space-y-1">
-                          {hasReceivable && (
-                            <p className="text-emerald-600 font-bold text-sm lg:text-lg">You will receive Rs {toReceive.toLocaleString()}</p>
-                          )}
-                          {hasPayable && (
-                            <p className="text-rose-500 font-bold text-sm lg:text-lg">You owe Rs {toPay.toLocaleString()}</p>
-                          )}
+                        <div className="w-7 lg:w-8 h-7 lg:h-8 rounded-full border-2 border-slate-50 bg-slate-50 flex items-center justify-center text-slate-300">
+                          <Users className="w-3 lg:w-4 h-3 lg:h-4" />
                         </div>
                       )}
                     </div>
+                  </div>
 
-                    {/* Actions - Always visible on mobile, hover on desktop */}
-                    <div className="flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300">
-                      <button
-                        onClick={handleSettleClick}
-                        className={`flex-1 text-white text-xs font-bold py-2 rounded-lg transition-colors ${isSettled
-                          ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                          : "bg-[#4a6850] hover:bg-[#3d5643]"
-                          }`}
-                        disabled={isSettled}
-                      >
-                        {isSettled ? "Settled" : "Settle Up"}
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleGroupClick(group.id);
-                        }}
-                        className="px-3 bg-slate-100 text-slate-600 py-2 rounded-lg hover:bg-slate-200 transition-colors"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </div>
+                  {/* Status */}
+                  <div className="mb-3 lg:mb-4">
+                    <p className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
+                    {isSettled ? (
+                      <p className="text-slate-400 font-bold text-sm lg:text-lg">No pending dues</p>
+                    ) : (
+                      <div className="space-y-1">
+                        {hasReceivable && (
+                          <p className="text-emerald-600 font-bold text-sm lg:text-lg">You will receive Rs {toReceive.toLocaleString()}</p>
+                        )}
+                        {hasPayable && (
+                          <p className="text-rose-500 font-bold text-sm lg:text-lg">You owe Rs {toPay.toLocaleString()}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions - Always visible on mobile, hover on desktop */}
+                  <div className="flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300">
+                    <button
+                      onClick={handleSettleClick}
+                      className={`flex-1 text-white text-xs font-bold py-2 rounded-lg transition-colors ${isSettled || group.isPersonal
+                        ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                        : "bg-[#4a6850] hover:bg-[#3d5643]"
+                        }`}
+                      disabled={isSettled || group.isPersonal}
+                    >
+                      {group.isPersonal ? "Individual" : (isSettled ? "Settled" : "Settle Up")}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGroupClick(group.id);
+                      }}
+                      className="px-3 bg-slate-100 text-slate-600 py-2 rounded-lg hover:bg-slate-200 transition-colors flex items-center gap-1"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span className="text-[10px] font-black uppercase">View</span>
+                    </button>
                   </div>
                 </div>
               );
@@ -475,7 +490,7 @@ const Groups = () => {
             groupId={selectedSettlement.groupId}
           />
         )}
-      </AppContainer>
+      </AppContainer >
     </>
   );
 };

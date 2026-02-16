@@ -28,6 +28,12 @@
         ".write": "$uid === auth.uid && auth != null"
       }
     },
+    "user_p2p_transactions": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": false
+      }
+    },
     "transactions": {
       ".indexOn": [
         "timestamp",
@@ -71,17 +77,16 @@
       }
     },
     "usernames": {
-      ".read": true,
+      ".read": "auth != null",
       "$username": {
         ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid)",
         ".validate": "newData.hasChildren(['uid', 'createdAt']) && newData.child('uid').isString()"
       }
     },
     "invitations": {
-      ".read": "auth != null",
       "$invitationId": {
         ".read": "auth != null && (data.child('senderId').val() === auth.uid || data.child('receiverId').val() === auth.uid)",
-        ".write": "auth != null",
+        ".write": false,
         ".validate": "newData.hasChildren(['groupId', 'senderId', 'receiverId', 'status', 'createdAt'])"
       }
     },
