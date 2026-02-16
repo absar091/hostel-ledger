@@ -25,7 +25,7 @@ import {
 const GroupDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { getGroupById, fetchGroupDetail, getTransactionsByGroup, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup, mergeMembers } = useFirebaseData();
+  const { getGroupById, fetchGroupDetail, transactions: allTransactions, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup, mergeMembers } = useFirebaseData();
   const { getSettlements, user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
 
@@ -70,18 +70,31 @@ const GroupDetail = () => {
   const rawGroup = fullGroup || partialGroup;
 
   // Defensive: Ensure members is always an array (Firebase may return object)
-  const group = rawGroup ? {
-    ...rawGroup,
-    members: Array.isArray(rawGroup.members)
-      ? rawGroup.members
-      : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
-  } : null;
+  // OPTIMIZATION: Memoize group object creation to prevent unnecessary re-renders
+  const group = useMemo(() => {
+    return rawGroup ? {
+      ...rawGroup,
+      members: Array.isArray(rawGroup.members)
+        ? rawGroup.members
+        : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
+    } : null;
+  }, [rawGroup]);
 
-  const transactions = id ? getTransactionsByGroup(id) : [];
-  const settlements = id ? getSettlements(id) : {};
+  // OPTIMIZATION: Memoize transactions filtering and ensure stable reference
+  const transactions = useMemo(() => {
+    return id ? allTransactions.filter(t => t.groupId === id) : [];
+  }, [id, allTransactions]);
+
+  // OPTIMIZATION: Create member map for O(1) lookups
+  const memberMap = useMemo(() => {
+    if (!group) return new Map();
+    return new Map(group.members.map((m: any) => [m.id, m]));
+  }, [group]);
+
+  const settlements = useMemo(() => id ? getSettlements(id) : {}, [id, getSettlements]);
 
   // Calculate total amount to receive in this group
-  const groupTotalToReceive = Object.values(settlements).reduce((total, settlement) => {
+  const groupTotalToReceive = Object.values(settlements).reduce((total: number, settlement: any) => {
     return total + (settlement.toReceive || 0);
   }, 0);
 
@@ -89,7 +102,7 @@ const GroupDetail = () => {
   const memberTransactions = useMemo(() => {
     if (!group || !selectedMember) return [];
 
-    const currentUser = group.members.find((m) => m.isCurrentUser);
+    const currentUser = group.members.find((m: any) => m.isCurrentUser);
     if (!currentUser) return [];
 
     return transactions
@@ -169,53 +182,107 @@ const GroupDetail = () => {
       });
   }, [group, selectedMember, transactions]);
 
-  if (!group && !isGroupLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        {/* iPhone-style top accent border */}
-        <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
+  // OPTIMIZATION: Memoize members array
+  const members = useMemo(() => {
+    if (!group) return [];
+    return group.members.map((m: any) => ({
+      id: m.id,
+      name: m.name,
+      isTemporary: m.isTemporary,
+      deletionCondition: m.deletionCondition,
+      expiresAt: m.expiresAt,
+      email: (m as any).email,
+      isPending: (m as any).isPending
+    }));
+  }, [group]);
 
-        <div className="text-center px-6">
-          <div className="text-6xl mb-4">🔍</div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Group not found</h2>
-          <Button onClick={() => navigate("/")} className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">Go Back</Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (isGroupLoading && !partialGroup) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
-        <div className="w-16 h-16 border-4 border-emerald-100 border-t-emerald-500 rounded-full animate-spin mb-6"></div>
-        <h2 className="text-xl font-bold text-gray-800">Loading Group Details</h2>
-        <p className="text-gray-500 mt-2">Getting the latest balances for you...</p>
-      </div>
-    );
-  }
-
-  const members = group.members.map((m) => ({
-    id: m.id,
-    name: m.name,
-    isTemporary: m.isTemporary,
-    deletionCondition: m.deletionCondition,
-    expiresAt: m.expiresAt,
-    email: (m as any).email,
-    isPending: (m as any).isPending
-  }));
-  const currentUser = group.members.find((m) => m.isCurrentUser);
+  const currentUser = useMemo(() => {
+    if (!group) return null;
+    return group.members.find((m: any) => m.isCurrentUser);
+  }, [group]);
 
   // Calculate total pending using settlements
-  const totalPending = group.members.reduce((sum, m) => {
-    if (!m.isCurrentUser) {
-      const settlement = settlements[m.id];
-      // If settlement exists and you owe them (toPay > 0)
-      if (settlement && settlement.toPay > 0) {
-        return sum + settlement.toPay;
+  const totalPending = useMemo(() => {
+    if (!group) return 0;
+    return group.members.reduce((sum: number, m: any) => {
+      if (!m.isCurrentUser) {
+        const settlement = settlements[m.id];
+        // If settlement exists and you owe them (toPay > 0)
+        if (settlement && settlement.toPay > 0) {
+          return sum + settlement.toPay;
+        }
       }
-    }
-    return sum;
-  }, 0);
+      return sum;
+    }, 0);
+  }, [group, settlements]);
+
+  // Single group for this page (for sheets)
+  const groupForSheet = useMemo(() => {
+    if (!group) return [];
+    return [{
+      id: group.id,
+      name: group.name,
+      emoji: group.emoji,
+      members: members,
+    }];
+  }, [group, members]);
+
+  // OPTIMIZATION: Move hooks to top level, before conditional returns
+  // Calculate personal stats if it's a personal group
+  const personalStats = useMemo(() => {
+    if (!group?.isPersonal) return null;
+    const totalSpentValue = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
+    return {
+      totalSpent: totalSpentValue,
+      count: transactions.filter(t => t.type === 'expense').length
+    };
+  }, [group, transactions]);
+
+  const totalSpent = useMemo(() => transactions
+    .filter((t) => t.type === "expense")
+    .reduce((sum, t) => sum + t.amount, 0), [transactions]);
+
+  const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
+
+  // Find the member who has paid the most in expenses (actual top contributor)
+  const topSpender = useMemo(() => {
+    if (!group || !transactions.length) return null;
+
+    const memberExpenseContributions = group.members.map((member: any) => {
+      const totalPaid = transactions
+        .filter(t => t.type === "expense" && t.paidBy === member.id)
+        .reduce((sum, t) => sum + t.amount, 0);
+      return {
+        ...member,
+        totalPaid
+      };
+    });
+
+    return memberExpenseContributions.length > 0
+      ? memberExpenseContributions.reduce((prev: any, curr: any) => {
+        return curr.totalPaid > prev.totalPaid ? curr : prev;
+      })
+      : null;
+  }, [group, transactions]);
+
+
+  // Helper for name resolution using memberMap (O(1))
+  const getParticipantName = (participantId: string, participantName: string) => {
+     if (participantId === user?.uid) return "You";
+     if (group && participantId === group.createdBy) return "Group Owner";
+     const member = memberMap.get(participantId);
+     return member?.name || participantName;
+  };
+
+  const getPayerName = (payerId: string, payerName: string) => {
+     if (payerId === user?.uid) return "You";
+     if (group && payerId === group.createdBy) return "Group Owner";
+     const member = memberMap.get(payerId);
+     return member?.name || payerName;
+  };
+
 
   const handleMemberClick = (member: { id: string; name: string; balance: number; paymentDetails?: any; phone?: string; isTemporary?: boolean }) => {
     if (member.id === currentUser?.id) return;
@@ -274,7 +341,7 @@ const GroupDetail = () => {
     });
 
     if (result.success) {
-      const memberName = group.members.find((m) => m.id === data.fromMember)?.name;
+      const memberName = group?.members.find((m: any) => m.id === data.fromMember)?.name;
       toast.success(`Recorded Rs ${data.amount} from ${memberName}`);
       if (result.transaction) {
         navigate("/receipt", { state: { transaction: result.transaction, type: "payment" } });
@@ -284,48 +351,31 @@ const GroupDetail = () => {
     }
   };
 
-  // Single group for this page
-  const groupForSheet = [{
-    id: group.id,
-    name: group.name,
-    emoji: group.emoji,
-    members: members,
-  }];
 
-  // Calculate personal stats if it's a personal group
-  const personalStats = useMemo(() => {
-    if (!group?.isPersonal) return null;
-    const totalSpentValue = transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
-    return {
-      totalSpent: totalSpentValue,
-      count: transactions.filter(t => t.type === 'expense').length
-    };
-  }, [group, transactions]);
+  if (!group && !isGroupLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        {/* iPhone-style top accent border */}
+        <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
 
-  const totalSpent = useMemo(() => transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0), [transactions]);
+        <div className="text-center px-6">
+          <div className="text-6xl mb-4">🔍</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Group not found</h2>
+          <Button onClick={() => navigate("/")} className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">Go Back</Button>
+        </div>
+      </div>
+    );
+  }
 
-  const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
-
-  // Find the member who has paid the most in expenses (actual top contributor)
-  const memberExpenseContributions = group.members.map(member => {
-    const totalPaid = transactions
-      .filter(t => t.type === "expense" && t.paidBy === member.id)
-      .reduce((sum, t) => sum + t.amount, 0);
-    return {
-      ...member,
-      totalPaid
-    };
-  });
-
-  const topSpender = memberExpenseContributions.length > 0
-    ? memberExpenseContributions.reduce((prev, curr) => {
-      return curr.totalPaid > prev.totalPaid ? curr : prev;
-    })
-    : null;
+  if (isGroupLoading && !partialGroup) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
+        <div className="w-16 h-16 border-4 border-emerald-100 border-t-emerald-500 rounded-full animate-spin mb-6"></div>
+        <h2 className="text-xl font-bold text-gray-800">Loading Group Details</h2>
+        <p className="text-gray-500 mt-2">Getting the latest balances for you...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white pb-24">
@@ -415,23 +465,10 @@ const GroupDetail = () => {
                       title={item.title}
                       amount={item.amount}
                       date={item.date}
-                      paidBy={item.type === "expense" ? (
-                        (() => {
-                          // Use consistent naming logic
-                          if (item.paidBy === user?.uid) return "You";
-                          if (item.paidBy === group.createdBy) return "Group Owner";
-                          const member = group.members.find(m => m.id === item.paidBy);
-                          return member?.name || item.paidByName;
-                        })()
-                      ) : undefined}
+                      paidBy={item.type === "expense" ? getPayerName(item.paidBy, item.paidByName) : undefined}
                       participants={item.type === "expense" ? item.participants?.map(p => ({
                         ...p,
-                        name: (() => {
-                          if (p.id === user?.uid) return "You"; // Your share
-                          if (p.id === group.createdBy) return "Group Owner"; // Owner's share
-                          const member = group.members.find(m => m.id === p.id); // Valid member name
-                          return member?.name || p.name;
-                        })()
+                        name: getParticipantName(p.id, p.name)
                       })) : undefined}
                       from={item.type === "payment" ? item.fromName : undefined}
                       to={item.type === "payment" ? item.toName : undefined}
@@ -448,7 +485,7 @@ const GroupDetail = () => {
                   <Plus className="w-7 h-7 text-[#4a6850] font-bold" />
                 </div>
                 <h3 className="text-base font-black text-gray-900 mb-1.5 tracking-tight">No transactions yet</h3>
-                <p className="text-[#4a6850]/80 text-xs font-bold">
+                <p className="text-gray-500 text-xs font-bold">
                   Add an expense to get started
                 </p>
               </div>
@@ -461,7 +498,7 @@ const GroupDetail = () => {
             {/* Pending Invitations Section */}
             {id && <GroupPendingInvitations groupId={id} />}
 
-            {group.members.map((member, index) => {
+            {group.members.map((member: any, index: number) => {
               const isYou = member.isCurrentUser;
 
               // Get settlement data for this member
@@ -593,25 +630,27 @@ const GroupDetail = () => {
             </div>
 
             {/* Top Contributor Card - iPhone Style */}
-            <div className="bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-2xl flex items-center justify-center">
-                  <span className="text-base">🏆</span>
+            {topSpender && (
+              <div className="bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-2xl flex items-center justify-center">
+                    <span className="text-base">🏆</span>
+                  </div>
+                  <h3 className="font-black text-gray-900 text-base tracking-tight">Top Contributor</h3>
                 </div>
-                <h3 className="font-black text-gray-900 text-base tracking-tight">Top Contributor</h3>
-              </div>
-              <div className="flex items-center gap-4">
-                <Avatar name={topSpender.name} size="lg" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-black text-gray-900 text-base mb-1 tracking-tight truncate">{topSpender.name}</div>
-                  <div className="text-xs text-[#4a6850] font-bold">
-                    {topSpender.totalPaid > 0
-                      ? `Paid Rs ${topSpender.totalPaid.toLocaleString()} in expenses`
-                      : `No expenses paid yet`}
+                <div className="flex items-center gap-4">
+                  <Avatar name={topSpender.name} size="lg" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-black text-gray-900 text-base mb-1 tracking-tight truncate">{topSpender.name}</div>
+                    <div className="text-xs text-[#4a6850] font-bold">
+                      {topSpender.totalPaid > 0
+                        ? `Paid Rs ${topSpender.totalPaid.toLocaleString()} in expenses`
+                        : `No expenses paid yet`}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Members Overview Card - iPhone Style */}
             <div className="bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
@@ -622,7 +661,7 @@ const GroupDetail = () => {
                 <h3 className="font-black text-gray-900 text-base tracking-tight">Members</h3>
               </div>
               <div className="flex -space-x-3 mb-3">
-                {group.members.slice(0, 5).map((member) => (
+                {group.members.slice(0, 5).map((member: any) => (
                   <Avatar key={member.id} name={member.name} size="md" />
                 ))}
                 {group.members.length > 5 && (
@@ -766,30 +805,34 @@ const GroupDetail = () => {
       <GroupSettingsSheet
         open={showGroupSettings}
         onClose={() => setShowGroupSettings(false)}
-        group={{
+        group={group ? {
           id: group.id,
           name: group.name,
           emoji: group.emoji,
-          members: group.members.map(m => ({
+          members: group.members.map((m: any) => ({
             ...m,
             balance: (settlements[m.id]?.toReceive || 0) - (settlements[m.id]?.toPay || 0)
           })),
-        }}
-        isOwner={user?.uid === group.createdBy}
+        } : undefined}
+        isOwner={user?.uid === group?.createdBy}
         onAddMember={(name) => {
+          if (!group) return;
           addMemberToGroup(group.id, { name });
           toast.success(`Added ${name} to the group`);
         }}
         onRemoveMember={(memberId) => {
-          const memberName = group.members.find((m) => m.id === memberId)?.name;
+          if (!group) return;
+          const memberName = group.members.find((m: any) => m.id === memberId)?.name;
           removeMemberFromGroup(group.id, memberId);
           toast.success(`Removed ${memberName} from the group`);
         }}
         onUpdateGroup={(data) => {
+          if (!group) return;
           updateGroup(group.id, data);
           toast.success("Group updated");
         }}
         onDeleteGroup={() => {
+          if (!group) return;
           deleteGroup(group.id);
           toast.success("Group deleted");
           navigate("/");
