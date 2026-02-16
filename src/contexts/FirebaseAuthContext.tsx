@@ -137,6 +137,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Safety timeout: on some devices/networks Firebase auth callback can hang,
     // leaving the app stuck on splash forever. Fallback to cached session.
+    // Safety timeout: on some devices/networks Firebase auth callback can hang,
+    // leaving the app stuck on splash forever. Fallback to cached session.
+    // OPTIMIZATION: Reduced timeout from 5000ms to 2500ms
     const authTimeout = window.setTimeout(() => {
       if (authResolved) return;
 
@@ -146,7 +149,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       if (!loadCachedUser('auth timeout fallback')) {
         setIsLoading(false);
       }
-    }, 5000);
+    }, 2500);
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (authResolved) return;
@@ -196,11 +199,12 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       logger.debug("Setting up real-time profile listener", { uid });
 
       try {
-        // Added Safety Timeout: If profile fetch hangs, force app entry after 5s
+        // Added Safety Timeout: If profile fetch hangs, force app entry after 3s
+        // OPTIMIZATION: Reduced timeout from 5000ms to 3000ms
         const profileTimeout = setTimeout(() => {
           console.warn('⏱️ Profile load timeout - forcing app entry (offline/partial state)');
           setIsLoading(false);
-        }, 5000);
+        }, 3000);
 
         // User Profile Listener
         unsubscribeUser = onValue(userRef, async (snapshot) => {
@@ -225,11 +229,17 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
             // Simplified approach: Just fetch verification status once on profile update.
             // Real-time verification status is less critical than profile.
 
-            let isVerified = false;
-            try {
-              const vSnap = await get(verificationRef);
-              isVerified = vSnap.exists() && vSnap.val().emailVerified;
-            } catch (e) { console.warn("Failed to fetch verification", e); }
+            // Get verification status (async/non-blocking for performance)
+            // OPTIMIZATION: Don't await this call to prevent blocking app load
+            get(verificationRef).then((vSnap) => {
+              if (vSnap.exists() && vSnap.val().emailVerified) {
+                // If verified but local state isn't, update it
+                setUser(prev => prev && !prev.emailVerified ? ({ ...prev, emailVerified: true }) : prev);
+              }
+            }).catch(e => console.warn("Failed to fetch verification", e));
+
+            // Use profile data immediately (optimistic)
+            const isVerified = userData.emailVerified || false;
 
             const userProfile: UserProfile = {
               uid,

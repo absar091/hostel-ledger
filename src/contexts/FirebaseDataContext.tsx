@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
-import { ref, push, set, update, remove, onValue, off, get } from "firebase/database";
+import { ref, push, set, update, remove, onValue, off, get, query, limitToLast, orderByChild } from "firebase/database";
 import { database } from "@/lib/firebase";
 import { useFirebaseAuth, PaymentDetails } from "./FirebaseAuthContext";
 import { TransactionManager, retryOperation } from "@/lib/transaction";
@@ -307,7 +307,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         }
 
         // Wait a bit for auth to be fully established (only if online)
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // REMOVED ARTIFICIAL DELAY for performance optimization
+        // await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Listen to user's groups with error handling
         const groupsRef = ref(database, `userGroups/${user.uid}`);
@@ -398,7 +399,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         });
 
         // Listen to user's transactions with error handling
-        const transactionsRef = ref(database, `userTransactions/${user.uid}`);
+        // OPTIMIZATION: Limit to last 100 transactions to prevent slow startup
+        const transactionsRef = query(ref(database, `userTransactions/${user.uid}`), limitToLast(100));
         const transactionsListener = onValue(transactionsRef, async (snapshot) => {
           try {
             if (snapshot.exists()) {

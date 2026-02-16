@@ -2504,6 +2504,125 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
   }
 });
 
+// Respond to Invitation (Accept/Decline)
+app.post('/api/respond-invitation', authenticate, async (req, res) => {
+  const { invitationId, accept } = req.body;
+  const uid = req.user.uid;
+
+  if (!invitationId) return res.status(400).json({ success: false, error: 'Invitation ID required' });
+
+  try {
+    const db = admin.database();
+
+    // 1. Get Invitation
+    const invRef = db.ref(`invitations/${invitationId}`);
+    const invSnap = await invRef.get();
+
+    if (!invSnap.exists()) return res.status(404).json({ success: false, error: 'Invitation not found' });
+
+    const invitation = invSnap.val();
+
+    // 2. Validate Ownership
+    const receiverId = invitation.receiverId || (invitation.invitee ? invitation.invitee.uid : null);
+
+    if (receiverId !== uid) {
+      return res.status(403).json({ success: false, error: 'This invitation is not for you' });
+    }
+
+    // 3. Check Status
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({ success: false, error: `Invitation is already ${invitation.status}` });
+    }
+
+    const updates = {};
+    const now = new Date().toISOString();
+    const status = accept ? 'accepted' : 'declined';
+
+    // 4. Update Invitation Status
+    updates[`invitations/${invitationId}/status`] = status;
+    updates[`userInvitations/${uid}/${invitationId}/status`] = status;
+
+    if (accept) {
+      const groupId = invitation.groupId;
+      const groupRef = db.ref(`groups/${groupId}`);
+      const groupSnap = await groupRef.get();
+
+      if (groupSnap.exists()) {
+        const group = groupSnap.val();
+        let members = group.members || [];
+
+        // Normalize members array if it's an object (legacy)
+        if (!Array.isArray(members)) {
+          members = Object.values(members);
+        }
+
+        // Fetch User Profile for accurate name/username
+        const userSnap = await db.ref(`users/${uid}`).get();
+        const userProfile = userSnap.exists() ? userSnap.val() : {};
+        const userName = userProfile.name || req.user.email?.split('@')[0] || 'Member';
+        const userUsername = userProfile.username || '';
+
+        // Check if already a member (including manual/invited)
+        const existingIndex = members.findIndex(m => m.userId === uid || (m.email && req.user.email && m.email.toLowerCase() === req.user.email.toLowerCase()));
+
+        if (existingIndex !== -1) {
+          // Update existing member entry
+          const member = members[existingIndex];
+          member.userId = uid; // Ensure UID is set
+          member.type = 'member'; // Promote to full member
+          member.isPending = false;
+          member.joinedAt = now;
+          member.name = userName; // Update name from profile
+          member.username = userUsername;
+
+          members[existingIndex] = member;
+          console.log(`🔄 Upgraded existing member ${userName} to full member`);
+        } else {
+          // Add new member
+          members.push({
+            id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            userId: uid,
+            name: userName,
+            username: userUsername,
+            email: req.user.email,
+            type: 'member',
+            role: 'member',
+            joinedAt: now
+          });
+          console.log(`➕ Added new member ${userName} to group`);
+        }
+
+        updates[`groups/${groupId}/members`] = members;
+
+        // Add to User's Group List
+        updates[`userGroups/${uid}/${groupId}`] = {
+          name: group.name,
+          emoji: group.emoji,
+          coverPhoto: group.coverPhoto || null,
+          memberCount: members.length,
+          createdBy: group.createdBy || '',
+          createdAt: group.createdAt || now,
+          status: 'joined',
+          joinedAt: now
+        };
+      }
+    }
+
+    await db.ref().update(updates);
+
+    res.json({
+      success: true,
+      message: accept ? 'Invitation accepted' : 'Invitation declined',
+      groupId: accept ? invitation.groupId : null,
+      status: status
+    });
+
+  } catch (error) {
+    console.error('Respond invitation error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 // Cleanup Unverified Users Endpoint (Admin/Secure)
 app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
   try {
