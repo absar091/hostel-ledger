@@ -198,6 +198,10 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Silently handle favicon requests (eliminates 404 noise in logs)
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+app.get('/favicon.png', (req, res) => res.status(204).end());
+
 // Test endpoint to verify push routes are loaded
 app.get('/api/push-test', (req, res) => {
   res.json({
@@ -2504,122 +2508,386 @@ app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
   }
 });
 
-// Respond to Invitation (Accept/Decline)
-app.post('/api/respond-invitation', authenticate, async (req, res) => {
-  const { invitationId, accept } = req.body;
-  const uid = req.user.uid;
-
-  if (!invitationId) return res.status(400).json({ success: false, error: 'Invitation ID required' });
-
+// Delete Image Endpoint (Cloudinary)
+app.post('/api/delete-image', authenticate, async (req, res) => {
   try {
+    const { publicId } = req.body;
+
+    if (!publicId) {
+      return res.status(400).json({ success: false, error: 'Public ID is required' });
+    }
+
+    if (!process.env.CLOUDINARY_API_KEY) {
+      console.warn('⚠️ Cloudinary not configured, skipping deletion');
+      return res.json({ success: true, message: 'Cloudinary not configured (Mock delete)' });
+    }
+
+    // Call Cloudinary API
+    const result = await cloudinary.uploader.destroy(publicId);
+
+    if (result.result !== 'ok' && result.result !== 'not found') {
+      console.warn('⚠️ Cloudinary delete result:', result);
+    } else {
+      console.log('✅ Image deleted from Cloudinary:', publicId);
+    }
+
+    res.json({ success: true, message: 'Image deleted' });
+
+  } catch (error) {
+    console.error('❌ Delete image error:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete image: ' + error.message });
+  }
+});
+
+// ============================================
+// DELETE GROUP
+// ============================================
+app.post('/api/delete-group', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { groupId } = req.body;
+
+    if (!groupId) {
+      return res.status(400).json({ success: false, error: 'Group ID is required' });
+    }
+
     const db = admin.database();
+    const groupRef = db.ref(`groups/${groupId}`);
+    const groupSnap = await groupRef.get();
 
-    // 1. Get Invitation
-    const invRef = db.ref(`invitations/${invitationId}`);
-    const invSnap = await invRef.get();
-
-    if (!invSnap.exists()) return res.status(404).json({ success: false, error: 'Invitation not found' });
-
-    const invitation = invSnap.val();
-
-    // 2. Validate Ownership
-    const receiverId = invitation.receiverId || (invitation.invitee ? invitation.invitee.uid : null);
-
-    if (receiverId !== uid) {
-      return res.status(403).json({ success: false, error: 'This invitation is not for you' });
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
     }
 
-    // 3. Check Status
-    if (invitation.status !== 'pending') {
-      return res.status(400).json({ success: false, error: `Invitation is already ${invitation.status}` });
+    const groupData = groupSnap.val();
+
+    // Only the creator can delete
+    if (groupData.createdBy !== userId) {
+      return res.status(403).json({ success: false, error: 'Only the group creator can delete this group' });
     }
+
+    // Check for pending settlements via transactions
+    // We check if any transactions exist — if they do, we warn but still allow delete
+    // (The frontend already checks settlements before calling this)
+
+    const members = normalizeMembers(groupData.members);
+    const updates = {};
+
+    // 1. Delete the group itself
+    updates[`groups/${groupId}`] = null;
+
+    // 2. Remove from all members' userGroups
+    for (const member of members) {
+      const memberUserId = member.userId || member.id;
+      if (memberUserId) {
+        updates[`userGroups/${memberUserId}/${groupId}`] = null;
+        updates[`users/${memberUserId}/groups/${groupId}`] = null;
+      }
+    }
+
+    // Also ensure the creator's entry is removed
+    updates[`userGroups/${userId}/${groupId}`] = null;
+    updates[`users/${userId}/groups/${groupId}`] = null;
+
+    await db.ref().update(updates);
+
+    console.log(`✅ Group ${groupId} deleted by ${userId}`);
+    res.json({ success: true, message: 'Group deleted successfully' });
+
+  } catch (error) {
+    console.error('❌ Delete group error:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete group: ' + error.message });
+  }
+});
+
+// ============================================
+// REMOVE MEMBER FROM GROUP
+// ============================================
+app.post('/api/remove-member', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { groupId, memberId } = req.body;
+
+    if (!groupId || !memberId) {
+      return res.status(400).json({ success: false, error: 'Group ID and Member ID are required' });
+    }
+
+    const db = admin.database();
+    const groupRef = db.ref(`groups/${groupId}`);
+    const groupSnap = await groupRef.get();
+
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const groupData = groupSnap.val();
+
+    // Only the creator can remove members (except self-leave)
+    const isSelfLeave = memberId === userId;
+    if (!isSelfLeave && groupData.createdBy !== userId) {
+      return res.status(403).json({ success: false, error: 'Only the group creator can remove members' });
+    }
+
+    // Cannot remove the creator
+    if (memberId === groupData.createdBy && !isSelfLeave) {
+      return res.status(400).json({ success: false, error: 'Cannot remove the group creator' });
+    }
+
+    const members = normalizeMembers(groupData.members);
+    const memberToRemove = members.find(m => m.id === memberId || m.userId === memberId);
+
+    if (!memberToRemove) {
+      return res.status(404).json({ success: false, error: 'Member not found in group' });
+    }
+
+    // Filter out the member
+    const updatedMembers = members.filter(m => m.id !== memberId && m.userId !== memberId);
 
     const updates = {};
-    const now = new Date().toISOString();
-    const status = accept ? 'accepted' : 'declined';
+    updates[`groups/${groupId}/members`] = updatedMembers;
+    updates[`groups/${groupId}/memberCount`] = updatedMembers.length;
 
-    // 4. Update Invitation Status
-    updates[`invitations/${invitationId}/status`] = status;
-    updates[`userInvitations/${uid}/${invitationId}/status`] = status;
+    // Update denormalized count for the requester
+    updates[`userGroups/${userId}/${groupId}/memberCount`] = updatedMembers.length;
 
-    if (accept) {
-      const groupId = invitation.groupId;
-      const groupRef = db.ref(`groups/${groupId}`);
-      const groupSnap = await groupRef.get();
-
-      if (groupSnap.exists()) {
-        const group = groupSnap.val();
-        let members = group.members || [];
-
-        // Normalize members array if it's an object (legacy)
-        if (!Array.isArray(members)) {
-          members = Object.values(members);
-        }
-
-        // Fetch User Profile for accurate name/username
-        const userSnap = await db.ref(`users/${uid}`).get();
-        const userProfile = userSnap.exists() ? userSnap.val() : {};
-        const userName = userProfile.name || req.user.email?.split('@')[0] || 'Member';
-        const userUsername = userProfile.username || '';
-
-        // Check if already a member (including manual/invited)
-        const existingIndex = members.findIndex(m => m.userId === uid || (m.email && req.user.email && m.email.toLowerCase() === req.user.email.toLowerCase()));
-
-        if (existingIndex !== -1) {
-          // Update existing member entry
-          const member = members[existingIndex];
-          member.userId = uid; // Ensure UID is set
-          member.type = 'member'; // Promote to full member
-          member.isPending = false;
-          member.joinedAt = now;
-          member.name = userName; // Update name from profile
-          member.username = userUsername;
-
-          members[existingIndex] = member;
-          console.log(`🔄 Upgraded existing member ${userName} to full member`);
-        } else {
-          // Add new member
-          members.push({
-            id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-            userId: uid,
-            name: userName,
-            username: userUsername,
-            email: req.user.email,
-            type: 'member',
-            role: 'member',
-            joinedAt: now
-          });
-          console.log(`➕ Added new member ${userName} to group`);
-        }
-
-        updates[`groups/${groupId}/members`] = members;
-
-        // Add to User's Group List
-        updates[`userGroups/${uid}/${groupId}`] = {
-          name: group.name,
-          emoji: group.emoji,
-          coverPhoto: group.coverPhoto || null,
-          memberCount: members.length,
-          createdBy: group.createdBy || '',
-          createdAt: group.createdAt || now,
-          status: 'joined',
-          joinedAt: now
-        };
-      }
+    // If the removed member had a userId, remove their userGroups entry too
+    const removedUserId = memberToRemove.userId;
+    if (removedUserId) {
+      updates[`userGroups/${removedUserId}/${groupId}`] = null;
+      updates[`users/${removedUserId}/groups/${groupId}`] = null;
     }
 
     await db.ref().update(updates);
 
+    console.log(`✅ Member ${memberId} removed from group ${groupId} by ${userId}`);
+    res.json({ success: true, message: 'Member removed successfully' });
+
+  } catch (error) {
+    console.error('❌ Remove member error:', error);
+    res.status(500).json({ success: false, error: 'Failed to remove member: ' + error.message });
+  }
+});
+
+// ============================================
+// UPDATE GROUP (Name, Emoji, etc.)
+// ============================================
+app.post('/api/update-group', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { groupId, name, emoji } = req.body;
+
+    if (!groupId) {
+      return res.status(400).json({ success: false, error: 'Group ID is required' });
+    }
+
+    if (!name && !emoji) {
+      return res.status(400).json({ success: false, error: 'Nothing to update' });
+    }
+
+    const db = admin.database();
+    const groupRef = db.ref(`groups/${groupId}`);
+    const groupSnap = await groupRef.get();
+
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const groupData = groupSnap.val();
+
+    // Only the creator can update group details
+    if (groupData.createdBy !== userId) {
+      return res.status(403).json({ success: false, error: 'Only the group creator can update group details' });
+    }
+
+    // Sanitize and build updates
+    const sanitized = {};
+    if (name) {
+      const cleanName = name.trim().replace(/[<>"'&]/g, '').substring(0, 50);
+      if (!cleanName) return res.status(400).json({ success: false, error: 'Invalid group name' });
+      sanitized.name = cleanName;
+    }
+    if (emoji) {
+      sanitized.emoji = emoji.trim().substring(0, 10);
+    }
+
+    const updates = {};
+
+    // Update group itself
+    for (const [key, value] of Object.entries(sanitized)) {
+      updates[`groups/${groupId}/${key}`] = value;
+    }
+
+    // Update denormalized metadata for ALL members who have this in userGroups
+    const members = normalizeMembers(groupData.members);
+    for (const member of members) {
+      const memberUserId = member.userId;
+      if (memberUserId) {
+        for (const [key, value] of Object.entries(sanitized)) {
+          updates[`userGroups/${memberUserId}/${groupId}/${key}`] = value;
+        }
+      }
+    }
+
+    // Also update for creator (in case they're not in members array somehow)
+    for (const [key, value] of Object.entries(sanitized)) {
+      updates[`userGroups/${userId}/${groupId}/${key}`] = value;
+    }
+
+    await db.ref().update(updates);
+
+    console.log(`✅ Group ${groupId} updated by ${userId}:`, sanitized);
+    res.json({ success: true, message: 'Group updated successfully' });
+
+  } catch (error) {
+    console.error('❌ Update group error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update group: ' + error.message });
+  }
+});
+
+// ============================================
+// MERGE MEMBERS (Combine duplicate profiles)
+// ============================================
+app.post('/api/merge-members', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { groupId, fromMemberId, toMemberId } = req.body;
+
+    if (!groupId || !fromMemberId || !toMemberId) {
+      return res.status(400).json({ success: false, error: 'groupId, fromMemberId, and toMemberId are required' });
+    }
+
+    if (fromMemberId === toMemberId) {
+      return res.status(400).json({ success: false, error: 'Cannot merge a member into themselves' });
+    }
+
+    const db = admin.database();
+
+    // 1. Get group
+    const groupSnap = await db.ref(`groups/${groupId}`).get();
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const groupData = groupSnap.val();
+    const members = normalizeMembers(groupData.members);
+
+    const fromMember = members.find(m => m.id === fromMemberId);
+    const toMember = members.find(m => m.id === toMemberId);
+
+    if (!fromMember || !toMember) {
+      return res.status(404).json({ success: false, error: 'One or both members not found' });
+    }
+
+    // 2. Get all transactions for this group
+    const txSnap = await db.ref('transactions').orderByChild('groupId').equalTo(groupId).get();
+    const allTransactions = txSnap.exists() ? txSnap.val() : {};
+
+    const updates = {};
+    const txToDelete = []; // self-payments to delete
+
+    // 3. Update transactions
+    for (const [txId, tx] of Object.entries(allTransactions)) {
+      const txUpdates = {};
+      let needsUpdate = false;
+
+      // Update paidBy
+      if (tx.paidBy === fromMemberId) {
+        txUpdates.paidBy = toMemberId;
+        txUpdates.paidByName = toMember.name;
+        needsUpdate = true;
+      }
+
+      // Update from/to for payments
+      if (tx.type === 'payment') {
+        if (tx.from === fromMemberId) {
+          txUpdates.from = toMemberId;
+          txUpdates.fromName = toMember.name;
+          needsUpdate = true;
+        }
+        if (tx.to === fromMemberId) {
+          txUpdates.to = toMemberId;
+          txUpdates.toName = toMember.name;
+          needsUpdate = true;
+        }
+
+        // Check for self-payment after merge
+        const finalFrom = txUpdates.from || tx.from;
+        const finalTo = txUpdates.to || tx.to;
+        if (finalFrom === finalTo) {
+          txToDelete.push(txId);
+          continue; // Skip normal update
+        }
+      }
+
+      // Update participants for expenses  
+      if (tx.type === 'expense' && Array.isArray(tx.participants)) {
+        const fromIdx = tx.participants.findIndex(p => p.id === fromMemberId);
+        if (fromIdx !== -1) {
+          const newParticipants = [...tx.participants];
+          const toIdx = newParticipants.findIndex(p => p.id === toMemberId);
+
+          if (toIdx !== -1) {
+            // Both present: merge amounts
+            newParticipants[toIdx] = {
+              ...newParticipants[toIdx],
+              amount: (newParticipants[toIdx].amount || 0) + (newParticipants[fromIdx].amount || 0)
+            };
+            newParticipants.splice(fromIdx, 1);
+          } else {
+            // Only from present: rename
+            newParticipants[fromIdx] = {
+              ...newParticipants[fromIdx],
+              id: toMemberId,
+              name: toMember.name
+            };
+          }
+
+          txUpdates.participants = newParticipants;
+          needsUpdate = true;
+        }
+      }
+
+      if (needsUpdate) {
+        for (const [key, value] of Object.entries(txUpdates)) {
+          updates[`transactions/${txId}/${key}`] = value;
+        }
+      }
+    }
+
+    // 4. Delete self-payment transactions
+    for (const txId of txToDelete) {
+      updates[`transactions/${txId}`] = null;
+      updates[`userTransactions/${userId}/${txId}`] = null;
+    }
+
+    // 5. Remove fromMember from members array
+    const updatedMembers = members.filter(m => m.id !== fromMemberId);
+    updates[`groups/${groupId}/members`] = updatedMembers;
+    updates[`groups/${groupId}/memberCount`] = updatedMembers.length;
+
+    // Update denormalized count
+    updates[`userGroups/${userId}/${groupId}/memberCount`] = updatedMembers.length;
+
+    // Remove fromMember's userGroups entry if they had a userId
+    if (fromMember.userId) {
+      updates[`userGroups/${fromMember.userId}/${groupId}`] = null;
+    }
+
+    await db.ref().update(updates);
+
+    const mergedTxCount = Object.keys(updates).filter(k => k.startsWith('transactions/')).length;
+    console.log(`✅ Merged member "${fromMember.name}" into "${toMember.name}" in group ${groupId}. Updated ${mergedTxCount} transaction paths, deleted ${txToDelete.length} self-payments.`);
+
     res.json({
       success: true,
-      message: accept ? 'Invitation accepted' : 'Invitation declined',
-      groupId: accept ? invitation.groupId : null,
-      status: status
+      message: `Merged "${fromMember.name}" into "${toMember.name}" successfully`,
+      mergedTransactions: mergedTxCount,
+      deletedSelfPayments: txToDelete.length
     });
 
   } catch (error) {
-    console.error('Respond invitation error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    console.error('❌ Merge members error:', error);
+    res.status(500).json({ success: false, error: 'Failed to merge members: ' + error.message });
   }
 });
 

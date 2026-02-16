@@ -233,7 +233,12 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
             // OPTIMIZATION: Don't await this call to prevent blocking app load
             get(verificationRef).then((vSnap) => {
               if (vSnap.exists() && vSnap.val().emailVerified) {
-                // If verified but local state isn't, update it
+                // If verified in emailVerification but NOT in user profile, fix the mismatch
+                if (!userData.emailVerified) {
+                  // Self-healing: persist the fix to user profile so gate works on next load
+                  update(ref(database, `users/${uid}`), { emailVerified: true })
+                    .catch(e => console.warn("Failed to persist emailVerified fix", e));
+                }
                 setUser(prev => prev && !prev.emailVerified ? ({ ...prev, emailVerified: true }) : prev);
               }
             }).catch(e => console.warn("Failed to fetch verification", e));
@@ -259,37 +264,6 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
             };
 
             setUser(userProfile);
-
-            // SYNC logic: Propagate balance/privacy to groups
-            try {
-              const userGroupsRef = ref(database, `userGroups/${uid}`);
-              const userGroupsSnap = await get(userGroupsRef);
-              if (userGroupsSnap.exists()) {
-                const groupIds = Object.keys(userGroupsSnap.val());
-                const balanceToSync = userProfile.showBalanceToOthers ? userProfile.walletBalance : null;
-
-                // Update balance in all groups where this user is a member
-                for (const gid of groupIds) {
-                  const membersRef = ref(database, `groups/${gid}/members`);
-                  const membersSnap = await get(membersRef);
-                  if (membersSnap.exists()) {
-                    const members = membersSnap.val();
-                    const membersArray = Array.isArray(members) ? members : Object.values(members);
-                    const memberIndex = membersArray.findIndex((m: any) => m.id === uid || m.userId === uid);
-
-                    if (memberIndex !== -1) {
-                      const memberKey = Array.isArray(members) ? memberIndex : Object.keys(members)[memberIndex];
-                      await update(ref(database, `groups/${gid}/members/${memberKey}`), {
-                        balance: balanceToSync
-                      });
-                    }
-                  }
-                }
-              }
-            } catch (syncError) {
-              console.error("Failed to sync balance to groups:", syncError);
-            }
-
             logger.setUserId(uid);
             setIsLoading(false);
 
@@ -298,6 +272,14 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
               localStorage.setItem('cachedUser', JSON.stringify(userProfile));
             } catch (error) {
               console.error('Failed to cache user profile:', error);
+            }
+
+            // DEFERRED: Sync balance to groups ONLY when showBalanceToOthers is enabled
+            // This was previously blocking initial load with N+1 queries
+            if (userProfile.showBalanceToOthers) {
+              // NOTE: Balance-to-groups sync is DISABLED because Firebase security rules
+              // block direct writes to groups/{gid}/members/ from the frontend.
+              // If "show balance to others" needs to work, move this sync to a backend API endpoint.
             }
           } else {
             // Profile doesn't exist - Create it
@@ -787,19 +769,22 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
   const markEmailAsVerified = async (uid: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      // Update email verification status in database
-      const verificationRef = ref(database, `emailVerification/${uid}`);
-      await update(verificationRef, {
-        emailVerified: true,
-        verifiedAt: new Date().toISOString()
-      });
+      // Update email verification status in BOTH locations atomically
+      const db = database;
+      const updates: Record<string, any> = {};
+      updates[`emailVerification/${uid}/emailVerified`] = true;
+      updates[`emailVerification/${uid}/verifiedAt`] = new Date().toISOString();
+      updates[`users/${uid}/emailVerified`] = true; // <-- THIS WAS MISSING! Gate reads from here
 
-      // Update user profile in memory
+      await update(ref(db), updates);
+
+      // Update user profile in memory + cache
       if (user && user.uid === uid) {
-        setUser({
-          ...user,
-          emailVerified: true
-        });
+        const updatedUser = { ...user, emailVerified: true };
+        setUser(updatedUser);
+        try {
+          localStorage.setItem('cachedUser', JSON.stringify(updatedUser));
+        } catch (e) { /* ignore cache error */ }
       }
 
       logger.info('Email marked as verified', { uid });

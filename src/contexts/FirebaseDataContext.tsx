@@ -779,48 +779,27 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return { success: false, error: "User not authenticated" };
 
     try {
-      // 1. Get Group Data
-      const groupRef = ref(database, `groups/${groupId}`);
-      const snapshot = await get(groupRef);
-      if (!snapshot.exists()) return { success: false, error: "Group not found" };
-
-      const groupData = snapshot.val();
-      if (groupData.createdBy !== user.uid) {
-        return { success: false, error: "Only the group creator can remove members" };
-      }
-
-      // 2. Logic Fix: Check per-group settlements instead of global aggregate
+      // Quick client-side check for unsettled debts
       const settlements = getSettlements(groupId);
       const memberSettlement = settlements[memberId] || { toReceive: 0, toPay: 0 };
-
       const hasDebt = memberSettlement.toReceive > 0 || memberSettlement.toPay > 0;
       if (hasDebt) {
         return { success: false, error: "Cannot remove a member with unsettled debts in this group" };
       }
 
-      // Don't allow removing the current user
-      if (memberId === user.uid) {
-        return { success: false, error: "Cannot remove yourself from the group" };
+      const result = await callSecureApi('/api/remove-member', { groupId, memberId });
+
+      if (result.success) {
+        // Optimistic local state cleanup — remove member from group immediately
+        setGroups(prev => prev.map(g => {
+          if (g.id === groupId) {
+            return { ...g, members: g.members.filter(m => m.id !== memberId) };
+          }
+          return g;
+        }));
       }
 
-      // Normalize members to handle both array (legacy) and object (push) structures
-      const members = normalizeMembers(groupData.members);
-
-      const memberToRemove = members.find((m: GroupMember) => m.id === memberId);
-      if (!memberToRemove) {
-        return { success: false, error: "Member not found" };
-      }
-
-      const updatedMembers = members.filter((m: GroupMember) => m.id !== memberId);
-      const groupMembersRef = ref(database, `groups/${groupId}/members`);
-
-      await retryOperation(() => set(groupMembersRef, updatedMembers));
-
-      // Update denormalized count for the current user
-      const userGroupMetadataCountRef = ref(database, `userGroups/${user.uid}/${groupId}/memberCount`);
-      set(userGroupMetadataCountRef, updatedMembers.length).catch(e => console.error("Failed to update index count", e));
-
-      return { success: true };
+      return { success: result.success, error: result.error };
     } catch (error: any) {
       console.error("Remove member error:", error);
       return { success: false, error: error.message || "Failed to remove member" };
@@ -1083,26 +1062,12 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return { success: false, error: "User not authenticated" };
 
     try {
-      const group = groups.find(g => g.id === groupId);
-      if (!group) return { success: false, error: "Group not found" };
-
-      if (group.createdBy !== user.uid) {
-        return { success: false, error: "Only group creator can update group details" };
-      }
-
-      // Sanitize update data
-      const sanitizedData: Partial<Group> = {};
-      if (data.name) sanitizedData.name = sanitizeString(data.name);
-      if (data.emoji) sanitizedData.emoji = sanitizeString(data.emoji);
-
-      const groupRef = ref(database, `groups/${groupId}`);
-      await retryOperation(() => update(groupRef, sanitizedData));
-
-      // Also update the denormalized metadata in userGroups
-      const userGroupMetadataRef = ref(database, `userGroups/${user.uid}/${groupId}`);
-      await retryOperation(() => update(userGroupMetadataRef, sanitizedData));
-
-      return { success: true };
+      const result = await callSecureApi('/api/update-group', {
+        groupId,
+        name: data.name,
+        emoji: data.emoji
+      });
+      return { success: result.success, error: result.error };
     } catch (error: any) {
       console.error("Update group error:", error);
       return { success: false, error: error.message || "Failed to update group" };
@@ -1112,54 +1077,24 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   const deleteGroup = async (groupId: string): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
-    const transaction = new TransactionManager();
-
     try {
-      const group = groups.find(g => g.id === groupId);
-      if (!group) return { success: false, error: "Group not found" };
-
-      if (group.createdBy !== user.uid) {
-        return { success: false, error: "Only group creator can delete the group" };
-      }
-
-      // Check for pending settlements in this specific group
+      // Quick client-side check for pending settlements
       const settlements = getSettlements(groupId);
-
       const hasPendingSettlements = Object.values(settlements).some((settlement: any) =>
         settlement.toReceive > 0 || settlement.toPay > 0
       );
-
       if (hasPendingSettlements) {
         return { success: false, error: "Cannot delete group with pending settlements. Please settle all debts first." };
       }
 
-      transaction.addOperation({
-        execute: async () => {
-          const groupRef = ref(database, `groups/${groupId}`);
-          await retryOperation(() => remove(groupRef));
-          return true;
-        },
-        rollback: async () => {
-          const groupRef = ref(database, `groups/${groupId}`);
-          await retryOperation(() => set(groupRef, group));
-        },
-        description: "Delete group"
-      });
+      const result = await callSecureApi('/api/delete-group', { groupId });
 
-      transaction.addOperation({
-        execute: async () => {
-          const userGroupRef = ref(database, `userGroups/${user.uid}/${groupId}`);
-          await retryOperation(() => remove(userGroupRef));
-          return true;
-        },
-        rollback: async () => {
-          const userGroupRef = ref(database, `userGroups/${user.uid}/${groupId}`);
-          await retryOperation(() => set(userGroupRef, true));
-        },
-        description: "Remove group from user's groups"
-      });
+      if (result.success) {
+        // Optimistic local state cleanup — remove immediately so UI doesn't show stale "Unknown Group"
+        setGroups(prev => prev.filter(g => g.id !== groupId));
+        setTransactions(prev => prev.filter(t => t.groupId !== groupId));
+      }
 
-      const result = await transaction.execute();
       return { success: result.success, error: result.error };
     } catch (error: any) {
       console.error("Delete group error:", error);
@@ -1172,158 +1107,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     if (fromMemberId === toMemberId) return { success: false, error: "Cannot merge member into themselves" };
 
     try {
-      const transaction = new TransactionManager();
-
-      // 1. Get Group & Transactions
-      const group = groups.find(g => g.id === groupId);
-      if (!group) return { success: false, error: "Group not found" };
-
-      const fromMember = group.members.find(m => m.id === fromMemberId);
-      const toMember = group.members.find(m => m.id === toMemberId);
-
-      if (!fromMember || !toMember) return { success: false, error: "Member not found" };
-
-      const groupTransactions = transactions.filter(t => t.groupId === groupId);
-
-      // 2. Identify transactions to update
-      // We need to check all transactions where fromMember is involved
-      const txToUpdate = groupTransactions.filter(t =>
-        t.paidBy === fromMemberId ||
-        t.from === fromMemberId ||
-        t.to === fromMemberId ||
-        t.participants?.some(p => p.id === fromMemberId)
-      );
-
-      // 3. Update transactions
-      for (const tx of txToUpdate) {
-        const updates: any = {};
-        let needsUpdate = false;
-
-        // Update paidBy
-        if (tx.paidBy === fromMemberId) {
-          updates.paidBy = toMemberId;
-          updates.paidByName = toMember.name;
-          needsUpdate = true;
-        }
-
-        // Update from/to for payments
-        if (tx.type === 'payment') {
-          if (tx.from === fromMemberId) {
-            updates.from = toMemberId;
-            updates.fromName = toMember.name;
-            needsUpdate = true;
-          }
-          if (tx.to === fromMemberId) {
-            updates.to = toMemberId;
-            updates.toName = toMember.name;
-            needsUpdate = true;
-          }
-          // Self-payment check (if merging makes from==to)
-          const finalFrom = updates.from || tx.from;
-          const finalTo = updates.to || tx.to;
-          if (finalFrom === finalTo) {
-            // Delete self-payment?
-            // Yes, a payment from A to A is meaningless and should be deleted.
-            transaction.addOperation({
-              execute: async () => {
-                const txRef = ref(database, `transactions/${tx.id}`);
-                await retryOperation(() => remove(txRef));
-                return true;
-              },
-              rollback: async () => { /* No easy rollback for deletion */ },
-              description: `Delete self-payment ${tx.id}`
-            });
-            // Also remove from userTransactions
-            transaction.addOperation({
-              execute: async () => {
-                const userTxRef = ref(database, `userTransactions/${user.uid}/${tx.id}`);
-                await retryOperation(() => remove(userTxRef));
-                return true;
-              },
-              rollback: async () => { },
-              description: `Delete user transaction ${tx.id}`
-            });
-            continue; // Skip normal update
-          }
-        }
-
-        // Update participants for expenses
-        if (tx.type === 'expense' && tx.participants) {
-          const fromParticipantIndex = tx.participants.findIndex(p => p.id === fromMemberId);
-          if (fromParticipantIndex !== -1) {
-            const fromParticipant = tx.participants[fromParticipantIndex];
-            const toParticipantIndex = tx.participants.findIndex(p => p.id === toMemberId);
-
-            let newParticipants = [...tx.participants];
-
-            if (toParticipantIndex !== -1) {
-              // Both present: Merge 'from' into 'to'
-              // Add amounts?
-              // expense splitting usually fixed amounts or shares.
-              // If fixed amounts, sum them.
-              newParticipants[toParticipantIndex] = {
-                ...newParticipants[toParticipantIndex],
-                amount: newParticipants[toParticipantIndex].amount + fromParticipant.amount
-              };
-              // Remove 'from'
-              newParticipants.splice(fromParticipantIndex, 1);
-            } else {
-              // Only 'from' present: Rename 'from' to 'to'
-              newParticipants[fromParticipantIndex] = {
-                ...fromParticipant,
-                id: toMemberId,
-                name: toMember.name
-              };
-            }
-            updates.participants = newParticipants;
-            needsUpdate = true;
-          }
-        }
-
-        if (needsUpdate) {
-          transaction.addOperation({
-            execute: async () => {
-              const txRef = ref(database, `transactions/${tx.id}`);
-              await retryOperation(() => update(txRef, updates));
-              return true;
-            },
-            rollback: async () => {
-              // Rollback logic omitted for brevity
-            },
-            description: `Update transaction ${tx.id}`
-          });
-        }
-      }
-
-      // 4. Delete the old member
-      const updatedMembers = group.members.filter(m => m.id !== fromMemberId);
-      transaction.addOperation({
-        execute: async () => {
-          const membersRef = ref(database, `groups/${groupId}/members`);
-          await retryOperation(() => set(membersRef, updatedMembers));
-          return true;
-        },
-        rollback: async () => {
-          const membersRef = ref(database, `groups/${groupId}/members`);
-          await retryOperation(() => set(membersRef, group.members));
-        },
-        description: `Remove member ${fromMember.name}`
-      });
-
-      // Update member count
-      transaction.addOperation({
-        execute: async () => {
-          const countRef = ref(database, `userGroups/${user.uid}/${groupId}/memberCount`);
-          await retryOperation(() => set(countRef, updatedMembers.length));
-          return true;
-        },
-        rollback: async () => { },
-        description: "Update member count"
-      });
-
-      const result = await transaction.execute();
+      const result = await callSecureApi('/api/merge-members', { groupId, fromMemberId, toMemberId });
       return { success: result.success, error: result.error };
-
     } catch (error: any) {
       console.error("Merge members error:", error);
       return { success: false, error: error.message || "Failed to merge members" };

@@ -85,6 +85,25 @@ const GroupDetail = () => {
     return total + (settlement.toReceive || 0);
   }, 0);
 
+  // NOTE: These useMemo hooks MUST be before the early returns below to maintain
+  // consistent hook count across renders (React Rules of Hooks)
+  const personalStats = useMemo(() => {
+    if (!group?.isPersonal) return null;
+    const totalSpentValue = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
+    return {
+      totalSpent: totalSpentValue,
+      count: transactions.filter(t => t.type === 'expense').length
+    };
+  }, [group, transactions]);
+
+  const totalSpent = useMemo(() => transactions
+    .filter((t) => t.type === "expense")
+    .reduce((sum, t) => sum + t.amount, 0), [transactions]);
+
+  const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
+
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
     if (!group || !selectedMember) return [];
@@ -292,23 +311,7 @@ const GroupDetail = () => {
     members: members,
   }];
 
-  // Calculate personal stats if it's a personal group
-  const personalStats = useMemo(() => {
-    if (!group?.isPersonal) return null;
-    const totalSpentValue = transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
-    return {
-      totalSpent: totalSpentValue,
-      count: transactions.filter(t => t.type === 'expense').length
-    };
-  }, [group, transactions]);
-
-  const totalSpent = useMemo(() => transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0), [transactions]);
-
-  const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
+  // personalStats, totalSpent, and expenseCount are defined before early returns above
 
   // Find the member who has paid the most in expenses (actual top contributor)
   const memberExpenseContributions = group.members.map(member => {
@@ -776,23 +779,43 @@ const GroupDetail = () => {
           })),
         }}
         isOwner={user?.uid === group.createdBy}
-        onAddMember={(name) => {
-          addMemberToGroup(group.id, { name });
-          toast.success(`Added ${name} to the group`);
+        onAddMember={async (name) => {
+          const result = await addMemberToGroup(group.id, { name });
+          if (result.success) {
+            toast.success(`Added ${name} to the group`);
+            fetchGroupDetail(group.id);
+          } else {
+            toast.error(result.error || "Failed to add member");
+          }
         }}
-        onRemoveMember={(memberId) => {
+        onRemoveMember={async (memberId) => {
           const memberName = group.members.find((m) => m.id === memberId)?.name;
-          removeMemberFromGroup(group.id, memberId);
-          toast.success(`Removed ${memberName} from the group`);
+          const result = await removeMemberFromGroup(group.id, memberId);
+          if (result.success) {
+            toast.success(`Removed ${memberName} from the group`);
+            fetchGroupDetail(group.id);
+          } else {
+            toast.error(result.error || "Failed to remove member");
+          }
         }}
-        onUpdateGroup={(data) => {
-          updateGroup(group.id, data);
-          toast.success("Group updated");
+        onUpdateGroup={async (data) => {
+          const result = await updateGroup(group.id, data);
+          if (result.success) {
+            toast.success("Group updated");
+            fetchGroupDetail(group.id);
+          } else {
+            toast.error(result.error || "Failed to update group");
+          }
         }}
-        onDeleteGroup={() => {
-          deleteGroup(group.id);
-          toast.success("Group deleted");
-          navigate("/");
+        onDeleteGroup={async () => {
+          const result = await deleteGroup(group.id);
+          if (result.success) {
+            toast.success("Group deleted");
+            setShowGroupSettings(false);
+            navigate("/");
+          } else {
+            toast.error(result.error || "Failed to delete group");
+          }
         }}
       />
 
