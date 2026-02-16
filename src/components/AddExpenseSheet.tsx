@@ -11,6 +11,7 @@ import { useSync } from "@/hooks/useSync";
 import { toast } from "sonner";
 import { calculateExpenseSplit } from "@/lib/expenseLogic";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { getDatabase, ref, get } from "firebase/database";
 // import { validateExpenseData, sanitizeString, sanitizeAmount } from "@/lib/validation";
 
@@ -22,6 +23,7 @@ interface Member {
   expiresAt?: number | null;
   isPending?: boolean;
   isCurrentUser?: boolean;
+  balance?: number; // Wallet balance if shared
 }
 
 interface Group {
@@ -31,6 +33,7 @@ interface Group {
   members: Member[];
   createdBy?: string;
   memberCount?: number;
+  isPersonal?: boolean;
 }
 interface AddExpenseSheetProps {
   open: boolean;
@@ -45,6 +48,7 @@ interface AddExpenseSheetProps {
     place: string;
   }) => void;
   onAddMember?: (groupId: string, data: { name: string; isTemporary: boolean; deletionCondition: 'SETTLED' | 'TIME_LIMIT' }) => Promise<{ success: boolean; memberId?: string }>;
+  initialGroupId?: string;
 }
 
 import {
@@ -58,20 +62,32 @@ import {
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddExpenseSheetProps) => {
+const PERSONAL_CATEGORIES = [
+  { id: 'food', label: 'Food', emoji: '🍕' },
+  { id: 'transport', label: 'Transport', emoji: '🚗' },
+  { id: 'shopping', label: 'Shopping', emoji: '🛍️' },
+  { id: 'rent', label: 'Rent', emoji: '🏠' },
+  { id: 'bills', label: 'Bills', emoji: '💸' },
+  { id: 'entertainment', label: 'Entertainment', emoji: '🎬' },
+  { id: 'others', label: 'Others', emoji: '✨' },
+];
+
+const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initialGroupId }: AddExpenseSheetProps) => {
   const [step, setStep] = useState(1);
-  const [selectedGroup, setSelectedGroup] = useState("");
+  const [selectedGroup, setSelectedGroup] = useState(initialGroupId || "");
   const [amount, setAmount] = useState("");
   const [paidBy, setPaidBy] = useState("");
   const [participants, setParticipants] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [place, setPlace] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('others');
 
   // Hooks
   const { isOnline, updatePendingCount } = useSync();
   const offline = !isOnline;
   const { fetchGroupDetail } = useFirebaseData();
+  const { user } = useFirebaseAuth();
 
   // Temp member state
   const [showTempMemberInput, setShowTempMemberInput] = useState(false);
@@ -82,20 +98,46 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Pre-select group if there's only one and it hasn't been set
+  useEffect(() => {
+    if (open && groups.length === 1 && !selectedGroup) {
+      setSelectedGroup(groups[0].id);
+      setStep(2);
+    }
+  }, [open, groups, selectedGroup]);
+
+  // Handle auto-population for personal groups
+  useEffect(() => {
+    if (selectedGroup && user) {
+      const groupData = groups.find(g => g.id === selectedGroup);
+      if (groupData?.isPersonal) {
+        setPaidBy(user.uid);
+        setParticipants([user.uid]);
+      }
+    }
+  }, [selectedGroup, user, groups]);
+
   // Reset state when sheet opens
   useEffect(() => {
     if (open) {
-      setStep(1);
-      setSelectedGroup("");
+      // Don't reset if it was already pre-selected or initialGroupId provided
+      if (groups.length !== 1 && !initialGroupId) {
+        setStep(1);
+        setSelectedGroup("");
+      } else {
+        setSelectedGroup(initialGroupId || (groups.length === 1 ? groups[0].id : ""));
+        setStep(2);
+      }
       setAmount("");
       setPaidBy("");
       setParticipants([]);
       setNote("");
       setPlace("");
       setValidationErrors([]);
-      setIsSubmitting(false); // Reset submitting state too
+      setIsSubmitting(false);
+      setSelectedCategory('others');
     }
-  }, [open]);
+  }, [open, groups.length, initialGroupId]);
 
   // Get members from selected group
   const members = useMemo(() => {
@@ -151,7 +193,9 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
         amount: parseFloat(amount),
         paidBy,
         participants,
-        note,
+        note: selectedGroupData?.isPersonal
+          ? `${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.emoji} ${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.label}${note ? ': ' + note : ''}`
+          : note,
         place,
         timestamp: Date.now(),
         synced: false
@@ -178,7 +222,9 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
           amount: parseFloat(amount),
           paidBy,
           participants,
-          note,
+          note: selectedGroupData?.isPersonal
+            ? `${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.emoji} ${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.label}${note ? ': ' + note : ''}`
+            : note,
           place
         });
         setIsSubmitting(false);
@@ -309,7 +355,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
               {step === 2 && "Enter Amount"}
               {step === 3 && "Who Paid?"}
               {step === 4 && "Split Between"}
-              {step === 5 && "Add Details"}
+              {step === 5 && (selectedGroupData?.isPersonal ? "Review & Note" : "Add Details")}
             </SheetTitle>
             <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
               Add a new expense to split between group members
@@ -432,12 +478,19 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                               <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited (Email)</span>
                             )}
                           </div>
-                          {member.isTemporary && (
-                            <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600 mt-0.5">
-                              {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
-                              <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {member.balance !== undefined && member.balance !== null && (
+                              <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-lg border border-emerald-100">
+                                Rs {member.balance.toLocaleString()}
+                              </span>
+                            )}
+                            {member.isTemporary && (
+                              <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600">
+                                {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                                <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         {paidBy === member.id && (
                           <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-md flex-shrink-0">
@@ -498,12 +551,19 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
                                 <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">Invited (Email)</span>
                               )}
                             </div>
-                            {member.isTemporary && (
-                              <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600 mt-0.5">
-                                {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
-                                <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {member.balance !== undefined && member.balance !== null && (
+                                <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-lg border border-emerald-100">
+                                  Rs {member.balance.toLocaleString()}
+                                </span>
+                              )}
+                              {member.isTemporary && (
+                                <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600">
+                                  {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                                  <span>Temp • {member.deletionCondition === 'TIME_LIMIT' ? '7 Days' : 'Until Settled'}</span>
+                                </div>
+                              )}
+                            </div>
                             {isSelected && (
                               <div className="text-xs text-[#4a6850] font-bold">
                                 Rs {splitDetails.perPerson} share
@@ -555,50 +615,93 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
             {/* Step 5: Add Details - iPhone Style */}
             {step === 5 && (
               <div className="space-y-6 animate-fade-in">
+                {/* Category Selection for Personal/Self tracking */}
+                {selectedGroupData?.isPersonal && (
+                  <div>
+                    <label className="text-sm font-black text-[#4a6850]/80 mb-4 block uppercase tracking-wide">
+                      Select Category
+                    </label>
+                    <div className="grid grid-cols-4 gap-3">
+                      {PERSONAL_CATEGORIES.map((cat) => (
+                        <button
+                          key={cat.id}
+                          onClick={() => setSelectedCategory(cat.id)}
+                          className={cn(
+                            "flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border-2",
+                            selectedCategory === cat.id
+                              ? "bg-[#4a6850]/10 border-[#4a6850] scale-105 shadow-md"
+                              : "bg-white border-gray-100 hover:border-[#4a6850]/30"
+                          )}
+                        >
+                          <span className="text-2xl">{cat.emoji}</span>
+                          <span className="text-[10px] font-black uppercase text-[#4a6850]">{cat.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
-                    What was it for? (optional)
+                    {selectedGroupData?.isPersonal ? "Add a note" : "What was it for? (optional)"}
                   </label>
                   <Input
-                    placeholder="e.g., Dinner, Chai, Groceries"
+                    placeholder={selectedGroupData?.isPersonal ? "e.g. My dinner, Gym subscription" : "e.g., Dinner, Chai, Groceries"}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
                     maxLength={100}
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
-                    Where? (optional)
-                  </label>
-                  <Input
-                    placeholder="e.g., Student Café"
-                    value={place}
-                    onChange={(e) => setPlace(e.target.value)}
-                    className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
-                    maxLength={100}
-                  />
-                </div>
+
+                {!selectedGroupData?.isPersonal && (
+                  <div>
+                    <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
+                      Where? (optional)
+                    </label>
+                    <Input
+                      placeholder="e.g., Student Café"
+                      value={place}
+                      onChange={(e) => setPlace(e.target.value)}
+                      className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
+                      maxLength={100}
+                    />
+                  </div>
+                )}
 
                 {/* Final Summary - iPhone Style */}
                 <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-6 mt-8 shadow-[0_25px_70px_rgba(74,104,80,0.3)] text-white">
-                  <div className="text-sm text-white/90 mb-3 font-black uppercase tracking-wide">Final Summary</div>
-                  <div className="font-black text-xl tracking-tight mb-2">Rs {amount}</div>
-                  <div className="text-sm text-white/90 font-bold">
-                    Paid by {paidByName} • Split {participants.length} ways
+                  <div className="text-sm text-white/90 mb-3 font-black uppercase tracking-wide">
+                    {selectedGroupData?.isPersonal ? "Personal Expense" : "Final Summary"}
                   </div>
-                  <div className="text-sm text-white/90 font-bold">
-                    Rs {splitDetails.perPerson} per person
-                  </div>
-                  {splitDetails.toReceive > 0 && (
-                    <div className="text-emerald-200 font-black mt-3 text-lg">
-                      You will receive Rs {splitDetails.toReceive}
+                  <div className="font-black text-2xl tracking-tight mb-2">Rs {amount}</div>
+
+                  {selectedGroupData?.isPersonal ? (
+                    <div className="flex items-center gap-2 text-sm text-white/90 font-bold">
+                      <span>Category:</span>
+                      <span className="bg-white/20 px-2 py-1 rounded-lg">
+                        {PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.emoji} {PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.label}
+                      </span>
                     </div>
-                  )}
-                  {splitDetails.toGive > 0 && (
-                    <div className="text-orange-200 font-black mt-3 text-lg">
-                      You owe Rs {splitDetails.toGive}
-                    </div>
+                  ) : (
+                    <>
+                      <div className="text-sm text-white/90 font-bold">
+                        Paid by {paidByName} • Split {participants.length} ways
+                      </div>
+                      <div className="text-sm text-white/90 font-bold">
+                        Rs {splitDetails.perPerson} per person
+                      </div>
+                      {splitDetails.toReceive > 0 && (
+                        <div className="text-emerald-200 font-black mt-3 text-lg">
+                          You will receive Rs {splitDetails.toReceive}
+                        </div>
+                      )}
+                      {splitDetails.toGive > 0 && (
+                        <div className="text-orange-200 font-black mt-3 text-lg">
+                          You owe Rs {splitDetails.toGive}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -610,7 +713,13 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
               {step > 1 && (
                 <Button
                   variant="secondary"
-                  onClick={() => setStep((s) => s - 1)}
+                  onClick={() => {
+                    if (step === 5 && selectedGroupData?.isPersonal) {
+                      setStep(2);
+                    } else {
+                      setStep((s) => s - 1);
+                    }
+                  }}
                   className="flex-1 h-14 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black border-0 shadow-lg hover:shadow-xl transition-all"
                 >
                   Back
@@ -618,7 +727,13 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember }: AddEx
               )}
               {step < 5 ? (
                 <Button
-                  onClick={() => setStep((s) => s + 1)}
+                  onClick={() => {
+                    if (step === 2 && selectedGroupData?.isPersonal) {
+                      setStep(5);
+                    } else {
+                      setStep((s) => s + 1);
+                    }
+                  }}
                   disabled={!canProceed()}
                   className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >

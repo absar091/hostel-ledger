@@ -183,6 +183,7 @@ export interface Group {
   memberCount?: number;
   createdBy: string;
   createdAt: string;
+  isPersonal?: boolean; // NEW: Flag for private tracking
 }
 
 export interface Transaction {
@@ -341,9 +342,44 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                   memberCount: meta.memberCount || 0,
                   createdBy: meta.createdBy,
                   createdAt: meta.createdAt || new Date().toISOString(),
+                  isPersonal: meta.isPersonal || false,
                   members: [] // Empty members initially - will be lazy loaded on demand
                 } as Group;
               });
+
+              // --- NEW: Check for Personal Space (Migration) ---
+              if (newGroups.length === 0 || !newGroups.some(g => g.isPersonal)) {
+                console.log('✨ No Personal Space found - triggering auto-creation');
+                const personalGroupId = `personal_${user.uid}`;
+
+                // We run this in the background, the listener will pick it up
+                const personalGroup = {
+                  id: personalGroupId,
+                  name: "Personal Space",
+                  emoji: "👤",
+                  isPersonal: true,
+                  members: [{
+                    id: user.uid,
+                    name: "You",
+                    userId: user.uid,
+                    isAdmin: true
+                  }],
+                  createdBy: user.uid,
+                  createdAt: new Date().toISOString()
+                };
+
+                // Push to DB
+                set(ref(database, `groups/${personalGroupId}`), personalGroup);
+                set(ref(database, `userGroups/${user.uid}/${personalGroupId}`), {
+                  name: "Personal Space",
+                  emoji: "👤",
+                  isPersonal: true,
+                  memberCount: 1,
+                  role: 'admin',
+                  createdAt: personalGroup.createdAt
+                });
+              }
+              // ------------------------------------------------
 
               return newGroups.sort((a, b) =>
                 new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()

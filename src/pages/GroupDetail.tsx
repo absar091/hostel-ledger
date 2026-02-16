@@ -292,11 +292,23 @@ const GroupDetail = () => {
     members: members,
   }];
 
-  // Calculate summary data
-  const totalSpent = transactions
+  // Calculate personal stats if it's a personal group
+  const personalStats = useMemo(() => {
+    if (!group?.isPersonal) return null;
+    const totalSpentValue = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
+    return {
+      totalSpent: totalSpentValue,
+      count: transactions.filter(t => t.type === 'expense').length
+    };
+  }, [group, transactions]);
+
+  const totalSpent = useMemo(() => transactions
     .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
-  const expenseCount = transactions.filter((t) => t.type === "expense").length;
+    .reduce((sum, t) => sum + t.amount, 0), [transactions]);
+
+  const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
 
   // Find the member who has paid the most in expenses (actual top contributor)
   const memberExpenseContributions = group.members.map(member => {
@@ -350,25 +362,40 @@ const GroupDetail = () => {
           </div>
         </div>
 
-        {/* Tabs - iPhone Style Enhanced */}
-        <div className="flex gap-2 px-4 pb-4">
-          {[
-            { id: "ledger", label: "Ledger" },
-            { id: "members", label: "Members" },
-            { id: "summary", label: "Summary" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`flex-1 py-3 px-4 rounded-2xl text-sm font-black transition-all duration-200 ${activeTab === tab.id
-                ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] scale-105"
-                : "bg-white/80 text-[#4a6850]/80 hover:bg-white border border-[#4a6850]/10 hover:scale-102"
-                }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Tabs - iPhone Style Enhanced - Only for multi-member groups */}
+        {!group.isPersonal ? (
+          <div className="flex gap-2 px-4 pb-4">
+            {[
+              { id: "ledger", label: "Ledger" },
+              { id: "members", label: "Members" },
+              { id: "summary", label: "Summary" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                className={`flex-1 py-3 px-4 rounded-2xl text-sm font-black transition-all duration-200 ${activeTab === tab.id
+                  ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] scale-105"
+                  : "bg-white/80 text-[#4a6850]/80 hover:bg-white border border-[#4a6850]/10 hover:scale-102"
+                  }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          /* Personal Stats Summary for Personal groups */
+          personalStats && (
+            <div className="px-4 pb-4">
+              <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-6 text-white shadow-xl">
+                <div className="text-xs font-black uppercase tracking-wider text-white/70 mb-1">Lifetime Spent</div>
+                <div className="text-3xl font-black mb-1">Rs {personalStats.totalSpent.toLocaleString()}</div>
+                <div className="text-xs font-bold text-white/60">
+                  Over {personalStats.count} {personalStats.count === 1 ? 'expense' : 'expenses'}
+                </div>
+              </div>
+            </div>
+          )
+        )}
       </header>
 
       {/* Content */}
@@ -447,10 +474,8 @@ const GroupDetail = () => {
                 setSettlementMember({
                   id: member.id,
                   name: member.name,
+                  avatar: undefined,
                   isTemporary: member.isTemporary,
-                  isOwner: member.userId === group.createdBy || member.id === group.createdBy,
-                  isPending: member.isPending,
-                  isCurrentUser: member.isCurrentUser,
                 });
                 setShowMemberSettlement(true);
               };

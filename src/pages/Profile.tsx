@@ -6,7 +6,8 @@ import { useFirebaseAuth, PaymentDetails } from "@/contexts/FirebaseAuthContext"
 import { toast } from "sonner";
 import {
   User, Phone, CreditCard, Building2, LogOut, Check, ChevronRight,
-  Bell, Shield, HelpCircle, Info, Mail, Calendar, Camera, X, Loader2
+  Bell, Shield, HelpCircle, Info, Mail, Calendar, Camera, X, Loader2,
+  Settings
 } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import BottomNav from "@/components/BottomNav";
@@ -218,270 +219,280 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Profile Card - iPhone Style with #4a6850 */}
-          <div className="bg-white rounded-3xl p-5 lg:p-7 shadow-[0_25px_70px_rgba(74,104,80,0.15)] animate-fade-in border border-[#4a6850]/10">
-            <div className="flex items-start gap-4 lg:gap-5 mb-4 lg:mb-5">
-              {/* Avatar - Enhanced iPhone Style */}
-              <button
-                onClick={handlePhotoClick}
-                disabled={isUploadingPhoto}
-                className="relative group cursor-pointer flex-shrink-0"
-              >
-                <div className="relative">
-                  <Avatar name={user?.name || "User"} photoURL={user?.photoURL} size="xl" />
+          {/* Profile Card - White iPhone Style */}
+          <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 overflow-hidden animate-fade-in">
 
-                  {/* Status Indicator */}
-                  <div className="absolute -bottom-1 -right-1 w-6 lg:w-7 h-6 lg:h-7 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-full flex items-center justify-center shadow-lg border-2 lg:border-3 border-white">
-                    <div className="w-2 lg:w-2.5 h-2 lg:h-2.5 bg-white rounded-full"></div>
+            <div className="p-6 lg:p-8">
+              <div className="flex items-start gap-5 lg:gap-6">
+                {/* Avatar */}
+                <button
+                  onClick={handlePhotoClick}
+                  disabled={isUploadingPhoto}
+                  className="relative group cursor-pointer flex-shrink-0"
+                >
+                  <div className="relative">
+                    <div className="ring-[3px] ring-[#4a6850]/20 rounded-full shadow-lg">
+                      <Avatar name={user?.name || "User"} photoURL={user?.photoURL} size="xl" />
+                    </div>
+                    {/* Online Indicator */}
+                    <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 bg-green-400 rounded-full border-[3px] border-white shadow-lg"></div>
                   </div>
-                </div>
+                  {/* Camera Overlay */}
+                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
+                    {isUploadingPhoto ? (
+                      <Loader2 className="w-6 h-6 text-white animate-spin" />
+                    ) : (
+                      <Camera className="w-6 h-6 text-white" />
+                    )}
+                  </div>
+                </button>
 
-                {/* Camera Icon Overlay - Enhanced */}
-                <div className="absolute inset-0 bg-[#4a6850]/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
-                  {isUploadingPhoto ? (
-                    <Loader2 className="w-6 lg:w-7 h-6 lg:h-7 text-white animate-spin" />
-                  ) : (
-                    <Camera className="w-6 lg:w-7 h-6 lg:h-7 text-white font-bold" />
+                {/* Hidden File Input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-2xl lg:text-3xl font-black text-gray-900 tracking-tight mb-0.5 truncate">{user?.name}</h2>
+                  {user?.username && (
+                    <p className="text-[#4a6850] text-sm font-bold truncate">@{user.username}</p>
+                  )}
+                  <p className="text-gray-500 text-xs lg:text-sm flex items-center gap-2 mt-2 font-semibold truncate">
+                    <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="truncate">{user?.email}</span>
+                  </p>
+                  {user?.phone && (
+                    <p className="text-gray-500 text-xs lg:text-sm flex items-center gap-2 mt-1 font-semibold">
+                      <Phone className="w-3.5 h-3.5 flex-shrink-0" />
+                      {user.phone}
+                    </p>
                   )}
                 </div>
-              </button>
+              </div>
 
-              {/* Hidden File Input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                className="hidden"
-              />
-
-              <div className="flex-1 min-w-0">
-                <h2 className="text-xl lg:text-2xl font-black text-gray-900 tracking-tight mb-0.5 lg:mb-1 truncate">{user?.name}</h2>
-                {user?.username && (
-                  <p className="text-[#4a6850]/90 text-sm font-bold truncate">@{user.username}</p>
-                )}
-                <p className="text-[#4a6850]/80 text-xs lg:text-sm flex items-center gap-2 mt-1 font-bold truncate">
-                  <Mail className="w-3.5 lg:w-4 h-3.5 lg:h-4 flex-shrink-0" />
-                  <span className="truncate">{user?.email}</span>
-                </p>
-                {user?.phone && (
-                  <p className="text-[#4a6850]/80 text-xs lg:text-sm flex items-center gap-2 mt-1 font-bold">
-                    <Phone className="w-3.5 lg:w-4 h-3.5 lg:h-4 flex-shrink-0" />
-                    {user.phone}
+              {/* Stats Row */}
+              <div className="grid grid-cols-3 gap-3 mt-6 pt-5 border-t border-[#4a6850]/10">
+                <div className="text-center">
+                  <p className="text-[#4a6850]/50 text-[10px] font-bold uppercase tracking-widest">Member Since</p>
+                  <p className="text-gray-900 font-black text-sm mt-1">{memberSince}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[#4a6850]/50 text-[10px] font-bold uppercase tracking-widest">Email</p>
+                  <p className="text-[#4a6850] font-black text-sm mt-1 flex items-center justify-center gap-1">
+                    <Check className="w-3.5 h-3.5" /> Verified
                   </p>
-                )}
-                <p className="text-[#4a6850]/60 text-[10px] lg:text-xs flex items-center gap-2 mt-2 lg:mt-3 font-black">
-                  <Calendar className="w-3.5 lg:w-4 h-3.5 lg:h-4 flex-shrink-0" />
-                  Member since {memberSince}
-                </p>
-              </div>
-            </div>
-
-            {/* Quick Stats - Enhanced iPhone Style */}
-            <div className="grid grid-cols-2 gap-3 lg:gap-4 mt-4 lg:mt-5 pt-4 lg:pt-5 border-t border-[#4a6850]/10">
-              <div className="bg-[#4a6850]/5 rounded-2xl p-3 lg:p-4 border border-[#4a6850]/10">
-                <p className="text-[#4a6850]/70 text-[10px] lg:text-xs font-black uppercase tracking-wide">Email Status</p>
-                <p className="font-black text-xs lg:text-sm flex items-center gap-2 mt-1.5 lg:mt-2 text-[#4a6850]">
-                  <Check className="w-3.5 lg:w-4 h-3.5 lg:h-4" />
-                  Verified
-                </p>
-              </div>
-              <div className="bg-[#4a6850]/5 rounded-2xl p-3 lg:p-4 border border-[#4a6850]/10">
-                <p className="text-[#4a6850]/70 text-[10px] lg:text-xs font-black uppercase tracking-wide">Payment Methods</p>
-                <p className="font-black text-xs lg:text-sm mt-1.5 lg:mt-2 text-gray-900">
-                  {hasPaymentDetails ? Object.keys(user?.paymentDetails || {}).length : 0} Added
-                </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[#4a6850]/50 text-[10px] font-bold uppercase tracking-widest">Payments</p>
+                  <p className="text-gray-900 font-black text-sm mt-1">
+                    {hasPaymentDetails ? Object.keys(user?.paymentDetails || {}).length : 0} Added
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </header>
 
         <main className="px-4 space-y-6">
-          {/* Account Section - iPhone Style Enhanced */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-black text-[#4a6850]/80 uppercase tracking-widest px-2">Account</h3>
-
-            <button
-              onClick={() => {
-                setEditName(user?.name || "");
-                setEditPhone(user?.phone || "");
-                setShowEditSheet(true);
-              }}
-              className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
-              style={{ animationDelay: "0.05s" }}
-            >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <User className="w-6 h-6 text-[#4a6850] font-bold" />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-black text-gray-900 tracking-tight">Edit Profile</p>
-                <p className="text-sm text-[#4a6850]/80 font-bold">Update your name and phone</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850] transition-colors" />
-            </button>
-
-            <button
-              onClick={() => {
-                setJazzCash(user?.paymentDetails?.jazzCash || "");
-                setEasypaisa(user?.paymentDetails?.easypaisa || "");
-                setBankName(user?.paymentDetails?.bankName || "");
-                setAccountNumber(user?.paymentDetails?.accountNumber || "");
-                setRaastId(user?.paymentDetails?.raastId || "");
-                setShowPaymentSheet(true);
-              }}
-              className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
-              style={{ animationDelay: "0.1s" }}
-            >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <CreditCard className="w-6 h-6 text-blue-600 font-bold" />
-              </div>
-              <div className="flex-1 text-left">
-                <div className="flex items-center gap-3">
-                  <p className="font-black text-gray-900 tracking-tight">Payment Details</p>
-                  {hasPaymentDetails && (
-                    <div className="w-6 h-6 rounded-full bg-[#4a6850] flex items-center justify-center shadow-sm">
-                      <Check className="w-3.5 h-3.5 text-white font-bold" />
-                    </div>
-                  )}
-                </div>
-                <p className="text-sm text-[#4a6850]/80 font-bold">
-                  {hasPaymentDetails ? `${Object.keys(user?.paymentDetails || {}).length} methods added` : "Add payment methods"}
-                </p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850] transition-colors" />
-            </button>
-          </div>
-
-          {/* Share Section */}
+          {/* Account Section - iPhone Grouped Style */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide px-2">Share & Connect</h3>
+            <h3 className="text-[12px] font-black text-[#4a6850]/70 uppercase tracking-[0.2em] px-5">Account</h3>
 
-            <ShareButton
-              variant="card"
-              className="animate-slide-up"
-            />
-          </div>
+            <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
+              {/* Edit Profile */}
+              <button
+                onClick={() => {
+                  setEditName(user?.name || "");
+                  setEditPhone(user?.phone || "");
+                  setShowEditSheet(true);
+                }}
+                className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors group"
+              >
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl bg-[#4a6850]/10 flex items-center justify-center shadow-sm">
+                    <User className="w-5 h-5 text-[#4a6850]" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-[15px] font-black tracking-tight text-gray-900">Edit Profile</p>
+                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">Update your name and phone</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
+              </button>
 
-          {/* Preferences Section - iPhone Style Enhanced */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-black text-[#4a6850]/80 uppercase tracking-widest px-2">Preferences</h3>
-
-            <button
-              onClick={() => navigate("/notifications")}
-              className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
-              style={{ animationDelay: "0.15s" }}
-            >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500/20 to-violet-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Bell className="w-6 h-6 text-purple-600 font-bold" />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-black text-gray-900 tracking-tight">Notifications</p>
-                <p className="text-sm text-[#4a6850]/80 font-bold">Manage email and push notifications</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850] transition-colors" />
-            </button>
-
-            <button
-              onClick={() => navigate("/security")}
-              className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
-              style={{ animationDelay: "0.2s" }}
-            >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Shield className="w-6 h-6 text-orange-600 font-bold" />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-black text-gray-900 tracking-tight">Security & Privacy</p>
-                <p className="text-sm text-[#4a6850]/80 font-bold">Password, data export, delete account</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850] transition-colors" />
-            </button>
-          </div>
-
-          {/* Support Section - iPhone Style Enhanced */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-black text-[#4a6850]/80 uppercase tracking-widest px-2">Support</h3>
-
-            <button
-              onClick={() => navigate("/about")}
-              className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
-              style={{ animationDelay: "0.25s" }}
-            >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Info className="w-6 h-6 text-[#4a6850] font-bold" />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-black text-gray-900 tracking-tight">About</p>
-                <p className="text-sm text-[#4a6850]/80 font-bold">Version, terms, privacy policy</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850] transition-colors" />
-            </button>
-
-            <a
-              href="mailto:support@aarx.online"
-              className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
-              style={{ animationDelay: "0.3s" }}
-            >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500/20 to-cyan-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <HelpCircle className="w-6 h-6 text-teal-600 font-bold" />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-black text-gray-900 tracking-tight">Help & Support</p>
-                <p className="text-sm text-[#4a6850]/80 font-bold">Contact us for assistance</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850] transition-colors" />
-            </a>
-
-            <button
-              onClick={async () => {
-                if (confirm('Clear app cache? This will refresh the app with the latest version.')) {
-                  try {
-                    // Clear all caches
-                    if ('caches' in window) {
-                      const cacheNames = await caches.keys();
-                      await Promise.all(cacheNames.map(name => caches.delete(name)));
-                    }
-
-                    // Unregister service workers
-                    if ('serviceWorker' in navigator) {
-                      const registrations = await navigator.serviceWorker.getRegistrations();
-                      await Promise.all(registrations.map(reg => reg.unregister()));
-                    }
-
-                    toast.success("Cache cleared! Reloading app...");
-                    setTimeout(() => window.location.reload(), 1000);
-                  } catch (error) {
-                    toast.error("Failed to clear cache");
-                    console.error('Cache clear error:', error);
-                  }
-                }
-              }}
-              className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group"
-              style={{ animationDelay: "0.35s" }}
-            >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-yellow-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <svg className="w-6 h-6 text-amber-600 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-black text-gray-900 tracking-tight">Clear Cache</p>
-                <p className="text-sm text-[#4a6850]/80 font-bold">Fix loading issues and get latest version</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-[#4a6850]/60 group-hover:text-[#4a6850] transition-colors" />
-            </button>
-          </div>
-
-          {/* Logout - iPhone Style Enhanced */}
-          <button
-            onClick={handleLogoutClick}
-            className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 animate-slide-up border border-red-200/50 hover:shadow-[0_25px_70px_rgba(239,68,68,0.15)] hover:border-red-300 transition-all group"
-            style={{ animationDelay: "0.35s" }}
-          >
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-500/20 to-pink-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <LogOut className="w-6 h-6 text-red-600 font-bold" />
+              {/* Payment Details */}
+              <button
+                onClick={() => {
+                  setJazzCash(user?.paymentDetails?.jazzCash || "");
+                  setEasypaisa(user?.paymentDetails?.easypaisa || "");
+                  setBankName(user?.paymentDetails?.bankName || "");
+                  setAccountNumber(user?.paymentDetails?.accountNumber || "");
+                  setRaastId(user?.paymentDetails?.raastId || "");
+                  setShowPaymentSheet(true);
+                }}
+                className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors group"
+              >
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center shadow-sm">
+                    <CreditCard className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="flex items-center gap-2">
+                      <p className="text-[15px] font-black tracking-tight text-gray-900">Payment Details</p>
+                      {hasPaymentDetails && (
+                        <div className="w-5 h-5 rounded-full bg-[#4a6850] flex items-center justify-center">
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">
+                      {hasPaymentDetails ? `${Object.keys(user?.paymentDetails || {}).length} methods added` : "Add payment methods"}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
+              </button>
             </div>
-            <p className="font-black text-red-600 tracking-tight">Log Out</p>
-          </button>
+          </div>
+
+
+          {/* Preferences Section - iPhone Grouped Style */}
+          <div className="space-y-3">
+            <h3 className="text-[12px] font-black text-[#4a6850]/70 uppercase tracking-[0.2em] px-5">Preferences</h3>
+
+            <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
+              <button
+                onClick={() => navigate("/settings")}
+                className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
+              >
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl bg-[#4a6850]/10 flex items-center justify-center shadow-sm">
+                    <Settings className="w-5 h-5 text-[#4a6850]" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-[15px] font-black tracking-tight text-gray-900">General Settings</p>
+                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">Privacy, notifications, and more</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
+              </button>
+
+              <button
+                onClick={() => navigate("/security")}
+                className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
+              >
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl bg-orange-50 flex items-center justify-center shadow-sm">
+                    <Shield className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-[15px] font-black tracking-tight text-gray-900">Security & Privacy</p>
+                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">Password, data export, delete account</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
+              </button>
+            </div>
+          </div>
+
+          {/* Support Section - iPhone Grouped Style */}
+          <div className="space-y-3">
+            <h3 className="text-[12px] font-black text-[#4a6850]/70 uppercase tracking-[0.2em] px-5">Support</h3>
+
+            <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
+              <button
+                onClick={() => navigate("/about")}
+                className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
+              >
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl bg-[#4a6850]/10 flex items-center justify-center shadow-sm">
+                    <Info className="w-5 h-5 text-[#4a6850]" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-[15px] font-black tracking-tight text-gray-900">About</p>
+                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">Version, terms, privacy policy</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
+              </button>
+
+              <a
+                href="mailto:support@aarx.online"
+                className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
+              >
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl bg-teal-50 flex items-center justify-center shadow-sm">
+                    <HelpCircle className="w-5 h-5 text-teal-600" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-[15px] font-black tracking-tight text-gray-900">Help & Support</p>
+                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">Contact us for assistance</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
+              </a>
+
+              <button
+                onClick={async () => {
+                  if (confirm('Clear app cache? This will refresh the app with the latest version.')) {
+                    try {
+                      if ('caches' in window) {
+                        const cacheNames = await caches.keys();
+                        await Promise.all(cacheNames.map(name => caches.delete(name)));
+                      }
+                      if ('serviceWorker' in navigator) {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        await Promise.all(registrations.map(reg => reg.unregister()));
+                      }
+                      toast.success("Cache cleared! Reloading app...");
+                      setTimeout(() => window.location.reload(), 1000);
+                    } catch (error) {
+                      toast.error("Failed to clear cache");
+                      console.error('Cache clear error:', error);
+                    }
+                  }
+                }}
+                className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
+              >
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center shadow-sm">
+                    <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-[15px] font-black tracking-tight text-gray-900">Clear Cache</p>
+                    <p className="text-[12px] text-[#4a6850]/70 font-bold mt-0.5 truncate">Fix loading issues and get latest version</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
+              </button>
+            </div>
+          </div>
+
+          {/* Share */}
+          <ShareButton
+            variant="card"
+            className="animate-slide-up"
+          />
+
+          {/* Logout */}
+          <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-red-100 overflow-hidden">
+            <button
+              onClick={handleLogoutClick}
+              className="w-full flex items-center gap-4 p-5 active:bg-red-50 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-2xl bg-red-50 flex items-center justify-center shadow-sm">
+                <LogOut className="w-5 h-5 text-red-500" />
+              </div>
+              <p className="text-[15px] font-black tracking-tight text-red-500">Log Out</p>
+            </button>
+          </div>
+
 
           {/* App Version */}
           <div className="text-center py-4">
@@ -518,6 +529,7 @@ const Profile = () => {
 
         {/* Edit Profile Sheet */}
         <Sheet open={showEditSheet} onOpenChange={setShowEditSheet}>
+
           <SheetContent side="bottom" className="h-auto rounded-t-3xl flex flex-col">
             <SheetHeader className="flex-shrink-0 mb-4">
               <SheetTitle className="text-center">Edit Profile</SheetTitle>
@@ -562,10 +574,10 @@ const Profile = () => {
               </Button>
             </div>
           </SheetContent>
-        </Sheet>
+        </Sheet >
 
         {/* Payment Details Sheet */}
-        <Sheet open={showPaymentSheet} onOpenChange={setShowPaymentSheet}>
+        < Sheet open={showPaymentSheet} onOpenChange={setShowPaymentSheet} >
           <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col">
             <SheetHeader className="flex-shrink-0 mb-4">
               <SheetTitle className="text-center">Payment Details</SheetTitle>
@@ -670,10 +682,10 @@ const Profile = () => {
               </Button>
             </div>
           </SheetContent>
-        </Sheet>
+        </Sheet >
 
         {/* Photo Options Sheet */}
-        <Sheet open={showPhotoOptionsSheet} onOpenChange={setShowPhotoOptionsSheet}>
+        < Sheet open={showPhotoOptionsSheet} onOpenChange={setShowPhotoOptionsSheet} >
           <SheetContent side="bottom" className="h-auto rounded-t-3xl">
             <SheetHeader className="mb-6">
               <SheetTitle className="text-center">Profile Picture</SheetTitle>
@@ -711,8 +723,8 @@ const Profile = () => {
               </Button>
             </div>
           </SheetContent>
-        </Sheet>
-      </AppContainer>
+        </Sheet >
+      </AppContainer >
     </>
   );
 };

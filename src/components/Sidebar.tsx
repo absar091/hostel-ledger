@@ -28,7 +28,7 @@ const Sidebar = () => {
     { id: "dashboard", icon: Home, label: "Dashboard", path: "/", badge: pendingInvites },
     { id: "groups", icon: Users, label: "Groups", path: "/groups" },
     { id: "activity", icon: Clock, label: "Activity", path: "/activity" },
-    { id: "settings", icon: Settings, label: "Settings", path: "/profile" },
+    { id: "settings", icon: Settings, label: "Settings", path: "/settings" },
   ];
 
   const isActive = (path: string) => {

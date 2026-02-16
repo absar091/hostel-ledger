@@ -191,12 +191,12 @@ const ReceiptPage = () => {
 
                 <main className="flex-1 flex flex-col items-center px-6 pb-24 lg:pb-12 max-w-2xl mx-auto w-full">
                     {/* Success Hero */}
-                    <div className="mt-4 mb-8 text-center flex flex-col items-center animate-in fade-in zoom-in duration-700">
-                        <div className="w-20 h-20 rounded-[2rem] bg-emerald-500 shadow-[0_15px_40px_rgba(16,185,129,0.3)] flex items-center justify-center mb-6 transform rotate-3">
-                            <CheckCircle2 className="w-10 h-10 text-white" strokeWidth={3} />
+                    <div className="mt-2 mb-4 text-center flex flex-col items-center animate-in fade-in zoom-in duration-700">
+                        <div className="w-16 h-16 rounded-[1.5rem] bg-emerald-500 shadow-[0_15px_40px_rgba(16,185,129,0.3)] flex items-center justify-center mb-4 transform rotate-3">
+                            <CheckCircle2 className="w-8 h-8 text-white" strokeWidth={3} />
                         </div>
-                        <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Success!</h2>
-                        <p className="text-slate-500 font-bold">Your transaction has been recorded.</p>
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1">Success!</h2>
+                        <p className="text-slate-500 font-bold text-sm">Your transaction has been recorded.</p>
                     </div>
 
                     {/* THE RECEIPT */}
@@ -215,43 +215,43 @@ const ReceiptPage = () => {
                             <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
 
                             {/* Header */}
-                            <div className="pt-10 pb-8 px-8 text-center border-b border-dashed border-slate-200">
-                                <div className="inline-flex items-center gap-2 mb-4">
-                                    <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
-                                        <img src="/only-logo.png" className="w-5 h-5 filter invert" alt="L" />
+                            <div className="pt-6 pb-4 px-6 text-center border-b border-dashed border-slate-200">
+                                <div className="inline-flex items-center gap-2 mb-2">
+                                    <div className="w-6 h-6 bg-slate-900 rounded-lg flex items-center justify-center">
+                                        <img src="/only-logo.png" className="w-4 h-4 filter invert" alt="L" />
                                     </div>
-                                    <span className="font-black text-xl uppercase tracking-tighter text-slate-900">Hostel Ledger</span>
+                                    <span className="font-black text-lg uppercase tracking-tighter text-slate-900">Hostel Ledger</span>
                                 </div>
-                                <div className="text-[11px] text-slate-400 font-mono tracking-widest uppercase">{new Date(transaction.timestamp || transaction.date).toLocaleString()}</div>
+                                <div className="text-[10px] text-slate-400 font-mono tracking-widest uppercase">{new Date(transaction.timestamp || transaction.date).toLocaleString()}</div>
                             </div>
 
                             {/* Hero Amount */}
-                            <div className="py-10 text-center bg-slate-50/30">
-                                <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] block mb-3">Amount {type === 'expense' ? 'Spent' : 'Received'}</span>
-                                <div className="text-5xl font-black text-emerald-600 tabular-nums tracking-tighter flex justify-center items-end gap-1">
-                                    <span className="text-2xl mb-1.5 opacity-40 font-bold">Rs</span>
+                            <div className="py-6 text-center bg-slate-50/30">
+                                <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] block mb-2">Amount {type === 'expense' ? 'Spent' : 'Received'}</span>
+                                <div className="text-4xl font-black text-emerald-600 tabular-nums tracking-tighter flex justify-center items-end gap-1">
+                                    <span className="text-xl mb-1 opacity-40 font-bold">Rs</span>
                                     {transaction.amount.toLocaleString()}
                                 </div>
                             </div>
 
                             {/* Detail Rows */}
-                            <div className="p-10 space-y-6">
-                                <div className="grid grid-cols-2 gap-y-6">
+                            <div className="p-6 space-y-4">
+                                <div className="grid grid-cols-2 gap-y-4">
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transaction ID</p>
-                                        <p className="font-mono text-xs font-bold text-slate-900">{transaction.id.substring(0, 16).toUpperCase()}</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Transaction ID</p>
+                                        <p className="font-mono text-[10px] font-bold text-slate-900">{transaction.id.substring(0, 16).toUpperCase()}</p>
                                     </div>
                                     <div className="space-y-1 text-right">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</p>
-                                        <p className="font-black text-xs text-slate-900 uppercase tracking-tight">{type === 'expense' ? 'Group Expense' : 'Settlement Payment'}</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Type</p>
+                                        <p className="font-black text-[10px] text-slate-900 uppercase tracking-tight">{type === 'expense' ? 'Group Expense' : 'Settlement Payment'}</p>
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? "Paid By" : "From"}</p>
-                                        <p className="font-black text-sm text-slate-900">{type === "expense" ? transaction.paidByName : transaction.fromName}</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? "Paid By" : "From"}</p>
+                                        <p className="font-black text-xs text-slate-900">{type === "expense" ? transaction.paidByName : transaction.fromName}</p>
                                     </div>
                                     <div className="space-y-1 text-right">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? "Split With" : "To"}</p>
-                                        <p className="font-black text-sm text-slate-900">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? "Split With" : "To"}</p>
+                                        <p className="font-black text-xs text-slate-900">
                                             {type === "expense"
                                                 ? `${transaction.participants?.length || 0} People`
                                                 : transaction.toName || currentUser?.name}
@@ -260,9 +260,9 @@ const ReceiptPage = () => {
                                 </div>
 
                                 {transaction.note && (
-                                    <div className="pt-4 border-t border-slate-100">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Note / Description</p>
-                                        <div className="bg-slate-50 rounded-2xl p-4 text-sm font-bold text-slate-700 italic border border-slate-100">
+                                    <div className="pt-3 border-t border-slate-100">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Note</p>
+                                        <div className="bg-slate-50 rounded-xl p-3 text-xs font-bold text-slate-700 italic border border-slate-100">
                                             "{transaction.note}"
                                         </div>
                                     </div>
@@ -283,32 +283,28 @@ const ReceiptPage = () => {
                                 )}
                             </div>
 
-                            {/* Barcode & Footer */}
-                            <div className="p-10 bg-slate-900 text-white text-center pb-16">
-                                <div className="h-10 w-full max-w-[240px] mx-auto bg-white mb-4 rounded-sm opacity-90 shadow-lg" style={{
-                                    backgroundImage: `repeating-linear-gradient(90deg, #000 0px, #000 2px, transparent 2px, transparent 4px, #000 4px, #000 8px)`
-                                }}></div>
-                                <div className="text-[9px] text-slate-500 font-mono tracking-[0.4em] uppercase font-black mb-1">Authentic Hostel Ledger Entry</div>
+                            {/* Barcode & Footer - Compacted */}
+                            <div className="p-6 bg-slate-900 text-white text-center pb-8">
                                 <div className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Fully Settled • No Returns</div>
                             </div>
                         </div>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="w-full mt-10 grid grid-cols-2 gap-4 animate-in slide-in-from-bottom-6 duration-700 delay-500">
+                    <div className="w-full mt-6 grid grid-cols-2 gap-4 animate-in slide-in-from-bottom-6 duration-700 delay-500">
                         <Button
                             onClick={handleDownload}
                             variant="outline"
-                            className="h-16 rounded-3xl bg-white border-slate-200 text-slate-900 font-black text-sm uppercase tracking-wider shadow-xl hover:bg-slate-50 border-2"
+                            className="h-14 rounded-3xl bg-white border-slate-200 text-slate-900 font-black text-xs uppercase tracking-wider shadow-md hover:bg-slate-50 border-2"
                         >
-                            <Download className="w-5 h-5 mr-3" />
+                            <Download className="w-4 h-4 mr-2" />
                             Download
                         </Button>
                         <Button
                             onClick={handleShare}
-                            className="h-16 rounded-3xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm uppercase tracking-wider shadow-[0_15px_30px_rgba(16,185,129,0.3)] border-0"
+                            className="h-14 rounded-3xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider shadow-[0_10px_20px_rgba(16,185,129,0.2)] border-0"
                         >
-                            <Share2 className="w-5 h-5 mr-3" />
+                            <Share2 className="w-4 h-4 mr-2" />
                             Share
                         </Button>
                     </div>
@@ -316,9 +312,9 @@ const ReceiptPage = () => {
                     <Button
                         onClick={() => navigate("/")}
                         variant="ghost"
-                        className="mt-8 text-slate-400 hover:text-slate-900 font-black uppercase tracking-widest text-xs"
+                        className="mt-4 text-slate-400 hover:text-slate-900 font-black uppercase tracking-widest text-[10px]"
                     >
-                        <Home className="w-4 h-4 mr-2" />
+                        <Home className="w-3.5 h-3.5 mr-1.5" />
                         Back to Dashboard
                     </Button>
                 </main>

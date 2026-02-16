@@ -51,6 +51,7 @@ export interface UserProfile {
   createdAt: string;
   emailVerified?: boolean; // Email verification status
   favoriteGroups?: string[]; // Array of favorite group IDs
+  showBalanceToOthers: boolean; // Privacy setting for wallet balance visibility
 }
 
 interface FirebaseAuthContextType {
@@ -243,10 +244,42 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
               settlements: userData.settlements || {},
               createdAt: userData.createdAt,
               emailVerified: isVerified,
-              favoriteGroups: userData.favoriteGroups || []
+              favoriteGroups: userData.favoriteGroups || [],
+              showBalanceToOthers: userData.showBalanceToOthers ?? false
             };
 
             setUser(userProfile);
+
+            // SYNC logic: Propagate balance/privacy to groups
+            try {
+              const userGroupsRef = ref(database, `userGroups/${uid}`);
+              const userGroupsSnap = await get(userGroupsRef);
+              if (userGroupsSnap.exists()) {
+                const groupIds = Object.keys(userGroupsSnap.val());
+                const balanceToSync = userProfile.showBalanceToOthers ? userProfile.walletBalance : null;
+
+                // Update balance in all groups where this user is a member
+                for (const gid of groupIds) {
+                  const membersRef = ref(database, `groups/${gid}/members`);
+                  const membersSnap = await get(membersRef);
+                  if (membersSnap.exists()) {
+                    const members = membersSnap.val();
+                    const membersArray = Array.isArray(members) ? members : Object.values(members);
+                    const memberIndex = membersArray.findIndex((m: any) => m.id === uid || m.userId === uid);
+
+                    if (memberIndex !== -1) {
+                      const memberKey = Array.isArray(members) ? memberIndex : Object.keys(members)[memberIndex];
+                      await update(ref(database, `groups/${gid}/members/${memberKey}`), {
+                        balance: balanceToSync
+                      });
+                    }
+                  }
+                }
+              }
+            } catch (syncError) {
+              console.error("Failed to sync balance to groups:", syncError);
+            }
+
             logger.setUserId(uid);
             setIsLoading(false);
 
@@ -270,7 +303,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
               walletBalance: 0,
               settlements: {},
               createdAt: new Date().toISOString(),
-              emailVerified: false
+              emailVerified: false,
+              showBalanceToOthers: false
             };
 
             try {
@@ -431,7 +465,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           paymentDetails: {},
           walletBalance: 0,
           settlements: {},
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          showBalanceToOthers: false
         };
 
         const userRef = ref(database, `users/${firebaseUser.uid}`);
@@ -451,6 +486,46 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           createdAt: new Date().toISOString(),
           email: sanitizedEmail
         });
+
+        // --- NEW: Create Personal Space ---
+        try {
+          const groupId = `personal_${firebaseUser.uid}`;
+          const personalGroup = {
+            id: groupId,
+            name: "Personal Space",
+            emoji: "👤",
+            isPersonal: true,
+            members: [
+              {
+                id: firebaseUser.uid,
+                name: "You",
+                userId: firebaseUser.uid,
+                isAdmin: true
+              }
+            ],
+            createdBy: firebaseUser.uid,
+            createdAt: new Date().toISOString()
+          };
+
+          // 1. Create the group entry
+          await set(ref(database, `groups/${groupId}`), personalGroup);
+
+          // 2. Add to user's group index
+          await set(ref(database, `userGroups/${firebaseUser.uid}/${groupId}`), {
+            name: "Personal Space",
+            emoji: "👤",
+            isPersonal: true,
+            memberCount: 1,
+            role: 'admin',
+            createdAt: personalGroup.createdAt
+          });
+
+          logger.info('Personal Space created for new user', { uid: firebaseUser.uid });
+        } catch (personalError: any) {
+          logger.error("Failed to create Personal Space during signup", personalError);
+          // Don't fail the whole signup if just personal space creation fails
+        }
+        // ---------------------------------
 
         return { success: true };
 
