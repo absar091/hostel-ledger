@@ -17,13 +17,15 @@ import {
   X,
   CreditCard
 } from "lucide-react";
-import { sendVerificationEmail } from "@/lib/email";
-import { storeVerificationCode } from "@/lib/verificationStore";
+import { generateVerificationCode } from "@/lib/verificationStore";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import PageGuide from "@/components/PageGuide";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { useTranslation } from "react-i18next";
+import LanguageSelector from "@/components/LanguageSelector";
 
 const Signup = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { signup, checkUsernameAvailable, checkEmailExists, user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
@@ -88,29 +90,29 @@ const Signup = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.firstName || formData.firstName.length < 2) {
-      newErrors.firstName = "First name must be at least 2 characters";
+      newErrors.firstName = t('auth.first_name_min_length');
     }
 
     if (!formData.lastName || formData.lastName.length < 2) {
-      newErrors.lastName = "Last name must be at least 2 characters";
+      newErrors.lastName = t('auth.last_name_min_length');
     }
 
     if (!formData.email || !formData.email.includes('@')) {
-      newErrors.email = "Please enter a valid email address";
+      newErrors.email = t('auth.email_invalid');
     }
 
     // Username validation
     const normalizedUsername = formData.username.toLowerCase().replace(/[^a-z0-9._]/g, '');
     if (!normalizedUsername || normalizedUsername.length < 3) {
-      newErrors.username = "Username must be at least 3 characters";
+      newErrors.username = t('auth.username_min_length');
     } else if (normalizedUsername.length > 20) {
-      newErrors.username = "Username cannot exceed 20 characters";
+      newErrors.username = t('auth.username_max_length');
     } else if (usernameStatus === 'taken') {
-      newErrors.username = "This username is already taken";
+      newErrors.username = t('auth.username_taken');
     }
 
     if (!formData.university || formData.university.length < 2) {
-      newErrors.university = "University name is required";
+      newErrors.university = t('auth.university_required');
     }
 
     setErrors(newErrors);
@@ -121,19 +123,19 @@ const Signup = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.password || formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
+      newErrors.password = t('auth.password_min_length');
     }
 
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
+      newErrors.confirmPassword = t('auth.passwords_dont_match');
     }
 
     if (!formData.termsAccepted) {
-      newErrors.termsAccepted = "You must accept the terms and conditions";
+      newErrors.termsAccepted = t('auth.terms_required');
     }
 
     if (!formData.privacyAccepted) {
-      newErrors.privacyAccepted = "You must accept the privacy policy";
+      newErrors.privacyAccepted = t('auth.privacy_required');
     }
 
     setErrors(newErrors);
@@ -166,7 +168,7 @@ const Signup = () => {
 
   const handleContinue = async () => {
     if (!validateBasicInfo()) {
-      toast.error("Please fix the errors in the form");
+      toast.error(t('auth.fix_errors'));
       return;
     }
 
@@ -175,8 +177,8 @@ const Signup = () => {
       // Check if email already exists
       const emailExists = await checkEmailExists(formData.email);
       if (emailExists) {
-        toast.error("An account with this email already exists. Please Sign In instead.");
-        setErrors(prev => ({ ...prev, email: "Account already exists" }));
+        toast.error(t('auth.account_exists'));
+        setErrors(prev => ({ ...prev, email: t('auth.account_exists') }));
         return;
       }
 
@@ -184,7 +186,7 @@ const Signup = () => {
       setCurrentView('password');
     } catch (error) {
       console.error("Email check failed:", error);
-      toast.error("Failed to verify email. Please try again.");
+      toast.error(t('common.error'), { description: "Failed to verify email. Please try again." });
     } finally {
       setIsLoading(false);
     }
@@ -192,7 +194,7 @@ const Signup = () => {
 
   const handleCreateAccount = async () => {
     if (!validatePassword()) {
-      toast.error("Please fix the errors in the form");
+      toast.error(t('auth.fix_errors'));
       return;
     }
 
@@ -215,22 +217,14 @@ const Signup = () => {
         throw new Error(signupResult.error || 'Failed to create account');
       }
 
-      // Step 2: Generate and store verification code
-      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-      await storeVerificationCode(formData.email, verificationCode, 'signup');
-
-      // Step 3: Send verification email
-      toast.loading("Sending verification code...", { id: "sending-code" });
-      const emailResult = await sendVerificationEmail(
+      // Step 2 & 3: Generate and send verification code via Backend
+      toast.loading(t('auth.verification_code_sending'), { id: "sending-code" });
+      await generateVerificationCode(
         formData.email,
-        verificationCode,
+        'signup',
+        signupResult.uid,
         `${formData.firstName} ${formData.lastName}`
       );
-
-      if (!emailResult.success) {
-        toast.dismiss("sending-code");
-        throw new Error('Failed to send verification email');
-      }
 
       toast.dismiss("sending-code");
 
@@ -244,7 +238,7 @@ const Signup = () => {
         // NEVER store password in browser storage - it's already in Firebase Auth
       }));
 
-      toast.success("Account created! Please check your email for verification code.");
+      toast.success(t('auth.reset_success'));
       navigate("/verify-email", { state: { email: formData.email, type: 'signup' } });
 
     } catch (error: any) {
@@ -269,7 +263,8 @@ const Signup = () => {
 
       {/* App Header - iPhone Style Enhanced with #4a6850 */}
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-4 pb-5 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-between max-w-sm mx-auto">
+          <div className="w-10" />
           {/* App Logo and Name - Enhanced */}
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl flex items-center justify-center shadow-lg">
@@ -281,9 +276,10 @@ const Signup = () => {
             </div>
             <div>
               <h1 className="text-2xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
-              <p className="text-sm text-[#4a6850]/80 font-bold">Split expenses with ease</p>
+              <p className="text-sm text-[#4a6850]/80 font-bold">{t('sidebar.motto')}</p>
             </div>
           </div>
+          <LanguageSelector />
         </div>
       </div>
 
@@ -304,8 +300,8 @@ const Signup = () => {
       <div className="w-full max-w-md pt-20">
         {/* Page Description */}
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Create Account</h2>
-          <p className="text-[#4a6850]/80 font-bold text-lg">Sign up as new user to get started</p>
+          <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">{t('auth.signup_title')}</h2>
+          <p className="text-[#4a6850]/80 font-bold text-lg">{t('auth.signup_subtitle')}</p>
         </div>
 
         {/* Basic Information View - iPhone Style */}
@@ -313,7 +309,7 @@ const Signup = () => {
           <div className="space-y-8">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">First Name</label>
+                <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.first_name')}</label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                   <Input
@@ -329,7 +325,7 @@ const Signup = () => {
               </div>
 
               <div>
-                <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Last Name</label>
+                <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.last_name')}</label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                   <Input
@@ -346,7 +342,7 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Email</label>
+              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.email')}</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
@@ -361,13 +357,13 @@ const Signup = () => {
                 <p className="text-red-500 text-sm mt-2 font-bold">{errors.email}</p>
               )}
               <p className="text-xs text-[#4a6850]/80 mt-2 font-bold">
-                Already have an account? <Link to="/login" className="text-[#4a6850] hover:text-[#3d5643] font-black underline">Sign in here</Link>
+                {t('auth.already_have_account')} <Link to="/login" className="text-[#4a6850] hover:text-[#3d5643] font-black underline">{t('auth.back_to_login')}</Link>
               </p>
             </div>
 
             {/* Username Field - Collaborative Feature */}
             <div>
-              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Choose Username</label>
+              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.username')}</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#4a6850]/60 font-bold">@</span>
                 <Input
@@ -404,7 +400,7 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">University</label>
+              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.university')}</label>
               <div className="relative">
                 <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
@@ -427,11 +423,11 @@ const Signup = () => {
               {isLoading ? (
                 <div className="flex items-center gap-3">
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Checking...
+                  {t('common.loading')}
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
-                  Continue
+                  {t('auth.continue')}
                   <ArrowRight className="w-5 h-5" />
                 </div>
               )}
@@ -443,12 +439,12 @@ const Signup = () => {
         {currentView === 'password' && (
           <div className="space-y-8">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-black text-gray-900 tracking-tight">Set Your Password</h2>
-              <p className="text-[#4a6850]/80 text-sm font-bold">Choose a strong password for your account</p>
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight">{t('auth.set_password_title')}</h2>
+              <p className="text-[#4a6850]/80 text-sm font-bold">{t('auth.set_password_subtitle')}</p>
             </div>
 
             <div>
-              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Password</label>
+              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.password')}</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
@@ -505,7 +501,7 @@ const Signup = () => {
             )}
 
             <div>
-              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Confirm Password</label>
+              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.confirm_password')}</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
@@ -540,14 +536,7 @@ const Signup = () => {
                   className="border-2 data-[state=checked]:bg-[#4a6850] data-[state=checked]:border-[#4a6850] w-5 h-5"
                 />
                 <label className="text-sm text-[#4a6850]/80 cursor-pointer flex-1 font-bold">
-                  I agree to the{" "}
-                  <Link to="/terms" className="text-[#4a6850] hover:text-[#3d5643] font-black underline">
-                    Terms & Conditions
-                  </Link>
-                  {" "}and{" "}
-                  <Link to="/privacy" className="text-[#4a6850] hover:text-[#3d5643] font-black underline">
-                    Privacy Policy
-                  </Link>
+                  {t('auth.terms_privacy_agree')}
                 </label>
               </div>
               {(errors.termsAccepted || errors.privacyAccepted) && (
@@ -561,7 +550,7 @@ const Signup = () => {
                 variant="outline"
                 className="h-14 px-8 rounded-3xl border-2 border-[#4a6850]/20 text-[#4a6850] hover:bg-[#4a6850]/5 font-black shadow-lg hover:shadow-xl transition-all"
               >
-                Back
+                {t('common.back')}
               </Button>
 
               <Button
@@ -572,10 +561,10 @@ const Signup = () => {
                 {isLoading ? (
                   <div className="flex items-center gap-3">
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Creating...
+                    {t('common.loading')}
                   </div>
                 ) : (
-                  "Create Account"
+                  t('auth.signup')
                 )}
               </Button>
             </div>
@@ -585,9 +574,9 @@ const Signup = () => {
         {/* Login Link - iPhone Style */}
         <div className="text-center mt-10 pt-8 border-t border-[#4a6850]/20">
           <p className="text-[#4a6850]/80 font-bold">
-            Already have an account?{" "}
+            {t('auth.already_have_account')}{" "}
             <Link to="/login" className="text-[#4a6850] hover:text-[#3d5643] font-black hover:underline transition-all">
-              Sign in here
+              {t('auth.back_to_login')}
             </Link>
           </p>
         </div>

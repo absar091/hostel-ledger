@@ -598,6 +598,7 @@ app.post('/api/get-valid-user-details', authenticate, async (req, res) => {
       username: userData.username || 'Unknown',
       name: userData.name || 'Unknown User',
       photoURL: userData.photoURL || null,
+      currency: userData.currency || 'PKR',
       paymentMethods: {
         jazzCash: !!paymentDetails.jazzCash,
         easypaisa: !!paymentDetails.easypaisa,
@@ -871,7 +872,7 @@ app.post('/api/claim-email-invite', authenticate, async (req, res) => {
 // Apply authentication middleware to ALL /api routes EXCEPT public ones
 app.use('/api', (req, res, next) => {
   // Public endpoints that don't need auth
-  const publicEndpoints = ['/push-test', '/check-email-exists']; // Example: /api/push-test is public
+  const publicEndpoints = ['/push-test', '/check-email-exists', '/verification/request', '/verification/verify']; // Example: /api/push-test is public
   if (publicEndpoints.includes(req.path)) {
     return next();
   }
@@ -1033,6 +1034,124 @@ app.use((err, req, res, next) => {
     success: false,
     error: 'Internal server error'
   });
+});
+
+// ============================================
+// VERIFICATION CODE SYSTEM (Backend-Driven)
+// ============================================
+
+/**
+ * Request a verification code
+ * Generates code, stores in Firestore, and sends email
+ */
+app.post('/api/verification/request', generalLimiter, async (req, res) => {
+  try {
+    const { email, name, type, userId } = req.body;
+
+    if (!email || !name || !type) {
+      return res.status(400).json({ success: false, error: 'Missing required fields: email, name, type' });
+    }
+
+    // Generate 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + (10 * 60 * 1000)); // 10 minutes expiry
+
+    const record = {
+      code,
+      email: email.toLowerCase(),
+      type,
+      attempts: 0,
+      createdAt: admin.firestore.Timestamp.fromDate(now),
+      expiresAt: admin.firestore.Timestamp.fromDate(expiresAt),
+      verified: false
+    };
+
+    if (userId) {
+      record.userId = userId;
+    }
+
+    // Hash email for document ID
+    const docId = Buffer.from(email.toLowerCase()).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
+
+    // Store in Firestore using Admin SDK
+    await admin.firestore().collection('verificationCodes').doc(docId).set(record);
+
+    // Send email
+    await emailService.sendVerification(email, code, name);
+
+    console.log(`✅ Verification code generated and stored for: ${email}`);
+    res.json({ success: true, message: 'Verification code sent' });
+
+  } catch (error) {
+    console.error('❌ Verification request error:', error);
+    res.status(500).json({ success: false, error: 'Failed to request verification code' });
+  }
+});
+
+/**
+ * Verify a code
+ */
+app.post('/api/verification/verify', generalLimiter, async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      return res.status(400).json({ success: false, error: 'Email and code are required' });
+    }
+
+    const docId = Buffer.from(email.toLowerCase()).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
+    const docRef = admin.firestore().collection('verificationCodes').doc(docId);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return res.status(404).json({ success: false, error: 'No verification code found' });
+    }
+
+    const record = docSnap.data();
+    const now = new Date();
+
+    // Check expiry
+    if (now > record.expiresAt.toDate()) {
+      await docRef.delete();
+      return res.status(400).json({ success: false, error: 'Code has expired' });
+    }
+
+    // Check attempts (Max 3)
+    if (record.attempts >= 3) {
+      await docRef.delete();
+      return res.status(400).json({ success: false, error: 'Too many attempts. Please request a new code.' });
+    }
+
+    // Check code
+    if (record.code !== code) {
+      const newAttempts = record.attempts + 1;
+      await docRef.update({ attempts: newAttempts });
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid code',
+        attemptsLeft: 3 - newAttempts
+      });
+    }
+
+    // Success - mark as verified and delete after a short delay (or immediately)
+    await docRef.update({ verified: true });
+
+    // Delete the code record since it's used
+    setTimeout(async () => {
+      try {
+        await docRef.delete();
+      } catch (err) {
+        console.error('Error deleting verified code:', err);
+      }
+    }, 1000);
+
+    res.json({ success: true, message: 'Verified successfully' });
+
+  } catch (error) {
+    console.error('❌ Verification check error:', error);
+    res.status(500).json({ success: false, error: 'Failed to verify code' });
+  }
 });
 
 // Email existence check endpoint (Production-hardened)

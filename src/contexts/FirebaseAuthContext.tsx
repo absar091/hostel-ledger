@@ -52,6 +52,8 @@ export interface UserProfile {
   emailVerified?: boolean; // Email verification status
   favoriteGroups?: string[]; // Array of favorite group IDs
   showBalanceToOthers: boolean; // Privacy setting for wallet balance visibility
+  currency?: string; // Currency code (e.g., 'PKR', 'USD', 'EUR') — defaults to PKR
+  language?: string; // Language code (e.g., 'en', 'ur', 'hi') — defaults to en
 }
 
 interface FirebaseAuthContextType {
@@ -69,7 +71,7 @@ interface FirebaseAuthContextType {
     phone?: string;
     university?: string;
     emailVerified?: boolean;
-  }) => Promise<{ success: boolean; error?: string }>;
+  }) => Promise<{ success: boolean; error?: string; uid?: string }>;
   createGroup: (groupData: any) => Promise<{ success: boolean; groupId?: string; error?: string }>;
   checkUsernameAvailable: (username: string) => Promise<boolean>; // Check if username is available
   logout: () => Promise<void>;
@@ -393,7 +395,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     phone?: string;
     university?: string;
     emailVerified?: boolean;
-  }): Promise<{ success: boolean; error?: string }> => {
+  }): Promise<{ success: boolean; error?: string; uid?: string }> => {
     try {
       // setIsLoading(true);
 
@@ -519,7 +521,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         }
         // ---------------------------------
 
-        return { success: true };
+        return { success: true, uid: firebaseUser.uid };
 
       } catch (authError: any) {
         logger.error("Firebase Auth signup failed", { email: sanitizedEmail, error: authError.message });

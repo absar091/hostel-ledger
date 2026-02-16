@@ -6,11 +6,14 @@ import { toast } from "sonner";
 import { Shield, ArrowLeft, RefreshCw } from "lucide-react";
 import { verifyVerificationCode, resendVerificationCode, getVerificationTimeRemaining } from "@/lib/verificationStore";
 import { sendVerificationEmail, sendWelcomeEmail } from "@/lib/email";
+import { useTranslation } from "react-i18next";
+import LanguageSelector from "@/components/LanguageSelector";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
-import PageGuide from "@/components/PageGuide";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
+import PageGuide from "@/components/PageGuide";
 
 const VerifyEmail = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { markEmailAsVerified, firebaseUser, user } = useFirebaseAuth();
@@ -46,7 +49,7 @@ const VerifyEmail = () => {
     // Prevent back navigation during verification
     const handlePopState = (e: PopStateEvent) => {
       e.preventDefault();
-      toast.error("Please complete email verification first");
+      toast.error(t('auth.enter_code'));
       window.history.pushState(null, '', window.location.pathname);
     };
 
@@ -76,7 +79,7 @@ const VerifyEmail = () => {
 
   const handleVerify = async () => {
     if (!code || code.length !== 6) {
-      toast.error("Please enter a valid 6-digit code");
+      toast.error(t('auth.enter_code'));
       return;
     }
 
@@ -87,7 +90,7 @@ const VerifyEmail = () => {
       const result = await verifyVerificationCode(email, code);
 
       if (!result.success) {
-        toast.error(result.error || "Invalid verification code");
+        toast.error(result.error || t('auth.invalid_link'));
         setIsLoading(false);
         return;
       }
@@ -95,7 +98,7 @@ const VerifyEmail = () => {
       // If verification successful and it's signup, mark email as verified
       if (type === 'signup') {
         if (!firebaseUser) {
-          toast.error("User session not found. Please try signing up again.");
+          toast.error(t('common.error'), { description: t('auth.user_session_not_found') });
           navigate("/signup");
           return;
         }
@@ -119,7 +122,7 @@ const VerifyEmail = () => {
 
           // Clean up session storage
           sessionStorage.removeItem('pendingSignup');
-          toast.success("Email verified successfully! Welcome to Hostel Ledger!");
+          toast.success(t('auth.reset_success'));
 
           // CHECK FOR PENDING JOIN
           const pendingJoin = localStorage.getItem('pendingJoinGroup');
@@ -138,17 +141,17 @@ const VerifyEmail = () => {
           navigate("/download-app");
         } else {
           console.error('❌ Failed to mark email as verified:', verificationResult.error);
-          toast.error("Failed to complete verification. Please try again.");
+          toast.error(t('common.error'), { description: t('auth.failed_to_complete_verification') });
         }
       } else {
         // Handle other verification types (password reset, etc.)
-        toast.success("Email verified successfully!");
+        toast.success(t('common.success'));
         navigate("/reset-password", { state: { email, verified: true } });
       }
 
     } catch (error: any) {
       console.error("Verification error:", error);
-      toast.error("Verification failed. Please try again.");
+      toast.error(t('common.error'), { description: t('auth.verification_failed_try_again') });
     } finally {
       setIsLoading(false);
     }
@@ -156,39 +159,25 @@ const VerifyEmail = () => {
 
   const handleResend = async () => {
     if (timeRemaining > 0) {
-      toast.error(`Please wait ${formatTime(timeRemaining)} before requesting a new code`);
+      toast.error(t('auth.resend_available_in', { time: formatTime(timeRemaining) }));
       return;
     }
 
     setIsResending(true);
 
     try {
-      // Generate new code using Firestore
-      const newCode = await resendVerificationCode(email);
-      if (!newCode) {
-        toast.error("Unable to resend code. Please try signing up again.");
-        navigate("/signup");
-        return;
-      }
+      // Call resend - Backend handles generation and email
+      const success = await resendVerificationCode(email);
 
-      // Get user name for email
-      const pendingSignup = sessionStorage.getItem('pendingSignup');
-      const userName = pendingSignup
-        ? `${JSON.parse(pendingSignup).firstName} ${JSON.parse(pendingSignup).lastName}`
-        : "User";
-
-      // Send new verification email
-      const emailResult = await sendVerificationEmail(email, newCode, userName);
-
-      if (emailResult.success) {
-        toast.success("New verification code sent to your email!");
+      if (success) {
+        toast.success(t('auth.reset_instructions_sent'), { description: "New verification code sent to your email!" });
       } else {
-        toast.error("Failed to send verification email. Please try again.");
+        toast.error(t('common.error'), { description: "Failed to resend code. Please try again." });
       }
 
     } catch (error) {
       console.error("Resend error:", error);
-      toast.error("Failed to resend code. Please try again.");
+      toast.error(t('common.error'), { description: "Failed to resend code. Please try again." });
     } finally {
       setIsResending(false);
     }
@@ -209,7 +198,7 @@ const VerifyEmail = () => {
 
   const handleVerifyWithCode = async (codeToVerify: string) => {
     if (!codeToVerify || codeToVerify.length !== 6) {
-      toast.error("Please enter a valid 6-digit code");
+      toast.error(t('auth.enter_code'));
       return;
     }
 
@@ -220,7 +209,7 @@ const VerifyEmail = () => {
       const result = await verifyVerificationCode(email, codeToVerify);
 
       if (!result.success) {
-        toast.error(result.error || "Invalid verification code");
+        toast.error(result.error || t('auth.invalid_link'));
         setIsLoading(false);
         return;
       }
@@ -228,7 +217,7 @@ const VerifyEmail = () => {
       // If verification successful and it's signup, mark email as verified
       if (type === 'signup') {
         if (!firebaseUser) {
-          toast.error("User session not found. Please try signing up again.");
+          toast.error(t('common.error'), { description: t('auth.user_session_not_found') });
           navigate("/signup");
           return;
         }
@@ -252,7 +241,7 @@ const VerifyEmail = () => {
 
           // Clean up session storage
           sessionStorage.removeItem('pendingSignup');
-          toast.success("Email verified successfully! Welcome to Hostel Ledger!");
+          toast.success(t('auth.reset_success'));
 
           // CHECK FOR PENDING JOIN
           const pendingJoin = localStorage.getItem('pendingJoinGroup');
@@ -270,17 +259,17 @@ const VerifyEmail = () => {
           navigate("/download-app");
         } else {
           console.error('❌ Failed to mark email as verified:', verificationResult.error);
-          toast.error("Failed to complete verification. Please try again.");
+          toast.error(t('common.error'), { description: t('auth.failed_to_complete_verification') });
         }
       } else {
         // Handle other verification types (password reset, etc.)
-        toast.success("Email verified successfully!");
+        toast.success(t('common.success'));
         navigate("/reset-password", { state: { email, verified: true } });
       }
 
     } catch (error: any) {
       console.error("Verification error:", error);
-      toast.error("Verification failed. Please try again.");
+      toast.error(t('common.error'), { description: t('auth.verification_failed_try_again') });
     } finally {
       setIsLoading(false);
     }
@@ -305,9 +294,10 @@ const VerifyEmail = () => {
             </div>
             <div>
               <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
-              <p className="text-xs text-[#4a6850]/80 font-bold">Split expenses with ease</p>
+              <p className="text-xs text-[#4a6850]/80 font-bold">{t('sidebar.motto')}</p>
             </div>
           </div>
+          <LanguageSelector />
         </div>
       </div>
 
@@ -328,9 +318,9 @@ const VerifyEmail = () => {
       <div className="w-full max-w-md pt-20">
         {/* Header - iPhone Style */}
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Verify Your Email</h2>
+          <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">{t('auth.verify_email_title')}</h2>
           <p className="text-[#4a6850]/80 font-bold mb-2">
-            Enter the 6-digit code sent to your email
+            {t('auth.enter_code')}
           </p>
           <p className="text-[#4a6850] font-black">{email}</p>
         </div>
@@ -339,7 +329,7 @@ const VerifyEmail = () => {
         <div className="space-y-8">
           <div>
             <label className="text-sm font-black text-[#4a6850]/80 mb-4 block uppercase tracking-wide">
-              Verification Code
+              {t('auth.verification_code')}
             </label>
             <Input
               type="text"
@@ -353,7 +343,7 @@ const VerifyEmail = () => {
               autoFocus
             />
             <p className="text-sm text-[#4a6850]/80 mt-3 text-center font-bold">
-              Enter the 6-digit code from your email
+              {t('auth.enter_code')}
             </p>
           </div>
 
@@ -365,23 +355,23 @@ const VerifyEmail = () => {
             {isLoading ? (
               <div className="flex items-center gap-3">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Verifying...
+                {t('auth.verifying')}
               </div>
             ) : (
               <div className="flex items-center gap-3">
                 <Shield className="w-5 h-5" />
-                Verify Email
+                {t('auth.verify_btn')}
               </div>
             )}
           </Button>
 
           {/* Resend Section - iPhone Style */}
           <div className="text-center pt-6 border-t border-[#4a6850]/20">
-            <p className="text-[#4a6850]/80 mb-6 font-bold">Didn't receive the code?</p>
+            <p className="text-[#4a6850]/80 mb-6 font-bold">{t('auth.no_account')}</p>
 
             {timeRemaining > 0 ? (
               <p className="text-sm text-[#4a6850]/80 font-bold">
-                Resend available in {formatTime(timeRemaining)}
+                {t('auth.resend_available_in', { time: formatTime(timeRemaining) })}
               </p>
             ) : (
               <Button
@@ -394,12 +384,12 @@ const VerifyEmail = () => {
                 {isResending ? (
                   <div className="flex items-center gap-3">
                     <RefreshCw className="w-5 h-5 animate-spin" />
-                    Sending...
+                    {t('auth.resending')}
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
                     <RefreshCw className="w-5 h-5" />
-                    Resend Code
+                    {t('auth.resend_code')}
                   </div>
                 )}
               </Button>
@@ -409,8 +399,8 @@ const VerifyEmail = () => {
 
         {/* Help Text - iPhone Style */}
         <div className="mt-10 pt-8 border-t border-[#4a6850]/20 text-center text-sm text-[#4a6850]/80 font-bold">
-          <p>Check your spam folder if you don't see the email</p>
-          <p className="mt-2">The code expires in 10 minutes</p>
+          <p>{t('auth.check_spam_detail')}</p>
+          <p className="mt-2">{t('auth.code_expiry')}</p>
         </div>
       </div>
     </div>
