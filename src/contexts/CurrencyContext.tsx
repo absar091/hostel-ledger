@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useFirebaseAuth } from './FirebaseAuthContext';
 import { formatCurrency as formatCurrencyUtil, getCurrency, getCurrencySymbol, DEFAULT_CURRENCY, type Currency } from '@/lib/currency';
 
@@ -22,12 +22,21 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
     const currency = getCurrency(currencyCode);
     const symbol = getCurrencySymbol(currencyCode);
 
-    const formatAmount = (amount: number): string => {
+    const formatAmount = useCallback((amount: number): string => {
         return formatCurrencyUtil(amount, currencyCode);
-    };
+    }, [currencyCode]);
+
+    // Optimization: Memoize the context value to prevent unnecessary re-renders in consuming components
+    // (like TimelineItem) when the parent provider re-renders but currency data hasn't changed.
+    const value = useMemo(() => ({
+        currencyCode,
+        currency,
+        formatAmount,
+        symbol
+    }), [currencyCode, currency, formatAmount, symbol]);
 
     return (
-        <CurrencyContext.Provider value={{ currencyCode, currency, formatAmount, symbol }}>
+        <CurrencyContext.Provider value={value}>
             {children}
         </CurrencyContext.Provider>
     );
