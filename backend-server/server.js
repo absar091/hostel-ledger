@@ -180,7 +180,7 @@ app.get('/', (req, res) => {
     pushProvider: 'OneSignal',
     endpoints: {
       health: '/health',
-      sendEmail: '/api/send-email',
+      sendTempMemberAlert: '/api/send-temp-member-alert',
       sendVerification: '/api/send-verification',
       sendPasswordReset: '/api/send-password-reset',
       sendWelcome: '/api/send-welcome',
@@ -891,17 +891,15 @@ app.use('/api', (req, res, next) => {
   authenticate(req, res, next);
 });
 
-// Generic email sending endpoint
-// Generic email sending endpoint
-app.post('/api/send-email', emailLimiter, async (req, res) => {
+// Temporary Member Alert Endpoint
+app.post('/api/send-temp-member-alert', emailLimiter, async (req, res) => {
   try {
-    const { to, subject, html, text } = req.body;
+    const { to, memberName, groupName, expiresAt } = req.body;
 
-    // Validate input
-    if (!to || !subject || !html) {
+    if (!to || !memberName || !groupName || !expiresAt) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: to, subject, html'
+        error: 'Missing required fields'
       });
     }
 
@@ -914,36 +912,23 @@ app.post('/api/send-email', emailLimiter, async (req, res) => {
       });
     }
 
-    // Send email using emailService
-    console.log('📧 Sending email via emailService...');
-    const result = await emailService.sendEmailSafe({
+    const result = await emailService.sendTempMemberAlert({
       to,
-      subject,
-      html,
-      text: text || ''
+      memberName,
+      groupName,
+      expiresAt
     });
 
     if (result.success) {
-      console.log('✅ Email sent successfully:', result.messageId);
-      res.json({
-        success: true,
-        messageId: result.messageId,
-        provider: result.provider
-      });
+      console.log('✅ Temp member alert sent:', result.messageId);
+      res.json({ success: true, messageId: result.messageId });
     } else {
-      console.error('❌ Failed to send email:', result.error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to send email: ' + result.error
-      });
+      res.status(500).json({ success: false, error: 'Failed to send email' });
     }
 
   } catch (error) {
-    console.error('❌ Email sending error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to send email: ' + error.message
-    });
+    console.error('❌ Temp member alert error:', error);
+    res.status(500).json({ success: false, error: 'Failed to send email: ' + error.message });
   }
 });
 
