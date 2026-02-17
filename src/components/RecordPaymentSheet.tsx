@@ -342,7 +342,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                             ) : owesYou ? (
                               <span className="text-[#4a6850] font-black">{t('sheets.record_payment.owe_amount', { amount: formatAmount(settlement.toReceive) })}</span>
                             ) : youOwe ? (
-                              <span className="text-red-500 font-black">{t('sheets.add_expense.you_owe', { amount: formatAmount(settlement.toPay), name: '' }).replace(' to ', '')}</span>
+                              <span className="text-red-500 font-black">{t('common.you_owe_simple', { amount: formatAmount(settlement.toPay) })}</span>
                             ) : (
                               <span className="text-gray-500">{t('common.no_pending')}</span>
                             )}
@@ -386,7 +386,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                           </span>
                         ) : selectedMemberData.settlement.toPay > 0 ? (
                           <span className="text-red-500">
-                            💸 {t('sheets.add_expense.you_owe', { amount: formatAmount(selectedMemberData.settlement.toPay), name: '' }).replace(' to ', '')}
+                            💸 {t('common.you_owe_simple', { amount: formatAmount(selectedMemberData.settlement.toPay) })}
                           </span>
                         ) : (
                           <span className="text-[#4a6850]">✅ {t('common.all_settled')}</span>
@@ -497,7 +497,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     <span className={cn(
                       "font-black tracking-tight text-sm",
                       method === "cash" ? "text-[#4a6850]" : "text-gray-900"
-                    )}>Cash</span>
+                    )}>{t('common.cash')}</span>
                   </button>
 
                   <button
@@ -516,7 +516,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     <span className={cn(
                       "font-black tracking-tight text-sm",
                       method === "online" ? "text-[#4a6850]" : "text-gray-900"
-                    )}>Online</span>
+                    )}>{t('common.online')}</span>
                   </button>
                 </div>
               </div>

@@ -799,14 +799,14 @@ const Dashboard = () => {
                     >
                       {isEnablingNotifications
                         ? t('common.loading')
-                        : "Enable Notifications"}
+                        : t('common.enable_notifications')}
                     </button>
                     <button
                       onClick={handleDismissNotificationPrompt}
                       disabled={isEnablingNotifications}
                       className="px-4 h-10 border-2 border-blue-300 text-blue-700 hover:bg-blue-100 font-black rounded-2xl transition-all disabled:opacity-50 text-sm"
                     >
-                      Later
+                      {t('common.later')}
                     </button>
                   </div>
                 </div>
@@ -873,7 +873,7 @@ const Dashboard = () => {
                     <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
                         <button className="text-white/70 text-xs font-black uppercase tracking-wider cursor-help inline-flex items-center gap-1.5 hover:text-white/90 transition-colors">
-                          Available Balance
+                          {t('dashboard.available_balance')}
                           <span className="w-4 h-4 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[10px] hover:bg-white/25 hover:scale-110 transition-all">
                             ?
                           </span>
@@ -892,7 +892,7 @@ const Dashboard = () => {
                               {t('dashboard.available_balance')}
                             </h4>
                             <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                              {t('dashboard.available_balance_desc', "Your current wallet balance that you can spend right now. This doesn't include pending settlements.")}
+                              {t('dashboard.available_balance_desc')}
                             </p>
                           </div>
                         </div>
@@ -954,12 +954,10 @@ const Dashboard = () => {
                             </div>
                             <div>
                               <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                                After Settlements
+                                {t('dashboard.after_settlements')}
                               </h4>
                               <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                                Your balance after all pending payments are
-                                settled. This is what you'll have once everyone
-                                pays what they owe.
+                                {t('dashboard.after_settlements_desc')}
                               </p>
                             </div>
                           </div>
@@ -967,7 +965,7 @@ const Dashboard = () => {
                             onClick={() => setShowSettlementsTooltip(false)}
                             className="mt-4 w-full py-2 bg-[#4a6850] text-white rounded-xl font-bold text-sm"
                           >
-                            Got it
+                            {t('common.got_it')}
                           </button>
                         </div>
                       </div>
@@ -993,12 +991,10 @@ const Dashboard = () => {
                           </div>
                           <div>
                             <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                              After Settlements
+                              {t('dashboard.after_settlements')}
                             </h4>
                             <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                              Your balance after all pending payments are
-                              settled. This is what you'll have once everyone
-                              pays what they owe.
+                              {t('dashboard.after_settlements_desc')}
                             </p>
                           </div>
                         </div>
@@ -1016,7 +1012,7 @@ const Dashboard = () => {
                       onClick={() => setShowDeltaTooltip(!showDeltaTooltip)}
                       className="text-white/60 text-[9px] uppercase font-black mb-1 truncate inline-flex items-center gap-1 active:text-white transition-colors"
                     >
-                      Settlement Delta
+                      {t('dashboard.settlement_delta')}
                       <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] active:bg-white/30 active:scale-95 transition-all">
                         ?
                       </span>
@@ -1036,12 +1032,10 @@ const Dashboard = () => {
                             </div>
                             <div>
                               <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                                Settlement Delta
+                                {t('dashboard.settlement_delta')}
                               </h4>
                               <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                                The net amount you'll gain (+) or lose (-) after
-                                all settlements. Green means you'll receive
-                                money, red means you owe money.
+                                {t('dashboard.settlement_delta_desc')}
                               </p>
                             </div>
                           </div>
@@ -1049,7 +1043,7 @@ const Dashboard = () => {
                             onClick={() => setShowDeltaTooltip(false)}
                             className="mt-4 w-full py-2 bg-[#4a6850] text-white rounded-xl font-bold text-sm"
                           >
-                            Got it
+                            {t('common.got_it')}
                           </button>
                         </div>
                       </div>
@@ -1059,7 +1053,7 @@ const Dashboard = () => {
                     <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
                         <button className="text-white/60 text-[10px] uppercase font-black mb-1 truncate cursor-help inline-flex items-center gap-1 hover:text-white/80 transition-colors">
-                          Settlement Delta
+                          {t('dashboard.settlement_delta')}
                           <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] hover:bg-white/25 hover:scale-110 transition-all">
                             ?
                           </span>
@@ -1075,12 +1069,10 @@ const Dashboard = () => {
                           </div>
                           <div>
                             <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                              Settlement Delta
+                              {t('dashboard.settlement_delta')}
                             </h4>
                             <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                              The net amount you'll gain (+) or lose (-) after
-                              all settlements. Green means you'll receive money,
-                              red means you owe money.
+                              {t('dashboard.settlement_delta_desc')}
                             </p>
                           </div>
                         </div>
@@ -1128,14 +1120,14 @@ const Dashboard = () => {
                 </div>
 
                 <p className="text-[11px] font-bold text-[#4a6850]/70 mb-1.5 tracking-wide">
-                  TO RECEIVE
+                  {t('dashboard.total_to_receive')}
                 </p>
                 <h4 className="text-2xl font-black text-[#4a6850] tabular-nums tracking-tight mb-2">
                   Rs {totalToReceive.toLocaleString()}
                 </h4>
 
                 <div className="flex items-center gap-1 text-[#4a6850] font-bold text-xs">
-                  <span>View details</span>
+                  <span>{t('common.view_details')}</span>
                   <span className="text-base group-hover:translate-x-0.5 transition-transform">
                     →
                   </span>
@@ -1162,14 +1154,14 @@ const Dashboard = () => {
                 </div>
 
                 <p className="text-[11px] font-bold text-rose-500/70 mb-1.5 tracking-wide">
-                  YOU OWE
+                  {t('dashboard.total_to_pay')}
                 </p>
                 <h4 className="text-2xl font-black text-rose-500 tabular-nums tracking-tight mb-2">
                   Rs {totalToPay.toLocaleString()}
                 </h4>
 
                 <div className="flex items-center gap-1 text-rose-500 font-bold text-xs">
-                  <span>Settle now</span>
+                  <span>{t('sheets.record_payment.settle_now')}</span>
                   <span className="text-base group-hover:translate-x-0.5 transition-transform">
                     →
                   </span>
@@ -1202,7 +1194,7 @@ const Dashboard = () => {
                     </div>
 
                     <p className="text-xs font-bold text-[#4a6850]/70 mb-2 tracking-wide">
-                      TO RECEIVE
+                      {t('dashboard.total_to_receive')}
                     </p>
                     <h4 className="text-4xl font-black text-[#4a6850] tabular-nums tracking-tight mb-4">
                       Rs {totalToReceive.toLocaleString()}
@@ -1211,8 +1203,8 @@ const Dashboard = () => {
                     <div className="flex items-center gap-1.5 text-[#4a6850] font-bold text-sm">
                       <span>
                         {totalToReceive <= 0
-                          ? "All settled up! 🎉"
-                          : "View details"}
+                          ? t('to_receive.all_settled_up')
+                          : t('common.view_details')}
                       </span>
                       {totalToReceive > 0 && (
                         <span className="text-lg group-hover:translate-x-1 transition-transform">
@@ -1233,11 +1225,10 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                      To Receive
+                      {t('to_receive.guide_title')}
                     </h4>
                     <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                      Total amount others owe you from shared expenses. Click to
-                      see who owes you and record payments.
+                      {t('to_receive.guide_desc')}
                     </p>
                   </div>
                 </div>
@@ -1266,14 +1257,14 @@ const Dashboard = () => {
                     </div>
 
                     <p className="text-xs font-bold text-rose-500/70 mb-2 tracking-wide">
-                      YOU OWE
+                      {t('dashboard.total_to_pay')}
                     </p>
                     <h4 className="text-4xl font-black text-rose-500 tabular-nums tracking-tight mb-4">
                       Rs {totalToPay.toLocaleString()}
                     </h4>
 
                     <div className="flex items-center gap-1.5 text-rose-500 font-bold text-sm">
-                      <span>Settle now</span>
+                      <span>{t('sheets.record_payment.settle_now')}</span>
                       <span className="text-lg group-hover:translate-x-1 transition-transform">
                         →
                       </span>
@@ -1291,11 +1282,10 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                      You Owe
+                      {t('to_pay.guide_title')}
                     </h4>
                     <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                      Total amount you owe to others from shared expenses. Click
-                      to see who you need to pay and settle your debts.
+                      {t('to_pay.guide_desc')}
                     </p>
                   </div>
                 </div>
@@ -1314,7 +1304,7 @@ const Dashboard = () => {
                 onClick={() => navigate("/groups")}
                 className="text-xs font-black text-primary dark:text-emerald-400"
               >
-                Open Groups
+                {t('dashboard.quick_actions.open_groups')}
               </button>
             </div>
             <div className="grid grid-cols-4 gap-3">
@@ -1326,7 +1316,7 @@ const Dashboard = () => {
                   <Plus className="w-6 h-6 font-bold" />
                 </div>
                 <span className="text-xs font-black text-emerald-900 dark:text-emerald-100 text-center">
-                  Log Solo
+                  {t('dashboard.quick_actions.log_solo')}
                 </span>
               </button>
 
@@ -1338,7 +1328,7 @@ const Dashboard = () => {
                   <CreditCard className="w-6 h-6 text-slate-600 dark:text-slate-400" />
                 </div>
                 <span className="text-xs font-black text-slate-900 dark:text-white text-center">
-                  Split Bill
+                  {t('dashboard.quick_actions.split_bill')}
                 </span>
               </button>
 
@@ -1350,7 +1340,7 @@ const Dashboard = () => {
                   <Users className="w-6 h-6 text-slate-600 dark:text-slate-400" />
                 </div>
                 <span className="text-xs font-black text-slate-900 dark:text-white text-center">
-                  New Group
+                  {t('dashboard.quick_actions.new_group')}
                 </span>
               </button>
 
@@ -1362,7 +1352,7 @@ const Dashboard = () => {
                   <Send className="w-6 h-6 text-slate-600 dark:text-slate-400" />
                 </div>
                 <span className="text-xs font-black text-slate-900 dark:text-white text-center">
-                  Send
+                  {t('dashboard.quick_actions.send')}
                 </span>
               </button>
 
@@ -1375,7 +1365,7 @@ const Dashboard = () => {
                   <Send className="w-6 h-6 text-slate-600 dark:text-slate-400" />
                 </div>
                 <span className="text-xs font-black text-slate-900 dark:text-white text-center">
-                  Received
+                  {t('dashboard.quick_actions.received')}
                 </span>
               </button>
 
@@ -1387,7 +1377,7 @@ const Dashboard = () => {
                   <Wallet className="w-6 h-6 text-slate-600 dark:text-slate-400" />
                 </div>
                 <span className="text-xs font-black text-slate-900 dark:text-white text-center">
-                  Top Up
+                  {t('dashboard.quick_actions.top_up')}
                 </span>
               </button>
             </div>
@@ -1411,10 +1401,10 @@ const Dashboard = () => {
                     <Plus className="w-8 h-8 font-bold" />
                   </div>
                   <h5 className="text-xl font-black mb-2 tracking-tighter">
-                    Log Personal
+                    {t('dashboard.quick_actions.log_solo')}
                   </h5>
                   <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold">
-                    Quickly record your own private expenses.
+                    {t('dashboard.quick_actions.log_solo_desc')}
                   </p>
                 </div>
               </button>
@@ -1431,10 +1421,10 @@ const Dashboard = () => {
                     <Plus className="w-9 h-9 font-bold" />
                   </div>
                   <h5 className="text-xl font-black mb-2 tracking-tighter text-emerald-900 dark:text-emerald-100">
-                    Split Bill
+                    {t('dashboard.quick_actions.split_bill')}
                   </h5>
                   <p className="text-emerald-700 dark:text-emerald-300 text-sm font-semibold">
-                    Easily split a new bill with friends or groups.
+                    {t('dashboard.quick_actions.split_bill_desc')}
                   </p>
                 </div>
               </button>
@@ -1448,10 +1438,10 @@ const Dashboard = () => {
                     <Send className="w-8 h-8 font-bold" />
                   </div>
                   <h5 className="text-xl font-black mb-2 tracking-tighter">
-                    Send Money
+                    {t('dashboard.quick_actions.send_money')}
                   </h5>
                   <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold">
-                    Send money to friends directly.
+                    {t('dashboard.quick_actions.send_money_desc')}
                   </p>
                 </div>
               </button>
@@ -1465,12 +1455,12 @@ const Dashboard = () => {
                   <Send className="w-8 h-8" />
                 </div>
                 <h5 className="text-xl font-black mb-2 tracking-tighter">
-                  Settlements
+                  {t('dashboard.quick_actions.received')}
                 </h5>
                 <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold">
                   {totalToReceive <= 0
-                    ? "No pending settlements for this month."
-                    : "Record payments you received."}
+                    ? t('dashboard.quick_actions.no_settlements')
+                    : t('dashboard.quick_actions.received_desc')}
                 </p>
               </button>
 
@@ -1482,10 +1472,10 @@ const Dashboard = () => {
                   <Users className="w-8 h-8" />
                 </div>
                 <h5 className="text-xl font-black mb-2 tracking-tighter">
-                  New Group
+                  {t('dashboard.quick_actions.new_group')}
                 </h5>
                 <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold">
-                  Start sharing expenses with a new circle.
+                  {t('dashboard.quick_actions.new_group_desc')}
                 </p>
               </button>
             </div>
@@ -2316,7 +2306,7 @@ const Dashboard = () => {
           member={selectedMemberForPayment}
           onConfirmPayment={handlePaymentConfirmation}
         />
-      </AppContainer>
+      </AppContainer >
     </>
   );
 };

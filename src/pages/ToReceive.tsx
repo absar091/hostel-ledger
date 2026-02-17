@@ -9,6 +9,7 @@ import AppContainer from "@/components/AppContainer";
 import PageGuide from "@/components/PageGuide";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import Avatar from "@/components/Avatar";
+import { useTranslation } from "react-i18next";
 
 interface PersonToReceiveFrom {
   id: string;
@@ -28,6 +29,7 @@ interface PersonToReceiveFrom {
 }
 
 const ToReceive = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useFirebaseAuth();
   const { groups } = useFirebaseData();
@@ -63,7 +65,7 @@ const ToReceive = () => {
 
           people.push({
             id: memberId,
-            name: member?.name || `Member (${memberId.substring(0, 5)})`,
+            name: member?.name || t('common.member_fallback', { username: memberId.substring(0, 5) }),
             amount: settlements.toReceive,
             groupId: groupId,
             groupName: group.name,
@@ -90,12 +92,12 @@ const ToReceive = () => {
     if (!paymentDetails) return null;
 
     const details = [];
-    if (paymentDetails.jazzCash) details.push(`JazzCash: ${paymentDetails.jazzCash}`);
-    if (paymentDetails.easypaisa) details.push(`Easypaisa: ${paymentDetails.easypaisa}`);
+    if (paymentDetails.jazzCash) details.push(`${t('common.jazzcash')}: ${paymentDetails.jazzCash}`);
+    if (paymentDetails.easypaisa) details.push(`${t('common.easypaisa')}: ${paymentDetails.easypaisa}`);
     if (paymentDetails.bankName && paymentDetails.accountNumber) {
       details.push(`${paymentDetails.bankName}: ${paymentDetails.accountNumber}`);
     }
-    if (paymentDetails.raastId) details.push(`Raast ID: ${paymentDetails.raastId}`);
+    if (paymentDetails.raastId) details.push(`${t('common.raast_id')}: ${paymentDetails.raastId}`);
 
     return details.length > 0 ? details.join(" • ") : null;
   };
@@ -138,14 +140,14 @@ const ToReceive = () => {
 
         {/* Page Guide */}
         <PageGuide
-          title="Money to Receive "
-          description="Here are all the people who owe you money across your groups. Tap on anyone to view group details."
+          title={t('to_receive.guide_title')}
+          description={t('to_receive.guide_desc')}
           tips={[
-            "Amounts are calculated automatically from group expenses",
-            "Tap on a person to go to their group and record payments",
-            "Payment details help you know how to receive money"
+            t('to_receive.tip1'),
+            t('to_receive.tip2'),
+            t('to_receive.tip3')
           ]}
-          emoji=""
+          emoji="📥"
           show={showPageGuide}
           onClose={handleClosePageGuide}
         />
@@ -159,20 +161,23 @@ const ToReceive = () => {
             >
               <ArrowLeft className="w-5 h-5 text-[#4a6850] font-bold" />
             </button>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">Money to Receive</h1>
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight">{t('to_receive.title')}</h1>
           </div>
 
           {/* Total Summary Card - iPhone Style with #4a6850 */}
           <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-7 shadow-[0_25px_70px_rgba(74,104,80,0.4)] text-white border-t-2 border-[#5a7860]/40">
             <div className="flex items-center gap-3 mb-2">
               <ArrowDownLeft className="w-6 h-6 text-white/90 font-bold" />
-              <span className="text-sm text-white/90 font-black tracking-wide uppercase">Total Amount</span>
+              <span className="text-sm text-white/90 font-black tracking-wide uppercase">{t('to_receive.total_amount')}</span>
             </div>
             <div className="text-5xl font-black mb-3 tracking-tighter tabular-nums drop-shadow-sm">
               Rs {totalToReceive.toLocaleString()}
             </div>
             <div className="text-sm text-white/90 font-bold">
-              From {peopleWhoOweMe.length} {peopleWhoOweMe.length === 1 ? 'person' : 'people'}
+              {t('to_receive.from_count_people', {
+                count: peopleWhoOweMe.length,
+                people: t(peopleWhoOweMe.length === 1 ? 'to_receive.person_singular' : 'to_receive.person_plural')
+              })}
             </div>
           </div>
         </header>
@@ -197,7 +202,7 @@ const ToReceive = () => {
                         <div className="flex items-center gap-2">
                           <h3 className="font-black text-gray-900 text-lg truncate tracking-tight">{person.name}</h3>
                           {person.isTemporary && (
-                            <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                            <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">{t('group.temp')}</span>
                           )}
                         </div>
                         <div className="text-2xl font-black text-[#4a6850] tabular-nums">
@@ -230,7 +235,7 @@ const ToReceive = () => {
                         </div>
                         <span className="text-xs text-[#4a6850]/80 font-black">{person.groupName}</span>
                         <span className="text-xs text-[#4a6850]/40 font-bold">•</span>
-                        <span className="text-xs text-[#4a6850]/60 font-bold">Tap to view group</span>
+                        <span className="text-xs text-[#4a6850]/60 font-bold">{t('to_receive.tap_to_view')}</span>
                       </div>
                     </div>
                   </div>
@@ -242,9 +247,9 @@ const ToReceive = () => {
               <div className="w-16 h-16 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">🎉</span>
               </div>
-              <h3 className="font-black text-gray-900 mb-1 tracking-tight">All Settled Up!</h3>
+              <h3 className="font-black text-gray-900 mb-1 tracking-tight">{t('to_receive.all_settled_up')}</h3>
               <p className="text-sm text-[#4a6850]/80 mb-4 font-bold">
-                Nobody owes you money right now. Great job keeping things balanced!
+                {t('to_receive.all_settled_up_desc')}
               </p>
             </div>
           )}

@@ -92,11 +92,11 @@ const Settings = () => {
         setPreferences(prev => ({ ...prev, emailEnabled: value }));
         try {
             const prefRef = doc(db, `users/${user.uid}/preferences/notifications`);
-            setPreferences(snap.data() as any);
+            await setDoc(prefRef, { emailEnabled: value }, { merge: true });
             toast.success(value ? t('settings.email_enabled_toast') : t('settings.email_disabled_toast'));
         } catch (error) {
             console.error("Error updating preference:", error);
-            toast.error(t('common.error'));
+            toast.error(t('common.error_occurred'));
             setPreferences(prev => ({ ...prev, emailEnabled: !value }));
         }
     };
@@ -142,7 +142,7 @@ const Settings = () => {
                 toast.success(t('settings.cache_cleared'));
                 setTimeout(() => window.location.reload(), 1000);
             } catch (error) {
-                toast.error(t('common.error'));
+                toast.error(t('common.error_occurred'));
             }
         }
     };
@@ -262,7 +262,7 @@ const Settings = () => {
                                             }
                                         } catch (error) {
                                             console.error("Privacy update error:", error);
-                                            toast.error(t('common.error'));
+                                            toast.error(t('common.error_occurred'));
                                         } finally {
                                             setUpdatingPrivacy(false);
                                         }
@@ -307,13 +307,13 @@ const Settings = () => {
                             try {
                                 const result = await updateUserProfile({ currency: code });
                                 if (result.success) {
-                                    toast.success(`Currency updated to ${code}`);
+                                    toast.success(t('settings.currency_updated_toast', { code }));
                                 } else {
-                                    toast.error(result.error || "Failed to update currency");
+                                    toast.error(result.error || t('common.error_occurred'));
                                 }
                             } catch (error) {
                                 console.error("Currency update error:", error);
-                                toast.error("An error occurred");
+                                toast.error(t('common.error_occurred'));
                             }
                         }}
                     />
@@ -327,13 +327,13 @@ const Settings = () => {
                                 const result = await updateUserProfile({ language: code });
                                 if (result.success) {
                                     i18n.changeLanguage(code);
-                                    toast.success(`Language updated to ${getLanguage(code).name}`);
+                                    toast.success(t('settings.language_updated_toast', { name: getLanguage(code).name }));
                                 } else {
-                                    toast.error(result.error || "Failed to update language");
+                                    toast.error(result.error || t('common.error_occurred'));
                                 }
                             } catch (error) {
                                 console.error("Language update error:", error);
-                                toast.error("An error occurred");
+                                toast.error(t('common.error_occurred'));
                             }
                         }}
                     />

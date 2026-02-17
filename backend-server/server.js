@@ -149,6 +149,18 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// STRICT Rate Limiter for sensitive actions like non-user invitations
+const strictEmailLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours
+  max: 20, // Limit to 20 invites per day per IP
+  message: {
+    success: false,
+    error: 'Daily invitation limit reached. Please try again tomorrow to protect against spam.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Verify email configuration on startup
 emailService.verifyConnection().then(connected => {
   if (connected) {
@@ -1044,7 +1056,7 @@ app.use((err, req, res, next) => {
  * Request a verification code
  * Generates code, stores in Firestore, and sends email
  */
-app.post('/api/verification/request', generalLimiter, async (req, res) => {
+app.post('/api/verification/request', strictEmailLimiter, async (req, res) => {
   try {
     const { email, name, type, userId } = req.body;
 
@@ -2533,7 +2545,7 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
 
 
 // Send External Invitation (to email)
-app.post('/api/send-external-invitation', generalLimiter, async (req, res) => {
+app.post('/api/send-external-invitation', strictEmailLimiter, async (req, res) => {
   try {
     const { email, groupId } = req.body;
     const senderUid = req.user.uid;

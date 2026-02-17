@@ -17,7 +17,11 @@ const resources = {
                 "to_settle": "To Settle",
                 "wallet_balance": "Wallet Balance",
                 "available_balance": "Available Balance",
-                "after_settlements": "After settlements",
+                "available_balance_desc": "Your current wallet balance that you can spend right now. This doesn't include pending settlements.",
+                "after_settlements": "After Settlements",
+                "after_settlements_desc": "Your balance after all pending payments are settled. This is what you'll have once everyone pays what they owe.",
+                "settlement_delta": "Settlement Delta",
+                "settlement_delta_desc": "The net amount you'll gain (+) or lose (-) after all settlements. Green means you'll receive money, red means you owe money.",
                 "groups": "Groups",
                 "pending_payments": "Pending payments",
                 "pay_receive": "pay {{pay}} • receive {{receive}}",
@@ -52,6 +56,29 @@ const resources = {
                     "actions_desc": "Add expenses, record payments, and create groups with just a tap. Everything you need is here!",
                     "ready_title": "You're All Set! ✨",
                     "ready_desc": "Start by creating your first group and adding your friends. Happy expense splitting!"
+                },
+                "quick_actions": {
+                    "open_groups": "Open Groups",
+                    "log_solo": "Log Solo",
+                    "log_solo_desc": "Quickly record your own private expenses.",
+                    "split_bill": "Split Bill",
+                    "split_bill_desc": "Easily split a new bill with friends or groups.",
+                    "new_group": "New Group",
+                    "new_group_desc": "Start sharing expenses with a new circle.",
+                    "send": "Send",
+                    "send_money": "Send Money",
+                    "send_money_desc": "Send money to friends directly.",
+                    "received": "Received",
+                    "received_desc": "Record payments you received.",
+                    "no_settlements": "No pending settlements for this month.",
+                    "top_up": "Top Up"
+                },
+                "guide": {
+                    "title": "Dashboard Overview",
+                    "desc": "This is your financial command center! Here you can see your balance, pending settlements, and recent activity.",
+                    "tip_wallet": "Tap the wallet card to add money",
+                    "tip_quick": "Use quick actions to split bills instantly",
+                    "tip_activity": "Check recent activity to track all transactions"
                 }
             },
             "group": {
@@ -115,7 +142,9 @@ const resources = {
                 "push_not_supported": "Not supported",
                 "balance_desc": "Visible to group members",
                 "privacy_error": "Failed to update visibility",
-                "privacy_success": "Balance visibility {{status}}"
+                "privacy_success": "Balance visibility {{status}}",
+                "currency_updated_toast": "Currency updated to {{code}}",
+                "language_updated_toast": "Language updated to {{name}}"
             },
             "profile": {
                 "title": "My Profile",
@@ -295,6 +324,24 @@ const resources = {
                     "summary_title": "Added to Available Budget",
                     "submit_btn": "Add to Available Budget",
                     "error_valid_amount": "Please enter a valid amount greater than zero"
+                },
+                "payment_details": {
+                    "title": "Payment Details",
+                    "subtitle": "Add your payment methods for group settlements",
+                    "visibility_notice": "These details are visible to group members when they pay you",
+                    "visibility_tooltip": "These details will be visible to your group members when they need to pay you back for shared expenses.",
+                    "mobile_wallets": "Mobile Wallets",
+                    "bank_account": "Bank Account",
+                    "raast": "Raast",
+                    "jazzcash_label": "JazzCash Number",
+                    "easypaisa_label": "Easypaisa Number",
+                    "bank_name_label": "Bank Name",
+                    "bank_placeholder": "Select your bank",
+                    "account_iban_label": "Account Number / IBAN",
+                    "account_placeholder": "Enter account number",
+                    "raast_id_label": "Raast ID",
+                    "raast_placeholder": "Your Raast ID (phone/CNIC)",
+                    "save_btn": "Save Payment Details"
                 }
             },
             "navigation": {
@@ -338,24 +385,6 @@ const resources = {
                 "pay_dues": "Pay Dues",
                 "request_payment": "Request Payment"
             },
-            "payment_details": {
-                "title": "Payment Details",
-                "subtitle": "Add your payment methods for group settlements",
-                "visibility_notice": "These details are visible to group members when they pay you",
-                "visibility_tooltip": "These details will be visible to your group members when they need to pay you back for shared expenses.",
-                "mobile_wallets": "Mobile Wallets",
-                "bank_account": "Bank Account",
-                "raast": "Raast",
-                "jazzcash_label": "JazzCash Number",
-                "easypaisa_label": "Easypaisa Number",
-                "bank_name_label": "Bank Name",
-                "bank_placeholder": "Select your bank",
-                "account_iban_label": "Account Number / IBAN",
-                "account_placeholder": "Enter account number",
-                "raast_id_label": "Raast ID",
-                "raast_placeholder": "Your Raast ID (phone/CNIC)",
-                "save_btn": "Save Payment Details"
-            },
             "common": {
                 "today": "Today",
                 "yesterday": "Yesterday",
@@ -375,6 +404,29 @@ const resources = {
                 "medium": "Medium",
                 "strong": "Strong",
                 "user": "User",
+                "raast_id": "Raast ID",
+                "jazzcash": "JazzCash",
+                "easypaisa": "Easypaisa",
+                "bank": "Bank",
+                "account": "Account",
+                "quick_fill": "Quick Fill",
+                "full_amount": "Full Amount",
+                "member_fallback": "Member ({{username}})",
+                "no_debt": "No Debt",
+                "all_settled": "All Settled",
+                "no_pending": "No Pending",
+                "you": "You",
+                "payment_info": "Payment Info",
+                "approved": "Approved",
+                "enabled": "Enabled",
+                "disabled": "Disabled",
+                "enable_notifications": "Enable Notifications",
+                "later": "Later",
+                "got_it": "Got it",
+                "error_occurred": "An error occurred. Please try again.",
+                "cash": "Cash",
+                "online": "Online",
+                "you_owe_simple": "You owe {{amount}}",
                 "statuses": {
                     "paid": "Paid",
                     "pending": "Pending",
@@ -386,6 +438,36 @@ const resources = {
                     "rejected": "Rejected",
                     "approved": "Approved"
                 }
+            },
+            "to_pay": {
+                "title": "Money to Pay",
+                "total_amount": "Total Amount",
+                "person_plural": "{{count}} people",
+                "person_singular": "1 person",
+                "to_count_people": "To {{count}} {{people}}",
+                "tap_to_view": "Tap to view group",
+                "all_paid_up": "All Paid Up!",
+                "all_paid_up_desc": "You don't owe anyone money right now. Keep up the good work!",
+                "guide_title": "Money to Pay 💳",
+                "guide_desc": "Here are all the people you owe money to across your groups. Tap on anyone to view group details and make payments.",
+                "tip1": "Amounts are calculated automatically from group expenses",
+                "tip2": "Tap on a person to go to their group and record payments",
+                "tip3": "Payment details show you how to send money to them"
+            },
+            "to_receive": {
+                "title": "Money to Receive",
+                "total_amount": "Total Amount",
+                "person_plural": "people",
+                "person_singular": "person",
+                "from_count_people": "From {{count}} {{people}}",
+                "tap_to_view": "Tap to view group",
+                "all_settled_up": "All Settled Up!",
+                "all_settled_up_desc": "Nobody owes you money right now. Great job keeping things balanced!",
+                "guide_title": "Money to Receive 📥",
+                "guide_desc": "Here are all the people who owe you money across your groups. Tap on anyone to view group details.",
+                "tip1": "Amounts are calculated automatically from group expenses",
+                "tip2": "Tap on a person to go to their group and record payments",
+                "tip3": "Payment details help you know how to receive money"
             },
             "activity": {
                 "title": "Activity",
@@ -414,7 +496,20 @@ const resources = {
                     "tip1": "Use filters to find specific transactions quickly",
                     "tip2": "Search by description, amount, or group name",
                     "tip3": "Tap any transaction to see detailed information"
-                }
+                },
+                "type": {
+                    "you_paid": "You paid",
+                    "you_owe": "You owe",
+                    "group_expense": "Group expense",
+                    "sent": "Payment sent",
+                    "received": "Payment received",
+                    "wallet": "Wallet",
+                    "not_involved": "Not involved"
+                },
+                "ready_title": "Ready to get started?",
+                "ready_desc": "Your financial journey begins here! 🚀",
+                "create_first_group": "Create Your First Group",
+                "add_first_expense": "Add Your First Expense"
             },
             "budget": {
                 "title": "My Budget",
@@ -700,8 +795,12 @@ const resources = {
                 "lent_money": "قرض دی گئی رقم",
                 "to_settle": "واجب الادا",
                 "wallet_balance": "والٹ بیلنس",
-                "available_balance": "دستیاب بیلنس",
+                "available_balance": "دستیاب رقم",
+                "available_balance_desc": "آپ کے بٹوے کی موجودہ رقم جو آپ ابھی خرچ کر سکتے ہیں۔ اس میں زیر التواء تصفیہ شامل نہیں ہیں۔",
                 "after_settlements": "تصفیہ کے بعد",
+                "after_settlements_desc": "وہ رقم جو تمام ادائیگیاں تصفیہ ہونے کے بعد آپ کے پاس ہو گی۔",
+                "settlement_delta": "تصفیہ کا فرق (Delta)",
+                "settlement_delta_desc": "وہ رقم جو آپ تمام تصفیوں کے بعد حاصل (+) کریں گے یا کم (-) ہو گی۔ سبز کا مطلب ہے رقم ملے گی، سرخ کا مطلب ہے آپ نے دینی ہے۔",
                 "groups": "گروپس",
                 "pending_payments": "زیر التواء ادائیگیاں",
                 "pay_receive": "ادائیگی {{pay}} • وصولی {{receive}}",
@@ -735,7 +834,30 @@ const resources = {
                     "actions_title": "فوری کارروائیاں ⚡",
                     "actions_desc": "صرف ایک ٹیپ کے ساتھ اخراجات شامل کریں، ادائیگیاں ریکارڈ کریں اور گروپس بنائیں۔ آپ کی ضرورت کی ہر چیز یہاں ہے!",
                     "ready_title": "آپ سب تیار ہیں! ✨",
-                    "ready_desc": "اپنا پہلا گروپ بنا کر اور اپنے دوستوں کو شامل کر کے شروع کریں۔ خوش قسمت اخراجات تقسیم کرنے والا!"
+                    "ready_desc": "اپنا پہلا گروپ بنا کر اور اپنے دوستوں کو شامل کر کے شروع کریں۔ خوشگوار اخراجات کی تقسیم!"
+                },
+                "quick_actions": {
+                    "open_groups": "گروپس کھولیں",
+                    "log_solo": "اکیلے کا اندراج",
+                    "log_solo_desc": "اپنے نجی اخراجات کا فوری ریکارڈ رکھیں۔",
+                    "split_bill": "بل تقسیم کریں",
+                    "split_bill_desc": "دوستوں یا گروپس کے ساتھ نیا بل آسانی سے تقسیم کریں۔",
+                    "new_group": "نیا گروپ",
+                    "new_group_desc": "دوستوں کے ایک نئے حلقے کے ساتھ اخراجات شیئر کرنا شروع کریں۔",
+                    "send": "بھیجیں",
+                    "send_money": "رقم بھیجیں",
+                    "send_money_desc": "دوستوں کو براہ راست رقم بھیجیں۔",
+                    "received": "موصول ہوا",
+                    "received_desc": "موصول ہونے والی ادائیگیوں کو ریکارڈ کریں۔",
+                    "no_settlements": "اس مہینے کے لیے کوئی زیر التواء تصفیہ نہیں ہے۔",
+                    "top_up": "ٹاپ اپ"
+                },
+                "guide": {
+                    "title": "ڈیش بورڈ کا جائزہ",
+                    "desc": "یہ آپ کا مالیاتی کمانڈ سینٹر ہے! یہاں آپ اپنا بیلنس، زیر التواء تصفیہ اور حالیہ سرگرمیاں دیکھ سکتے ہیں۔",
+                    "tip_wallet": "رقم شامل کرنے کے لیے والٹ کارڈ پر ٹیپ کریں",
+                    "tip_quick": "بلوں کو فوری تقسیم کرنے کے لیے 'کوئیک ایکشنز' استعمال کریں",
+                    "tip_activity": "تمام لین دین کو ٹریک کرنے کے لیے حالیہ سرگرمی چیک کریں"
                 }
             },
             "group": {
@@ -979,6 +1101,24 @@ const resources = {
                     "summary_title": "دستیاب بجٹ میں شامل کر دیا گیا",
                     "submit_btn": "دستیاب بجٹ میں اضافہ کریں",
                     "error_valid_amount": "براہ کرم صفر سے زیادہ درست رقم درج کریں"
+                },
+                "payment_details": {
+                    "title": "ادائیگی کی تفصیلات",
+                    "subtitle": "گروپ سیٹلمنٹس کے لیے اپنے ادائیگی کے طریقے شامل کریں",
+                    "visibility_notice": "یہ تفصیلات گروپ ممبران کو نظر آتی ہیں جب وہ آپ کو ادائیگی کرتے ہیں",
+                    "visibility_tooltip": "یہ تفصیلات آپ کے گروپ ممبران کو نظر آئیں گی جب انہیں مشترکہ اخراجات کے لیے آپ کو رقم واپس کرنی ہوگی۔",
+                    "mobile_wallets": "موبائل والٹس",
+                    "bank_account": "بینک اکاؤنٹ",
+                    "raast": "راست",
+                    "jazzcash_label": "جیز کیش نمبر",
+                    "easypaisa_label": "ایزی پیسہ نمبر",
+                    "bank_name_label": "بینک کا نام",
+                    "bank_placeholder": "اپنا بینک منتخب کریں",
+                    "account_iban_label": "اکاؤنٹ نمبر / IBAN",
+                    "account_placeholder": "اکاؤنٹ نمبر درج کریں",
+                    "raast_id_label": "راست آئی ڈی",
+                    "raast_placeholder": "آپ کی راست آئی ڈی (فون/CNIC)",
+                    "save_btn": "ادائیگی کی تفصیلات محفوظ کریں"
                 }
             },
             "navigation": {
@@ -1022,24 +1162,6 @@ const resources = {
                 "pay_dues": "واجبات ادا کریں",
                 "request_payment": "ادائیگی کی درخواست کریں"
             },
-            "payment_details": {
-                "title": "ادائیگی کی تفصیلات",
-                "subtitle": "گروپ سیٹلمنٹس کے لیے اپنے ادائیگی کے طریقے شامل کریں",
-                "visibility_notice": "یہ تفصیلات گروپ ممبران کو نظر آتی ہیں جب وہ آپ کو ادائیگی کرتے ہیں",
-                "visibility_tooltip": "یہ تفصیلات آپ کے گروپ ممبران کو نظر آئیں گی جب انہیں مشترکہ اخراجات کے لیے آپ کو رقم واپس کرنی ہوگی۔",
-                "mobile_wallets": "موبائل والٹس",
-                "bank_account": "بینک اکاؤنٹ",
-                "raast": "راست",
-                "jazzcash_label": "جیز کیش نمبر",
-                "easypaisa_label": "ایزی پیسہ نمبر",
-                "bank_name_label": "بینک کا نام",
-                "bank_placeholder": "اپنا بینک منتخب کریں",
-                "account_iban_label": "اکاؤنٹ نمبر / IBAN",
-                "account_placeholder": "اکاؤنٹ نمبر درج کریں",
-                "raast_id_label": "راست آئی ڈی",
-                "raast_placeholder": "آپ کی راست آئی ڈی (فون/CNIC)",
-                "save_btn": "ادائیگی کی تفصیلات محفوظ کریں"
-            },
             "common": {
                 "today": "آج",
                 "yesterday": "کل",
@@ -1058,7 +1180,29 @@ const resources = {
                 "weak": "کمزور",
                 "medium": "درمیانہ",
                 "strong": "مضبوط",
-                "user": "صارف",
+                "raast_id": "راست آئی ڈی",
+                "jazzcash": "جیز کیش (JazzCash)",
+                "easypaisa": "ایزی پیسہ (Easypaisa)",
+                "bank": "بینک",
+                "account": "اکاؤنٹ",
+                "quick_fill": "فوری اندراج",
+                "full_amount": "مکمل رقم",
+                "member_fallback": "رکن ({{username}})",
+                "no_debt": "کوئی قرض نہیں",
+                "all_settled": "تمام تصفیہ شدہ",
+                "no_pending": "کچھ باقی نہیں",
+                "you": "آپ",
+                "payment_info": "ادائیگی کی تفصیلات",
+                "approved": "منظور شدہ",
+                "enabled": "فعال",
+                "disabled": "غیر فعال",
+                "enable_notifications": "اطلاعات فعال کریں",
+                "later": "بعد میں",
+                "got_it": "سمجھ گیا",
+                "error_occurred": "خرابی پیش آگئی۔ براہ کرم دوبارہ کوشش کریں۔",
+                "cash": "نقد",
+                "online": "آن لائن",
+                "you_owe_simple": "آپ نے {{amount}} دینے ہیں",
                 "statuses": {
                     "paid": "ادا کر دیا",
                     "pending": "زیر التواء",
@@ -1070,6 +1214,36 @@ const resources = {
                     "rejected": "مسترد",
                     "approved": "منظور شدہ"
                 }
+            },
+            "to_pay": {
+                "title": "رقم جو دینی ہے",
+                "total_amount": "کل واجب الادا رقم",
+                "person_plural": "افراد",
+                "person_singular": "شخص",
+                "to_count_people": "{{count}} {{people}} کو",
+                "tap_to_view": "گروپ دیکھنے کے لیے ٹیپ کریں",
+                "all_paid_up": "سب ادا کر دیا! 🎉",
+                "all_paid_up_desc": "آپ نے ابھی کسی کے پیسے نہیں دینے۔ بہت اچھا کام!",
+                "guide_title": "رقم جو دینی ہے 💳",
+                "guide_desc": "یہاں وہ تمام لوگ ہیں جن کے آپ نے پیسے دینے ہیں۔ کسی پر بھی ٹیپ کر کے گروپ کی تفصیلات دیکھیں اور ادائیگی کریں۔",
+                "tip1": "رقم کا حساب خود بخود گروپ کے اخراجات سے لگایا جاتا ہے",
+                "tip2": "کسی شخص پر ٹیپ کر کے ان کے گروپ پر جائیں اور ادائیگی ریکارڈ کریں",
+                "tip3": "ادائیگی کی تفصیلات آپ کو بتاتی ہیں کہ انہیں رقم کیسے بھیجی جائے"
+            },
+            "to_receive": {
+                "title": "رقم جو وصول کرنی ہے",
+                "total_amount": "کل وصول طلب رقم",
+                "person_plural": "افراد",
+                "person_singular": "شخص",
+                "from_count_people": "{{count}} {{people}} سے",
+                "tap_to_view": "گروپ دیکھنے کے لیے ٹیپ کریں",
+                "all_settled_up": "حساب برابر! 🎉",
+                "all_settled_up_desc": "ابھی کسی نے آپ کے پیسے نہیں دینے۔ حساب کتاب رکھنے کے لیے بہت عمدہ!",
+                "guide_title": "رقم جو وصول کرنی ہے 📥",
+                "guide_desc": "یہاں وہ تمام لوگ ہیں جن سے آپ نے پیسے لینے ہیں۔ کسی پر بھی ٹیپ کر کے گروپ کی تفصیلات دیکھیں۔",
+                "tip1": "رقم کا حساب خود بخود گروپ کے اخراجات سے لگایا جاتا ہے",
+                "tip2": "کسی شخص پر ٹیپ کر کے ان کے گروپ پر جائیں اور ادائیگی ریکارڈ کریں",
+                "tip3": "ادائیگی کی تفصیلات آپ کی مدد کرتی ہیں کہ رقم کیسے وصول کی جائے"
             },
             "activity": {
                 "title": "سرگرمی",
@@ -1098,7 +1272,20 @@ const resources = {
                     "tip1": "مخصوص لین دین کو تیزی سے تلاش کرنے کے لیے فلٹرز استعمال کریں",
                     "tip2": "تفصیل، رقم یا گروپ کے نام سے تلاش کریں",
                     "tip3": "تفصیلی معلومات دیکھنے کے لیے کسی بھی لین دین پر ٹیپ کریں"
-                }
+                },
+                "type": {
+                    "you_paid": "آپ نے ادا کیا",
+                    "you_owe": "آپ نے دینے ہیں",
+                    "group_expense": "گروپ اخراجات",
+                    "sent": "ادائیگی بھیج دی",
+                    "received": "ادائیگی موصول ہو گئی",
+                    "wallet": "والٹ",
+                    "not_involved": "شامل نہیں"
+                },
+                "ready_title": "کیا آپ تیار ہیں؟",
+                "ready_desc": "آپ کا مالی سفر یہاں سے شروع ہوتا ہے! 🚀",
+                "create_first_group": "اپنا پہلا گروپ بنائیں",
+                "add_first_expense": "پہلا خرچ شامل کریں"
             },
             "budget": {
                 "title": "میرا بجٹ",

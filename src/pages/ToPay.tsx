@@ -9,6 +9,7 @@ import AppContainer from "@/components/AppContainer";
 import PageGuide from "@/components/PageGuide";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import Avatar from "@/components/Avatar";
+import { useTranslation } from "react-i18next";
 
 interface PersonToPay {
   id: string;
@@ -28,6 +29,7 @@ interface PersonToPay {
 }
 
 const ToPay = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useFirebaseAuth();
   const { groups } = useFirebaseData();
@@ -63,7 +65,7 @@ const ToPay = () => {
 
           people.push({
             id: memberId,
-            name: member?.name || `Member (${memberId.substring(0, 5)})`,
+            name: member?.name || t('common.member_fallback', { username: memberId.substring(0, 5) }),
             amount: settlements.toPay,
             groupId: groupId,
             groupName: group.name,
@@ -90,12 +92,12 @@ const ToPay = () => {
     if (!paymentDetails) return null;
 
     const details = [];
-    if (paymentDetails.jazzCash) details.push(`JazzCash: ${paymentDetails.jazzCash}`);
-    if (paymentDetails.easypaisa) details.push(`Easypaisa: ${paymentDetails.easypaisa}`);
+    if (paymentDetails.jazzCash) details.push(`${t('common.jazzcash')}: ${paymentDetails.jazzCash}`);
+    if (paymentDetails.easypaisa) details.push(`${t('common.easypaisa')}: ${paymentDetails.easypaisa}`);
     if (paymentDetails.bankName && paymentDetails.accountNumber) {
       details.push(`${paymentDetails.bankName}: ${paymentDetails.accountNumber}`);
     }
-    if (paymentDetails.raastId) details.push(`Raast ID: ${paymentDetails.raastId}`);
+    if (paymentDetails.raastId) details.push(`${t('common.raast_id')}: ${paymentDetails.raastId}`);
 
     return details.length > 0 ? details.join(" • ") : null;
   };
@@ -138,12 +140,12 @@ const ToPay = () => {
 
         {/* Page Guide */}
         <PageGuide
-          title="Money to Pay 💳"
-          description="Here are all the people you owe money to across your groups. Tap on anyone to view group details and make payments."
+          title={t('to_pay.guide_title')}
+          description={t('to_pay.guide_desc')}
           tips={[
-            "Amounts are calculated automatically from group expenses",
-            "Tap on a person to go to their group and record payments",
-            "Payment details show you how to send money to them"
+            t('to_pay.tip1'),
+            t('to_pay.tip2'),
+            t('to_pay.tip3')
           ]}
           emoji="📤"
           show={showPageGuide}
@@ -159,20 +161,23 @@ const ToPay = () => {
             >
               <ArrowLeft className="w-5 h-5 text-[#4a6850] font-bold" />
             </button>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">Money to Pay</h1>
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight">{t('to_pay.title')}</h1>
           </div>
 
           {/* Total Summary Card - iPhone Style with Greenish-Gray Theme */}
           <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-7 shadow-[0_25px_70px_rgba(74,104,80,0.4)] text-white border-t-2 border-[#5a7860]/40">
             <div className="flex items-center gap-3 mb-2">
               <ArrowUpRight className="w-6 h-6 text-white/90 font-bold" />
-              <span className="text-sm text-white/90 font-black tracking-wide uppercase">Total Amount</span>
+              <span className="text-sm text-white/90 font-black tracking-wide uppercase">{t('to_pay.total_amount')}</span>
             </div>
             <div className="text-5xl font-black mb-3 tracking-tighter tabular-nums drop-shadow-sm">
               Rs {totalToPay.toLocaleString()}
             </div>
             <div className="text-sm text-white/90 font-bold">
-              To {peopleIOwe.length} {peopleIOwe.length === 1 ? 'person' : 'people'}
+              {t('to_pay.to_count_people', {
+                count: peopleIOwe.length,
+                people: t(peopleIOwe.length === 1 ? 'to_pay.person_singular' : 'to_pay.person_plural')
+              })}
             </div>
           </div>
         </header>
@@ -197,7 +202,7 @@ const ToPay = () => {
                         <div className="flex items-center gap-2">
                           <h3 className="font-black text-gray-900 text-lg truncate tracking-tight">{person.name}</h3>
                           {person.isTemporary && (
-                            <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                            <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">{t('group.temp')}</span>
                           )}
                         </div>
                         <div className="text-2xl font-black text-[#4a6850] tabular-nums">
@@ -230,7 +235,7 @@ const ToPay = () => {
                         </div>
                         <span className="text-xs text-[#4a6850]/80 font-black">{person.groupName}</span>
                         <span className="text-xs text-[#4a6850]/40 font-bold">•</span>
-                        <span className="text-xs text-[#4a6850]/60 font-bold">Tap to view group</span>
+                        <span className="text-xs text-[#4a6850]/60 font-bold">{t('to_pay.tap_to_view')}</span>
                       </div>
                     </div>
                   </div>
@@ -242,9 +247,9 @@ const ToPay = () => {
               <div className="w-16 h-16 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">🎉</span>
               </div>
-              <h3 className="font-black text-gray-900 mb-1 tracking-tight">All Paid Up!</h3>
+              <h3 className="font-black text-gray-900 mb-1 tracking-tight">{t('to_pay.all_paid_up')}</h3>
               <p className="text-sm text-[#4a6850]/80 mb-4 font-bold">
-                You don't owe anyone money right now. Keep up the good work!
+                {t('to_pay.all_paid_up_desc')}
               </p>
             </div>
           )}

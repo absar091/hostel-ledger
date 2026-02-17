@@ -182,6 +182,23 @@ const sendEmailSafe = async (mailOptions) => {
 };
 
 // ============================================================================
+// HELPERS & TEMPLATES
+// ============================================================================
+
+/**
+ * Escapes HTML special characters to prevent injection attacks
+ */
+const escapeHtml = (text) => {
+    if (typeof text !== 'string') return text;
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+};
+
+// ============================================================================
 // TEMPLATE HELPERS (Refactored for Clean, Mobile-Friendly Design)
 // ============================================================================
 
@@ -314,12 +331,15 @@ const emailService = {
      * Uses Zoho -> Gmail Fallback
      */
     sendVerification: async (email, otp, name) => {
+        const safeName = escapeHtml(name);
+        const safeOtp = escapeHtml(otp);
+
         const html = getCommonTemplate(
             'Confirm your email',
-            `<p>Hi ${name},</p>
+            `<p>Hi ${safeName},</p>
              <p>Thank you for signing up for Hostel Ledger. To complete your registration, please verify your email address.</p>
              <p>Your verification code is:</p>
-             <div class="otp-box">${otp}</div>
+             <div class="otp-box">${safeOtp}</div>
              <p>This code will expire in 10 minutes.</p>`,
             '', // No action button
             false // No unsubscribe for critical auth emails
@@ -336,12 +356,15 @@ const emailService = {
      * Send Invitation Email
      */
     sendInvitation: async (email, senderName, groupName, link, isNewUser = false) => {
+        const safeSender = escapeHtml(senderName);
+        const safeGroup = escapeHtml(groupName);
+
         const title = isNewUser ? 'You\'ve been invited to Hostel Ledger!' : 'You\'re invited!';
         const buttonText = isNewUser ? 'Sign Up & Join' : 'Join Group';
 
         const html = getCommonTemplate(
             title,
-            `<p><strong>${senderName}</strong> invited you to join the group <strong>${groupName}</strong> on Hostel Ledger.</p>
+            `<p><strong>${safeSender}</strong> invited you to join the group <strong>${safeGroup}</strong> on Hostel Ledger.</p>
              <p>Track expenses, settle debts, and manage shared costs easily.</p>
              ${isNewUser ? '<p>Create an account to accept the invitation and start tracking.</p>' : ''}`,
             `<a href="${link}" class="button">${buttonText}</a>`,
@@ -360,9 +383,10 @@ const emailService = {
      * Uses SendPulse -> Zoho -> Gmail Fallback
      */
     sendWelcome: async (email, name) => {
+        const safeName = escapeHtml(name);
         const html = getCommonTemplate(
             'Welcome to Hostel Ledger! 🎉',
-            `<p>Hi ${name},</p>
+            `<p>Hi ${safeName},</p>
              <p>We're excited to have you on board! Hostel Ledger makes it easy to track shared expenses with your roommates.</p>
              <p>You can now create groups, add expenses, and settle debts easily.</p>`,
             `<a href="https://app.hostelledger.aarx.online" class="button">Go to Dashboard</a>`,
@@ -402,20 +426,24 @@ const emailService = {
      */
     sendTransactionAlert: async (data) => {
         const { email, name, transactionType, amount, groupName, date, description } = data;
+        const safeName = escapeHtml(name);
+        const safeGroup = escapeHtml(groupName);
+        const safeDesc = escapeHtml(description);
+        const safeType = escapeHtml(transactionType);
 
         const html = getCommonTemplate(
             `Transaction Alert`,
-            `<p>Hi ${name},</p>
-             <p>A new <strong>${transactionType}</strong> was recorded in <strong>${groupName}</strong>.</p>
+            `<p>Hi ${safeName},</p>
+             <p>A new <strong>${safeType}</strong> was recorded in <strong>${safeGroup}</strong>.</p>
              <div class="amount-box">${amount}</div>
-             <p>${description}</p>
+             <p>${safeDesc}</p>
              <p style="font-size: 12px; color: #999; margin-top: 20px;">Date: ${date}</p>`,
             `<a href="https://app.hostelledger.aarx.online" class="button">View Details</a>`,
             true // Allow unsubscribe
         );
         return sendEmailSafe({
             to: data.email,
-            subject: `${data.transactionType}: Rs ${data.amount} in ${data.groupName}`,
+            subject: `${safeType}: Rs ${amount} in ${safeGroup}`,
             html
         });
     },
@@ -425,19 +453,24 @@ const emailService = {
      */
     sendExpenseNotification: async (email, data) => {
         // data = { payerName, amount, title, splitAmount, date, groupName, note }
+        const safePayer = escapeHtml(data.payerName);
+        const safeTitle = escapeHtml(data.title);
+        const safeGroup = escapeHtml(data.groupName);
+        const safeNote = escapeHtml(data.note);
+
         const html = getCommonTemplate(
             `New Expense Added`,
             `
         <div style="text-align: center; margin-bottom: 30px;">
           <p style="margin: 0; color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Total Amount</p>
           <div class="amount-large">Rs ${data.amount}</div>
-          <p style="margin: 5px 0 0 0; color: #555;">Paid by <strong>${data.payerName}</strong></p>
+          <p style="margin: 5px 0 0 0; color: #555;">Paid by <strong>${safePayer}</strong></p>
         </div>
 
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top: 1px solid #eeeeee; margin: 20px 0;">
           <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #888; font-size: 14px;">For</td>
-            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: 600; color: #333;">${data.title}</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: 600; color: #333;">${safeTitle}</td>
           </tr>
           <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #888; font-size: 14px;">Your Share</td>
@@ -445,16 +478,16 @@ const emailService = {
           </tr>
           <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #888; font-size: 14px;">Group</td>
-            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: 600; color: #333;">${data.groupName}</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: 600; color: #333;">${safeGroup}</td>
           </tr>
           <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #888; font-size: 14px;">Date</td>
             <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: 600; color: #333;">${data.date}</td>
           </tr>
-          ${data.note ? `
+          ${safeNote ? `
           <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #888; font-size: 14px;">Note</td>
-            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: 600; color: #333;">${data.note}</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; font-weight: 600; color: #333;">${safeNote}</td>
           </tr>` : ''}
         </table>
       `,
@@ -464,7 +497,7 @@ const emailService = {
 
         return sendEmailSafe({
             to: email,
-            subject: `New Expense: ${data.title} (Rs ${data.amount})`,
+            subject: `New Expense: ${safeTitle} (Rs ${data.amount})`,
             html
         });
     }
