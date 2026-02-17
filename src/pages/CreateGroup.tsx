@@ -205,7 +205,7 @@ export default function CreateGroupPage() {
                 {/* Header Container */}
                 <div className="w-full max-w-2xl mx-auto bg-white sticky top-0 z-10 border-b border-gray-100">
                     <div className="px-4 py-4 flex items-center gap-3">
-                        <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full">
+                        <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full" aria-label="Go back">
                             <ArrowLeft className="w-6 h-6 text-gray-700" />
                         </button>
                         <h1 className="text-xl font-black text-gray-900">Create Group</h1>
@@ -255,8 +255,17 @@ export default function CreateGroupPage() {
                                     />
 
                                     <div
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-label="Upload cover photo"
                                         className={`w-full h-full rounded-3xl shadow-sm border border-gray-100 flex items-center justify-center text-4xl overflow-hidden cursor-pointer transition-all ${coverPhoto ? 'border-0' : 'bg-white'}`}
                                         onClick={() => document.getElementById('cover-upload')?.click()}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                document.getElementById('cover-upload')?.click();
+                                            }
+                                        }}
                                     >
                                         {coverPhoto ? (
                                             <img src={coverPhoto} alt="Cover" className="w-full h-full object-cover" />
@@ -290,7 +299,12 @@ export default function CreateGroupPage() {
 
                                 <div className="flex gap-2 justify-center flex-wrap mb-6">
                                     {EMOJI_OPTIONS.map(e => (
-                                        <button key={e} onClick={() => setEmoji(e)} className={`text-xl p-2 rounded-xl transition-all ${emoji === e ? 'bg-[#4a6850] scale-110 shadow-lg' : 'bg-white hover:bg-gray-100'}`}>
+                                        <button
+                                            key={e}
+                                            onClick={() => setEmoji(e)}
+                                            className={`text-xl p-2 rounded-xl transition-all ${emoji === e ? 'bg-[#4a6850] scale-110 shadow-lg' : 'bg-white hover:bg-gray-100'}`}
+                                            aria-label={`Select emoji ${e}`}
+                                        >
                                             {e}
                                         </button>
                                     ))}
@@ -298,8 +312,9 @@ export default function CreateGroupPage() {
                             </div>
 
                             <div>
-                                <label className="text-xs font-bold text-gray-500 uppercase ml-1 mb-2 block">Group Name</label>
+                                <label htmlFor="group-name" className="text-xs font-bold text-gray-500 uppercase ml-1 mb-2 block">Group Name</label>
                                 <Input
+                                    id="group-name"
                                     className="h-14 text-lg font-bold bg-white border-gray-200 rounded-2xl"
                                     placeholder="e.g. Home Sweet Home"
                                     value={name}
@@ -431,7 +446,11 @@ export default function CreateGroupPage() {
                                                 {m.type === 'manual' && !(m as ManualMember).email && <p className="text-[10px] text-gray-400 font-bold">Manual Entry</p>}
                                             </div>
                                         </div>
-                                        <button onClick={() => setMembers(members.filter((_, idx) => idx !== i))} className="p-2 text-gray-400 hover:text-red-500">
+                                        <button
+                                            onClick={() => setMembers(members.filter((_, idx) => idx !== i))}
+                                            className="p-2 text-gray-400 hover:text-red-500"
+                                            aria-label={`Remove ${m.name}`}
+                                        >
                                             <X className="w-4 h-4" />
                                         </button>
                                     </div>
