@@ -98,4 +98,35 @@ function validateCreateGroup(body) {
   return null;
 }
 
-module.exports = { validateCreateGroup };
+/**
+ * Validates a financial amount.
+ * @param {any} amount - The amount to validate.
+ * @returns {string|null} - Error message if invalid, null if valid.
+ */
+function validateAmount(amount) {
+  if (amount === undefined || amount === null) {
+    return 'Amount is required.';
+  }
+
+  const num = Number(amount);
+
+  if (Number.isNaN(num)) {
+    return 'Amount must be a valid number.';
+  }
+
+  if (!Number.isFinite(num)) {
+    return 'Amount must be a finite number.';
+  }
+
+  if (num <= 0) {
+    return 'Amount must be greater than 0.';
+  }
+
+  if (num > 10000000) { // 10 million limit
+    return 'Amount exceeds maximum limit (10,000,000).';
+  }
+
+  return null;
+}
+
+module.exports = { validateCreateGroup, validateAmount };
