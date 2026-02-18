@@ -74,18 +74,30 @@ const GroupDetail = () => {
   const rawGroup = fullGroup || partialGroup;
 
   // Defensive: Ensure members is always an array (Firebase may return object)
-  const group = rawGroup ? {
-    ...rawGroup,
-    members: Array.isArray(rawGroup.members)
-      ? rawGroup.members
-      : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
-  } : null;
+  // OPTIMIZATION: Memoize group normalization to prevent new object references on every render
+  const group = useMemo(() => {
+    if (!rawGroup) return null;
+    return {
+      ...rawGroup,
+      members: Array.isArray(rawGroup.members)
+        ? rawGroup.members
+        : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
+    };
+  }, [rawGroup]);
+
+  // OPTIMIZATION: Create memberMap for O(1) lookups during rendering
+  // This reduces complexity from O(M*T) to O(1) inside loops
+  const memberMap = useMemo(() => {
+    if (!group?.members) return new Map();
+    // Using Map for faster lookups than array.find
+    return new Map(group.members.map((m: any) => [m.id, m]));
+  }, [group?.members]);
 
   const transactions = id ? getTransactionsByGroup(id) : [];
   const settlements = id ? getSettlements(id) : {};
 
   // Calculate total amount to receive in this group
-  const groupTotalToReceive = Object.values(settlements).reduce((total, settlement) => {
+  const groupTotalToReceive = Object.values(settlements).reduce((total: number, settlement: any) => {
     return total + (settlement.toReceive || 0);
   }, 0);
 
@@ -112,7 +124,7 @@ const GroupDetail = () => {
   const memberTransactions = useMemo(() => {
     if (!group || !selectedMember) return [];
 
-    const currentUser = group.members.find((m) => m.isCurrentUser);
+    const currentUser = group.members.find((m: any) => m.isCurrentUser);
     if (!currentUser) return [];
 
     return transactions
@@ -192,6 +204,59 @@ const GroupDetail = () => {
       });
   }, [group, selectedMember, transactions]);
 
+  // OPTIMIZATION: Calculate top spender in O(T) instead of O(M*T)
+  const topSpender = useMemo(() => {
+    if (!group?.members || transactions.length === 0) return null;
+
+    const contributions = new Map<string, number>();
+
+    // Initialize with 0
+    group.members.forEach((m: any) => contributions.set(m.id, 0));
+
+    // Single pass over transactions
+    transactions.forEach(t => {
+      if (t.type === "expense" && t.paidBy) {
+        const current = contributions.get(t.paidBy) || 0;
+        contributions.set(t.paidBy, current + t.amount);
+      }
+    });
+
+    let maxPaid = -1;
+    let topMember = null;
+
+    // Find max
+    group.members.forEach((m: any) => {
+      const paid = contributions.get(m.id) || 0;
+      if (paid > maxPaid) {
+        maxPaid = paid;
+        topMember = { ...m, totalPaid: paid };
+      }
+    });
+
+    return topMember;
+  }, [group?.members, transactions]);
+
+  // Single group for this page
+  // OPTIMIZATION: Memoize groupForSheet to provide stable props to sheets
+  const groupForSheet = useMemo(() => {
+    if (!group) return [];
+    return [{
+      id: group.id,
+      name: group.name,
+      emoji: group.emoji,
+      members: group.members.map((m: any) => ({
+        id: m.id,
+        name: m.name,
+        isTemporary: m.isTemporary,
+        deletionCondition: m.deletionCondition,
+        expiresAt: m.expiresAt,
+        email: m.email,
+        isPending: m.isPending
+      })),
+    }];
+  }, [group]);
+
+
   if (!group && !isGroupLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -217,19 +282,19 @@ const GroupDetail = () => {
     );
   }
 
-  const members = group.members.map((m) => ({
-    id: m.id,
-    name: m.name,
-    isTemporary: m.isTemporary,
-    deletionCondition: m.deletionCondition,
-    expiresAt: m.expiresAt,
-    email: (m as any).email,
-    isPending: (m as any).isPending
-  }));
-  const currentUser = group.members.find((m) => m.isCurrentUser);
+  // const members = ... (REMOVED, used inline inside groupForSheet or not needed globally)
+  // But we use members in render loop.
+  // const members = group.members.map(...) - This was doing unnecessary mapping in render.
+  // We can just use group.members directly if normalized, or map it.
+  // The original code mapped it to a cleaner object.
+  // Since we already map it in groupForSheet, let's just use group.members in the loop if it has the props we need.
+  // group normalization ensures 'id' exists.
+
+  // Re-deriving currentUser for render
+  const currentUser = group.members.find((m: any) => m.isCurrentUser);
 
   // Calculate total pending using settlements
-  const totalPending = group.members.reduce((sum, m) => {
+  const totalPending = group.members.reduce((sum: number, m: any) => {
     if (!m.isCurrentUser) {
       const settlement = settlements[m.id];
       // If settlement exists and you owe them (toPay > 0)
@@ -297,7 +362,7 @@ const GroupDetail = () => {
     });
 
     if (result.success) {
-      const memberName = group.members.find((m) => m.id === data.fromMember)?.name;
+      const memberName = group.members.find((m: any) => m.id === data.fromMember)?.name;
       toast.success(`Recorded ${formatAmount(data.amount)} from ${memberName}`);
       if (result.transaction) {
         navigate("/receipt", { state: { transaction: result.transaction, type: "payment" } });
@@ -306,33 +371,6 @@ const GroupDetail = () => {
       toast.error(result.error || "Failed to record payment");
     }
   };
-
-  // Single group for this page
-  const groupForSheet = [{
-    id: group.id,
-    name: group.name,
-    emoji: group.emoji,
-    members: members,
-  }];
-
-  // personalStats, totalSpent, and expenseCount are defined before early returns above
-
-  // Find the member who has paid the most in expenses (actual top contributor)
-  const memberExpenseContributions = group.members.map(member => {
-    const totalPaid = transactions
-      .filter(t => t.type === "expense" && t.paidBy === member.id)
-      .reduce((sum, t) => sum + t.amount, 0);
-    return {
-      ...member,
-      totalPaid
-    };
-  });
-
-  const topSpender = memberExpenseContributions.length > 0
-    ? memberExpenseContributions.reduce((prev, curr) => {
-      return curr.totalPaid > prev.totalPaid ? curr : prev;
-    })
-    : null;
 
   return (
     <div className="min-h-screen bg-white pb-24">
@@ -427,7 +465,8 @@ const GroupDetail = () => {
                           // Use consistent naming logic
                           if (item.paidBy === user?.uid) return t('group.you_label');
                           if (item.paidBy === group.createdBy) return t('group.owner');
-                          const member = group.members.find(m => m.id === item.paidBy);
+                          // OPTIMIZATION: Use memberMap for O(1) lookup
+                          const member = memberMap.get(item.paidBy);
                           return member?.name || item.paidByName;
                         })()
                       ) : undefined}
@@ -436,7 +475,8 @@ const GroupDetail = () => {
                         name: (() => {
                           if (p.id === user?.uid) return t('group.you_label'); // Your share
                           if (p.id === group.createdBy) return t('group.owner'); // Owner's share
-                          const member = group.members.find(m => m.id === p.id); // Valid member name
+                          // OPTIMIZATION: Use memberMap for O(1) lookup
+                          const member = memberMap.get(p.id); // Valid member name
                           return member?.name || p.name;
                         })()
                       })) : undefined}
@@ -468,7 +508,7 @@ const GroupDetail = () => {
             {/* Pending Invitations Section */}
             {id && <GroupPendingInvitations groupId={id} />}
 
-            {group.members.map((member, index) => {
+            {group.members.map((member: any, index: number) => {
               const isYou = member.isCurrentUser;
 
               // Get settlement data for this member
@@ -631,7 +671,7 @@ const GroupDetail = () => {
                 <h3 className="font-black text-gray-900 text-base tracking-tight">{t('group.members_title')}</h3>
               </div>
               <div className="flex -space-x-3 mb-3">
-                {group.members.slice(0, 5).map((member) => (
+                {group.members.slice(0, 5).map((member: any) => (
                   <Avatar key={member.id} name={member.name} size="md" />
                 ))}
                 {group.members.length > 5 && (
@@ -779,7 +819,7 @@ const GroupDetail = () => {
           id: group.id,
           name: group.name,
           emoji: group.emoji,
-          members: group.members.map(m => ({
+          members: group.members.map((m: any) => ({
             ...m,
             balance: (settlements[m.id]?.toReceive || 0) - (settlements[m.id]?.toPay || 0)
           })),
@@ -795,7 +835,7 @@ const GroupDetail = () => {
           }
         }}
         onRemoveMember={async (memberId) => {
-          const memberName = group.members.find((m) => m.id === memberId)?.name;
+          const memberName = group.members.find((m: any) => m.id === memberId)?.name;
           const result = await removeMemberFromGroup(group.id, memberId);
           if (result.success) {
             toast.success(`Removed ${memberName} from the group`);
