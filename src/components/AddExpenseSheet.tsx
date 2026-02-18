@@ -392,8 +392,9 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                   <button
                     key={group.id}
                     onClick={() => setSelectedGroup(group.id)}
+                    aria-pressed={selectedGroup === group.id}
                     className={cn(
-                      "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
+                      "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95 focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2",
                       selectedGroup === group.id
                         ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
                         : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
@@ -429,11 +430,14 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                     <span className="text-sm font-black text-[#4a6850]">{selectedGroupData.name}</span>
                   </div>
                 )}
-                <p className="text-[#4a6850]/60 text-sm font-bold mb-4">{t('sheets.add_expense.amount_prompt')}</p>
+                <label htmlFor="amount-input" className="block text-[#4a6850]/60 text-sm font-bold mb-4">
+                  {t('sheets.add_expense.amount_prompt')}
+                </label>
                 <div className="text-4xl font-black text-gray-900 mb-8 tracking-tighter tabular-nums">
                   {formatAmount(parseFloat(amount) || 0)}
                 </div>
                 <Input
+                  id="amount-input"
                   type="number"
                   placeholder={t('sheets.add_expense.amount_label')}
                   value={amount}
@@ -465,8 +469,9 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                       <button
                         key={member.id}
                         onClick={() => setPaidBy(member.id)}
+                        aria-pressed={paidBy === member.id}
                         className={cn(
-                          "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
+                          "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95 focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2",
                           paidBy === member.id
                             ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
                             : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
@@ -535,8 +540,9 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                         <button
                           key={member.id}
                           onClick={() => toggleParticipant(member.id)}
+                          aria-pressed={isSelected}
                           className={cn(
-                            "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
+                            "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95 focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2",
                             isSelected
                               ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
                               : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
@@ -647,10 +653,11 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                 )}
 
                 <div>
-                  <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
+                  <label htmlFor="note-input" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
                     {selectedGroupData?.isPersonal ? t('sheets.add_expense.add_note') : t('sheets.add_expense.optional_note')}
                   </label>
                   <Input
+                    id="note-input"
                     placeholder={selectedGroupData?.isPersonal ? t('sheets.add_expense.note_placeholder') : t('sheets.add_expense.optional_note_placeholder')}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
@@ -661,10 +668,11 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
 
                 {!selectedGroupData?.isPersonal && (
                   <div>
-                    <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
+                    <label htmlFor="place-input" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
                       {t('sheets.add_expense.where')}
                     </label>
                     <Input
+                      id="place-input"
                       placeholder={t('sheets.add_expense.where_placeholder')}
                       value={place}
                       onChange={(e) => setPlace(e.target.value)}
