@@ -8,7 +8,7 @@ const path = require('path');
 const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
 const { loadEmailTemplate } = require('./utils/email');
-const { validateCreateGroup } = require('./utils/validation');
+const { validateCreateGroup, validateAmount } = require('./utils/validation');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
 const pkg = require('./package.json');
@@ -1535,6 +1535,11 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
   }
 
+  const amountError = validateAmount(amount);
+  if (amountError) {
+    return res.status(400).json({ success: false, error: amountError });
+  }
+
   try {
     const db = admin.database();
 
@@ -1863,6 +1868,11 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
 
   if (!groupId || !fromMember || !toMember || !amount || !method) {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
+  }
+
+  const amountError = validateAmount(amount);
+  if (amountError) {
+    return res.status(400).json({ success: false, error: amountError });
   }
 
   try {
@@ -3142,8 +3152,9 @@ app.post('/api/send-money', authenticate, async (req, res) => {
     return res.status(400).json({ success: false, error: 'Recipient and amount are required' });
   }
 
-  if (amount <= 0) {
-    return res.status(400).json({ success: false, error: 'Amount must be positive' });
+  const amountError = validateAmount(amount);
+  if (amountError) {
+    return res.status(400).json({ success: false, error: amountError });
   }
 
   try {
