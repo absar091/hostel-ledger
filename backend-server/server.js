@@ -245,6 +245,26 @@ const createLimiter = rateLimit({
 });
 
 /**
+ * Admin API Key Middleware
+ * Verifies x-admin-key header against environment variable
+ */
+const requireAdminKey = (req, res, next) => {
+  const apiKey = req.headers['x-admin-key'];
+
+  if (!process.env.ADMIN_API_KEY) {
+    console.error('❌ ADMIN_API_KEY not set in environment variables');
+    return res.status(500).json({ success: false, error: 'Server misconfiguration' });
+  }
+
+  if (apiKey && apiKey === process.env.ADMIN_API_KEY) {
+    next();
+  } else {
+    console.warn(`⚠️ Unauthorized admin access attempt from ${req.ip}`);
+    res.status(403).json({ success: false, error: 'Forbidden: Invalid Admin Key' });
+  }
+};
+
+/**
  * Authentication Middleware
  * Verifies Firebase ID Token in Authorization header
  */
@@ -884,7 +904,7 @@ app.post('/api/claim-email-invite', authenticate, async (req, res) => {
 // Apply authentication middleware to ALL /api routes EXCEPT public ones
 app.use('/api', (req, res, next) => {
   // Public endpoints that don't need auth
-  const publicEndpoints = ['/push-test', '/check-email-exists', '/verification/request', '/verification/verify']; // Example: /api/push-test is public
+  const publicEndpoints = ['/push-test', '/check-email-exists', '/verification/request', '/verification/verify', '/cleanup-temp-members', '/cleanup-unverified-users']; // Example: /api/push-test is public
   if (publicEndpoints.includes(req.path)) {
     return next();
   }
@@ -2226,7 +2246,7 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
 
 
 // Cleanup Temporary Members endpoint (Server-Authoritative)
-app.post('/api/cleanup-temp-members', generalLimiter, async (req, res) => {
+app.post('/api/cleanup-temp-members', generalLimiter, requireAdminKey, async (req, res) => {
   try {
     const db = admin.database();
     const groupsRef = db.ref('groups');
@@ -3023,7 +3043,7 @@ app.post('/api/merge-members', authenticate, async (req, res) => {
 });
 
 // Cleanup Unverified Users Endpoint (Admin/Secure)
-app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
+app.post('/api/cleanup-unverified-users', requireAdminKey, async (req, res) => {
   try {
     const db = admin.database();
     const verificationRef = db.ref('emailVerification');
