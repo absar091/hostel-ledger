@@ -269,7 +269,9 @@ const resources = {
                     "payment_summary": "Payment Summary",
                     "received_from": "Received from {{name}}",
                     "method_cash": "Cash",
-                    "method_online": "Online / Digital"
+                    "method_online": "Online / Digital",
+                    "settle_now": "Settle Now",
+                    "member_count": "{{count}} members"
                 },
                 "create_group": {
                     "title": "Start a Group",
@@ -1046,7 +1048,9 @@ const resources = {
                     "payment_summary": "ادائیگی کا خلاصہ",
                     "received_from": "{{name}} سے موصول ہوئے",
                     "method_cash": "نقد (Cash)",
-                    "method_online": "آن لائن / ڈیجیٹل"
+                    "method_online": "آن لائن / ڈیجیٹل",
+                    "settle_now": "ابھی تصفیہ کریں",
+                    "member_count": "{{count}} ممبران"
                 },
                 "create_group": {
                     "title": "گروپ شروع کریں",

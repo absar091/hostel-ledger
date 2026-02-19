@@ -65,7 +65,8 @@ const ToPay = () => {
 
           people.push({
             id: memberId,
-            name: member?.name || t('common.member_fallback', { username: memberId.substring(0, 5) }),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            name: member?.name || (member as any)?.username || t('common.member_fallback', { username: memberId.substring(0, 5) }),
             amount: settlements.toPay,
             groupId: groupId,
             groupName: group.name,
@@ -79,7 +80,7 @@ const ToPay = () => {
 
     // Sort by amount (highest first)
     return people.sort((a, b) => b.amount - a.amount);
-  }, [groups, user]);
+  }, [groups, user, t]);
 
   const totalToPay = peopleIOwe.reduce((sum, person) => sum + person.amount, 0);
 
@@ -165,15 +166,17 @@ const ToPay = () => {
           </div>
 
           {/* Total Summary Card - iPhone Style with Greenish-Gray Theme */}
-          <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-7 shadow-[0_25px_70px_rgba(74,104,80,0.4)] text-white border-t-2 border-[#5a7860]/40">
+          <div className="bg-gradient-to-br from-[#fef3f2] to-[#fef8f7] rounded-3xl p-7 shadow-lg border border-rose-100">
             <div className="flex items-center gap-3 mb-2">
-              <ArrowUpRight className="w-6 h-6 text-white/90 font-bold" />
-              <span className="text-sm text-white/90 font-black tracking-wide uppercase">{t('to_pay.total_amount')}</span>
+              <div className="w-10 h-10 rounded-2xl bg-rose-500/10 flex items-center justify-center">
+                <ArrowUpRight className="w-5 h-5 text-rose-500" strokeWidth={3} />
+              </div>
+              <span className="text-sm text-rose-500/70 font-black tracking-wide uppercase">{t('to_pay.total_amount')}</span>
             </div>
-            <div className="text-5xl font-black mb-3 tracking-tighter tabular-nums drop-shadow-sm">
+            <div className="text-5xl font-black mb-3 tracking-tighter tabular-nums text-rose-500">
               Rs {totalToPay.toLocaleString()}
             </div>
-            <div className="text-sm text-white/90 font-bold">
+            <div className="text-sm text-rose-500 font-bold">
               {t('to_pay.to_count_people', {
                 count: peopleIOwe.length,
                 people: t(peopleIOwe.length === 1 ? 'to_pay.person_singular' : 'to_pay.person_plural')
