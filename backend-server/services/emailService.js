@@ -500,6 +500,41 @@ const emailService = {
             subject: `New Expense: ${safeTitle} (Rs ${data.amount})`,
             html
         });
+    },
+
+    /**
+     * Send Temporary Member Alert (Transactional)
+     */
+    sendTempMemberAlert: async (email, memberName, groupName, expiryDate) => {
+        // Simple HTML escaping to prevent injection
+        const escapeHtml = (unsafe) => {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        };
+
+        const safeMemberName = escapeHtml(memberName);
+        const safeGroupName = escapeHtml(groupName);
+
+        const html = getCommonTemplate(
+            'Temporary Member Alert',
+            `<div style="font-family: sans-serif; padding: 20px;">
+               <h2>Temporary Member Added</h2>
+               <p>You added <b>${safeMemberName}</b> as a temporary member to group <b>${safeGroupName}</b>.</p>
+               <p>This member is scheduled to be automatically removed on <b>${expiryDate}</b>.</p>
+               <p>Please ensure all debts are settled before this date.</p>
+             </div>`,
+            '',
+            false
+        );
+        return sendEmailByType('transactional', {
+            to: email,
+            subject: `Temporary Member Alert: ${safeMemberName}`,
+            html
+        });
     }
 };
 
