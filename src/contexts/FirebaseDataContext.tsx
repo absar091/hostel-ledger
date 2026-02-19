@@ -1176,9 +1176,9 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const getGroupById = (groupId: string): Group | undefined => {
+  const getGroupById = useCallback((groupId: string): Group | undefined => {
     return groups.find((g) => g.id === groupId);
-  };
+  }, [groups]);
 
   const fetchGroupDetail = useCallback(async (groupId: string): Promise<Group | null> => {
     try {
@@ -1239,11 +1239,11 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user?.uid]);
 
-  const getTransactionsByGroup = (groupId: string): Transaction[] => {
+  const getTransactionsByGroup = useCallback((groupId: string): Transaction[] => {
     return transactions.filter((t) => t.groupId === groupId);
-  };
+  }, [transactions]);
 
-  const getTransactionsByMember = (groupId: string, memberId: string): Transaction[] => {
+  const getTransactionsByMember = useCallback((groupId: string, memberId: string): Transaction[] => {
     return transactions.filter((t) => {
       if (t.groupId !== groupId) return false;
 
@@ -1253,11 +1253,11 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         return t.from === memberId || t.to === memberId;
       }
     });
-  };
+  }, [transactions]);
 
-  const getAllTransactions = (): Transaction[] => {
+  const getAllTransactions = useCallback((): Transaction[] => {
     return transactions;
-  };
+  }, [transactions]);
 
   const checkAccountDeletionEligibility = async (): Promise<{ eligible: boolean; reason?: string }> => {
     if (isLoading) return { eligible: false, reason: "Please wait for data to load..." };
