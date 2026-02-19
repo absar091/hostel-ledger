@@ -41,7 +41,6 @@ const resources = {
                 "no_tx_yet": "No transactions yet",
                 "total_to_receive": "Total To Receive",
                 "total_to_pay": "Total To Pay",
-                "settlement_delta": "Settlement Delta",
                 "transactions": "Transactions",
                 "notification_prompt_title": "Stay Updated!",
                 "notification_prompt_desc": "Get instant notifications when expenses are added or payments are received. Never miss an update!",
@@ -611,6 +610,11 @@ const resources = {
             "personal_space": {
                 "phone": "Phone Number"
             },
+            "records": {
+                "payments": {
+                    "sheet": "Payment Sheet"
+                }
+            },
             "errors": {
                 "invalid_email": "Invalid email address",
                 "email_already_added": "Email already added",
@@ -833,7 +837,6 @@ const resources = {
                 "no_tx_yet": "ابھی تک کوئی لین دین نہیں ہوا",
                 "total_to_receive": "کل وصولی",
                 "total_to_pay": "کل ادائیگی",
-                "settlement_delta": "تصفیہ کا فرق",
                 "transactions": "لین دین",
                 "notification_prompt_title": "باخبر رہیں!",
                 "notification_prompt_desc": "اخراجات شامل ہونے یا ادائیگیاں موصول ہونے پر فوری اطلاعات حاصل کریں۔ کوئی اپ ڈیٹ نہ چھوڑیں!",
@@ -1399,6 +1402,11 @@ const resources = {
             },
             "personal_space": {
                 "phone": "فون نمبر"
+            },
+            "records": {
+                "payments": {
+                    "sheet": "ادائیگی کی شیٹ"
+                }
             },
             "errors": {
                 "invalid_email": "ناقص ای میل ایڈریس",
