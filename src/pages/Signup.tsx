@@ -528,6 +528,7 @@ const Signup = () => {
             <div>
               <div className="flex items-center space-x-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
                 <Checkbox
+                  id="terms"
                   checked={formData.termsAccepted && formData.privacyAccepted}
                   onCheckedChange={(checked) => {
                     handleInputChange('termsAccepted', checked);
@@ -535,7 +536,7 @@ const Signup = () => {
                   }}
                   className="border-2 data-[state=checked]:bg-[#4a6850] data-[state=checked]:border-[#4a6850] w-5 h-5"
                 />
-                <label className="text-sm text-[#4a6850]/80 cursor-pointer flex-1 font-bold">
+                <label htmlFor="terms" className="text-sm text-[#4a6850]/80 cursor-pointer flex-1 font-bold">
                   {t('auth.terms_privacy_agree')}
                 </label>
               </div>
