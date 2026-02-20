@@ -1655,7 +1655,8 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
         return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
       }
       walletBalanceAfter -= amount;
-      updates[`users/${currentUserId}/walletBalance`] = walletBalanceAfter;
+      // Use atomic increment to prevent race conditions
+      updates[`users/${currentUserId}/walletBalance`] = admin.database.ServerValue.increment(-amount);
     }
 
     // B. Create Transaction Record
@@ -1962,10 +1963,13 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
         return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
       }
       currentUserBalanceAfter -= amount;
+      // Use atomic increment
+      updates[`users/${currentUserId}/walletBalance`] = admin.database.ServerValue.increment(-amount);
     } else {
       currentUserBalanceAfter += amount;
+      // Use atomic increment
+      updates[`users/${currentUserId}/walletBalance`] = admin.database.ServerValue.increment(amount);
     }
-    updates[`users/${currentUserId}/walletBalance`] = currentUserBalanceAfter;
 
     walletBalancesSnapshot[currentUserId] = {
       before: currentUserBalanceBefore,
@@ -1980,14 +1984,17 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
       if (isPaying) {
         // Current user paid -> Other user receives
         otherUserBalanceAfter += amount;
+        // Use atomic increment
+        updates[`users/${otherPerson.userId}/walletBalance`] = admin.database.ServerValue.increment(amount);
       } else {
         // Current user received -> Other user paid
         if (otherUserBalanceBefore < amount) {
           return res.status(400).json({ success: false, error: 'Other user has insufficient wallet balance' });
         }
         otherUserBalanceAfter -= amount;
+        // Use atomic increment
+        updates[`users/${otherPerson.userId}/walletBalance`] = admin.database.ServerValue.increment(-amount);
       }
-      updates[`users/${otherPerson.userId}/walletBalance`] = otherUserBalanceAfter;
 
       walletBalancesSnapshot[otherPerson.userId] = {
         before: otherUserBalanceBefore,
@@ -2175,21 +2182,21 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
     const user = userSnap.val();
     const currentBalance = user.walletBalance || 0;
 
+    const updates = {};
     let newBalance = currentBalance;
     if (type === 'add') {
       newBalance += amount;
+      updates[`users/${currentUserId}/walletBalance`] = admin.database.ServerValue.increment(amount);
     } else {
       if (currentBalance < amount) {
         return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
       }
       newBalance -= amount;
+      updates[`users/${currentUserId}/walletBalance`] = admin.database.ServerValue.increment(-amount);
     }
 
     const transactionId = db.ref('transactions').push().key;
     const serverTime = admin.database.ServerValue.TIMESTAMP;
-
-    const updates = {};
-    updates[`users/${currentUserId}/walletBalance`] = newBalance;
 
     // Record internal wallet transaction
     const walletTransaction = {
