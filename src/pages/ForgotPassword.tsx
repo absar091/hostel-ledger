@@ -49,7 +49,16 @@ const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
-      // Send password reset email using Firebase
+      // First check if user exists (Explicit check as requested)
+      const exists = await checkEmailExists(email);
+
+      if (!exists) {
+        toast.error("No account found with this email address.");
+        setIsLoading(false);
+        return;
+      }
+
+      // If exists, proceed to send reset email
       toast.loading("Sending reset email...", { id: "sending-reset" });
       const result = await sendPasswordResetEmail(email);
       toast.dismiss("sending-reset");
@@ -59,20 +68,10 @@ const ForgotPassword = () => {
         toast.success(t('auth.reset_instructions_sent'), { description: "Password reset email sent! Check your inbox." });
       } else {
         // Handle specific Firebase errors
-        if (result.error?.includes('user-not-found')) {
-          // Check if user exists in backend (Invited but not signed up)
-          const existsInDb = await checkEmailExists(email);
-
-          if (existsInDb) {
-            // It's an invited user!
-            toast.error("This email is linked to an INVITED account. Please Sign Up to set your password.");
-            // Optional: You could set an error state here to show a "Go to Sign Up" button in the UI
-          } else {
-            // Genuine non-existent user
-            // Security: Don't reveal if user exists or not. Show success message (fake success).
-            setEmailSent(true);
-            toast.success(t('auth.reset_instructions_sent'));
-          }
+        if (result.error?.includes('user-not-found') || result.error === "No account found with this email address") {
+          // Since checkEmailExists returned true, but Firebase Auth says user not found,
+          // it must be an INVITED user (exists in DB but not Auth)
+          toast.error("This email is linked to an INVITED account. Please Sign Up to set your password.");
         } else if (result.error?.includes('too-many-requests')) {
           toast.error("Too many reset attempts. Please wait a few minutes before trying again.");
         } else {
@@ -214,11 +213,6 @@ const ForgotPassword = () => {
           <p className="text-[#4a6850]/80 font-bold leading-relaxed">
             {t('auth.forgot_password_subtitle')}
           </p>
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-2xl">
-            <p className="text-sm text-blue-800 font-bold">
-              💡 {t('auth.reset_note')}
-            </p>
-          </div>
         </div>
 
 
