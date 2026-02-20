@@ -124,6 +124,7 @@ app.use(express.json());
 
 const emailService = require('./services/emailService');
 const expenseLogic = require('./utils/expenseLogic');
+const adminAuth = require('./middleware/adminAuth');
 
 // Rate limiting for email endpoints - very generous limits for testing
 const emailLimiter = rateLimit({
@@ -884,7 +885,15 @@ app.post('/api/claim-email-invite', authenticate, async (req, res) => {
 // Apply authentication middleware to ALL /api routes EXCEPT public ones
 app.use('/api', (req, res, next) => {
   // Public endpoints that don't need auth
-  const publicEndpoints = ['/push-test', '/check-email-exists', '/verification/request', '/verification/verify']; // Example: /api/push-test is public
+  // Note: Cleanup endpoints are "public" for user auth but secured by adminAuth middleware
+  const publicEndpoints = [
+    '/push-test',
+    '/check-email-exists',
+    '/verification/request',
+    '/verification/verify',
+    '/cleanup-temp-members',
+    '/cleanup-unverified-users'
+  ];
   if (publicEndpoints.includes(req.path)) {
     return next();
   }
@@ -2226,7 +2235,8 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
 
 
 // Cleanup Temporary Members endpoint (Server-Authoritative)
-app.post('/api/cleanup-temp-members', generalLimiter, async (req, res) => {
+// Secured by Admin Key (for cron jobs)
+app.post('/api/cleanup-temp-members', generalLimiter, adminAuth, async (req, res) => {
   try {
     const db = admin.database();
     const groupsRef = db.ref('groups');
@@ -3023,7 +3033,8 @@ app.post('/api/merge-members', authenticate, async (req, res) => {
 });
 
 // Cleanup Unverified Users Endpoint (Admin/Secure)
-app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
+// Secured by Admin Key (for cron jobs)
+app.post('/api/cleanup-unverified-users', adminAuth, async (req, res) => {
   try {
     const db = admin.database();
     const verificationRef = db.ref('emailVerification');
