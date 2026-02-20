@@ -32,7 +32,7 @@ const ToPay = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useFirebaseAuth();
-  const { groups } = useFirebaseData();
+  const { groups, fetchGroupDetail } = useFirebaseData();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   const [showPageGuide, setShowPageGuide] = useState(false);
 
@@ -82,6 +82,19 @@ const ToPay = () => {
     return people.sort((a, b) => b.amount - a.amount);
   }, [groups, user, t]);
 
+  // Fetch group details if member names are missing
+  useEffect(() => {
+    peopleIOwe.forEach(person => {
+      // If the name is the fallback (contains the ID substring), trigger a fetch
+      // Also check if the group members array is empty, which indicates lazy loading state
+      const group = groups.find(g => g.id === person.groupId);
+      if (group && (!group.members || group.members.length === 0)) {
+        fetchGroupDetail(person.groupId);
+      }
+    });
+  }, [peopleIOwe, groups, fetchGroupDetail]);
+
+
   const totalToPay = peopleIOwe.reduce((sum, person) => sum + person.amount, 0);
 
   const handlePersonClick = (person: PersonToPay) => {
@@ -113,14 +126,14 @@ const ToPay = () => {
         <DesktopHeader />
 
         {/* iPhone-style top accent border - Mobile only */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
+        <div className="lg:hidden fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-700 via-rose-500 to-rose-700 z-50 shadow-sm"></div>
 
-        {/* App Header - iPhone Style Enhanced with #4a6850 */}
-        <div className="bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
+        {/* App Header - iPhone Style Enhanced with Rose Theme */}
+        <div className="bg-white border-b border-rose-500/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(244,63,94,0.08)]">
           <div className="flex items-center justify-between">
             {/* App Logo and Name - Enhanced */}
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
+              <div className="w-9 h-9 bg-gradient-to-br from-rose-500 to-rose-700 rounded-2xl flex items-center justify-center shadow-lg">
                 <img
                   src="/only-logo.png"
                   alt="Hostel Ledger"
@@ -132,7 +145,7 @@ const ToPay = () => {
 
             {/* Header Actions - Enhanced */}
             <div className="flex items-center gap-3">
-              <div className="w-14 h-14 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl flex items-center justify-center shadow-lg">
+              <div className="w-14 h-14 bg-gradient-to-br from-rose-500 to-rose-700 rounded-3xl flex items-center justify-center shadow-lg">
                 <ArrowUpRight className="w-7 h-7 text-white font-bold" />
               </div>
             </div>
@@ -158,29 +171,34 @@ const ToPay = () => {
           <div className="flex items-center gap-3 mb-6">
             <button
               onClick={() => navigate(-1)}
-              className="w-10 h-10 rounded-2xl bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
+              className="w-10 h-10 rounded-2xl bg-rose-500/10 shadow-sm border border-rose-500/20 flex items-center justify-center hover:bg-rose-500/20 transition-all"
             >
-              <ArrowLeft className="w-5 h-5 text-[#4a6850] font-bold" />
+              <ArrowLeft className="w-5 h-5 text-rose-500 font-bold" />
             </button>
             <h1 className="text-2xl font-black text-gray-900 tracking-tight">{t('to_pay.title')}</h1>
           </div>
 
-          {/* Total Summary Card - iPhone Style with Greenish-Gray Theme */}
-          <div className="bg-gradient-to-br from-[#fef3f2] to-[#fef8f7] rounded-3xl p-7 shadow-lg border border-rose-100">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-2xl bg-rose-500/10 flex items-center justify-center">
-                <ArrowUpRight className="w-5 h-5 text-rose-500" strokeWidth={3} />
+          {/* Total Summary Card - iPhone Style with Rose Theme */}
+          <div className="bg-gradient-to-br from-[#fef3f2] to-[#fef8f7] rounded-3xl p-7 shadow-lg border border-rose-100 relative overflow-hidden">
+            {/* Decorative circles to match dashboard */}
+            <div className="absolute -right-6 -top-6 w-24 h-24 bg-rose-500/5 rounded-full pointer-events-none"></div>
+
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-2xl bg-rose-500/10 flex items-center justify-center">
+                  <ArrowUpRight className="w-5 h-5 text-rose-500" strokeWidth={3} />
+                </div>
+                <span className="text-sm text-rose-500/70 font-black tracking-wide uppercase">{t('to_pay.total_amount')}</span>
               </div>
-              <span className="text-sm text-rose-500/70 font-black tracking-wide uppercase">{t('to_pay.total_amount')}</span>
-            </div>
-            <div className="text-5xl font-black mb-3 tracking-tighter tabular-nums text-rose-500">
-              Rs {totalToPay.toLocaleString()}
-            </div>
-            <div className="text-sm text-rose-500 font-bold">
-              {t('to_pay.to_count_people', {
-                count: peopleIOwe.length,
-                people: t(peopleIOwe.length === 1 ? 'to_pay.person_singular' : 'to_pay.person_plural')
-              })}
+              <div className="text-5xl font-black mb-3 tracking-tighter tabular-nums text-rose-500">
+                Rs {totalToPay.toLocaleString()}
+              </div>
+              <div className="text-sm text-rose-500 font-bold">
+                {t('to_pay.to_count_people', {
+                  count: peopleIOwe.length,
+                  people: t(peopleIOwe.length === 1 ? 'to_pay.person_singular' : 'to_pay.person_plural')
+                })}
+              </div>
             </div>
           </div>
         </header>
@@ -193,7 +211,7 @@ const ToPay = () => {
                 <button
                   key={`${person.id}-${person.groupId}`}
                   onClick={() => handlePersonClick(person)}
-                  className="w-full bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all duration-200 text-left group"
+                  className="w-full bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(244,63,94,0.08)] border border-rose-500/10 hover:shadow-[0_25px_70px_rgba(244,63,94,0.15)] hover:border-rose-500/20 transition-all duration-200 text-left group"
                 >
                   <div className="flex items-start gap-4">
                     {/* Avatar */}
@@ -208,7 +226,7 @@ const ToPay = () => {
                             <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">{t('group.temp')}</span>
                           )}
                         </div>
-                        <div className="text-2xl font-black text-[#4a6850] tabular-nums">
+                        <div className="text-2xl font-black text-rose-500 tabular-nums">
                           Rs {person.amount.toLocaleString()}
                         </div>
                       </div>
@@ -216,29 +234,29 @@ const ToPay = () => {
                       {/* Contact Info */}
                       {person.phone && (
                         <div className="flex items-center gap-2 mb-2">
-                          <Phone className="w-4 h-4 text-[#4a6850]/60" />
-                          <span className="text-sm text-[#4a6850]/80 font-bold">{person.phone}</span>
+                          <Phone className="w-4 h-4 text-rose-500/60" />
+                          <span className="text-sm text-rose-500/80 font-bold">{person.phone}</span>
                         </div>
                       )}
 
                       {/* Payment Details */}
                       {formatPaymentDetails(person.paymentDetails) && (
                         <div className="flex items-start gap-2 mb-3">
-                          <CreditCard className="w-4 h-4 text-[#4a6850]/60 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-[#4a6850]/80 leading-relaxed font-medium">
+                          <CreditCard className="w-4 h-4 text-rose-500/60 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-rose-500/80 leading-relaxed font-medium">
                             {formatPaymentDetails(person.paymentDetails)}
                           </span>
                         </div>
                       )}
 
                       {/* Group Info - At Bottom */}
-                      <div className="flex items-center gap-2 pt-2 border-t border-[#4a6850]/10">
-                        <div className="w-5 h-5 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-lg flex items-center justify-center">
-                          <Users className="w-3 h-3 text-[#4a6850] font-bold" />
+                      <div className="flex items-center gap-2 pt-2 border-t border-rose-500/10">
+                        <div className="w-5 h-5 bg-gradient-to-br from-rose-500/20 to-rose-700/20 rounded-lg flex items-center justify-center">
+                          <Users className="w-3 h-3 text-rose-500 font-bold" />
                         </div>
-                        <span className="text-xs text-[#4a6850]/80 font-black">{person.groupName}</span>
-                        <span className="text-xs text-[#4a6850]/40 font-bold">•</span>
-                        <span className="text-xs text-[#4a6850]/60 font-bold">{t('to_pay.tap_to_view')}</span>
+                        <span className="text-xs text-rose-500/80 font-black">{person.groupName}</span>
+                        <span className="text-xs text-rose-500/40 font-bold">•</span>
+                        <span className="text-xs text-rose-500/60 font-bold">{t('to_pay.tap_to_view')}</span>
                       </div>
                     </div>
                   </div>
@@ -246,12 +264,12 @@ const ToPay = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 bg-white rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-4">
+            <div className="text-center py-12 bg-white rounded-3xl border border-rose-500/10 shadow-[0_20px_60px_rgba(244,63,94,0.08)]">
+              <div className="w-16 h-16 bg-gradient-to-br from-rose-500/20 to-rose-700/20 rounded-3xl flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">🎉</span>
               </div>
               <h3 className="font-black text-gray-900 mb-1 tracking-tight">{t('to_pay.all_paid_up')}</h3>
-              <p className="text-sm text-[#4a6850]/80 mb-4 font-bold">
+              <p className="text-sm text-rose-500/80 mb-4 font-bold">
                 {t('to_pay.all_paid_up_desc')}
               </p>
             </div>

@@ -32,7 +32,7 @@ const ToReceive = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useFirebaseAuth();
-  const { groups } = useFirebaseData();
+  const { groups, fetchGroupDetail } = useFirebaseData();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   const [showPageGuide, setShowPageGuide] = useState(false);
 
@@ -79,7 +79,18 @@ const ToReceive = () => {
 
     // Sort by amount (highest first)
     return people.sort((a, b) => b.amount - a.amount);
-  }, [groups, user]);
+  }, [groups, user, t]);
+
+  // Fetch group details if member names are missing
+  useEffect(() => {
+    peopleWhoOweMe.forEach(person => {
+      // If the group members array is empty, which indicates lazy loading state
+      const group = groups.find(g => g.id === person.groupId);
+      if (group && (!group.members || group.members.length === 0)) {
+        fetchGroupDetail(person.groupId);
+      }
+    });
+  }, [peopleWhoOweMe, groups, fetchGroupDetail]);
 
   const totalToReceive = peopleWhoOweMe.reduce((sum, person) => sum + person.amount, 0);
 

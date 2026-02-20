@@ -41,7 +41,6 @@ const resources = {
                 "no_tx_yet": "No transactions yet",
                 "total_to_receive": "Total To Receive",
                 "total_to_pay": "Total To Pay",
-                "settlement_delta": "Settlement Delta",
                 "transactions": "Transactions",
                 "notification_prompt_title": "Stay Updated!",
                 "notification_prompt_desc": "Get instant notifications when expenses are added or payments are received. Never miss an update!",
@@ -95,6 +94,7 @@ const resources = {
                 "stats_overview": "Total activity overview",
                 "total_spent": "Total Spent",
                 "expenses_count": "Expenses",
+                "expense_count_plural": "{{count}} Expenses",
                 "lifetime_spent": "Lifetime Spent",
                 "member_count": "members",
                 "pending": "pending",
@@ -607,6 +607,21 @@ const resources = {
                 "sending": "Sending...",
                 "currency_warning": "Warning: Recipient uses {{currency}}. Your {{amount}} will be received as {{currency}} based on 1:1 conversion. Please confirm the value."
             },
+            "personal_space": {
+                "phone": "Phone Number"
+            },
+            "records": {
+                "payments": {
+                    "sheet": "Payment Sheet"
+                }
+            },
+            "errors": {
+                "invalid_email": "Invalid email address",
+                "email_already_added": "Email already added",
+                "user_already_invited": "User already invited",
+                "username_not_found": "Username not found",
+                "generic_error": "An error occurred"
+            },
             "auth": {
                 "login_title": "Login to Hostel Ledger",
                 "email": "Email Address",
@@ -822,7 +837,6 @@ const resources = {
                 "no_tx_yet": "ابھی تک کوئی لین دین نہیں ہوا",
                 "total_to_receive": "کل وصولی",
                 "total_to_pay": "کل ادائیگی",
-                "settlement_delta": "تصفیہ کا فرق",
                 "transactions": "لین دین",
                 "notification_prompt_title": "باخبر رہیں!",
                 "notification_prompt_desc": "اخراجات شامل ہونے یا ادائیگیاں موصول ہونے پر فوری اطلاعات حاصل کریں۔ کوئی اپ ڈیٹ نہ چھوڑیں!",
@@ -876,6 +890,7 @@ const resources = {
                 "stats_overview": "سرگرمی کا مجموعی جائزہ",
                 "total_spent": "کل خرچ",
                 "expenses_count": "اخراجات",
+                "expense_count_plural": "{{count}} اخراجات",
                 "lifetime_spent": "کل خرچ",
                 "member_count": "ارکان",
                 "pending": "واجب الادا",
@@ -1384,6 +1399,21 @@ const resources = {
                 "send_btn": "رقم بھیجیں",
                 "sending": "رقم بھیجی جا رہی ہے...",
                 "currency_warning": "انتباہ: وصول کنندہ {{currency}} استعمال کر رہا ہے۔ آپ کی {{amount}} کو 1:1 تبدیلی کی بنیاد پر {{currency}} کے طور پر وصول کیا جائے گا۔ براہ کرم قیمت کی تصدیق کریں۔"
+            },
+            "personal_space": {
+                "phone": "فون نمبر"
+            },
+            "records": {
+                "payments": {
+                    "sheet": "ادائیگی کی شیٹ"
+                }
+            },
+            "errors": {
+                "invalid_email": "ناقص ای میل ایڈریس",
+                "email_already_added": "ای میل پہلے ہی شامل ہے",
+                "user_already_invited": "صارف کو پہلے ہی مدعو کیا گیا ہے",
+                "username_not_found": "یوزر نیم نہیں ملا",
+                "generic_error": "ایک خرابی پیش آگئی"
             },
             "auth": {
                 "login_title": "ہاسٹل لیجر میں لاگ ان کریں",
