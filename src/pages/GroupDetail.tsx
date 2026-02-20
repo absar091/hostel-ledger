@@ -222,7 +222,8 @@ const GroupDetail = () => {
     deletionCondition: m.deletionCondition,
     expiresAt: m.expiresAt,
     email: (m as any).email,
-    isPending: (m as any).isPending
+    isPending: (m as any).isPending,
+    userId: (m as any).userId,
   }));
   const currentUser = group.members.find((m) => m.isCurrentUser);
 
@@ -311,6 +312,7 @@ const GroupDetail = () => {
     name: group.name,
     emoji: group.emoji,
     members: members,
+    createdBy: group.createdBy,
   }];
 
   // personalStats, totalSpent, and expenseCount are defined before early returns above
