@@ -23,6 +23,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import MobileHeader from "@/components/MobileHeader";
 
 const GroupDetail = () => {
   const { t } = useTranslation();
@@ -195,9 +196,6 @@ const GroupDetail = () => {
   if (!group && !isGroupLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        {/* iPhone-style top accent border */}
-        <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
-
         <div className="text-center px-6">
           <div className="text-6xl mb-4">🔍</div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('group.group_not_found')}</h2>
@@ -336,12 +334,22 @@ const GroupDetail = () => {
 
   return (
     <div className="min-h-screen bg-white pb-24">
-      {/* iPhone-style top accent border */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
+      <MobileHeader
+        title={group.name}
+        showBackButton={true}
+        rightContent={
+          <button
+            onClick={() => setShowGroupSettings(true)}
+            className="w-10 h-10 rounded-full bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
+          >
+            <Settings className="w-5 h-5 text-[#4a6850] font-bold" />
+          </button>
+        }
+      />
 
       {/* Header - iPhone Style Enhanced */}
-      <header className="sticky top-0 bg-white/95 backdrop-blur-xl z-50 border-b border-[#4a6850]/10 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
-        <div className="px-4 py-5">
+      <header className="sticky lg:top-0 top-[4.5rem] bg-white/95 backdrop-blur-xl z-40 border-b border-[#4a6850]/10 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
+        <div className="px-4 py-5 hidden lg:block">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate("/")}
