@@ -104,8 +104,9 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // Allow any Vercel preview deployment
-    if (origin.endsWith('.vercel.app')) {
+    // Allow Vercel preview deployments for the hostel-ledger project
+    // Matches https://hostel-ledger-*.vercel.app
+    if (/^https:\/\/hostel-ledger(-.+)?\.vercel\.app$/.test(origin)) {
       return callback(null, true);
     }
 
