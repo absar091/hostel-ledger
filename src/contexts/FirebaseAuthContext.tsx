@@ -154,11 +154,12 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }, 2500);
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      // Always update firebaseUser state, even if we loaded from cache
+      setFirebaseUser(user);
+
       if (authResolved) return;
       authResolved = true;
       clearTimeout(authTimeout);
-
-      setFirebaseUser(user);
       if (!user) {
         setUser(null);
         localStorage.removeItem('cachedUser');
@@ -828,6 +829,14 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         console.log('[updateUserProfile] New local user state:', newUser);
         return newUser;
       });
+
+      // Sync privacy settings if changed
+      if ('showBalanceToOthers' in cleanData) {
+        // Fire and forget - don't block the UI response
+        callSecureApi('/api/sync-balance-to-groups', {
+          showBalanceToOthers: cleanData.showBalanceToOthers
+        }).catch(err => console.error("Failed to sync balance privacy:", err));
+      }
 
       return { success: true };
     } catch (error: any) {
