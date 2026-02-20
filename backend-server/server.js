@@ -3130,11 +3130,11 @@ app.post('/api/cleanup-unverified-users', adminAuth, async (req, res) => {
     const errors = [];
     const firestore = admin.firestore();
 
-    for (const [uid, accountData] of Object.entries(accounts)) {
+    const cleanupPromises = Object.entries(accounts).map(async ([uid, accountData]) => {
       try {
         // Skip if already verified (double check)
         if (accountData.emailVerified) {
-          continue;
+          return null; // Skip
         }
 
         console.log('🗑️ Deleting unverified account:', uid);
@@ -3150,49 +3150,69 @@ app.post('/api/cleanup-unverified-users', adminAuth, async (req, res) => {
           }
         }
 
-        // 2. Delete user profile from Realtime Database
-        await db.ref(`users/${uid}`).remove();
-
-        // 3. Delete email verification record from Realtime Database
-        await db.ref(`emailVerification/${uid}`).remove();
+        // 2 & 3. Delete user profile and email verification record from Realtime Database in parallel
+        await Promise.all([
+          db.ref(`users/${uid}`).remove(),
+          db.ref(`emailVerification/${uid}`).remove()
+        ]);
 
         // 4. Delete verification codes (Legacy RTDB & Firestore)
         if (accountData.email) {
+          const codeCleanupPromises = [];
+
           // RTDB (Legacy/Invalid Path Handling)
-          try {
-            // Firebase keys cannot contain '.', but if stored somehow, we try to delete
-            // If the key was sanitized (e.g. replaced . with ,), we need to match that logic
-            // Assuming direct email usage as key is problematic in RTDB, but we try anyway
-            // or just skip if it throws
-            await db.ref(`verificationCodes/${accountData.email}`).remove();
-          } catch (e) {
-            console.warn('Could not delete RTDB verification codes for user:', e.message);
-          }
+          codeCleanupPromises.push((async () => {
+            try {
+              // Firebase keys cannot contain '.', but if stored somehow, we try to delete
+              // If the key was sanitized (e.g. replaced . with ,), we need to match that logic
+              // Assuming direct email usage as key is problematic in RTDB, but we try anyway
+              // or just skip if it throws
+              await db.ref(`verificationCodes/${accountData.email}`).remove();
+            } catch (e) {
+              console.warn('Could not delete RTDB verification codes for user:', e.message);
+            }
+          })());
 
           // Firestore (Current)
-          try {
-            const verificationCodesRef = firestore.collection('verificationCodes');
-            const snapshotCodes = await verificationCodesRef.where('email', '==', accountData.email).get();
-            if (!snapshotCodes.empty) {
-              const batch = firestore.batch();
-              snapshotCodes.forEach(doc => {
-                batch.delete(doc.ref);
-              });
-              await batch.commit();
-              console.log('Deleted Firestore verification codes for user');
+          codeCleanupPromises.push((async () => {
+            try {
+              const verificationCodesRef = firestore.collection('verificationCodes');
+              const snapshotCodes = await verificationCodesRef.where('email', '==', accountData.email).get();
+              if (!snapshotCodes.empty) {
+                const batch = firestore.batch();
+                snapshotCodes.forEach(doc => {
+                  batch.delete(doc.ref);
+                });
+                await batch.commit();
+                console.log('Deleted Firestore verification codes for user');
+              }
+            } catch (e) {
+              console.warn('Could not delete Firestore verification codes for user:', e.message);
             }
-          } catch (e) {
-            console.warn('Could not delete Firestore verification codes for user:', e.message);
-          }
+          })());
+
+          await Promise.all(codeCleanupPromises);
         }
 
-        deletedCount++;
+        return { success: true, uid };
 
       } catch (err) {
         console.error(`Failed to delete user ${uid}:`, err);
-        errors.push({ uid, error: err.message });
+        return { success: false, uid, error: err.message };
       }
-    }
+    });
+
+    const results = await Promise.all(cleanupPromises);
+
+    // Process results
+    results.forEach(result => {
+      if (!result) return; // Skipped
+      if (result.success) {
+        deletedCount++;
+      } else {
+        errors.push({ uid: result.uid, error: result.error });
+      }
+    });
 
     console.log(`✅ Cleanup completed. Deleted ${deletedCount} unverified accounts`);
 
