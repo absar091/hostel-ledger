@@ -377,56 +377,67 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 </div>
                             )}
 
-                            {/* Wallet Balance Changes - Intelligent Display */}
-                            {/* Priority 1: Use new per-user snapshots if available */}
-                            {/* Priority 2: Fallback to legacy fields for Recorder (Payer/Sender) */}
+                            {/* Wallet Balance Changes - Comprehensive Display */}
                             {(() => {
-                                let balanceBefore: number | undefined;
-                                let balanceAfter: number | undefined;
-                                let showBalance = false;
+                                const snapshots: any[] = [];
 
-                                // Check for new data structure (Supports both Payer & Receiver)
-                                const userSnapshot = transaction.walletBalances?.[user?.uid];
-
-                                if (userSnapshot) {
-                                    balanceBefore = userSnapshot.before;
-                                    balanceAfter = userSnapshot.after;
-                                    showBalance = true;
+                                if (transaction.walletBalances) {
+                                    Object.entries(transaction.walletBalances).forEach(([uid, balance]) => {
+                                        // Resolve name from group members or fallback to 'Unknown'
+                                        const member = transactionGroup?.members.find((m: any) => m.userId === uid || m.id === uid);
+                                        const name = uid === user?.uid ? "You" : (member?.name || "Unknown User");
+                                        // @ts-ignore
+                                        snapshots.push({ uid, name, ...balance });
+                                    });
                                 }
-                                // Fallback logic for older transactions (Only accurate for Recorder)
+                                // Legacy fallback: Only for current user if they are payer/sender
                                 else if ((transaction.type === 'expense' && transaction.paidBy === user?.uid) ||
                                     (transaction.type === 'payment' && transaction.from === user?.uid)) {
-                                    balanceBefore = transaction.walletBalanceBefore;
-                                    balanceAfter = transaction.walletBalanceAfter;
-                                    showBalance = true;
+                                    if (transaction.walletBalanceBefore !== undefined || transaction.walletBalanceAfter !== undefined) {
+                                        snapshots.push({
+                                            uid: user?.uid,
+                                            name: "You",
+                                            before: transaction.walletBalanceBefore,
+                                            after: transaction.walletBalanceAfter
+                                        });
+                                    }
                                 }
 
-                                if (!showBalance || (balanceBefore === undefined && balanceAfter === undefined)) return null;
+                                if (snapshots.length === 0) return null;
 
                                 return (
                                     <div className="space-y-3 lg:space-y-4">
-                                        {balanceBefore !== undefined && (
-                                            <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl lg:rounded-3xl border border-gray-200 shadow-lg">
-                                                <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 text-gray-500 flex-shrink-0" />
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-[10px] lg:text-xs text-gray-500 font-semibold uppercase tracking-wide">Wallet Balance Before</div>
-                                                    <div className="font-bold text-gray-900 text-sm lg:text-base tracking-tight tabular-nums">{formatAmount(balanceBefore)}</div>
+                                        {snapshots.map((snap, index) => (
+                                            <div key={index} className="flex flex-col gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border border-gray-200 shadow-sm">
+                                                <div className="flex items-center gap-2 pb-2 border-b border-gray-200/50">
+                                                    <CreditCard className="w-4 h-4 text-gray-500" />
+                                                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{snap.name}'s Wallet</span>
                                                 </div>
-                                            </div>
-                                        )}
 
-                                        {balanceAfter !== undefined && (
-                                            <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                                                <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Wallet Balance After</div>
-                                                    <div className={`font-bold text-sm lg:text-base tracking-tight tabular-nums ${(balanceAfter > (balanceBefore || 0)) ? 'text-green-600' : 'text-gray-900'
-                                                        }`}>
-                                                        {formatAmount(balanceAfter)}
-                                                    </div>
+                                                <div className="flex items-center justify-between gap-4">
+                                                    {snap.before !== undefined && (
+                                                        <div className="flex-1">
+                                                            <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-1">Before</div>
+                                                            <div className="font-bold text-gray-900 text-sm tabular-nums">{formatAmount(snap.before)}</div>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="text-gray-300">→</div>
+
+                                                    {snap.after !== undefined && (
+                                                        <div className="flex-1 text-right">
+                                                            <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-1">After</div>
+                                                            <div className={`font-bold text-sm tabular-nums ${
+                                                                (snap.after > (snap.before || 0)) ? 'text-green-600' :
+                                                                (snap.after < (snap.before || 0)) ? 'text-red-600' : 'text-gray-900'
+                                                            }`}>
+                                                                {formatAmount(snap.after)}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
-                                        )}
+                                        ))}
                                     </div>
                                 );
                             })()}
@@ -602,60 +613,53 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             </div>
                         )}
 
-                        {/* Wallet Balances - Intelligent Display for Receipt */}
+                        {/* Wallet Balances - Comprehensive Display for Receipt */}
                         {(() => {
-                            let balanceBefore: number | undefined;
-                            let balanceAfter: number | undefined;
-                            let showBalance = false;
+                            const snapshots: any[] = [];
 
-                            // Check for new data structure (Supports both Payer & Receiver)
-                            const userSnapshot = transaction.walletBalances?.[user?.uid];
-
-                            if (userSnapshot) {
-                                balanceBefore = userSnapshot.before;
-                                balanceAfter = userSnapshot.after;
-                                showBalance = true;
-                            }
-                            // Fallback logic for older transactions (Only accurate for Recorder)
-                            else if ((transaction.type === 'expense' && transaction.paidBy === user?.uid) ||
+                            if (transaction.walletBalances) {
+                                Object.entries(transaction.walletBalances).forEach(([uid, balance]) => {
+                                    const member = transactionGroup?.members.find((m: any) => m.userId === uid || m.id === uid);
+                                    const name = uid === user?.uid ? "You" : (member?.name || "Unknown");
+                                    // @ts-ignore
+                                    snapshots.push({ uid, name, ...balance });
+                                });
+                            } else if ((transaction.type === 'expense' && transaction.paidBy === user?.uid) ||
                                 (transaction.type === 'payment' && transaction.from === user?.uid)) {
-                                balanceBefore = transaction.walletBalanceBefore;
-                                balanceAfter = transaction.walletBalanceAfter;
-                                showBalance = true;
+                                if (transaction.walletBalanceBefore !== undefined || transaction.walletBalanceAfter !== undefined) {
+                                    snapshots.push({
+                                        uid: user?.uid,
+                                        name: "You",
+                                        before: transaction.walletBalanceBefore,
+                                        after: transaction.walletBalanceAfter
+                                    });
+                                }
                             }
 
-                            if (!showBalance || (balanceBefore === undefined && balanceAfter === undefined)) return null;
+                            if (snapshots.length === 0) return null;
 
                             return (
-                                <>
-                                    {balanceBefore !== undefined && (
-                                        <div style={{
-                                            display: 'flex', alignItems: 'center', gap: '12px',
-                                            padding: '14px 16px', background: '#F9FAFB', borderRadius: '16px',
-                                            border: '1px solid #E5E7EB', marginBottom: '12px'
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                                    {snapshots.map((snap, i) => (
+                                        <div key={i} style={{
+                                            padding: '12px', background: '#F9FAFB', borderRadius: '12px', border: '1px solid #E5E7EB'
                                         }}>
-                                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>💳</div>
-                                            <div>
-                                                <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Wallet Before</div>
-                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{formatAmount(balanceBefore)}</div>
+                                            <div style={{
+                                                fontSize: '10px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' as const, marginBottom: '4px', letterSpacing: '0.5px'
+                                            }}>
+                                                {snap.name}'s Wallet
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>
+                                                    {formatAmount(snap.before)} →
+                                                </span>
+                                                <span style={{ fontSize: '13px', fontWeight: 800, color: '#111827' }}>
+                                                    {formatAmount(snap.after)}
+                                                </span>
                                             </div>
                                         </div>
-                                    )}
-
-                                    {balanceAfter !== undefined && (
-                                        <div style={{
-                                            display: 'flex', alignItems: 'center', gap: '12px',
-                                            padding: '14px 16px', background: '#F0FDF4', borderRadius: '16px',
-                                            border: '1px solid #BBF7D0'
-                                        }}>
-                                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>💳</div>
-                                            <div>
-                                                <div style={{ fontSize: '10px', color: '#16A34A', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Wallet After</div>
-                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{formatAmount(balanceAfter)}</div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </>
+                                    ))}
+                                </div>
                             );
                         })()}
                     </div>

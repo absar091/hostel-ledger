@@ -205,6 +205,7 @@ export interface Transaction {
   note?: string;
   walletBalanceBefore?: number;
   walletBalanceAfter?: number;
+  walletBalances?: { [userId: string]: { before: number; after: number } };
   paidByIsTemporary?: boolean;
   fromIsTemporary?: boolean;
   toIsTemporary?: boolean;

@@ -1639,14 +1639,45 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
     const isCurrentUserPayer = paidBy === currentUserId;
 
-    // A. Update Wallet Balance if current user is payer
-    let walletBalanceAfter = user.walletBalance || 0;
+    // A. Update Wallet Balance for Payer (Comprehensive)
+    let walletBalanceAfter = user.walletBalance || 0; // Default for legacy field (User's view)
+    const walletBalancesSnapshot = {};
+
+    let payerUser = null;
+    let payerIdToUpdate = null;
+
     if (isCurrentUserPayer) {
-      if ((user.walletBalance || 0) < amount) {
+      payerUser = user;
+      payerIdToUpdate = currentUserId;
+    } else if (payer.userId) {
+      // Fetch payer user if they are a real user but not current user
+      const payerSnap = await db.ref(`users/${payer.userId}`).get();
+      if (payerSnap.exists()) {
+        payerUser = payerSnap.val();
+        payerIdToUpdate = payer.userId;
+      }
+    }
+
+    if (payerUser && payerIdToUpdate) {
+      const balanceBefore = payerUser.walletBalance || 0;
+
+      // Strict check only for current user to avoid blocking expense recording
+      if (payerIdToUpdate === currentUserId && balanceBefore < amount) {
         return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
       }
-      walletBalanceAfter -= amount;
-      updates[`users/${currentUserId}/walletBalance`] = walletBalanceAfter;
+
+      const balanceAfter = balanceBefore - amount;
+
+      // Update legacy variable if current user is payer
+      if (payerIdToUpdate === currentUserId) {
+        walletBalanceAfter = balanceAfter;
+      }
+
+      updates[`users/${payerIdToUpdate}/walletBalance`] = balanceAfter;
+      walletBalancesSnapshot[payerIdToUpdate] = {
+        before: balanceBefore,
+        after: balanceAfter
+      };
     }
 
     // B. Create Transaction Record
@@ -1670,6 +1701,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       place: place || null,
       note: note || null,
       walletBalanceAfter,
+      walletBalances: walletBalancesSnapshot,
       createdAt: new Date().toISOString(),
       serverTimestamp: serverTime
     };
@@ -2193,6 +2225,12 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
       serverTimestamp: serverTime,
       walletBalanceBefore: currentBalance,
       walletBalanceAfter: newBalance,
+      walletBalances: {
+        [currentUserId]: {
+          before: currentBalance,
+          after: newBalance
+        }
+      },
       userId: currentUserId,
       createdAt: new Date().toISOString()
     };
