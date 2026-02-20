@@ -238,7 +238,7 @@ const Signup = () => {
         // NEVER store password in browser storage - it's already in Firebase Auth
       }));
 
-      toast.success(t('auth.reset_success'));
+      toast.success(t('auth.signup_code_sent'));
       navigate("/verify-email", { state: { email: formData.email, type: 'signup' } });
 
     } catch (error: any) {

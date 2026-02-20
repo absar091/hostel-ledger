@@ -333,8 +333,9 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     const resolvedUsers = [];
     if (invitedUsernames && invitedUsernames.length > 0) {
       const resolved = await Promise.all(invitedUsernames.map(async (username) => {
-        const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
-        const s = await admin.database().ref(`usernames/${cleanUsername}`).get();
+        const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9._]/g, '');
+        const storageKey = cleanUsername.replace(/\./g, ',');
+        const s = await admin.database().ref(`usernames/${storageKey}`).get();
         if (s.exists()) {
           const uidData = s.val();
           const inviteeUid = typeof uidData === 'string' ? uidData : (uidData?.uid || uidData?.userId || null);
@@ -569,9 +570,10 @@ app.post('/api/get-valid-user-details', authenticate, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Username is required' });
     }
 
-    // Sanitize username to prevent path traversal (allow only alphanumeric and underscores)
-    const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
-    const usernameRef = admin.database().ref(`usernames/${cleanUsername}`);
+    // Sanitize username to prevent path traversal (allow only alphanumeric, dots and underscores)
+    const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9._]/g, '');
+    const storageKey = cleanUsername.replace(/\./g, ',');
+    const usernameRef = admin.database().ref(`usernames/${storageKey}`);
     const snapshot = await usernameRef.get();
 
     if (!snapshot.exists()) {
@@ -2363,7 +2365,8 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
     // 1. Resolve invitee username to UID
     // Using the 'usernames' index we created in Phase 1
     const normalizedUsername = inviteeUsername.toLowerCase().replace(/[^a-z0-9._]/g, '');
-    const usernameSnap = await db.ref(`usernames/${normalizedUsername}`).get();
+    const storageKey = normalizedUsername.replace(/\./g, ',');
+    const usernameSnap = await db.ref(`usernames/${storageKey}`).get();
 
     if (!usernameSnap.exists()) {
       return res.status(404).json({ success: false, error: 'Username not found' });
@@ -3151,8 +3154,9 @@ app.post('/api/send-money', authenticate, async (req, res) => {
 
     // 1. Resolve Recipient
     // We reuse the existing username index
-    const cleanUsername = recipientUsername.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
-    const usernameRef = db.ref(`usernames/${cleanUsername}`);
+    const cleanUsername = recipientUsername.toLowerCase().trim().replace(/[^a-z0-9._]/g, '');
+    const storageKey = cleanUsername.replace(/\./g, ',');
+    const usernameRef = db.ref(`usernames/${storageKey}`);
     const usernameSnap = await usernameRef.get();
 
     if (!usernameSnap.exists()) {
