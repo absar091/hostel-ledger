@@ -163,6 +163,18 @@ const strictEmailLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// STRICT Rate Limiter for Email Existence Checks (Anti-Enumeration)
+const strictEmailCheckLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // Limit to 10 checks per hour per IP
+  message: {
+    success: false,
+    error: 'Too many attempts. Please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Verify email configuration on startup
 emailService.verifyConnection().then(connected => {
   if (connected) {
@@ -1218,7 +1230,12 @@ app.post('/api/verification/check', generalLimiter, async (req, res) => {
 });
 
 // Email existence check endpoint (Production-hardened)
-app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
+// Applies strict rate limiting and random delays to prevent enumeration and timing attacks
+app.post('/api/check-email-exists', strictEmailCheckLimiter, async (req, res) => {
+  // Add random delay to mitigate timing attacks (500ms - 1500ms)
+  const randomDelay = Math.floor(Math.random() * 1000) + 500;
+  await new Promise(resolve => setTimeout(resolve, randomDelay));
+
   try {
     const { email } = req.body;
 
