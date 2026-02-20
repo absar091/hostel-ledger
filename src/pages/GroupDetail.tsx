@@ -74,15 +74,58 @@ const GroupDetail = () => {
   const rawGroup = fullGroup || partialGroup;
 
   // Defensive: Ensure members is always an array (Firebase may return object)
-  const group = rawGroup ? {
+  const group = useMemo(() => rawGroup ? {
     ...rawGroup,
     members: Array.isArray(rawGroup.members)
       ? rawGroup.members
       : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
-  } : null;
+  } : null, [rawGroup]);
 
-  const transactions = id ? getTransactionsByGroup(id) : [];
+  const transactions = useMemo(() => id ? getTransactionsByGroup(id) : [], [id, getTransactionsByGroup]);
   const settlements = id ? getSettlements(id) : {};
+
+  // Pre-calculate formatted transactions for rendering (Performance Optimization)
+  const formattedTransactions = useMemo(() => {
+    if (!group) return [];
+
+    return transactions.map(item => {
+      let paidByDisplay = undefined;
+      let participantsDisplay = undefined;
+      let userRole: 'payer' | 'receiver' | 'none' | undefined = undefined;
+
+      if (item.type === "expense") {
+        if (item.paidBy === user?.uid) {
+          paidByDisplay = t('group.you_label');
+        } else if (item.paidBy === group.createdBy) {
+          paidByDisplay = t('group.owner');
+        } else {
+          const member = group.members.find(m => m.id === item.paidBy);
+          paidByDisplay = member?.name || item.paidByName;
+        }
+
+        participantsDisplay = item.participants?.map(p => {
+          let name = p.name;
+          if (p.id === user?.uid) name = t('group.you_label');
+          else if (p.id === group.createdBy) name = t('group.owner');
+          else {
+            const member = group.members.find(m => m.id === p.id);
+            if (member) name = member.name;
+          }
+          return { ...p, name };
+        });
+      } else if (item.type === "payment") {
+        userRole = (item.from === user?.uid || item.paidBy === user?.uid ? 'payer' : 'receiver');
+      }
+
+      return {
+        ...item,
+        paidByDisplay,
+        participantsDisplay,
+        userRole,
+        isPayerOwner: item.paidBy === group.createdBy
+      };
+    });
+  }, [transactions, group, user?.uid, t]);
 
   // Calculate total amount to receive in this group
   const groupTotalToReceive = Object.values(settlements).reduce((total, settlement) => {
@@ -409,9 +452,9 @@ const GroupDetail = () => {
       <main className="px-4 py-4">
         {activeTab === "ledger" && (
           <div className="space-y-3 animate-fade-in">
-            {transactions.length > 0 ? (
+            {formattedTransactions.length > 0 ? (
               <div className="space-y-3">
-                {transactions.map((item, index) => (
+                {formattedTransactions.map((item, index) => (
                   <div
                     key={item.id}
                     className="animate-slide-up bg-white rounded-3xl shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 overflow-hidden"
@@ -422,29 +465,13 @@ const GroupDetail = () => {
                       title={item.title}
                       amount={item.amount}
                       date={item.date}
-                      paidBy={item.type === "expense" ? (
-                        (() => {
-                          // Use consistent naming logic
-                          if (item.paidBy === user?.uid) return t('group.you_label');
-                          if (item.paidBy === group.createdBy) return t('group.owner');
-                          const member = group.members.find(m => m.id === item.paidBy);
-                          return member?.name || item.paidByName;
-                        })()
-                      ) : undefined}
-                      participants={item.type === "expense" ? item.participants?.map(p => ({
-                        ...p,
-                        name: (() => {
-                          if (p.id === user?.uid) return t('group.you_label'); // Your share
-                          if (p.id === group.createdBy) return t('group.owner'); // Owner's share
-                          const member = group.members.find(m => m.id === p.id); // Valid member name
-                          return member?.name || p.name;
-                        })()
-                      })) : undefined}
+                      paidBy={item.paidByDisplay}
+                      participants={item.participantsDisplay}
                       from={item.type === "payment" ? item.fromName : undefined}
                       to={item.type === "payment" ? item.toName : undefined}
                       method={item.type === "payment" ? item.method : undefined}
-                      userRole={item.type === "payment" ? (item.from === user?.uid || item.paidBy === user?.uid ? 'payer' : 'receiver') : undefined}
-                      isPayerOwner={item.paidBy === group.createdBy}
+                      userRole={item.userRole}
+                      isPayerOwner={item.isPayerOwner}
                     />
                   </div>
                 ))}
