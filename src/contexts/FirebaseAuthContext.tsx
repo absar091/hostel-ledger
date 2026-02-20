@@ -84,7 +84,7 @@ interface FirebaseAuthContextType {
   updateUserProfile: (data: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>;
   uploadProfilePicture: (file: File) => Promise<{ success: boolean; url?: string; error?: string }>;
   removeProfilePicture: () => Promise<{ success: boolean; error?: string }>;
-  addMoneyToWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string }>;
+  addMoneyToWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string; transaction?: any }>;
   deductMoneyFromWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string }>;
   getWalletBalance: () => number;
   getSettlements: (groupId?: string) => { [personId: string]: { toReceive: number; toPay: number } };
@@ -886,7 +886,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addMoneyToWallet = async (amount: number, note?: string): Promise<{ success: boolean; error?: string }> => {
+  const addMoneyToWallet = async (amount: number, note?: string): Promise<{ success: boolean; error?: string; transaction?: any }> => {
     if (!user) {
       return { success: false, error: "User not authenticated" };
     }
@@ -903,7 +903,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       if (result.success) {
         logger.info("Wallet updated successfully via server");
         // No need to manually update local state as the onValue listener will sync it
-        return { success: true };
+        return { success: true, transaction: result.transaction };
       }
 
       return { success: false, error: "Failed to add money" };

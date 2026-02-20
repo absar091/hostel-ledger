@@ -232,7 +232,7 @@ interface FirebaseDataContextType {
   claimMemberProfile: (groupId: string, memberId: string) => Promise<{ success: boolean; error?: string }>;
   payMyDebt: (groupId: string, toMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   markPaymentAsPaid: (groupId: string, fromMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
-  addMoneyToWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string }>;
+  addMoneyToWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
   getGroupById: (groupId: string) => Group | undefined;
   fetchGroupDetail: (groupId: string) => Promise<Group | null>;
   getTransactionsByGroup: (groupId: string) => Transaction[];
@@ -1037,7 +1037,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addMoneyToWallet = async (amount: number, note?: string): Promise<{ success: boolean; error?: string }> => {
+  const addMoneyToWallet = async (amount: number, note?: string): Promise<{ success: boolean; error?: string; transaction?: Transaction }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
     const validation = validateAmount(amount);
