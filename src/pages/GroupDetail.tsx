@@ -70,19 +70,19 @@ const GroupDetail = () => {
   }, [id, fetchGroupDetail]);
 
   // Sync partial group from context if it exists (for immediate name/emoji display)
-  const partialGroup = id ? getGroupById(id) : undefined;
+  const partialGroup = useMemo(() => id ? getGroupById(id) : undefined, [id, getGroupById]);
   const rawGroup = fullGroup || partialGroup;
 
   // Defensive: Ensure members is always an array (Firebase may return object)
-  const group = rawGroup ? {
+  const group = useMemo(() => rawGroup ? {
     ...rawGroup,
     members: Array.isArray(rawGroup.members)
       ? rawGroup.members
       : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
-  } : null;
+  } : null, [rawGroup]);
 
-  const transactions = id ? getTransactionsByGroup(id) : [];
-  const settlements = id ? getSettlements(id) : {};
+  const transactions = useMemo(() => id ? getTransactionsByGroup(id) : [], [id, getTransactionsByGroup]);
+  const settlements = useMemo(() => id ? getSettlements(id) : {}, [id, getSettlements]);
 
   // Calculate total amount to receive in this group
   const groupTotalToReceive = Object.values(settlements).reduce((total, settlement) => {
@@ -107,6 +107,26 @@ const GroupDetail = () => {
     .reduce((sum, t) => sum + t.amount, 0), [transactions]);
 
   const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
+
+  const members = useMemo(() => group ? group.members.map((m) => ({
+    id: m.id,
+    name: m.name,
+    isTemporary: m.isTemporary,
+    deletionCondition: m.deletionCondition,
+    expiresAt: m.expiresAt,
+    email: (m as any).email,
+    isPending: (m as any).isPending
+  })) : [], [group]);
+
+  const currentUser = group ? group.members.find((m) => m.isCurrentUser) : undefined;
+
+  // Single group for this page
+  const groupForSheet = useMemo(() => group ? [{
+    id: group.id,
+    name: group.name,
+    emoji: group.emoji,
+    members: members,
+  }] : [], [group, members]);
 
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
@@ -217,17 +237,6 @@ const GroupDetail = () => {
     );
   }
 
-  const members = group.members.map((m) => ({
-    id: m.id,
-    name: m.name,
-    isTemporary: m.isTemporary,
-    deletionCondition: m.deletionCondition,
-    expiresAt: m.expiresAt,
-    email: (m as any).email,
-    isPending: (m as any).isPending
-  }));
-  const currentUser = group.members.find((m) => m.isCurrentUser);
-
   // Calculate total pending using settlements
   const totalPending = group.members.reduce((sum, m) => {
     if (!m.isCurrentUser) {
@@ -306,14 +315,6 @@ const GroupDetail = () => {
       toast.error(result.error || "Failed to record payment");
     }
   };
-
-  // Single group for this page
-  const groupForSheet = [{
-    id: group.id,
-    name: group.name,
-    emoji: group.emoji,
-    members: members,
-  }];
 
   // personalStats, totalSpent, and expenseCount are defined before early returns above
 
