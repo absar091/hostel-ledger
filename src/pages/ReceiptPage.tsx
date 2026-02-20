@@ -229,7 +229,12 @@ const ReceiptPage = () => {
 
                             {/* Hero Amount */}
                             <div className="py-6 text-center bg-slate-50/30">
-                                <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] block mb-2">{type === 'expense' ? t('receipt.amount_spent') : t('receipt.amount_received')}</span>
+                                <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] block mb-2">
+                                    {type === 'expense' ? t('receipt.amount_spent')
+                                        : type === 'wallet_add' ? 'Amount Added'
+                                            : type === 'wallet_deduct' ? 'Amount Deducted'
+                                                : t('receipt.amount_received')}
+                                </span>
                                 <div className="text-4xl font-black text-emerald-600 tabular-nums tracking-tighter flex justify-center items-end gap-1">
                                     {formatAmount(transaction.amount)}
                                 </div>
@@ -244,20 +249,43 @@ const ReceiptPage = () => {
                                     </div>
                                     <div className="space-y-1 text-right">
                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('receipt.type')}</p>
-                                        <p className="font-black text-[10px] text-slate-900 uppercase tracking-tight">{type === 'expense' ? t('receipt.group_expense') : t('receipt.settlement')}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? t('receipt.paid_by') : t('receipt.from')}</p>
-                                        <p className="font-black text-xs text-slate-900">{type === "expense" ? transaction.paidByName : transaction.fromName}</p>
-                                    </div>
-                                    <div className="space-y-1 text-right">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? t('receipt.split_with') : t('receipt.to')}</p>
-                                        <p className="font-black text-xs text-slate-900">
-                                            {type === "expense"
-                                                ? `${transaction.participants?.length || 0} ${t('receipt.people')}`
-                                                : transaction.toName || currentUser?.name}
+                                        <p className="font-black text-[10px] text-slate-900 uppercase tracking-tight">
+                                            {type === 'expense' ? t('receipt.group_expense')
+                                                : type === 'wallet_add' ? 'Wallet Deposit'
+                                                    : type === 'wallet_deduct' ? 'Wallet Withdrawal'
+                                                        : t('receipt.settlement')}
                                         </p>
                                     </div>
+
+                                    {(type === "expense" || type === "payment") && (
+                                        <>
+                                            <div className="space-y-1">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? t('receipt.paid_by') : t('receipt.from')}</p>
+                                                <p className="font-black text-xs text-slate-900">{type === "expense" ? transaction.paidByName : transaction.fromName}</p>
+                                            </div>
+                                            <div className="space-y-1 text-right">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? t('receipt.split_with') : t('receipt.to')}</p>
+                                                <p className="font-black text-xs text-slate-900">
+                                                    {type === "expense"
+                                                        ? `${transaction.participants?.length || 0} ${t('receipt.people')}`
+                                                        : transaction.toName || currentUser?.name}
+                                                </p>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {(type === "wallet_add" || type === "wallet_deduct") && (
+                                        <>
+                                            <div className="space-y-1">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">User</p>
+                                                <p className="font-black text-xs text-slate-900">{currentUser?.name || "User"}</p>
+                                            </div>
+                                            <div className="space-y-1 text-right">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Balance After</p>
+                                                <p className="font-black text-xs text-slate-900">{formatAmount(transaction.walletBalanceAfter)}</p>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
 
                                 {transaction.note && (

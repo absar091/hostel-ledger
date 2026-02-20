@@ -2215,7 +2215,8 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
     res.json({
       success: true,
       balance: newBalance,
-      transactionId
+      transactionId,
+      transaction: walletTransaction
     });
 
   } catch (error) {

@@ -613,6 +613,9 @@ const Dashboard = () => {
     const result = await addMoneyToWallet(amount, note);
     if (result.success) {
       toast.success(t('common.success'), { description: `Added ${formatAmount(amount)} to wallet` });
+      if (result.transaction) {
+        navigate("/receipt", { state: { transaction: result.transaction, type: "wallet_add" } });
+      }
     } else {
       toast.error(result.error || "Failed to add money");
     }
