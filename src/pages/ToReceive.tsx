@@ -85,8 +85,11 @@ const ToReceive = () => {
   useEffect(() => {
     peopleWhoOweMe.forEach(person => {
       // If the group members array is empty, which indicates lazy loading state
+      // OR if this specific person is not found in the group members list
       const group = groups.find(g => g.id === person.groupId);
-      if (group && (!group.members || group.members.length === 0)) {
+      const memberFound = group?.members?.some(m => m.id === person.id);
+
+      if (group && (!group.members || group.members.length === 0 || !memberFound)) {
         fetchGroupDetail(person.groupId);
       }
     });
@@ -176,19 +179,27 @@ const ToReceive = () => {
           </div>
 
           {/* Total Summary Card - iPhone Style with #4a6850 */}
-          <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-7 shadow-[0_25px_70px_rgba(74,104,80,0.4)] text-white border-t-2 border-[#5a7860]/40">
-            <div className="flex items-center gap-3 mb-2">
-              <ArrowDownLeft className="w-6 h-6 text-white/90 font-bold" />
-              <span className="text-sm text-white/90 font-black tracking-wide uppercase">{t('to_receive.total_amount')}</span>
-            </div>
-            <div className="text-5xl font-black mb-3 tracking-tighter tabular-nums drop-shadow-sm">
-              Rs {totalToReceive.toLocaleString()}
-            </div>
-            <div className="text-sm text-white/90 font-bold">
-              {t('to_receive.from_count_people', {
-                count: peopleWhoOweMe.length,
-                people: t(peopleWhoOweMe.length === 1 ? 'to_receive.person_singular' : 'to_receive.person_plural')
-              })}
+          <div className="bg-gradient-to-br from-[#e8f5e9] to-[#f1f8f4] rounded-3xl p-8 shadow-lg border border-[#4a6850]/10 relative overflow-hidden">
+            {/* Decorative circles to match dashboard */}
+            <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#4a6850]/5 rounded-full pointer-events-none"></div>
+            <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-[#4a6850]/5 rounded-full pointer-events-none"></div>
+
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-2xl bg-[#4a6850]/10 flex items-center justify-center">
+                  <ArrowDownLeft className="w-5 h-5 text-[#4a6850]" strokeWidth={3} />
+                </div>
+                <span className="text-sm text-[#4a6850]/70 font-black tracking-wide uppercase">{t('to_receive.total_amount')}</span>
+              </div>
+              <div className="text-5xl font-black mb-3 tracking-tighter tabular-nums text-[#4a6850]">
+                Rs {totalToReceive.toLocaleString()}
+              </div>
+              <div className="text-sm text-[#4a6850] font-bold">
+                {t('to_receive.from_count_people', {
+                  count: peopleWhoOweMe.length,
+                  people: t(peopleWhoOweMe.length === 1 ? 'to_receive.person_singular' : 'to_receive.person_plural', { count: peopleWhoOweMe.length })
+                })}
+              </div>
             </div>
           </div>
         </header>
