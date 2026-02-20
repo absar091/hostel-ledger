@@ -124,6 +124,7 @@ app.use(express.json());
 
 const emailService = require('./services/emailService');
 const expenseLogic = require('./utils/expenseLogic');
+const { verifyImageOwnership } = require('./utils/imageSecurity');
 const adminAuth = require('./middleware/adminAuth');
 
 // Rate limiting for email endpoints - very generous limits for testing
@@ -285,8 +286,13 @@ app.post('/api/delete-image', authenticate, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing publicId' });
     }
 
-    // Optional: Verify that the publicId belongs to the user or is relevant to the app
-    // For now, we trust the authenticated user is deleting their own profile picture or an image they have access to.
+    // Verify that the publicId belongs to the user or is a cover photo of a group they created
+    const isOwner = await verifyImageOwnership(admin.database(), req.user.uid, publicId);
+
+    if (!isOwner) {
+      console.warn(`⚠️ User ${req.user.uid} attempted to delete image ${publicId} but ownership verification failed.`);
+      return res.status(403).json({ success: false, error: 'Unauthorized: You do not have permission to delete this image.' });
+    }
 
     console.log(`🗑️ Deleting image from Cloudinary: ${publicId} by user ${req.user.uid}`);
 
