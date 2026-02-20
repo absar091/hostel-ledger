@@ -36,6 +36,55 @@ function normalizeMembers(members) {
   }));
 }
 
+// --- Helper: Sync Wallet Balance to Groups ---
+const syncWalletBalanceToGroups = async (db, userId, balance, isEnabled) => {
+  try {
+    const userGroupsRef = db.ref(`userGroups/${userId}`);
+    const snapshot = await userGroupsRef.get();
+
+    if (!snapshot.exists()) return;
+
+    const groupIds = Object.keys(snapshot.val());
+    const updates = {};
+
+    // We need to find the member entry for this user in each group
+    // This requires fetching each group, which is expensive (N+1)
+    // Optimization: Run fetches in parallel
+    const groupFetchPromises = groupIds.map(gid => db.ref(`groups/${gid}`).get());
+    const groupSnapshots = await Promise.all(groupFetchPromises);
+
+    groupSnapshots.forEach(groupSnap => {
+      if (!groupSnap.exists()) return;
+      const groupData = groupSnap.val();
+      const groupId = groupSnap.key;
+      const members = groupData.members;
+
+      if (!members) return;
+
+      if (Array.isArray(members)) {
+        const memberIndex = members.findIndex(m => m.userId === userId || m.id === userId);
+        if (memberIndex !== -1) {
+          updates[`groups/${groupId}/members/${memberIndex}/walletBalance`] = isEnabled ? balance : null;
+        }
+      } else {
+        // Object based members
+        const memberKey = Object.keys(members).find(key => members[key].userId === userId || members[key].id === userId);
+        if (memberKey) {
+          updates[`groups/${groupId}/members/${memberKey}/walletBalance`] = isEnabled ? balance : null;
+        }
+      }
+    });
+
+    if (Object.keys(updates).length > 0) {
+      await db.ref().update(updates);
+      console.log(`✅ Synced wallet balance for user ${userId} to ${Object.keys(updates).length} group paths (Enabled: ${isEnabled})`);
+    }
+
+  } catch (error) {
+    console.error('❌ Failed to sync wallet balance to groups:', error);
+  }
+};
+
 // Initialize Firebase Admin SDK using environment variables
 try {
   const serviceAccount = {
@@ -1854,6 +1903,13 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     // 6. Execute Atomic Update
     await db.ref().update(updates);
 
+    // --- SYNC WALLET BALANCE ---
+    if (isCurrentUserPayer) {
+      // Fire and forget
+      syncWalletBalanceToGroups(db, currentUserId, walletBalanceAfter, user.showBalanceToOthers || false)
+        .catch(err => console.error("Wallet sync failed:", err));
+    }
+
     // 7. Await Notifications (CRITICAL for Vercel/Serverless)
     // Run them BEFORE res.json to ensure the process isn't killed before they finish
     console.log('🚀 Triggering Notifications for Transaction:', transactionId);
@@ -2170,6 +2226,17 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     // 5. Execute Atomic Update
     await db.ref().update(updates);
 
+    // --- SYNC WALLET BALANCE ---
+    // Current User
+    syncWalletBalanceToGroups(db, currentUserId, currentUserBalanceAfter, user.showBalanceToOthers || false)
+      .catch(err => console.error("Wallet sync failed (current):", err));
+
+    // Other User
+    if (otherUser && otherPerson.userId) {
+      syncWalletBalanceToGroups(db, otherPerson.userId, otherUserBalanceAfter, otherUser.showBalanceToOthers || false)
+        .catch(err => console.error("Wallet sync failed (other):", err));
+    }
+
     // 7. Notifications (Awaited for Vercel/Serverless)
     console.log('🚀 Triggering Notifications for Payment:', transactionId);
     try {
@@ -2309,6 +2376,10 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
     updates[`userTransactions/${currentUserId}/${transactionId}`] = transactionSummary;
 
     await db.ref().update(updates);
+
+    // --- SYNC WALLET BALANCE ---
+    syncWalletBalanceToGroups(db, currentUserId, newBalance, user.showBalanceToOthers || false)
+      .catch(err => console.error("Wallet sync failed:", err));
 
     res.json({
       success: true,
@@ -2975,6 +3046,36 @@ app.post('/api/update-group', authenticate, async (req, res) => {
   }
 });
 
+// Sync Wallet Balance to Groups Endpoint
+app.post('/api/sync-balance-to-groups', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { showBalanceToOthers } = req.body;
+
+    const db = admin.database();
+    const userSnap = await db.ref(`users/${userId}`).get();
+
+    if (!userSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const userData = userSnap.val();
+    const currentBalance = userData.walletBalance || 0;
+
+    // Use value from body if provided, otherwise fallback to DB (though body is preferred for immediate toggle)
+    const isEnabled = showBalanceToOthers !== undefined ? showBalanceToOthers : (userData.showBalanceToOthers || false);
+
+    // Call helper (we await it here because this is an explicit sync request)
+    await syncWalletBalanceToGroups(db, userId, currentBalance, isEnabled);
+
+    res.json({ success: true, message: 'Wallet balance synced to groups' });
+
+  } catch (error) {
+    console.error('❌ Sync balance error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+  }
+});
+
 // ============================================
 // MERGE MEMBERS (Combine duplicate profiles)
 // ============================================
@@ -3454,6 +3555,13 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
     updates[`users/${tx.to}/walletBalance`] = receiverBalanceAfter;
 
     await db.ref().update(updates);
+
+    // --- SYNC WALLET BALANCE ---
+    syncWalletBalanceToGroups(db, tx.from, senderBalanceAfter, sender.showBalanceToOthers || false)
+      .catch(err => console.error("Wallet sync failed (sender):", err));
+
+    syncWalletBalanceToGroups(db, tx.to, receiverBalanceAfter, receiver.showBalanceToOthers || false)
+      .catch(err => console.error("Wallet sync failed (receiver):", err));
 
     // 4. Notify Sender
     try {
