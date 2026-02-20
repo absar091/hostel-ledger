@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export const PAKISTANI_PHONE_REGEX = /^(\+92|0)?3[0-9]{9}$/;
+
 // Enhanced validation schemas
 export const signupSchema = z.object({
   firstName: z.string()
@@ -20,7 +22,7 @@ export const signupSchema = z.object({
   
   phone: z.string()
     .optional()
-    .refine((val) => !val || val === '' || /^(\+92|0)?3[0-9]{9}$/.test(val), 'Please enter a valid Pakistani phone number (e.g., 03XX-XXXXXXX)'),
+    .refine((val) => !val || val === '' || PAKISTANI_PHONE_REGEX.test(val), 'Please enter a valid Pakistani phone number (e.g., 03XX-XXXXXXX)'),
   
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
@@ -89,7 +91,7 @@ export const signupSchemaWithEmergencyContact = z.object({
     .toLowerCase(),
   
   phone: z.string()
-    .regex(/^(\+92|0)?3[0-9]{9}$/, 'Please enter a valid Pakistani phone number (e.g., 03XX-XXXXXXX)')
+    .regex(PAKISTANI_PHONE_REGEX, 'Please enter a valid Pakistani phone number (e.g., 03XX-XXXXXXX)')
     .optional(),
   
   password: z.string()
@@ -127,7 +129,7 @@ export const signupSchemaWithEmergencyContact = z.object({
       .min(2, 'Emergency contact name must be at least 2 characters')
       .max(50, 'Emergency contact name must be less than 50 characters'),
     phone: z.string()
-      .regex(/^(\+92|0)?3[0-9]{9}$/, 'Please enter a valid Pakistani phone number'),
+      .regex(PAKISTANI_PHONE_REGEX, 'Please enter a valid Pakistani phone number'),
     relation: z.string()
       .min(2, 'Relation must be at least 2 characters')
       .max(30, 'Relation must be less than 30 characters')
@@ -306,7 +308,7 @@ export const validateGroupData = (data: {
         errors.push(`Member ${index + 1} name must be less than 50 characters`);
       }
 
-      if (member.phone && !/^(\+92|0)?3[0-9]{9}$/.test(member.phone)) {
+      if (member.phone && !PAKISTANI_PHONE_REGEX.test(member.phone)) {
         errors.push(`Member ${index + 1} phone number is invalid`);
       }
     });
