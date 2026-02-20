@@ -176,6 +176,18 @@ const strictEmailCheckLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Rate Limiter for User Search (Anti-Scraping/Enumeration)
+const userSearchLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // Limit to 30 searches per 15 mins per IP
+  message: {
+    success: false,
+    error: 'Too many search attempts. Please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Verify email configuration on startup
 emailService.verifyConnection().then(connected => {
   if (connected) {
@@ -581,7 +593,12 @@ const calculateExpenseSplit = (totalAmount, participants, payerId) => {
 const calculateExpenseSettlements = expenseLogic.calculateExpenseSettlements;
 
 // --- New Endpoint: Get Valid User Details ---
-app.post('/api/get-valid-user-details', authenticate, async (req, res) => {
+// Apply stricter rate limiting for user search
+app.post('/api/get-valid-user-details', userSearchLimiter, authenticate, async (req, res) => {
+  // Add random delay to mitigate timing attacks (500ms - 1500ms)
+  const randomDelay = Math.floor(Math.random() * 1000) + 500;
+  await new Promise(resolve => setTimeout(resolve, randomDelay));
+
   try {
     const { username } = req.body;
 
