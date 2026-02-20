@@ -13,6 +13,7 @@ import Avatar from "@/components/Avatar";
 import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
+import MobileHeader from "@/components/MobileHeader";
 import AppContainer from "@/components/AppContainer";
 import PWAInstallButton from "@/components/PWAInstallButton";
 import ShareButton from "@/components/ShareButton";
@@ -184,32 +185,8 @@ const Profile = () => {
         {/* Desktop Header */}
         <DesktopHeader />
 
-        {/* iPhone-style top accent border - Mobile only */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
-
-        {/* App Header - iPhone Style Enhanced with #4a6850 */}
-        <div className="bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
-          <div className="flex items-center justify-between">
-            {/* App Logo and Name - Enhanced */}
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
-                <img
-                  src="/only-logo.png"
-                  alt="Hostel Ledger"
-                  className="w-6 h-6 object-contain filter brightness-0 invert"
-                />
-              </div>
-              <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
-            </div>
-
-            {/* Header Actions - Enhanced */}
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl flex items-center justify-center shadow-lg">
-                <User className="w-7 h-7 text-white font-bold" />
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Mobile Header */}
+        <MobileHeader />
 
         {/* Header - iPhone Style Enhanced */}
         <header className="px-4 pt-6 lg:pt-8 pb-4 lg:pb-6">

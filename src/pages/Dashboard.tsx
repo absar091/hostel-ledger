@@ -18,6 +18,7 @@ import { sendExternalInvitation } from "@/lib/api";
 import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
+import MobileHeader from "@/components/MobileHeader";
 import AppContainer from "@/components/AppContainer";
 import Avatar from "@/components/Avatar";
 import Logo from "@/components/Logo";
@@ -670,70 +671,8 @@ const Dashboard = () => {
         {/* Desktop Header */}
         <DesktopHeader />
 
-        {/* Mobile Header - Minimalist Style with Real Logo */}
-        <header className="lg:hidden sticky top-0 z-30 bg-[#F8F9FA]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img
-              src="/only-logo.png"
-              alt="Hostel Ledger"
-              className="w-10 h-10 rounded-xl shadow-lg"
-            />
-            <div>
-              <h1 className="text-xs font-bold uppercase tracking-widest text-gray-500">
-                Hostel Ledger
-              </h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Offline/Sync Indicator - Auto-syncs in background */}
-            {offline ? (
-              <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 rounded-full px-3 py-1.5">
-                <WifiOff className="w-3.5 h-3.5 text-orange-600" />
-                <span className="text-xs font-bold text-orange-700">
-                  {t('common.offline')}
-                </span>
-                {pendingCount > 0 && (
-                  <span className="ml-1 bg-orange-600 text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center">
-                    {pendingCount}
-                  </span>
-                )}
-              </div>
-            ) : isSyncing ? (
-              <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1.5">
-                <RefreshCw className="w-3.5 h-3.5 text-blue-600 animate-spin" />
-                <span className="text-xs font-bold text-blue-700">
-                  {t('common.syncing')}
-                </span>
-              </div>
-            ) : pendingCount > 0 ? (
-              <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1.5">
-                <RefreshCw className="w-3.5 h-3.5 text-green-600" />
-                <span className="text-xs font-bold text-green-700">
-                  {pendingCount} pending
-                </span>
-              </div>
-            ) : null}
-
-            {isInstalled ? (
-              <button className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600">
-                <NotificationIcon />
-              </button>
-            ) : (
-              <PWAInstallButton />
-            )}
-
-            <button
-              onClick={() => navigate("/profile")}
-              className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center">
-                <span className="text-lg font-black text-white">
-                  {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-                </span>
-              </div>
-            </button>
-          </div>
-        </header>
+        {/* Mobile Header */}
+        <MobileHeader />
         {/* Username Migration Prompt */}
         <UsernameMigration />
 
