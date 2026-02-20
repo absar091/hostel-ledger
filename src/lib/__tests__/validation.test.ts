@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { signupSchema } from '../validation';
+import { signupSchema, validateGroupData } from '../validation';
 
 describe('signupSchema', () => {
   const validData = {
@@ -208,5 +208,116 @@ describe('signupSchema', () => {
           const result = signupSchema.safeParse({ ...validData, privacyAccepted: false });
           expect(result.success).toBe(false);
       });
+  });
+});
+
+describe('validateGroupData', () => {
+  const validMember = { name: 'John Doe', phone: '03001234567' };
+  const validData = {
+    name: 'Trip to Northern Areas',
+    emoji: '🏔️',
+    members: [validMember],
+  };
+
+  it('validates a correct group object', () => {
+    const result = validateGroupData(validData);
+    expect(result.isValid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('validates a group with multiple members', () => {
+    const result = validateGroupData({
+      ...validData,
+      members: [
+        { name: 'Alice', phone: '03001111111' },
+        { name: 'Bob', phone: '03002222222' }
+      ]
+    });
+    expect(result.isValid).toBe(true);
+  });
+
+  it('validates a member without phone number', () => {
+    const result = validateGroupData({
+      ...validData,
+      members: [{ name: 'Charlie' }]
+    });
+    expect(result.isValid).toBe(true);
+  });
+
+  describe('name', () => {
+    it('fails if name is empty', () => {
+      const result = validateGroupData({ ...validData, name: '' });
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Group name is required');
+    });
+
+    it('fails if name is too long', () => {
+      const result = validateGroupData({ ...validData, name: 'A'.repeat(51) });
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Group name must be less than 50 characters');
+    });
+  });
+
+  describe('emoji', () => {
+    it('fails if emoji is empty', () => {
+      const result = validateGroupData({ ...validData, emoji: '' });
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Please select an emoji for the group');
+    });
+  });
+
+  describe('members', () => {
+    it('fails if members list is empty', () => {
+      const result = validateGroupData({ ...validData, members: [] });
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Please add at least one member');
+    });
+
+    it('fails if a member name is empty', () => {
+      const result = validateGroupData({
+        ...validData,
+        members: [{ name: '' }]
+      });
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Member 1 name is required');
+    });
+
+    it('fails if a member name is too long', () => {
+      const result = validateGroupData({
+        ...validData,
+        members: [{ name: 'A'.repeat(51) }]
+      });
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Member 1 name must be less than 50 characters');
+    });
+
+    it('fails if a member phone is invalid', () => {
+      const result = validateGroupData({
+        ...validData,
+        members: [{ name: 'Dave', phone: '123' }]
+      });
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Member 1 phone number is invalid');
+    });
+
+    it('validates correct Pakistani phone formats', () => {
+        const result1 = validateGroupData({ ...validData, members: [{ name: 'E', phone: '03001234567' }] });
+        expect(result1.isValid).toBe(true);
+
+        const result2 = validateGroupData({ ...validData, members: [{ name: 'F', phone: '+923001234567' }] });
+        expect(result2.isValid).toBe(true);
+    });
+
+    it('fails if member names are duplicates', () => {
+      const result = validateGroupData({
+        ...validData,
+        members: [
+          { name: 'Alice' },
+          { name: 'alice ' } // Case insensitive check
+        ]
+      });
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Member names must be unique');
+    });
   });
 });
