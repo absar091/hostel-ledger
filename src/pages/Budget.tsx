@@ -10,6 +10,7 @@ import PageGuide from "@/components/PageGuide";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useTranslation } from "react-i18next";
+import MobileHeader from "@/components/MobileHeader";
 
 interface BudgetEntry {
   id: string;
@@ -114,7 +115,7 @@ const Budget = () => {
 
   return (
     <div className="min-h-screen bg-white pb-8">
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
+      <MobileHeader title={t('budget.title')} showBackButton={true} />
 
       <PageGuide
         title={t('budget.guide.title')}
@@ -129,17 +130,7 @@ const Budget = () => {
         onClose={handleClosePageGuide}
       />
 
-      <header className="px-4 pt-8 pb-4">
-        <div className="flex items-center gap-3 mb-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
-          </button>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">{t('budget.title')}</h1>
-        </div>
-
+      <main className="px-4 space-y-6 pt-6">
         <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-7 shadow-[0_25px_70px_rgba(74,104,80,0.4)] text-white border-t-2 border-[#5a7860]/40">
           <div className="flex items-center gap-2 mb-2">
             <PiggyBank className="w-6 h-6 text-white/90 font-bold" />
@@ -158,9 +149,6 @@ const Budget = () => {
             {t('budget.add_funds')}
           </Button>
         </div>
-      </header>
-
-      <main className="px-4 space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
             <div className="flex items-center gap-2 mb-2">
