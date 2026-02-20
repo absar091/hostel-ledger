@@ -115,7 +115,6 @@ const VerifyEmail = () => {
               : firebaseUser.displayName || "User";
 
             await sendWelcomeEmail(email, userName);
-            console.log('✅ Welcome email sent successfully');
           } catch (emailError) {
             console.warn('⚠️ Welcome email failed (non-critical):', emailError);
           }
@@ -129,8 +128,6 @@ const VerifyEmail = () => {
           if (pendingJoin) {
             try {
               const { groupId } = JSON.parse(pendingJoin);
-              console.log('🔗 Redirecting to pending group join:', groupId);
-              // navigate to JoinGroup page which will handle the claiming logic
               navigate(`/join/${groupId}`, { replace: true });
               return;
             } catch (e) {
@@ -234,7 +231,6 @@ const VerifyEmail = () => {
               : firebaseUser.displayName || "User";
 
             await sendWelcomeEmail(email, userName);
-            console.log('✅ Welcome email sent successfully');
           } catch (emailError) {
             console.warn('⚠️ Welcome email failed (non-critical):', emailError);
           }
@@ -248,7 +244,6 @@ const VerifyEmail = () => {
           if (pendingJoin) {
             try {
               const { groupId } = JSON.parse(pendingJoin);
-              console.log('🔗 Redirecting to pending group join:', groupId);
               navigate(`/join/${groupId}`, { replace: true });
               return;
             } catch (e) {
