@@ -148,9 +148,13 @@ class VerificationStore {
   // For now, we'll keep them as simple stubs or implement if backend supports them.
 
   async hasValidCode(email: string): Promise<boolean> {
-    // This is hard to check without a specific "check" endpoint.
-    // For now, assume true to let the UI proceed to verification input.
-    return true;
+    try {
+      const result = await this.callApi('/api/verification/check', { email });
+      return result.success && result.hasCode;
+    } catch (error) {
+      console.error('Error checking verification code:', error);
+      return false;
+    }
   }
 
   async getRemainingTime(email: string): Promise<number> {

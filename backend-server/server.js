@@ -892,6 +892,7 @@ app.use('/api', (req, res, next) => {
     '/check-email-exists',
     '/verification/request',
     '/verification/verify',
+    '/verification/check',
     '/cleanup-temp-members',
     '/cleanup-unverified-users'
   ];
@@ -1173,6 +1174,46 @@ app.post('/api/verification/verify', generalLimiter, async (req, res) => {
   } catch (error) {
     console.error('❌ Verification check error:', error);
     res.status(500).json({ success: false, error: 'Failed to verify code' });
+  }
+});
+
+/**
+ * Check if a valid verification code exists
+ */
+app.post('/api/verification/check', generalLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+
+    const docId = Buffer.from(email.toLowerCase()).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
+    const docRef = admin.firestore().collection('verificationCodes').doc(docId);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return res.json({ success: true, hasCode: false });
+    }
+
+    const record = docSnap.data();
+    const now = new Date();
+
+    // Check expiry
+    if (now > record.expiresAt.toDate()) {
+      return res.json({ success: true, hasCode: false, expired: true });
+    }
+
+    // Check if already verified
+    if (record.verified) {
+      return res.json({ success: true, hasCode: false, verified: true });
+    }
+
+    res.json({ success: true, hasCode: true, attempts: record.attempts });
+
+  } catch (error) {
+    console.error('❌ Verification check error:', error);
+    res.status(500).json({ success: false, error: 'Failed to check verification code' });
   }
 });
 
