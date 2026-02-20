@@ -755,23 +755,15 @@ const Dashboard = () => {
                   {groups.length}
                 </span>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1.5 shadow-sm">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-                  {t('dashboard.pending_payments')}
-                </span>
-                <span className="text-xs font-black text-slate-800 tabular-nums">
-                  {pendingPaymentCounts.total}
-                </span>
-                <span className="text-[10px] font-bold text-slate-500">
-                  ({t('dashboard.pay_receive', { pay: pendingPaymentCounts.toPayCount, receive: pendingPaymentCounts.toReceiveCount })})
-                </span>
-              </div>
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1.5 shadow-sm">
                 <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600">
-                  {t('dashboard.last_transaction')}
+                  {t('dashboard.pending_payments')}
                 </span>
-                <span className="text-xs font-black text-emerald-700">
-                  {lastTransactionTime}
+                <span className="text-xs font-black text-emerald-700 tabular-nums">
+                  {pendingPaymentCounts.total}
+                </span>
+                <span className="text-[10px] font-bold text-emerald-600/80">
+                  ({t('dashboard.pay_receive', { pay: pendingPaymentCounts.toPayCount, receive: pendingPaymentCounts.toReceiveCount })})
                 </span>
               </div>
             </div>
