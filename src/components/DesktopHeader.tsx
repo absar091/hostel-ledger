@@ -1,7 +1,8 @@
-import { Search, Bell, Settings } from "lucide-react";
+import { Search, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import NotificationIcon from "./NotificationIcon";
+import Avatar from "@/components/Avatar";
 
 const DesktopHeader = () => {
   const navigate = useNavigate();
@@ -40,10 +41,13 @@ const DesktopHeader = () => {
           onClick={() => navigate("/profile")}
           className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-gray-50 transition-all"
         >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center">
-            <span className="text-lg font-black text-white">
-              {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-            </span>
+          <div className="rounded-full ring-2 ring-white shadow-sm overflow-hidden">
+            <Avatar
+              name={user?.name || "User"}
+              photoURL={user?.photoURL}
+              size="md"
+              className="w-10 h-10"
+            />
           </div>
           <div className="text-left">
             <p className="text-sm font-black text-gray-900">{user?.name || "User"}</p>
