@@ -41,9 +41,61 @@ class VerificationStore {
     return result;
   }
 
+  // Helper: Save verification context to SessionStorage
+  private saveVerificationContext(email: string, type: string, name: string, userId?: string) {
+    try {
+      const context = {
+        email,
+        type,
+        name,
+        userId,
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem(`verification_context_${email}`, JSON.stringify(context));
+    } catch (e) {
+      console.warn('Failed to save verification context', e);
+    }
+  }
+
+  // Helper: Get verification context from SessionStorage
+  private getVerificationContext(email: string) {
+    try {
+      // 1. Try specific context
+      const item = sessionStorage.getItem(`verification_context_${email}`);
+      if (item) return JSON.parse(item);
+
+      // 2. Fallback to pendingSignup (for backward compatibility / page refreshes in signup flow)
+      const pendingSignup = sessionStorage.getItem('pendingSignup');
+      if (pendingSignup) {
+        const data = JSON.parse(pendingSignup);
+        if (data.email === email) {
+          return {
+            name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'User',
+            type: 'signup' // pendingSignup implies signup flow
+          };
+        }
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  }
+
+  // Helper: Clear verification context
+  private clearVerificationContext(email: string) {
+    try {
+      sessionStorage.removeItem(`verification_context_${email}`);
+    } catch (e) {
+      // ignore
+    }
+  }
+
   // Generate and store verification code via Backend
   async generateCode(email: string, type: VerificationRecord['type'], userId?: string, name: string = 'User'): Promise<string> {
     try {
+      // Persist context for resend
+      this.saveVerificationContext(email, type, name, userId);
+
       const result = await this.callApi('/api/verification/request', {
         email,
         name,
@@ -77,6 +129,10 @@ class VerificationStore {
         email,
         code: inputCode
       });
+
+      // Cleanup context on success
+      this.clearVerificationContext(email);
+
       return { success: true };
     } catch (error: any) {
       console.error('Error verifying code:', error);
@@ -107,12 +163,18 @@ class VerificationStore {
 
   async resendCode(email: string): Promise<string | null> {
     try {
-      // Note: We need the name of the user. We can store it in sessionStorage or similar if needed.
-      // For resend, we might need a stored type too.
+      // Retrieve stored context to get correct name and type
+      const context = this.getVerificationContext(email);
+
+      const name = context?.name || 'User';
+      const type = context?.type || 'signup';
+      const userId = context?.userId;
+
       await this.callApi('/api/verification/request', {
         email,
-        name: 'User', // Generic fallback
-        type: 'signup' // Default fallback
+        name,
+        type,
+        userId
       });
       return 'OK';
     } catch (error) {
