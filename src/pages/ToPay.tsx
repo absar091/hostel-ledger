@@ -87,8 +87,11 @@ const ToPay = () => {
     peopleIOwe.forEach(person => {
       // If the name is the fallback (contains the ID substring), trigger a fetch
       // Also check if the group members array is empty, which indicates lazy loading state
+      // OR if this specific person is not found in the group members list
       const group = groups.find(g => g.id === person.groupId);
-      if (group && (!group.members || group.members.length === 0)) {
+      const memberFound = group?.members?.some(m => m.id === person.id);
+
+      if (group && (!group.members || group.members.length === 0 || !memberFound)) {
         fetchGroupDetail(person.groupId);
       }
     });
@@ -179,9 +182,10 @@ const ToPay = () => {
           </div>
 
           {/* Total Summary Card - iPhone Style with Rose Theme */}
-          <div className="bg-gradient-to-br from-[#fef3f2] to-[#fef8f7] rounded-3xl p-7 shadow-lg border border-rose-100 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-[#fef3f2] to-[#fef8f7] rounded-3xl p-8 shadow-lg border border-rose-100 relative overflow-hidden">
             {/* Decorative circles to match dashboard */}
-            <div className="absolute -right-6 -top-6 w-24 h-24 bg-rose-500/5 rounded-full pointer-events-none"></div>
+            <div className="absolute -right-8 -top-8 w-32 h-32 bg-rose-500/5 rounded-full pointer-events-none"></div>
+            <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-500/5 rounded-full pointer-events-none"></div>
 
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-2">
@@ -196,7 +200,7 @@ const ToPay = () => {
               <div className="text-sm text-rose-500 font-bold">
                 {t('to_pay.to_count_people', {
                   count: peopleIOwe.length,
-                  people: t(peopleIOwe.length === 1 ? 'to_pay.person_singular' : 'to_pay.person_plural')
+                  people: t(peopleIOwe.length === 1 ? 'to_pay.person_singular' : 'to_pay.person_plural', { count: peopleIOwe.length })
                 })}
               </div>
             </div>
