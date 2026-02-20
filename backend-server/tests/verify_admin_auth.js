@@ -109,7 +109,7 @@ const runTests = () => {
     failed++;
   }
 
-  // Scenario 4: Valid x-admin-key header
+  // Scenario 4: Valid x-admin-key header (Single Key)
   try {
     const req = createMockReq({ 'x-admin-key': 'secret-key-123' });
     const res = createMockRes();
@@ -118,7 +118,7 @@ const runTests = () => {
     adminAuth(req, res, next);
 
     if (next.isCalled() && !res.statusCode) {
-      console.log('✅ Scenario 4 Passed: Calls next() when key is valid');
+      console.log('✅ Scenario 4 Passed: Calls next() when single key is valid');
       passed++;
     } else {
       console.error('❌ Scenario 4 Failed');
@@ -126,6 +126,72 @@ const runTests = () => {
     }
   } catch (e) {
     console.error('❌ Scenario 4 Exception:', e);
+    failed++;
+  }
+
+  // Scenario 5: Multiple Valid Keys (Comma Separated)
+  process.env.ADMIN_API_KEY = 'key1, key2, key3';
+
+  // Test key1
+  try {
+    const req = createMockReq({ 'x-admin-key': 'key1' });
+    const res = createMockRes();
+    const next = createMockNext();
+
+    adminAuth(req, res, next);
+
+    if (next.isCalled() && !res.statusCode) {
+      console.log('✅ Scenario 5a Passed: Calls next() when first key in list is valid');
+      passed++;
+    } else {
+      console.error('❌ Scenario 5a Failed');
+      failed++;
+    }
+  } catch (e) {
+    console.error('❌ Scenario 5a Exception:', e);
+    failed++;
+  }
+
+  // Test key2 (trim check)
+  try {
+    const req = createMockReq({ 'x-admin-key': 'key2' });
+    const res = createMockRes();
+    const next = createMockNext();
+
+    adminAuth(req, res, next);
+
+    if (next.isCalled() && !res.statusCode) {
+      console.log('✅ Scenario 5b Passed: Calls next() when second key (trimmed) is valid');
+      passed++;
+    } else {
+      console.error('❌ Scenario 5b Failed');
+      failed++;
+    }
+  } catch (e) {
+    console.error('❌ Scenario 5b Exception:', e);
+    failed++;
+  }
+
+  // Test invalid key against multiple list
+  try {
+    const req = createMockReq({ 'x-admin-key': 'key4' });
+    const res = createMockRes();
+    const next = createMockNext();
+
+    const originalWarn = console.warn;
+    console.warn = () => {};
+    adminAuth(req, res, next);
+    console.warn = originalWarn;
+
+    if (res.statusCode === 401) {
+      console.log('✅ Scenario 5c Passed: Returns 401 when key is not in list');
+      passed++;
+    } else {
+      console.error('❌ Scenario 5c Failed');
+      failed++;
+    }
+  } catch (e) {
+    console.error('❌ Scenario 5c Exception:', e);
     failed++;
   }
 
