@@ -309,6 +309,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
 
   const paidByName = members.find((m) => m.id === paidBy)?.name;
   const selectedGroupData = groups.find((g) => g.id === selectedGroup);
+  const creatorId = fullGroupData?.createdBy || selectedGroupData?.createdBy;
 
   // Calculate split details for display
   const splitDetails = useMemo(() => {
@@ -476,7 +477,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                         <div className="flex-1 text-left min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="font-black text-gray-900 tracking-tight block truncate">{member.name}</span>
-                            {(member.id === fullGroupData?.createdBy || (member as any).userId === fullGroupData?.createdBy) && (
+                            {(member.id === creatorId || (member as any).userId === creatorId) && (
                               <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.owner')}</span>
                             )}
                             {member.isPending && !member.isCurrentUser && (
@@ -549,7 +550,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                               {member.isTemporary && (
                                 <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.temp')}</span>
                               )}
-                              {(member.id === fullGroupData?.createdBy || (member as any).userId === fullGroupData?.createdBy) && (
+                              {(member.id === creatorId || (member as any).userId === creatorId) && (
                                 <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.owner')}</span>
                               )}
                               {member.isPending && !member.isCurrentUser && (
