@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { RateLimiter } from '../security';
+import { RateLimiter, validateCSRFToken } from '../security';
 
 describe('RateLimiter', () => {
     beforeEach(() => {
@@ -123,5 +123,28 @@ describe('RateLimiter', () => {
             // T=1001. Elapsed=1001. Remaining = 0.
             expect(limiter.getRemainingTime('user1')).toBe(0);
         });
+    });
+});
+
+describe('validateCSRFToken', () => {
+    it('should return true for matching tokens', () => {
+        const token = 'abc123xyz';
+        expect(validateCSRFToken(token, token)).toBe(true);
+    });
+
+    it('should return false for non-matching tokens', () => {
+        expect(validateCSRFToken('token1', 'token2')).toBe(false);
+    });
+
+    it('should return false when token is empty', () => {
+        expect(validateCSRFToken('', 'validToken')).toBe(false);
+    });
+
+    it('should return false when expectedToken is empty', () => {
+        expect(validateCSRFToken('validToken', '')).toBe(false);
+    });
+
+    it('should return false when both are empty', () => {
+        expect(validateCSRFToken('', '')).toBe(false);
     });
 });
