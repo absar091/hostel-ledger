@@ -196,34 +196,10 @@ const emailLimiter = rateLimit({
 // General rate limiter for API endpoints
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300, // limit each IP to 300 requests per windowMs (Increased slightly)
+  max: 200, // limit each IP to 200 requests per windowMs
   message: {
     success: false,
     error: 'Too many requests, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Global Rate Limit per Minute (Burst Protection)
-const globalMinuteLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 60, // limit each IP to 60 requests per minute
-  message: {
-    success: false,
-    error: 'Too many requests, please slow down.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Global Rate Limit per Hour (Sustained Usage)
-const globalHourLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 1000, // limit each IP to 1000 requests per hour
-  message: {
-    success: false,
-    error: 'Hourly request limit reached. Please try again later.'
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -333,10 +309,7 @@ app.get('/api/push-test', (req, res) => {
   });
 });
 
-// Apply rate limiting layers to API endpoints
-// Order matters: Minute (Burst) -> Hour (Sustained) -> General (15m window)
-app.use('/api', globalMinuteLimiter);
-app.use('/api', globalHourLimiter);
+// Apply general rate limiting to API endpoints only
 app.use('/api', generalLimiter);
 
 // Stricter rate limiting for creation endpoints
@@ -381,6 +354,189 @@ const authenticate = async (req, res, next) => {
     });
   }
 };
+
+// ============================================
+// 2FA Endpoints
+// ============================================
+
+// 2FA Status (Public) - Verify 2FA module is loaded
+app.get('/api/2fa/status', (req, res) => {
+  res.json({ success: true, message: '2FA Module Active' });
+});
+
+/**
+ * Setup 2FA
+ * Generates a secret and returns a QR code
+ */
+app.post('/api/2fa/setup', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+
+    // Generate secret
+    const secret = speakeasy.generateSecret({
+      name: `HostelLedger (${req.user.email || 'User'})`
+    });
+
+    // Store secret temporarily
+    // We store it in a restricted root node 'userSecrets' so it's not exposed to the client
+    await admin.database().ref(`userSecrets/${userId}/tempSecret`).set(secret.base32);
+
+    // Generate QR Code
+    QRCode.toDataURL(secret.otpauth_url, (err, data_url) => {
+      if (err) {
+        return res.status(500).json({ success: false, error: 'Failed to generate QR code' });
+      }
+
+      res.json({
+        success: true,
+        secret: secret.base32, // Allow manual entry
+        qrCode: data_url
+      });
+    });
+
+  } catch (error) {
+    console.error('2FA setup error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * Verify 2FA Setup
+ * Validates the token against the temp secret and enables 2FA
+ */
+app.post('/api/2fa/verify-setup', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'Token is required' });
+    }
+
+    // Get temp secret
+    const snap = await admin.database().ref(`userSecrets/${userId}/tempSecret`).get();
+
+    if (!snap.exists()) {
+      return res.status(400).json({ success: false, error: 'No 2FA setup in progress' });
+    }
+
+    const secret = snap.val();
+
+    // Verify token
+    const verified = speakeasy.totp.verify({
+      secret: secret,
+      encoding: 'base32',
+      token: token
+    });
+
+    if (verified) {
+      // Save secret permanently and enable 2FA
+      const updates = {};
+      updates[`userSecrets/${userId}/secret`] = secret;
+      updates[`userSecrets/${userId}/tempSecret`] = null;
+      updates[`users/${userId}/is2FAEnabled`] = true;
+
+      await admin.database().ref().update(updates);
+
+      console.log(`✅ 2FA enabled for user ${userId}`);
+      res.json({ success: true, message: '2FA enabled successfully' });
+    } else {
+      res.status(400).json({ success: false, error: 'Invalid verification code' });
+    }
+
+  } catch (error) {
+    console.error('2FA verify setup error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * Verify 2FA Token (Login Challenge)
+ */
+app.post('/api/2fa/verify', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'Token is required' });
+    }
+
+    // Get secret
+    const snap = await admin.database().ref(`userSecrets/${userId}/secret`).get();
+
+    if (!snap.exists()) {
+      return res.status(400).json({ success: false, error: '2FA is not enabled for this account' });
+    }
+
+    const secret = snap.val();
+
+    // Verify token
+    const verified = speakeasy.totp.verify({
+      secret: secret,
+      encoding: 'base32',
+      token: token
+    });
+
+    if (verified) {
+      res.json({ success: true, message: 'Verification successful' });
+    } else {
+      res.status(400).json({ success: false, error: 'Invalid verification code' });
+    }
+
+  } catch (error) {
+    console.error('2FA verify error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * Disable 2FA
+ */
+app.post('/api/2fa/disable', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'Token is required' });
+    }
+
+    // Get secret
+    const snap = await admin.database().ref(`userSecrets/${userId}/secret`).get();
+
+    if (!snap.exists()) {
+      return res.status(400).json({ success: false, error: '2FA is not enabled' });
+    }
+
+    const secret = snap.val();
+
+    // Verify token
+    const verified = speakeasy.totp.verify({
+      secret: secret,
+      encoding: 'base32',
+      token: token
+    });
+
+    if (verified) {
+      // Remove secret and disable 2FA
+      const updates = {};
+      updates[`userSecrets/${userId}/secret`] = null;
+      updates[`users/${userId}/is2FAEnabled`] = false;
+
+      await admin.database().ref().update(updates);
+
+      console.log(`✅ 2FA disabled for user ${userId}`);
+      res.json({ success: true, message: '2FA disabled successfully' });
+    } else {
+      res.status(400).json({ success: false, error: 'Invalid verification code' });
+    }
+
+  } catch (error) {
+    console.error('2FA disable error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
 
 // Delete Image Endpoint (Secure)
 app.post('/api/delete-image', authenticate, async (req, res) => {
@@ -1008,7 +1164,7 @@ app.post('/api/claim-email-invite', authenticate, async (req, res) => {
       success: true,
       message: 'Successfully joined the group!',
       groupId,
-      groupName: groupData.name, emoji: groupData.emoji || '👥', coverPhoto: groupData.coverPhoto || null, memberCount: groupData.memberCount || 0, createdBy: groupData.createdBy || ''
+      groupName: groupData.name
     });
 
   } catch (error) {
@@ -3462,183 +3618,6 @@ app.post('/api/cleanup-unverified-users', adminAuth, async (req, res) => {
 
 
 
-// ============================================
-// 2FA Endpoints
-// ============================================
-
-/**
- * Setup 2FA
- * Generates a secret and returns a QR code
- */
-app.post('/api/2fa/setup', authenticate, async (req, res) => {
-  try {
-    const userId = req.user.uid;
-
-    // Generate secret
-    const secret = speakeasy.generateSecret({
-      name: `HostelLedger (${req.user.email || 'User'})`
-    });
-
-    // Store secret temporarily
-    // We store it in a restricted root node 'userSecrets' so it's not exposed to the client
-    await admin.database().ref(`userSecrets/${userId}/tempSecret`).set(secret.base32);
-
-    // Generate QR Code
-    QRCode.toDataURL(secret.otpauth_url, (err, data_url) => {
-      if (err) {
-        return res.status(500).json({ success: false, error: 'Failed to generate QR code' });
-      }
-
-      res.json({
-        success: true,
-        secret: secret.base32, // Allow manual entry
-        qrCode: data_url
-      });
-    });
-
-  } catch (error) {
-    console.error('2FA setup error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-/**
- * Verify 2FA Setup
- * Validates the token against the temp secret and enables 2FA
- */
-app.post('/api/2fa/verify-setup', authenticate, async (req, res) => {
-  try {
-    const userId = req.user.uid;
-    const { token } = req.body;
-
-    if (!token) {
-      return res.status(400).json({ success: false, error: 'Token is required' });
-    }
-
-    // Get temp secret
-    const snap = await admin.database().ref(`userSecrets/${userId}/tempSecret`).get();
-
-    if (!snap.exists()) {
-      return res.status(400).json({ success: false, error: 'No 2FA setup in progress' });
-    }
-
-    const secret = snap.val();
-
-    // Verify token
-    const verified = speakeasy.totp.verify({
-      secret: secret,
-      encoding: 'base32',
-      token: token
-    });
-
-    if (verified) {
-      // Save secret permanently and enable 2FA
-      const updates = {};
-      updates[`userSecrets/${userId}/secret`] = secret;
-      updates[`userSecrets/${userId}/tempSecret`] = null;
-      updates[`users/${userId}/is2FAEnabled`] = true;
-
-      await admin.database().ref().update(updates);
-
-      console.log(`✅ 2FA enabled for user ${userId}`);
-      res.json({ success: true, message: '2FA enabled successfully' });
-    } else {
-      res.status(400).json({ success: false, error: 'Invalid verification code' });
-    }
-
-  } catch (error) {
-    console.error('2FA verify setup error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-/**
- * Verify 2FA Token (Login Challenge)
- */
-app.post('/api/2fa/verify', authenticate, async (req, res) => {
-  try {
-    const userId = req.user.uid;
-    const { token } = req.body;
-
-    if (!token) {
-      return res.status(400).json({ success: false, error: 'Token is required' });
-    }
-
-    // Get secret
-    const snap = await admin.database().ref(`userSecrets/${userId}/secret`).get();
-
-    if (!snap.exists()) {
-      return res.status(400).json({ success: false, error: '2FA is not enabled for this account' });
-    }
-
-    const secret = snap.val();
-
-    // Verify token
-    const verified = speakeasy.totp.verify({
-      secret: secret,
-      encoding: 'base32',
-      token: token
-    });
-
-    if (verified) {
-      res.json({ success: true, message: 'Verification successful' });
-    } else {
-      res.status(400).json({ success: false, error: 'Invalid verification code' });
-    }
-
-  } catch (error) {
-    console.error('2FA verify error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-/**
- * Disable 2FA
- */
-app.post('/api/2fa/disable', authenticate, async (req, res) => {
-  try {
-    const userId = req.user.uid;
-    const { token } = req.body;
-
-    if (!token) {
-      return res.status(400).json({ success: false, error: 'Token is required' });
-    }
-
-    // Get secret
-    const snap = await admin.database().ref(`userSecrets/${userId}/secret`).get();
-
-    if (!snap.exists()) {
-      return res.status(400).json({ success: false, error: '2FA is not enabled' });
-    }
-
-    const secret = snap.val();
-
-    // Verify token
-    const verified = speakeasy.totp.verify({
-      secret: secret,
-      encoding: 'base32',
-      token: token
-    });
-
-    if (verified) {
-      // Remove secret and disable 2FA
-      const updates = {};
-      updates[`userSecrets/${userId}/secret`] = null;
-      updates[`users/${userId}/is2FAEnabled`] = false;
-
-      await admin.database().ref().update(updates);
-
-      console.log(`✅ 2FA disabled for user ${userId}`);
-      res.json({ success: true, message: '2FA disabled successfully' });
-    } else {
-      res.status(400).json({ success: false, error: 'Invalid verification code' });
-    }
-
-  } catch (error) {
-    console.error('2FA disable error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
 
 // --- P2P Lending / Send Money Endpoints ---
 
@@ -3696,11 +3675,6 @@ app.post('/api/send-money', authenticate, async (req, res) => {
 
     if (!sender || !recipient) {
       return res.status(404).json({ success: false, error: 'User profile not found' });
-    }
-
-    // Check for sufficient funds (at time of request)
-    if ((sender.walletBalance || 0) < Number(amount)) {
-      return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
     }
 
     // 3. Create Pending Transaction
@@ -3831,11 +3805,6 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
 
     const senderBalanceBefore = sender.walletBalance || 0;
     const receiverBalanceBefore = receiver.walletBalance || 0;
-
-    // Check for sufficient funds
-    if (senderBalanceBefore < amount) {
-      return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
-    }
 
     // 2. Calculate new balances
     // Sender LOSES money (they sent it)

@@ -1155,27 +1155,9 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, error: result.error || "Failed to claim invitation" };
       }
 
-      // Optimistic update to ensure GroupDetail page finds the group immediately
-      setGroups(prev => {
-        // Prevent duplicate add
-        if (prev.some(g => g.id === groupId)) return prev;
-
-        const newGroup: Group = {
-          id: groupId,
-          name: result.groupName || "Group",
-          emoji: result.emoji || "📁",
-          coverPhoto: result.coverPhoto,
-          memberCount: result.memberCount || 1,
-          createdBy: result.createdBy || "",
-          createdAt: new Date().toISOString(),
-          members: [] // Members will be loaded when full detail is fetched
-        } as Group;
-        return [newGroup, ...prev];
-      });
-
+      // Refresh groups after claiming (listeners will handle this automatically)
       return { success: true };
     } catch (error: any) {
-
       console.error("Claim email invite error:", error);
       return { success: false, error: error.message || "Failed to join group" };
     }

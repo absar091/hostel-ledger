@@ -42,7 +42,6 @@ export const usePendingGroupJoin = (userId: string | undefined) => {
                     }, 1500);
                 } else {
                     console.log('Could not auto-join group:', result.error);
-                    toast.error(result.error || "Failed to join group from invitation");
                     localStorage.removeItem('pendingJoinGroup');
                 }
             } catch (error) {

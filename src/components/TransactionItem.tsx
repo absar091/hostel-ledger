@@ -1,25 +1,25 @@
-import { memo } from "react";
 import { ArrowUpRight, ArrowDownLeft, CreditCard } from "@/lib/icons";
-import { type Transaction } from "@/contexts/FirebaseDataContext";
+import { type Transaction, type Group } from "@/contexts/FirebaseDataContext";
 import { cn } from "@/lib/utils";
 
 interface TransactionItemProps {
   transaction: Transaction;
-  groupName?: string;
+  groups: Group[];
   userId?: string;
   onClick: (transaction: Transaction) => void;
   formatAmount: (amount: number) => string;
   dateFormat?: "time" | "date";
 }
 
-export const TransactionItem = memo(({
+export const TransactionItem = ({
   transaction,
-  groupName,
+  groups,
   userId,
   onClick,
   formatAmount,
   dateFormat = "time",
 }: TransactionItemProps) => {
+  const transactionGroup = groups.find((g) => g.id === transaction.groupId);
   const isPayer = transaction.paidBy === userId;
   const userParticipant = transaction.participants?.find(
     (p) => p.id === userId
@@ -97,7 +97,7 @@ export const TransactionItem = memo(({
         </p>
         <p className="text-xs text-slate-500 truncate">
           {typeLabel}
-          {groupName && ` • ${groupName}`}
+          {transactionGroup && ` • ${transactionGroup.name}`}
           {" • "}
           {dateDisplay}
         </p>
@@ -123,6 +123,4 @@ export const TransactionItem = memo(({
       </div>
     </button>
   );
-});
-
-TransactionItem.displayName = "TransactionItem";
+};

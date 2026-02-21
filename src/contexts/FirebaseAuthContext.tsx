@@ -728,18 +728,10 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
               return false;
             }
           }
-        } else if (response.status === 429) {
-          // Explicitly handle rate limiting
-          const data = await response.json().catch(() => ({}));
-          throw new Error(data.error || "Too many attempts. Please try again later.");
         } else {
           logger.warn('Backend email check failed, falling back to Firebase Auth', { email });
         }
       } catch (backendError: any) {
-        // Re-throw rate limit errors
-        if (backendError.message && backendError.message.includes("Too many attempts")) {
-          throw backendError;
-        }
         console.warn('⚠️ Backend email check error, falling back to Firebase Auth:', backendError.message);
       }
 
