@@ -413,8 +413,15 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     // 1b. Resolve Invited Usernames (Existing Users)
     const resolvedUsers = [];
     if (invitedUsernames && invitedUsernames.length > 0) {
-      const resolved = await Promise.all(invitedUsernames.map(async (username) => {
+      // Optimize: Deduplicate to prevent redundant DB calls
+      const uniqueUsernames = [...new Set(invitedUsernames)];
+
+      const resolved = await Promise.all(uniqueUsernames.map(async (username) => {
         const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
+
+        // Optimize: Skip empty usernames to prevent fetching the entire 'usernames' node (major performance/security fix)
+        if (!cleanUsername) return null;
+
         const s = await admin.database().ref(`usernames/${cleanUsername}`).get();
         if (s.exists()) {
           const uidData = s.val();
