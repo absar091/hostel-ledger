@@ -19,7 +19,8 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.0.2",
+    "supertest": "^7.2.2"
   },
   "engines": {
     "node": ">=18.0.0"

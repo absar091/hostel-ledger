@@ -5,7 +5,13 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const path = require('path');
-const admin = require('firebase-admin');
+// Allow dependency injection for testing
+let admin;
+if (process.env.NODE_ENV === 'test' && global.__MOCK_ADMIN__) {
+  admin = global.__MOCK_ADMIN__;
+} else {
+  admin = require('firebase-admin');
+}
 const cloudinary = require('cloudinary').v2;
 const { loadEmailTemplate } = require('./utils/email');
 const { validateCreateGroup } = require('./utils/validation');
@@ -3657,11 +3663,14 @@ app.use('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Hostel Ledger Email API server running on port ${PORT}`);
-  console.log(`📧 SMTP configured for: ${process.env.SMTP_USER}`);
-  console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-});
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Hostel Ledger Email API server running on port ${PORT}`);
+    console.log(`📧 SMTP configured for: ${process.env.SMTP_USER}`);
+    console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  });
+}
 
 module.exports = app;
