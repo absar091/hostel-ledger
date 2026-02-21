@@ -55,9 +55,7 @@ const MobileHeader = ({ title, showBackButton = false, rightContent }: MobileHea
       ) : null}
 
       {isInstalled ? (
-        <button className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600">
-          <NotificationIcon />
-        </button>
+        <NotificationIcon />
       ) : (
         <PWAInstallButton />
       )}
@@ -65,6 +63,7 @@ const MobileHeader = ({ title, showBackButton = false, rightContent }: MobileHea
       <button
         onClick={() => navigate("/profile")}
         className="relative group"
+        aria-label="View profile"
       >
         <div className="rounded-full ring-2 ring-white shadow-lg overflow-hidden">
           <Avatar
@@ -85,6 +84,7 @@ const MobileHeader = ({ title, showBackButton = false, rightContent }: MobileHea
           <button
             onClick={() => navigate(-1)}
             className="w-10 h-10 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all"
+            aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5 text-gray-700" />
           </button>
