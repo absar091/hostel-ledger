@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { RateLimiter, validateCSRFToken } from '../security';
+import { RateLimiter, validateCSRFToken, validateAmount } from '../security';
 
 describe('RateLimiter', () => {
     beforeEach(() => {
@@ -146,5 +146,72 @@ describe('validateCSRFToken', () => {
 
     it('should return false when both are empty', () => {
         expect(validateCSRFToken('', '')).toBe(false);
+    });
+});
+
+describe('validateAmount', () => {
+    it('should validate and sanitize valid integer numbers', () => {
+        const result = validateAmount(100);
+        expect(result.isValid).toBe(true);
+        expect(result.sanitizedAmount).toBe(100);
+        expect(result.error).toBeUndefined();
+    });
+
+    it('should validate and sanitize valid float numbers', () => {
+        const result = validateAmount(10.5);
+        expect(result.isValid).toBe(true);
+        expect(result.sanitizedAmount).toBe(10.5);
+    });
+
+    it('should handle string inputs correctly', () => {
+        const result = validateAmount('100.5');
+        expect(result.isValid).toBe(true);
+        expect(result.sanitizedAmount).toBe(100.5);
+    });
+
+    it('should return error for zero', () => {
+        const result = validateAmount(0);
+        expect(result.isValid).toBe(false);
+        expect(result.error).toBe('Amount must be greater than 0');
+    });
+
+    it('should return error for negative numbers', () => {
+        const result = validateAmount(-5);
+        expect(result.isValid).toBe(false);
+        expect(result.error).toBe('Amount must be greater than 0');
+    });
+
+    it('should return error for non-numeric strings', () => {
+        const result = validateAmount('abc');
+        expect(result.isValid).toBe(false);
+        expect(result.error).toBe('Amount must be a valid number');
+    });
+
+    it('should return error for NaN', () => {
+        const result = validateAmount(NaN);
+        expect(result.isValid).toBe(false);
+        expect(result.error).toBe('Amount must be a valid number');
+    });
+
+    it('should return error for amounts exceeding 1,000,000', () => {
+        const result = validateAmount(1000001);
+        expect(result.isValid).toBe(false);
+        expect(result.error).toBe('Amount cannot exceed 1,000,000');
+    });
+
+    it('should allow exactly 1,000,000', () => {
+        const result = validateAmount(1000000);
+        expect(result.isValid).toBe(true);
+        expect(result.sanitizedAmount).toBe(1000000);
+    });
+
+    it('should round to 2 decimal places', () => {
+        const result = validateAmount(10.556);
+        expect(result.isValid).toBe(true);
+        expect(result.sanitizedAmount).toBe(10.56);
+
+        const result2 = validateAmount(10.554);
+        expect(result2.isValid).toBe(true);
+        expect(result2.sanitizedAmount).toBe(10.55);
     });
 });
