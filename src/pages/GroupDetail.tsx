@@ -478,7 +478,15 @@ const GroupDetail = () => {
             {/* Pending Invitations Section */}
             {id && <GroupPendingInvitations groupId={id} />}
 
-            {group.members.map((member, index) => {
+            {group.members.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
+                <div className="w-14 h-14 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-3 border border-[#4a6850]/20">
+                  <Users className="w-7 h-7 text-[#4a6850] font-bold" />
+                </div>
+                <h3 className="text-base font-black text-gray-900 mb-1.5 tracking-tight">No members found</h3>
+              </div>
+            ) : (
+              group.members.map((member, index) => {
               const isYou = member.isCurrentUser;
 
               // Get settlement data for this member
@@ -576,7 +584,7 @@ const GroupDetail = () => {
                   </div>
                 </div>
               );
-            })}
+            }))}
           </div>
         )}
 
@@ -617,19 +625,25 @@ const GroupDetail = () => {
                 </div>
                 <h3 className="font-black text-gray-900 text-base tracking-tight">{t('group.top_contributor')}</h3>
               </div>
-              <div className="flex items-center gap-4">
-                <Avatar name={topSpender.name} size="lg" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-black text-gray-900 text-base mb-1 tracking-tight truncate">
-                    {topSpender.isCurrentUser ? t('group.you_label') : topSpender.name}
-                  </div>
-                  <div className="text-xs text-[#4a6850] font-bold">
-                    {topSpender.totalPaid > 0
-                      ? t('group.paid_amount', { amount: formatAmount(topSpender.totalPaid) })
-                      : t('group.no_expenses_paid')}
+              {topSpender ? (
+                <div className="flex items-center gap-4">
+                  <Avatar name={topSpender.name} size="lg" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-black text-gray-900 text-base mb-1 tracking-tight truncate">
+                      {topSpender.isCurrentUser ? t('group.you_label') : topSpender.name}
+                    </div>
+                    <div className="text-xs text-[#4a6850] font-bold">
+                      {topSpender.totalPaid > 0
+                        ? t('group.paid_amount', { amount: formatAmount(topSpender.totalPaid) })
+                        : t('group.no_expenses_paid')}
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="text-center py-4">
+                  <div className="text-sm text-gray-500 font-medium">No expenses recorded yet</div>
+                </div>
+              )}
             </div>
 
             {/* Members Overview Card - iPhone Style */}
