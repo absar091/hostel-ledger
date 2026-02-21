@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { RateLimiter, validateCSRFToken } from '../security';
+import { RateLimiter, validateCSRFToken, validatePassword } from '../security';
 
 describe('RateLimiter', () => {
     beforeEach(() => {
@@ -146,5 +146,69 @@ describe('validateCSRFToken', () => {
 
     it('should return false when both are empty', () => {
         expect(validateCSRFToken('', '')).toBe(false);
+    });
+});
+
+describe('validatePassword', () => {
+    it('should return valid for a password that meets all criteria', () => {
+        const result = validatePassword('StrongPass1!');
+        expect(result.isValid).toBe(true);
+        expect(result.errors).toHaveLength(0);
+    });
+
+    it('should fail if password is too short', () => {
+        const result = validatePassword('Short1!');
+        expect(result.isValid).toBe(false);
+        expect(result.errors).toContain('Password must be at least 8 characters long');
+    });
+
+    it('should fail if password is missing uppercase letter', () => {
+        const result = validatePassword('weakpass1!');
+        expect(result.isValid).toBe(false);
+        expect(result.errors).toContain('Password must contain at least one uppercase letter');
+    });
+
+    it('should fail if password is missing lowercase letter', () => {
+        const result = validatePassword('WEAKPASS1!');
+        expect(result.isValid).toBe(false);
+        expect(result.errors).toContain('Password must contain at least one lowercase letter');
+    });
+
+    it('should fail if password is missing number', () => {
+        const result = validatePassword('WeakPass!');
+        expect(result.isValid).toBe(false);
+        expect(result.errors).toContain('Password must contain at least one number');
+    });
+
+    it('should fail if password is missing special character', () => {
+        const result = validatePassword('WeakPass1');
+        expect(result.isValid).toBe(false);
+        expect(result.errors).toContain('Password must contain at least one special character');
+    });
+
+    it('should fail if password is too long', () => {
+        const longPassword = 'A'.repeat(129) + '1!';
+        const result = validatePassword(longPassword);
+        expect(result.isValid).toBe(false);
+        expect(result.errors).toContain('Password must be less than 128 characters');
+    });
+
+    it('should return multiple errors for multiple failures', () => {
+        const result = validatePassword('weak');
+        expect(result.isValid).toBe(false);
+        expect(result.errors).toContain('Password must be at least 8 characters long');
+        expect(result.errors).toContain('Password must contain at least one uppercase letter');
+        expect(result.errors).toContain('Password must contain at least one number');
+        expect(result.errors).toContain('Password must contain at least one special character');
+    });
+
+    it('should handle empty password', () => {
+        const result = validatePassword('');
+        expect(result.isValid).toBe(false);
+        expect(result.errors).toContain('Password must be at least 8 characters long');
+        expect(result.errors).toContain('Password must contain at least one uppercase letter');
+        expect(result.errors).toContain('Password must contain at least one lowercase letter');
+        expect(result.errors).toContain('Password must contain at least one number');
+        expect(result.errors).toContain('Password must contain at least one special character');
     });
 });
