@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { RateLimiter, validateCSRFToken } from '../security';
+import { RateLimiter, validateCSRFToken, sanitizeInput } from '../security';
 
 describe('RateLimiter', () => {
     beforeEach(() => {
@@ -146,5 +146,54 @@ describe('validateCSRFToken', () => {
 
     it('should return false when both are empty', () => {
         expect(validateCSRFToken('', '')).toBe(false);
+    });
+});
+
+describe('sanitizeInput', () => {
+    it('should return empty string for non-string input', () => {
+        // @ts-ignore
+        expect(sanitizeInput(null)).toBe('');
+        // @ts-ignore
+        expect(sanitizeInput(undefined)).toBe('');
+        // @ts-ignore
+        expect(sanitizeInput(123)).toBe('');
+        // @ts-ignore
+        expect(sanitizeInput({})).toBe('');
+    });
+
+    it('should return empty string for empty input', () => {
+        expect(sanitizeInput('')).toBe('');
+    });
+
+    it('should trim whitespace', () => {
+        expect(sanitizeInput('  test  ')).toBe('test');
+    });
+
+    it('should sanitize HTML special characters', () => {
+        expect(sanitizeInput('<')).toBe('&lt;');
+        expect(sanitizeInput('>')).toBe('&gt;');
+        expect(sanitizeInput('"')).toBe('&quot;');
+        expect(sanitizeInput("'")).toBe('&#x27;');
+        expect(sanitizeInput('&')).toBe('&amp;');
+    });
+
+    it('should sanitize common XSS vectors', () => {
+        expect(sanitizeInput('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
+        expect(sanitizeInput('<img src=x onerror=alert(1)>')).toBe('&lt;img src=x onerror=alert(1)&gt;');
+    });
+
+    it('should sanitize mixed content', () => {
+        expect(sanitizeInput('Hello <script> World')).toBe('Hello &lt;script&gt; World');
+    });
+
+    it('should truncate input to 1000 characters', () => {
+        const longString = 'a'.repeat(1005);
+        const sanitized = sanitizeInput(longString);
+        expect(sanitized.length).toBe(1000);
+        expect(sanitized).toBe('a'.repeat(1000));
+    });
+
+    it('should handle multiple special characters', () => {
+        expect(sanitizeInput('<<>>""\'\'&&')).toBe('&lt;&lt;&gt;&gt;&quot;&quot;&#x27;&#x27;&amp;&amp;');
     });
 });
