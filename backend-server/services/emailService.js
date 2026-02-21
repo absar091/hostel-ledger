@@ -491,7 +491,7 @@ const emailService = {
           </tr>` : ''}
         </table>
       `,
-            `<a href="https://app.hostelledger.aarx.online/groups/${data.groupId}" class="button">View Expense</a>`,
+            `<a href="https://app.hostelledger.aarx.online/group/${data.groupId}" class="button">View Expense</a>`,
             true // Allow unsubscribe
         );
 
