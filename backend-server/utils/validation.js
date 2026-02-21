@@ -98,4 +98,39 @@ function validateCreateGroup(body) {
   return null;
 }
 
-module.exports = { validateCreateGroup };
+/**
+ * Validates transaction details (expense or payment).
+ * @param {Object} params - The transaction parameters.
+ * @param {number} params.amount - The amount.
+ * @param {Array} [params.participants] - The participants array (optional).
+ * @returns {string|null} - Error message if invalid, null if valid.
+ */
+function validateTransaction({ amount, participants }) {
+  // 1. Validate Amount
+  if (typeof amount !== 'number' || isNaN(amount)) {
+    return 'Amount must be a valid number.';
+  }
+  if (amount <= 0) {
+    return 'Amount must be greater than zero.';
+  }
+  if (amount > 1000000) {
+    return 'Amount exceeds the maximum limit of 1,000,000.';
+  }
+
+  // 2. Validate Participants (if provided)
+  if (participants !== undefined) {
+    if (!Array.isArray(participants)) {
+      return 'Participants must be an array.';
+    }
+    if (participants.length === 0) {
+      return 'At least one participant is required.';
+    }
+    if (participants.length > 50) {
+      return 'Too many participants. Maximum allowed is 50.';
+    }
+  }
+
+  return null;
+}
+
+module.exports = { validateCreateGroup, validateTransaction };

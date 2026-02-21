@@ -14,7 +14,7 @@ if (process.env.NODE_ENV === 'test' && global.__MOCK_ADMIN__) {
 }
 const cloudinary = require('cloudinary').v2;
 const { loadEmailTemplate } = require('./utils/email');
-const { validateCreateGroup } = require('./utils/validation');
+const { validateCreateGroup, validateTransaction } = require('./utils/validation');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
 const pkg = require('./package.json');
@@ -1734,8 +1734,14 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
   const { groupId, amount, paidBy, participants, note, place } = req.body;
   const currentUserId = req.user.uid;
 
-  if (!groupId || !amount || !paidBy || !participants || participants.length === 0) {
+  if (!groupId || !amount || !paidBy || !participants) {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
+  }
+
+  // Security Fix: Validate Amount and Participants
+  const validationError = validateTransaction({ amount, participants });
+  if (validationError) {
+    return res.status(400).json({ success: false, error: validationError });
   }
 
   try {
@@ -2097,6 +2103,12 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
 
   if (!groupId || !fromMember || !toMember || !amount || !method) {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
+  }
+
+  // Security Fix: Validate Amount
+  const validationError = validateTransaction({ amount });
+  if (validationError) {
+    return res.status(400).json({ success: false, error: validationError });
   }
 
   try {
@@ -3450,8 +3462,10 @@ app.post('/api/send-money', authenticate, async (req, res) => {
     return res.status(400).json({ success: false, error: 'Recipient and amount are required' });
   }
 
-  if (amount <= 0) {
-    return res.status(400).json({ success: false, error: 'Amount must be positive' });
+  // Security Fix: Validate Amount
+  const validationError = validateTransaction({ amount });
+  if (validationError) {
+    return res.status(400).json({ success: false, error: validationError });
   }
 
   try {
@@ -3489,6 +3503,11 @@ app.post('/api/send-money', authenticate, async (req, res) => {
 
     if (!sender || !recipient) {
       return res.status(404).json({ success: false, error: 'User profile not found' });
+    }
+
+    // Security Fix: Check Sender Balance
+    if ((sender.walletBalance || 0) < amount) {
+      return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
     }
 
     // 3. Create Pending Transaction
@@ -3619,6 +3638,11 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
 
     const senderBalanceBefore = sender.walletBalance || 0;
     const receiverBalanceBefore = receiver.walletBalance || 0;
+
+    // Security Fix: Re-check sender balance (Double Check Locking)
+    if (senderBalanceBefore < amount) {
+        return res.status(400).json({ success: false, error: 'Sender has insufficient funds to complete this transaction' });
+    }
 
     // 2. Calculate new balances
     // Sender LOSES money (they sent it)

@@ -155,20 +155,13 @@ describe('Security Audit Tests', () => {
     // Check if the server accepted the request
     if (response.status === 200) {
         console.log('🚨 VULNERABILITY CONFIRMED: add-expense accepted negative amount');
-
-        // Verify DB update was called with positive increment (negative of negative)
-        if (mockDbUpdates.length > 0) {
-            const updateArg = mockDbUpdates[0];
-            const walletUpdate = updateArg['users/test-user-id/walletBalance'];
-
-            // Expected behavior for vulnerability: walletBalance -= -5000 => walletBalance += 5000
-            expect(walletUpdate).toEqual({ ".sv": "increment", "val": 5000 });
-        }
-    } else {
+    } else if (response.status === 400) {
         console.log('✅ SECURE: add-expense rejected negative amount');
     }
 
-    expect(response.status).toBe(200);
+    // Expect Bad Request (400) - Fix Applied
+    expect(response.status).toBe(400);
+    expect(response.body.error).toMatch(/greater than zero/);
   });
 
   it('VULNERABILITY 2: record-payment allows negative amounts', async () => {
@@ -194,18 +187,13 @@ describe('Security Audit Tests', () => {
 
      if (response.status === 200) {
          console.log('🚨 VULNERABILITY CONFIRMED: record-payment accepted negative amount');
-
-         if (mockDbUpdates.length > 0) {
-             const updateArg = mockDbUpdates[0];
-             // Payer (test-user-id) logic: walletBalance -= amount => -= -5000 => += 5000
-             const payerWalletUpdate = updateArg['users/test-user-id/walletBalance'];
-             expect(payerWalletUpdate).toEqual({ ".sv": "increment", "val": 5000 });
-         }
-     } else {
+     } else if (response.status === 400) {
          console.log('✅ SECURE: record-payment rejected negative amount');
      }
 
-     expect(response.status).toBe(200);
+     // Expect Bad Request (400) - Fix Applied
+     expect(response.status).toBe(400);
+     expect(response.body.error).toMatch(/greater than zero/);
    });
 
    it('VULNERABILITY 3: send-money allows insufficient funds (only checks amount > 0)', async () => {
@@ -229,9 +217,13 @@ describe('Security Audit Tests', () => {
 
       if (response.status === 200) {
           console.log('🚨 VULNERABILITY CONFIRMED: send-money allowed request exceeding balance');
+      } else if (response.status === 400) {
+          console.log('✅ SECURE: send-money rejected insufficient funds');
       }
 
-      expect(response.status).toBe(200);
+      // Expect Bad Request (400) - Fix Applied
+      expect(response.status).toBe(400);
+      expect(response.body.error).toMatch(/Insufficient wallet balance/);
    });
 
 });
