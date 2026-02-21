@@ -758,7 +758,7 @@ const Dashboard = () => {
           )}
 
           {/* PRIMARY CARD: Enhanced with last transaction time - Moved further down */}
-          <section className="bg-gradient-to-br from-[#10b981] to-[#059669] rounded-3xl p-5 lg:p-6 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
+          <section className="mesh-gradient rounded-3xl p-5 lg:p-6 text-white shadow-2xl shadow-[#4a6850]/30 relative">
             <div className="relative z-10">
               <div className="flex justify-between items-start">
                 <div>
