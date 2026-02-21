@@ -3,8 +3,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import Avatar from "./Avatar";
-import { UserPlus, Trash2, AlertTriangle, X } from "lucide-react";
+import { UserPlus, Trash2, AlertTriangle, X, Share2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,7 +49,6 @@ interface GroupSettingsSheetProps {
 }
 
 import { toast } from "sonner";
-import { Share2 } from "lucide-react";
 
 const EMOJIS = ["🏠", "🍕", "🎮", "📚", "🏖️", "⚽", "🎸", "🚗", "✈️"];
 
@@ -133,6 +137,7 @@ const GroupSettingsSheet = ({
                         }
                       }}
                       disabled={!isOwner}
+                      aria-label={`Select ${emoji} icon`}
                       className={`w-14 h-14 rounded-3xl text-2xl flex items-center justify-center transition-all shadow-lg hover:shadow-xl ${selectedEmoji === emoji
                         ? "bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white scale-110 border-2 border-[#4a6850]"
                         : "bg-white hover:bg-[#4a6850]/5 border border-[#4a6850]/10 hover:border-[#4a6850]/20"
@@ -187,6 +192,7 @@ const GroupSettingsSheet = ({
                       setNewMemberName("");
                     }}
                     className="h-12 w-12 rounded-2xl hover:bg-gray-100 shadow-lg hover:shadow-xl transition-all"
+                    aria-label="Cancel adding member"
                   >
                     <X className="w-4 h-4" />
                   </Button>
@@ -223,27 +229,42 @@ const GroupSettingsSheet = ({
                     <div className="flex items-center gap-1">
                       {/* Invite Link for Unclaimed Members */}
                       {!member.isCurrentUser && !member.userId && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleInviteToClaim(member.id, member.name)}
-                          className="text-[#4a6850] hover:text-[#3d5643] hover:bg-[#4a6850]/10 w-10 h-10 rounded-2xl transition-all"
-                          title="Copy invite link for this profile"
-                        >
-                          <Share2 className="w-4 h-4" />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleInviteToClaim(member.id, member.name)}
+                              className="text-[#4a6850] hover:text-[#3d5643] hover:bg-[#4a6850]/10 w-10 h-10 rounded-2xl transition-all"
+                              aria-label={`Copy invite link for ${member.name}`}
+                            >
+                              <Share2 className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Copy invite link</p>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
 
                       {/* RESTRICT REMOVE TO OWNER */}
                       {isOwner && !member.isCurrentUser && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setMemberToRemove(member)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 w-10 h-10 rounded-2xl shadow-lg hover:shadow-xl transition-all"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setMemberToRemove(member)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 w-10 h-10 rounded-2xl shadow-lg hover:shadow-xl transition-all"
+                              aria-label={`Remove ${member.name}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Remove member from group</p>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                   </div>
