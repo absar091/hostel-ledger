@@ -388,6 +388,7 @@ const resources = {
                 "request_payment": "Request Payment"
             },
             "common": {
+                "pending": "Pending",
                 "today": "Today",
                 "yesterday": "Yesterday",
                 "older": "Older",
@@ -1182,6 +1183,7 @@ const resources = {
                 "request_payment": "ادائیگی کی درخواست کریں"
             },
             "common": {
+                "pending": "زیر التواء",
                 "today": "آج",
                 "yesterday": "کل",
                 "older": "پرانا",

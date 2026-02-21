@@ -18,13 +18,12 @@ const sanitizeAmount = (amount: string | number): number => {
 const normalizeMembers = (members: any, currentUserId?: string): any[] => {
   if (!members) return [];
 
-  const membersArray = Array.isArray(members)
+  const membersArray = (Array.isArray(members)
     ? members
     : Object.entries(members).map(([key, value]: [string, any]) => ({
       ...value,
       id: value.id || key, // Ensure the key is used as the member id
-      isCurrentUser: false // Reset client-side property, ignore DB value
-    }));
+    }))).map((m: any) => ({ ...m, isCurrentUser: false })); // Reset client-side property for ALL members
 
   console.log('Validating members:', membersArray.map((m: any) => ({
     id: m.id,
