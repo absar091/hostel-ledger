@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -27,6 +27,9 @@ import LanguageSelector from "@/components/LanguageSelector";
 const Signup = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const emailParam = searchParams.get('email');
+
   const { signup, checkUsernameAvailable, checkEmailExists, user } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   const [currentView, setCurrentView] = useState<'basic' | 'password'>('basic');
@@ -40,7 +43,7 @@ const Signup = () => {
     firstName: "",
     lastName: "",
     username: "",
-    email: "",
+    email: emailParam || "",
     university: "",
     password: "",
     confirmPassword: "",
@@ -184,9 +187,13 @@ const Signup = () => {
 
       // Move to password step
       setCurrentView('password');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Email check failed:", error);
-      toast.error(t('common.error'), { description: "Failed to verify email. Please try again." });
+      if (error.message && error.message.includes("Too many attempts")) {
+        toast.error(t('auth.max_attempts_reached'));
+      } else {
+        toast.error(t('common.error'), { description: "Failed to verify email. Please try again." });
+      }
     } finally {
       setIsLoading(false);
     }

@@ -81,7 +81,11 @@ const ForgotPassword = () => {
 
     } catch (error: any) {
       console.error("Password reset error:", error);
-      toast.error(t('common.error'), { description: "Failed to send reset email. Please try again." });
+      if (error.message && error.message.includes("Too many attempts")) {
+        toast.error(t('auth.max_attempts_reached'));
+      } else {
+        toast.error(t('common.error'), { description: error.message || "Failed to send reset email. Please try again." });
+      }
     } finally {
       setIsLoading(false);
     }

@@ -121,7 +121,7 @@ const VerifyEmail = () => {
 
           // Clean up session storage
           sessionStorage.removeItem('pendingSignup');
-          toast.success(t('auth.reset_success'));
+          toast.success(t('auth.verification_success'));
 
           // CHECK FOR PENDING JOIN
           const pendingJoin = localStorage.getItem('pendingJoinGroup');
@@ -167,7 +167,7 @@ const VerifyEmail = () => {
       const success = await resendVerificationCode(email);
 
       if (success) {
-        toast.success(t('auth.reset_instructions_sent'), { description: "New verification code sent to your email!" });
+        toast.success(t('auth.verification_code_sent'), { description: "New verification code sent to your email!" });
       } else {
         toast.error(t('common.error'), { description: "Failed to resend code. Please try again." });
       }
@@ -237,7 +237,7 @@ const VerifyEmail = () => {
 
           // Clean up session storage
           sessionStorage.removeItem('pendingSignup');
-          toast.success(t('auth.reset_success'));
+          toast.success(t('auth.verification_success'));
 
           // CHECK FOR PENDING JOIN
           const pendingJoin = localStorage.getItem('pendingJoinGroup');
