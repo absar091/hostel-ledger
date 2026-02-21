@@ -148,7 +148,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     // leaving the app stuck on splash forever. Fallback to cached session.
     // Safety timeout: on some devices/networks Firebase auth callback can hang,
     // leaving the app stuck on splash forever. Fallback to cached session.
-    // OPTIMIZATION: Reduced timeout from 5000ms to 2500ms
+    // OPTIMIZATION: Increased timeout to 10000ms
     const authTimeout = window.setTimeout(() => {
       if (authResolved) return;
 
@@ -158,7 +158,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       if (!loadCachedUser('auth timeout fallback')) {
         setIsLoading(false);
       }
-    }, 2500);
+    }, 10000);
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       // Always update firebaseUser state, even if we loaded from cache
@@ -210,11 +210,11 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       try {
         // Added Safety Timeout: If profile fetch hangs, force app entry after 3s
-        // OPTIMIZATION: Reduced timeout from 5000ms to 3000ms
+        // OPTIMIZATION: Increased timeout to 15000ms
         const profileTimeout = setTimeout(() => {
           console.warn('⏱️ Profile load timeout - forcing app entry (offline/partial state)');
           setIsLoading(false);
-        }, 3000);
+        }, 15000);
 
         // User Profile Listener
         unsubscribeUser = onValue(userRef, async (snapshot) => {
