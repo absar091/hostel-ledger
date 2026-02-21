@@ -999,60 +999,45 @@ app.use('/api', (req, res, next) => {
   authenticate(req, res, next);
 });
 
-// Generic email sending endpoint
-// Generic email sending endpoint
-app.post('/api/send-email', emailLimiter, async (req, res) => {
+// Send Temporary Member Alert Endpoint (Secure - No raw HTML)
+app.post('/api/send-temp-member-alert', emailLimiter, async (req, res) => {
   try {
-    const { to, subject, html, text } = req.body;
+    const { to, memberName, groupName, expiryDate } = req.body;
 
-    // Validate input
-    if (!to || !subject || !html) {
+    // Validate inputs
+    if (!to || !memberName || !groupName || !expiryDate) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: to, subject, html'
+        error: 'Missing required fields: to, memberName, groupName, expiryDate'
       });
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(to)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid email address'
-      });
+    // Format Date (assuming timestamp or ISO string)
+    const dateObj = new Date(expiryDate);
+    if (isNaN(dateObj.getTime())) {
+      return res.status(400).json({ success: false, error: 'Invalid expiryDate' });
     }
+    const formattedDate = dateObj.toLocaleDateString();
 
-    // Send email using emailService
-    console.log('📧 Sending email via emailService...');
-    const result = await emailService.sendEmailSafe({
-      to,
-      subject,
-      html,
-      text: text || ''
-    });
+    await emailService.sendTempMemberAlert(to, memberName, groupName, formattedDate);
 
-    if (result.success) {
-      console.log('✅ Email sent successfully:', result.messageId);
-      res.json({
-        success: true,
-        messageId: result.messageId,
-        provider: result.provider
-      });
-    } else {
-      console.error('❌ Failed to send email:', result.error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to send email: ' + result.error
-      });
-    }
+    console.log(`✅ Temp member alert sent to ${to}`);
+    res.json({ success: true, message: 'Alert sent successfully' });
 
   } catch (error) {
-    console.error('❌ Email sending error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to send email: ' + error.message
-    });
+    console.error('❌ Temp member alert error:', error);
+    res.status(500).json({ success: false, error: 'Failed to send alert: ' + error.message });
   }
+});
+
+// Generic email sending endpoint
+// DEPRECATED: This endpoint is disabled for security reasons to prevent open relay abuse.
+app.post('/api/send-email', emailLimiter, async (req, res) => {
+  console.warn('⚠️ Access attempt to deprecated/insecure send-email endpoint');
+  return res.status(410).json({
+    success: false,
+    error: 'This endpoint is deprecated for security reasons. Please use specific transaction/alert endpoints.'
+  });
 });
 
 // Verification email endpoint
