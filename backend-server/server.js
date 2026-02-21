@@ -1006,7 +1006,7 @@ app.post('/api/claim-email-invite', authenticate, async (req, res) => {
       success: true,
       message: 'Successfully joined the group!',
       groupId,
-      groupName: groupData.name
+      groupName: groupData.name, emoji: groupData.emoji || '👥', coverPhoto: groupData.coverPhoto || null, memberCount: groupData.memberCount || 0, createdBy: groupData.createdBy || ''
     });
 
   } catch (error) {
