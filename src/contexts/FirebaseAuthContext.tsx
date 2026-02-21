@@ -13,11 +13,11 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider
 } from "firebase/auth";
-import { ref, set, get, update, push, onValue, off, query, orderByChild, equalTo } from "firebase/database";
+import { ref, set, get, update, push, onValue } from "firebase/database";
 import { auth, database } from "@/lib/firebase";
 import { logger } from "@/lib/logger";
 import { retryOperation } from "@/lib/transaction";
-import { IndividualDebt, calculateDebtSummary, createDebtEntries } from "@/lib/debtTracking";
+import { IndividualDebt } from "@/lib/debtTracking";
 import {
   sanitizeInput,
   isValidEmail,
@@ -1071,71 +1071,16 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return { youOwe: [], theyOwe: [], totalYouOwe: 0, totalTheyOwe: 0, netAmount: 0 };
 
     try {
-      const txRef = query(
-        ref(database, `userTransactions/${user.uid}`),
-        orderByChild('groupId'),
-        equalTo(groupId)
-      );
+      // Use backend endpoint for performance (server-side filtering)
+      const result = await callSecureApi('/api/get-individual-debts', { groupId, personId });
 
-      const snapshot = await get(txRef);
-      if (!snapshot.exists()) {
-        return { youOwe: [], theyOwe: [], totalYouOwe: 0, totalTheyOwe: 0, netAmount: 0 };
+      if (result.success) {
+        // Return summary directly (stripping success flag if needed, but the interface accepts extra props)
+        const { success, ...summary } = result;
+        return summary;
       }
 
-      const transactions = snapshot.val();
-      const debts: IndividualDebt[] = [];
-
-      Object.values(transactions).forEach((tx: any) => {
-        if (tx.type === 'expense') {
-          let participants: { id: string, amount: number }[] = [];
-          if (Array.isArray(tx.participants)) {
-            participants = tx.participants;
-          }
-
-          if (participants.length > 0) {
-            const personInvolved = participants.some(p => p.id === personId) || tx.paidBy === personId;
-            const userInvolved = participants.some(p => p.id === user.uid) || tx.paidBy === user.uid;
-
-            if (personInvolved && userInvolved) {
-              const newDebts = createDebtEntries(
-                tx.id,
-                tx.title || 'Expense',
-                tx.date || new Date(tx.createdAt).toISOString(),
-                participants.map(p => ({ participantId: p.id, amount: p.amount })),
-                tx.paidBy,
-                user.uid
-              );
-              debts.push(...newDebts);
-            }
-          }
-        }
-
-        if (tx.type === 'payment') {
-          if (tx.from === user.uid && tx.to === personId) {
-            debts.push({
-              id: tx.id,
-              expenseId: tx.id,
-              expenseTitle: `Payment: ${tx.note || 'Settlement'}`,
-              amount: -tx.amount,
-              date: tx.date || new Date(tx.createdAt).toISOString(),
-              createdAt: tx.createdAt,
-              settled: false
-            });
-          } else if (tx.from === personId && tx.to === user.uid) {
-            debts.push({
-              id: tx.id,
-              expenseId: tx.id,
-              expenseTitle: `Payment: ${tx.note || 'Settlement'}`,
-              amount: tx.amount,
-              date: tx.date || new Date(tx.createdAt).toISOString(),
-              createdAt: tx.createdAt,
-              settled: false
-            });
-          }
-        }
-      });
-
-      return calculateDebtSummary({ [personId]: debts }, personId);
+      return { youOwe: [], theyOwe: [], totalYouOwe: 0, totalTheyOwe: 0, netAmount: 0 };
 
     } catch (error) {
       console.error("Error fetching individual debts:", error);

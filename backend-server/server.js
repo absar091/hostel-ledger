@@ -174,6 +174,7 @@ app.use(express.json());
 
 const emailService = require('./services/emailService');
 const expenseLogic = require('./utils/expenseLogic');
+const { processTransactions, calculateDebtSummary } = require('./utils/debtLogic');
 const { verifyImageOwnership } = require('./utils/imageSecurity');
 const adminAuth = require('./middleware/adminAuth');
 
@@ -1665,6 +1666,50 @@ app.delete('/api/push-unsubscribe/:userId', generalLimiter, async (req, res) => 
 /**
  * FINANCIAL MUTATION ENDPOINTS
  */
+
+// Get Individual Debts Endpoint (Performance Optimized)
+app.post('/api/get-individual-debts', generalLimiter, authenticate, async (req, res) => {
+  try {
+    const { groupId, personId } = req.body;
+    const currentUserId = req.user.uid;
+
+    if (!groupId || !personId) {
+      return res.status(400).json({ success: false, error: 'groupId and personId are required' });
+    }
+
+    const db = admin.database();
+
+    // Query userTransactions for the current user, filtered by groupId
+    // This relies on the index we added to database.rules.json
+    const snapshot = await db.ref(`userTransactions/${currentUserId}`)
+      .orderByChild('groupId')
+      .equalTo(groupId)
+      .once('value');
+
+    if (!snapshot.exists()) {
+      return res.json({
+        success: true,
+        youOwe: [],
+        theyOwe: [],
+        totalYouOwe: 0,
+        totalTheyOwe: 0,
+        netAmount: 0
+      });
+    }
+
+    const transactions = snapshot.val();
+
+    // Process transactions to calculate debts
+    const debts = processTransactions(transactions, currentUserId, personId);
+    const summary = calculateDebtSummary(debts);
+
+    res.json({ success: true, ...summary });
+
+  } catch (error) {
+    console.error('Error fetching individual debts:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch debts' });
+  }
+});
 
 // Add Expense endpoint (Secure)
 app.post('/api/add-expense', generalLimiter, async (req, res) => {
