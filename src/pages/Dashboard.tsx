@@ -684,28 +684,28 @@ const Dashboard = () => {
           </div>
 
           {/* Greeting Section - Moved further down with more spacing */}
-          <section className="mt-16 lg:mt-20 mb-10 lg:mb-12">
+          <section className="mt-16 lg:mt-20 mb-8 lg:mb-10">
             <p className="text-gray-500 font-semibold text-sm">{t('dashboard.welcome_back')}</p>
-            <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-gray-900">
+            <h2 className="text-4xl lg:text-5xl font-black tracking-tighter text-gray-900">
               {user?.name || "User"}
             </h2>
-            <div className="mt-4 flex flex-wrap gap-2.5">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1.5 shadow-sm">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+            <div className="mt-6 flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 select-none">
+              <div className="flex-shrink-0 inline-flex items-center gap-2.5 rounded-2xl bg-white border border-slate-100 px-4 py-2.5 shadow-sm hover:shadow-md transition-all active:scale-95">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   {t('dashboard.groups')}
                 </span>
-                <span className="text-xs font-black text-slate-800 tabular-nums">
+                <span className="text-sm font-black text-slate-900 tabular-nums bg-slate-100 px-2.5 py-0.5 rounded-lg min-w-[2rem] text-center">
                   {groups.length}
                 </span>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1.5 shadow-sm">
-                <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600">
+              <div className="flex-shrink-0 inline-flex items-center gap-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-100/50 backdrop-blur-sm px-4 py-2.5 shadow-sm hover:shadow-md transition-all active:scale-95">
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">
                   {t('dashboard.pending_payments')}
                 </span>
-                <span className="text-xs font-black text-emerald-700 tabular-nums">
+                <span className="text-sm font-black text-emerald-700 tabular-nums bg-emerald-100/50 px-2.5 py-0.5 rounded-lg min-w-[2rem] text-center">
                   {pendingPaymentCounts.total}
                 </span>
-                <span className="text-[10px] font-bold text-emerald-600/80">
+                <span className="text-[10px] font-bold text-emerald-600/70 ml-0.5">
                   ({t('dashboard.pay_receive', { pay: pendingPaymentCounts.toPayCount, receive: pendingPaymentCounts.toReceiveCount })})
                 </span>
               </div>
@@ -758,7 +758,7 @@ const Dashboard = () => {
           )}
 
           {/* PRIMARY CARD: Enhanced with last transaction time - Moved further down */}
-          <section className="mesh-gradient rounded-3xl p-5 lg:p-6 text-white shadow-2xl shadow-[#4a6850]/30 relative">
+          <section className="bg-gradient-to-br from-[#10b981] to-[#059669] rounded-3xl p-5 lg:p-6 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
             <div className="relative z-10">
               <div className="flex justify-between items-start">
                 <div>
@@ -1247,7 +1247,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-4 gap-3">
               <button
                 onClick={handlePersonalExpense}
-                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-100 dark:border-emerald-800/50 active:scale-95 transition-all shadow-sm"
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-100 dark:border-emerald-800/50 active:scale-95 transition-all shadow-sm hover:shadow-md"
               >
                 <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-md">
                   <Plus className="w-6 h-6 font-bold" />
@@ -1259,7 +1259,7 @@ const Dashboard = () => {
 
               <button
                 onClick={handleAddExpense}
-                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all shadow-sm hover:shadow-md"
               >
                 <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
                   <CreditCard className="w-6 h-6 text-slate-600 dark:text-slate-400" />
@@ -1271,7 +1271,7 @@ const Dashboard = () => {
 
               <button
                 onClick={handleNewGroup}
-                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all shadow-sm hover:shadow-md"
               >
                 <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
                   <Users className="w-6 h-6 text-slate-600 dark:text-slate-400" />
@@ -1283,7 +1283,7 @@ const Dashboard = () => {
 
               <button
                 onClick={() => navigate("/personal-space")}
-                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all shadow-sm hover:shadow-md"
               >
                 <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
                   <Send className="w-6 h-6 text-slate-600 dark:text-slate-400" />
@@ -1308,7 +1308,7 @@ const Dashboard = () => {
 
               <button
                 onClick={() => setShowAddMoney(true)}
-                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all shadow-sm hover:shadow-md"
               >
                 <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
                   <Wallet className="w-6 h-6 text-slate-600 dark:text-slate-400" />
@@ -1420,7 +1420,7 @@ const Dashboard = () => {
 
           {/* Recent Activity */}
           <section className="mt-8 lg:mt-12">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-md">
               <div className="px-6 py-4 lg:px-8 lg:py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <h3 className="font-black tracking-tighter text-sm lg:text-base">
                   {t('dashboard.recent_activity')}
