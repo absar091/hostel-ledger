@@ -1529,38 +1529,13 @@ const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, b
   }
   console.log('✅ OneSignal credentials found (App ID:', oneSignalAppId.substring(0, 8) + '...)');
 
-  // Get OneSignal Player IDs from Firebase Realtime Database
-  console.log('🔍 Looking up Player IDs in Firebase...');
-
-  const playerIdsPromises = userIds.map(async (userId) => {
-    try {
-      const playerRef = admin.database().ref(`oneSignalPlayers/${userId}`);
-      const snapshot = await playerRef.once('value');
-      const playerData = snapshot.val();
-
-      if (playerData && playerData.playerId) {
-        console.log(`  ✅ User ${userId}: Player ID found (${playerData.playerId.substring(0, 12)}...)`);
-        return playerData.playerId;
-      } else {
-        console.log(`  ⚠️ User ${userId}: NO Player ID in Firebase (user may not have subscribed)`);
-        return null;
-      }
-    } catch (error) {
-      console.error(`  ❌ User ${userId}: Failed to get Player ID:`, error.message);
-      return null;
-    }
-  });
-
-  const results = await Promise.all(playerIdsPromises);
-  const playerIds = results.filter(id => id !== null);
-
-  console.log('📊 Summary: Found', playerIds.length, 'Player IDs out of', userIds.length, 'users');
+  // Optimization: Removed redundant N+1 fetching of Player IDs.
+  // We rely solely on include_external_user_ids (userIds) which OneSignal maps automatically.
 
   // Build notification payload
   const notificationData = {
     app_id: oneSignalAppId,
     include_external_user_ids: userIds,
-    include_player_ids: playerIds.length > 0 ? playerIds : undefined,
     headings: { en: title },
     contents: { en: body },
     chrome_web_icon: icon || '/only-logo.png',
@@ -1569,7 +1544,7 @@ const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, b
   };
 
   console.log('📤 Sending to OneSignal API...');
-  console.log('📤 Targeting:', playerIds.length > 0 ? `${playerIds.length} Player IDs` : 'External User IDs only');
+  console.log('📤 Targeting:', userIds.length, 'users via External ID');
 
   const response = await fetch('https://onesignal.com/api/v1/notifications', {
     method: 'POST',
