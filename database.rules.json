@@ -2,87 +2,73 @@
   "rules": {
     ".read": false,
     ".write": false,
-
     "users": {
       "$uid": {
         ".read": "auth != null",
         ".write": "$uid === auth.uid && auth != null",
         "walletBalance": {
-          ".write": "$uid === auth.uid && auth != null"
+          ".write": false
         },
         "settlements": {
-          ".write": "$uid === auth.uid && auth != null"
+          ".write": false
         },
         ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt']) && newData.child('uid').val() === $uid"
       }
     },
-
     "groups": {
       "$groupId": {
         ".read": "auth != null && (root.child('userGroups').child(auth.uid).child($groupId).exists() || data.child('createdBy').val() === auth.uid)",
         ".write": "auth != null && (root.child('userGroups').child(auth.uid).child($groupId).exists() || data.child('createdBy').val() === auth.uid || !data.exists())",
-        ".validate": "newData.hasChildren(['name', 'emoji', 'members', 'createdBy', 'createdAt']) &&
-                      newData.child('name').isString() &&
-                      newData.child('name').val().length > 0 &&
-                      newData.child('name').val().length < 100 &&
-                      newData.child('emoji').isString() &&
-                      newData.child('emoji').val().length === 1 &&
-                      newData.child('members').isMap() &&
-                      newData.child('createdBy').isString() &&
-                      newData.child('createdAt').isNumber()"
+        ".validate": "newData.hasChildren(['name', 'emoji', 'members', 'createdBy', 'createdAt'])"
       }
     },
-
     "userGroups": {
       "$uid": {
         ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid && auth != null",
-        ".indexOn": ["groupId", "role"]
+        ".write": "$uid === auth.uid && auth != null"
       }
     },
-
-    "transactions": {
-      ".indexOn": ["timestamp", "groupId", "createdBy"],
-      "$transactionId": {
-        ".read": "auth != null && root.child('userTransactions').child(auth.uid).child($transactionId).exists()",
-        ".write": "auth != null && newData.child('createdBy').val() === auth.uid",
-        ".validate": "newData.hasChildren(['groupId', 'type', 'amount', 'createdAt', 'createdBy', 'description']) &&
-                      newData.child('amount').isNumber() &&
-                      newData.child('amount').val() > 0 &&
-                      newData.child('type').val() in ['expense', 'payment'] &&
-                      newData.child('description').isString() &&
-                      newData.child('description').val().length > 0 &&
-                      newData.child('description').val().length < 500 &&
-                      newData.child('groupId').isString() &&
-                      newData.child('createdBy').isString() &&
-                      newData.child('createdAt').isNumber()"
-      }
-    },
-
-    "userTransactions": {
+    "user_p2p_transactions": {
       "$uid": {
         ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid && auth != null",
-        ".indexOn": ["transactionId", "createdAt"]
+        ".write": false
       }
     },
-
+    "transactions": {
+      ".indexOn": [
+        "timestamp",
+        "groupId"
+      ],
+      "$transactionId": {
+        ".read": "auth != null && root.child('userTransactions').child(auth.uid).child($transactionId).exists()",
+        ".write": false,
+        ".validate": "newData.hasChildren(['groupId', 'type', 'amount', 'createdAt']) && newData.child('amount').isNumber() && newData.child('amount').val() > 0"
+      }
+    },
+    "userTransactions": {
+      "$uid": {
+        ".indexOn": [
+          "groupId"
+        ],
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid && auth != null"
+      }
+    },
     "verificationCodes": {
       ".read": false,
       ".write": false
     },
-
+    "userSecrets": {
+      ".read": false,
+      ".write": false
+    },
     "emailVerification": {
       "$uid": {
         ".read": "$uid === auth.uid",
-        ".write": false,
-        ".validate": "newData.hasChildren(['email', 'emailVerified', 'verifiedAt']) &&
-                      newData.child('email').isString() &&
-                      newData.child('emailVerified').isBoolean() &&
-                      newData.child('verifiedAt').isNumber()"
+        ".write": "$uid === auth.uid",
+        ".validate": "newData.hasChildren(['email', 'emailVerified'])"
       }
     },
-
     "pushSubscriptions": {
       "$uid": {
         ".read": "$uid === auth.uid",
@@ -90,7 +76,6 @@
         ".validate": "newData.hasChildren(['subscription', 'updatedAt']) || newData.hasChildren(['fcmToken', 'updatedAt'])"
       }
     },
-
     "oneSignalPlayers": {
       "$uid": {
         ".read": "$uid === auth.uid",
@@ -98,34 +83,20 @@
         ".validate": "newData.hasChildren(['playerId', 'updatedAt']) && newData.child('playerId').isString()"
       }
     },
-
     "usernames": {
-      ".read": "auth != null",
+      ".read": true,
       "$username": {
-        ".write": "auth != null && (!data.exists() || (data.child('uid').val() === auth.uid && newData.child('uid').val() === auth.uid))",
-        ".validate": "newData.hasChildren(['uid', 'createdAt']) &&
-                      newData.child('uid').isString() &&
-                      newData.child('uid').val() === auth.uid &&
-                      newData.child('createdAt').isNumber() &&
-                      $username.length > 2 &&
-                      $username.length < 30 &&
-                      $username.matches(/^[a-zA-Z0-9_]+$/)"
+        ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid)",
+        ".validate": "newData.hasChildren(['uid', 'createdAt']) && newData.child('uid').isString()"
       }
     },
-
     "invitations": {
       "$invitationId": {
         ".read": "auth != null && (data.child('senderId').val() === auth.uid || data.child('receiverId').val() === auth.uid)",
-        ".write": "auth != null && (data.child('senderId').val() === auth.uid || !data.exists())",
-        ".validate": "newData.hasChildren(['groupId', 'senderId', 'receiverId', 'status', 'createdAt']) &&
-                      newData.child('groupId').isString() &&
-                      newData.child('senderId').isString() &&
-                      newData.child('receiverId').isString() &&
-                      newData.child('status').val() in ['pending', 'accepted', 'rejected'] &&
-                      newData.child('createdAt').isNumber()"
+        ".write": false,
+        ".validate": "newData.hasChildren(['groupId', 'senderId', 'receiverId', 'status', 'createdAt'])"
       }
     },
-
     "userInvitations": {
       "$uid": {
         ".read": "$uid === auth.uid",

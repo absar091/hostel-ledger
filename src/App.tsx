@@ -10,6 +10,7 @@ import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import EmailVerificationGate from "@/components/EmailVerificationGate";
+import TwoFactorVerification from "@/components/TwoFactorVerification";
 import ScrollToTop from "@/components/ScrollToTop";
 import { OfflineScreen } from "@/components/OfflineScreen";
 import { UpdateNotification } from "@/components/UpdateNotification";
@@ -113,7 +114,7 @@ const SplashScreen = ({ offline = false }: { offline?: boolean }) => {
 
 // Protected Route wrapper with mobile-first loading and email verification
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useFirebaseAuth();
+  const { user, isLoading, is2FAVerified } = useFirebaseAuth();
   const [offline, setOffline] = useState(!navigator.onLine);
 
   useEffect(() => {
@@ -164,7 +165,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // User is loaded - wrap with EmailVerificationGate
+  // User is loaded - check 2FA first
+  if (user.is2FAEnabled && !is2FAVerified) {
+    return <TwoFactorVerification />;
+  }
+
+  // Then check email verification
   return (
     <EmailVerificationGate>
       {children}

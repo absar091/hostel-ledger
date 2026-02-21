@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { useFirebaseAuth } from './FirebaseAuthContext';
 import { formatCurrency as formatCurrencyUtil, getCurrency, getCurrencySymbol, DEFAULT_CURRENCY, type Currency } from '@/lib/currency';
 
@@ -19,23 +19,15 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useFirebaseAuth();
 
     const currencyCode = user?.currency || DEFAULT_CURRENCY;
+    const currency = getCurrency(currencyCode);
+    const symbol = getCurrencySymbol(currencyCode);
 
-    const currency = useMemo(() => getCurrency(currencyCode), [currencyCode]);
-    const symbol = useMemo(() => getCurrencySymbol(currencyCode), [currencyCode]);
-
-    const formatAmount = useCallback((amount: number): string => {
+    const formatAmount = (amount: number): string => {
         return formatCurrencyUtil(amount, currencyCode);
-    }, [currencyCode]);
-
-    const value = useMemo(() => ({
-        currencyCode,
-        currency,
-        formatAmount,
-        symbol
-    }), [currencyCode, currency, formatAmount, symbol]);
+    };
 
     return (
-        <CurrencyContext.Provider value={value}>
+        <CurrencyContext.Provider value={{ currencyCode, currency, formatAmount, symbol }}>
             {children}
         </CurrencyContext.Provider>
     );

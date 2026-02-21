@@ -63,3 +63,41 @@ app.listen(PORT, () => {
   console.log(`\n💡 To use this backend, update your .env file:`);
   console.log(`VITE_API_URL=http://localhost:${PORT}`);
 });
+// Mock 2FA Endpoints
+app.post('/api/2fa/setup', (req, res) => {
+  console.log('🔹 [MOCK] 2FA Setup Request');
+  // Return fake data for testing
+  // Use a public QR code URL or generated one if needed, but for mock just return placeholder
+  res.json({
+    success: true,
+    secret: 'MOCKSECRET12345',
+    qrCode: 'https://chart.googleapis.com/chart?chs=166x166&chld=L|0&cht=qr&chl=otpauth://totp/HostelLedger:MockUser?secret=MOCKSECRET12345&issuer=HostelLedger'
+  });
+});
+
+app.post('/api/2fa/verify-setup', (req, res) => {
+  console.log('🔹 [MOCK] 2FA Verify Setup Request', req.body);
+  if (req.body.token === '123456') {
+     res.json({ success: true, message: '2FA Enabled (Mock)' });
+  } else {
+     res.status(400).json({ success: false, error: 'Invalid mock code (use 123456)' });
+  }
+});
+
+app.post('/api/2fa/verify', (req, res) => {
+  console.log('🔹 [MOCK] 2FA Verify Request', req.body);
+  if (req.body.token === '123456') {
+     res.json({ success: true, message: 'Verified (Mock)' });
+  } else {
+     res.status(400).json({ success: false, error: 'Invalid mock code (use 123456)' });
+  }
+});
+
+app.post('/api/2fa/disable', (req, res) => {
+  console.log('🔹 [MOCK] 2FA Disable Request', req.body);
+  if (req.body.token === '123456') {
+     res.json({ success: true, message: 'Disabled (Mock)' });
+  } else {
+     res.status(400).json({ success: false, error: 'Invalid mock code (use 123456)' });
+  }
+});
