@@ -749,6 +749,7 @@ const Dashboard = () => {
                   onClick={handleDismissNotificationPrompt}
                   disabled={isEnablingNotifications}
                   className="w-8 h-8 rounded-full hover:bg-blue-200 flex items-center justify-center transition-colors flex-shrink-0"
+                  aria-label="Dismiss notification prompt"
                 >
                   <X className="w-4 h-4 text-blue-700" />
                 </button>
@@ -845,6 +846,7 @@ const Dashboard = () => {
                 <button
                   onClick={() => setShowAddMoney(true)}
                   className="glass p-2.5 lg:p-3 rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
+                  aria-label="Add money to wallet"
                 >
                   <Plus className="w-4 lg:w-5 h-4 lg:h-5 text-white" />
                 </button>
