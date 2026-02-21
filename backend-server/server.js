@@ -3518,6 +3518,11 @@ app.post('/api/send-money', authenticate, async (req, res) => {
       return res.status(404).json({ success: false, error: 'User profile not found' });
     }
 
+    // Check for sufficient funds (at time of request)
+    if ((sender.walletBalance || 0) < Number(amount)) {
+      return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
+    }
+
     // 3. Create Pending Transaction
     const transactionId = db.ref('p2p_transactions').push().key;
     const now = new Date().toISOString();
@@ -3646,6 +3651,11 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
 
     const senderBalanceBefore = sender.walletBalance || 0;
     const receiverBalanceBefore = receiver.walletBalance || 0;
+
+    // Check for sufficient funds
+    if (senderBalanceBefore < amount) {
+      return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
+    }
 
     // 2. Calculate new balances
     // Sender LOSES money (they sent it)
