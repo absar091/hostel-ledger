@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { signupSchema } from '../validation';
+import { signupSchema, validatePasswordStrength } from '../validation';
 
 describe('signupSchema', () => {
   const validData = {
@@ -208,5 +208,87 @@ describe('signupSchema', () => {
           const result = signupSchema.safeParse({ ...validData, privacyAccepted: false });
           expect(result.success).toBe(false);
       });
+  });
+});
+
+describe('validatePasswordStrength', () => {
+  it('returns low score for empty password', () => {
+    const result = validatePasswordStrength('');
+    // Score is 1 because it satisfies "no repeating characters" check (which checks negation of regex)
+    expect(result.score).toBe(1);
+    expect(result.isStrong).toBe(false);
+    expect(result.feedback).toContain('Use at least 8 characters');
+  });
+
+  it('returns low score for short passwords', () => {
+    const result = validatePasswordStrength('short');
+    expect(result.score).toBeLessThan(5);
+    expect(result.feedback).toContain('Use at least 8 characters');
+    expect(result.isStrong).toBe(false);
+  });
+
+  it('rewards length >= 8', () => {
+    const result = validatePasswordStrength('abcdefgh');
+    // score: 1(len8) + 1(low) + 1(no-repeat) = 3
+    expect(result.feedback).not.toContain('Use at least 8 characters');
+  });
+
+  it('rewards length >= 12', () => {
+    const result = validatePasswordStrength('abcdefghijkl');
+    // score: 1(len8) + 1(len12) + 1(low) + 1(no-repeat) = 4
+    expect(result.feedback).not.toContain('Consider using 12+ characters for better security');
+  });
+
+  it('checks for lowercase letters', () => {
+    const result = validatePasswordStrength('PASSWORD123!');
+    expect(result.feedback).toContain('Include lowercase letters');
+  });
+
+  it('checks for uppercase letters', () => {
+    const result = validatePasswordStrength('password123!');
+    expect(result.feedback).toContain('Include uppercase letters');
+  });
+
+  it('checks for numbers', () => {
+    const result = validatePasswordStrength('Password!');
+    expect(result.feedback).toContain('Include numbers');
+  });
+
+  it('checks for special characters', () => {
+    const result = validatePasswordStrength('Password123');
+    expect(result.feedback).toContain('Include special characters (@$!%*?&)');
+  });
+
+  it('detects repeating characters', () => {
+    const result = validatePasswordStrength('aaabbbccc');
+    expect(result.feedback).toContain('Avoid repeating characters');
+  });
+
+  it('recognizes a strong password', () => {
+    const result = validatePasswordStrength('StrongP@ssw0rd!');
+    // Length > 12: +2
+    // Lower: +1
+    // Upper: +1
+    // Number: +1
+    // Special: +1
+    // No repeats: +1
+    // Total: 7
+    expect(result.score).toBeGreaterThanOrEqual(5);
+    expect(result.isStrong).toBe(true);
+    expect(result.feedback).toHaveLength(0);
+  });
+
+  it('calculates score correctly for "Abcdef1@"', () => {
+     // Length 8: +1
+     // Length 12: 0
+     // Lower: +1
+     // Upper: +1
+     // Number: +1
+     // Special: +1
+     // No repeats: +1
+     // Total: 6
+     const result = validatePasswordStrength('Abcdef1@');
+     expect(result.score).toBe(6);
+     expect(result.isStrong).toBe(true);
   });
 });
