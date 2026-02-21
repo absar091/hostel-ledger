@@ -408,7 +408,9 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
     // 1a. Fetch User Name first (so we don't store "You" in DB)
     const userSnap = await admin.database().ref(`users/${userId}`).get();
-    const userName = userSnap.exists() ? userSnap.val().name : "User";
+    const userData = userSnap.exists() ? userSnap.val() : {};
+    const userName = userData.name || "User";
+    const userEmail = userData.email || null;
 
     // 1b. Resolve Invited Usernames (Existing Users)
     const resolvedUsers = [];
@@ -438,6 +440,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
           name: userName,
           isCurrentUser: true,
           userId: userId,
+          email: userEmail,
           paymentDetails: {},
           isAdmin: true
         },
@@ -793,6 +796,7 @@ app.post('/api/respond-invitation', authenticate, async (req, res) => {
       const memberEntry = {
         id: memberIndex !== -1 ? membersArray[memberIndex].id : `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         name: userData.name || (memberIndex !== -1 ? membersArray[memberIndex].name : 'Member'),
+        email: userData.email || null,
         isRegistered: true,
         type: 'registered',
         userId: userId,
@@ -923,6 +927,7 @@ app.post('/api/claim-email-invite', authenticate, async (req, res) => {
     // Update the member entry to link it to this user
     await admin.database().ref(`groups/${groupId}/members/${matchedMemberId}`).update({
       userId: userId,
+      email: userData.email || null,
       isRegistered: true,
       type: 'registered',
       name: userData.name || matchedMember.name,
@@ -1713,14 +1718,35 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     const member = membersArray.find(m => m.userId === currentUserId || m.id === currentUserId);
 
     // CRITICAL FIX: Hydrate members with emails from 'users' node
+    // Optimization: Collect updates for lazy migration (store email in group member)
+    const emailUpdates = {};
+    const isMembersArray = Array.isArray(group.members);
+
     try {
-      const memberHydrationPromises = membersArray.map(async (m) => {
+      const memberHydrationPromises = membersArray.map(async (m, index) => {
         if (m.userId && !m.email) {
           try {
             const userSnap = await db.ref(`users/${m.userId}`).get();
             if (userSnap.exists()) {
               const userData = userSnap.val();
-              return { ...m, email: userData.email };
+              const email = userData.email;
+
+              if (email) {
+                // Determine path for lazy update
+                if (isMembersArray) {
+                   emailUpdates[`groups/${groupId}/members/${index}/email`] = email;
+                } else {
+                   // Object based: Find key
+                   const memberKey = Object.keys(group.members).find(k => {
+                       const mem = group.members[k];
+                       return (mem.id && mem.id === m.id) || k === m.id;
+                   });
+                   if (memberKey) {
+                       emailUpdates[`groups/${groupId}/members/${memberKey}/email`] = email;
+                   }
+                }
+                return { ...m, email };
+              }
             }
           } catch (err) {
             console.error(`⚠️ Failed to hydrate email for user ${m.userId}:`, err.message);
@@ -1773,6 +1799,8 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
     // 5. Build multi-path update object
     const updates = {};
+    // Merge lazy email migration updates
+    Object.assign(updates, emailUpdates);
     const transactionId = db.ref('transactions').push().key;
     const timestamp = Date.now();
     const serverTime = admin.database.ServerValue.TIMESTAMP;
