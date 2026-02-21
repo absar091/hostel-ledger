@@ -1,7 +1,63 @@
 import { describe, it, expect } from 'vitest';
-import { calculateExpenseSplit, validatePaymentAmount } from '../expenseLogic';
+import { calculateExpenseSplit, validatePaymentAmount, validateSettlementConsistency } from '../expenseLogic';
 
 describe('expenseLogic', () => {
+    describe('validateSettlementConsistency', () => {
+        it('should return valid for empty settlements', () => {
+            const result = validateSettlementConsistency({}, 'user1');
+            expect(result.isValid).toBe(true);
+            expect(result.errors).toHaveLength(0);
+        });
+
+        it('should return valid for consistent settlements', () => {
+            const settlements = {
+                'user2': { toReceive: 50, toPay: 0 },
+                'user3': { toReceive: 0, toPay: 20 },
+            };
+            const result = validateSettlementConsistency(settlements, 'user1');
+            expect(result.isValid).toBe(true);
+            expect(result.errors).toHaveLength(0);
+        });
+
+        it('should detect error when user has settlement with themselves', () => {
+            const settlements = {
+                'user1': { toReceive: 10, toPay: 0 },
+            };
+            const result = validateSettlementConsistency(settlements, 'user1');
+            expect(result.isValid).toBe(false);
+            expect(result.errors).toContain("User cannot have settlements with themselves");
+        });
+
+        it('should detect error when a person has both receivable and payable amounts', () => {
+            const settlements = {
+                'user2': { toReceive: 10, toPay: 5 },
+            };
+            const result = validateSettlementConsistency(settlements, 'user1');
+            expect(result.isValid).toBe(false);
+            expect(result.errors[0]).toMatch(/has both receivable and payable amounts/);
+        });
+
+        it('should detect error when settlement amounts are negative', () => {
+            const settlements = {
+                'user2': { toReceive: -10, toPay: 0 },
+            };
+            const result = validateSettlementConsistency(settlements, 'user1');
+            expect(result.isValid).toBe(false);
+            expect(result.errors[0]).toMatch(/has negative settlement amounts/);
+        });
+
+        it('should handle multiple errors simultaneously', () => {
+            const settlements = {
+                'user1': { toReceive: 10, toPay: 0 }, // Self settlement
+                'user2': { toReceive: 10, toPay: 5 }, // Unnetted
+                'user3': { toReceive: -5, toPay: 0 }, // Negative
+            };
+            const result = validateSettlementConsistency(settlements, 'user1');
+            expect(result.isValid).toBe(false);
+            expect(result.errors).toHaveLength(3);
+        });
+    });
+
     describe('calculateExpenseSplit', () => {
         it('should split integer amounts evenly', () => {
             const participants = [
