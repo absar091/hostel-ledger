@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, Lock, Download, Trash2, Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Shield, Lock, Download, Trash2, Eye, EyeOff, AlertTriangle, Copy, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -14,9 +14,18 @@ import { toast } from "sonner";
 
 const Security = () => {
   const navigate = useNavigate();
-  const { user, logout, updateUserPassword, deleteAccount, firebaseUser } = useFirebaseAuth();
+  const { user, logout, updateUserPassword, deleteAccount, firebaseUser, setup2FA, confirm2FASetup, disable2FA } = useFirebaseAuth();
   const { groups, transactions, isLoading: isDataLoading, deleteAccountData } = useFirebaseData();
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("profile");
+
+  // 2FA State
+  const [show2FASheet, setShow2FASheet] = useState(false);
+  const [setupStep, setSetupStep] = useState(0); // 0: Start, 1: QR, 2: Verify
+  const [qrCode, setQrCode] = useState("");
+  const [secret, setSecret] = useState("");
+  const [token, setToken] = useState("");
+  const [is2FALoading, setIs2FALoading] = useState(false);
+  const [showDisable2FAConfirm, setShowDisable2FAConfirm] = useState(false);
 
   // Change Password Sheet
   const [showChangePasswordSheet, setShowChangePasswordSheet] = useState(false);
@@ -36,6 +45,77 @@ const Security = () => {
     else if (tab === "groups") navigate("/groups");
     else if (tab === "activity") navigate("/activity");
     else if (tab === "profile") navigate("/profile");
+  };
+
+  const handleStart2FA = async () => {
+    setIs2FALoading(true);
+    try {
+      const result = await setup2FA();
+      if (result.success && result.qrCode && result.secret) {
+        setQrCode(result.qrCode);
+        setSecret(result.secret);
+        setSetupStep(1);
+        setShow2FASheet(true);
+      } else {
+        toast.error(result.error || "Failed to start 2FA setup");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    } finally {
+      setIs2FALoading(false);
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    if (token.length !== 6) {
+      toast.error("Please enter a valid 6-digit code");
+      return;
+    }
+    setIs2FALoading(true);
+    try {
+      const result = await confirm2FASetup(token);
+      if (result.success) {
+        toast.success("2FA Enabled Successfully!");
+        setShow2FASheet(false);
+        setSetupStep(0);
+        setToken("");
+        setQrCode("");
+        setSecret("");
+      } else {
+        toast.error(result.error || "Verification failed");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    } finally {
+      setIs2FALoading(false);
+    }
+  };
+
+  const handleDisable2FA = async () => {
+     if (token.length !== 6) {
+      toast.error("Please enter a valid 6-digit code");
+      return;
+    }
+    setIs2FALoading(true);
+    try {
+      const result = await disable2FA(token);
+      if (result.success) {
+        toast.success("2FA Disabled Successfully");
+        setShowDisable2FAConfirm(false);
+        setToken("");
+      } else {
+        toast.error(result.error || "Failed to disable 2FA");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    } finally {
+      setIs2FALoading(false);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+      navigator.clipboard.writeText(text);
+      toast.success("Copied to clipboard");
   };
 
   const handleChangePassword = async () => {
@@ -227,14 +307,29 @@ const Security = () => {
                   <p className="text-sm text-[#4a6850]/80 font-medium mb-3">
                     Add an extra layer of security to your account
                   </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toast.info("2FA coming soon!")}
-                    className="h-9"
-                  >
-                    Enable 2FA
-                  </Button>
+                  {user?.is2FAEnabled ? (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        setToken("");
+                        setShowDisable2FAConfirm(true);
+                      }}
+                      className="h-9"
+                    >
+                      Disable 2FA
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleStart2FA}
+                      disabled={is2FALoading}
+                      className="h-9"
+                    >
+                      {is2FALoading ? "Preparing..." : "Enable 2FA"}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -300,6 +395,110 @@ const Security = () => {
 
         <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
       </AppContainer>
+
+      {/* 2FA Setup Sheet */}
+      <Sheet open={show2FASheet} onOpenChange={(open) => {
+        if (!open) {
+          setShow2FASheet(false);
+          setSetupStep(0);
+          setQrCode("");
+          setSecret("");
+          setToken("");
+        }
+      }}>
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl overflow-y-auto">
+          <SheetHeader className="mb-6">
+            <SheetTitle className="text-center">Enable 2FA</SheetTitle>
+            <SheetDescription className="text-center text-sm text-gray-500">
+              Protect your account with Two-Factor Authentication
+            </SheetDescription>
+          </SheetHeader>
+
+          {setupStep === 1 && (
+            <div className="space-y-6 flex flex-col items-center">
+              <p className="text-center text-sm text-gray-600">
+                1. Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
+              </p>
+
+              <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100">
+                 {qrCode && <img src={qrCode} alt="2FA QR Code" className="w-48 h-48" />}
+              </div>
+
+              <div className="w-full text-center space-y-2">
+                 <p className="text-xs text-gray-500">Or enter this code manually:</p>
+                 <button
+                    onClick={() => copyToClipboard(secret)}
+                    className="flex items-center justify-center gap-2 bg-gray-100 py-2 px-4 rounded-lg w-full font-mono text-sm hover:bg-gray-200 transition-colors"
+                 >
+                    {secret}
+                    <Copy className="w-4 h-4 text-gray-500" />
+                 </button>
+              </div>
+
+              <div className="w-full space-y-4 pt-4 border-t border-gray-100">
+                 <p className="text-center text-sm text-gray-600">
+                   2. Enter the 6-digit code from your app
+                 </p>
+                 <Input
+                   type="text"
+                   inputMode="numeric"
+                   maxLength={6}
+                   placeholder="000000"
+                   className="text-center text-2xl tracking-widest h-14"
+                   value={token}
+                   onChange={(e) => setToken(e.target.value.replace(/[^0-9]/g, ''))}
+                 />
+                 <Button
+                   onClick={handleVerify2FA}
+                   className="w-full h-12"
+                   disabled={token.length !== 6 || is2FALoading}
+                 >
+                   {is2FALoading ? "Verifying..." : "Verify & Enable"}
+                 </Button>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Disable 2FA Confirm Sheet */}
+      <Sheet open={showDisable2FAConfirm} onOpenChange={setShowDisable2FAConfirm}>
+        <SheetContent side="bottom" className="h-auto rounded-t-3xl">
+          <SheetHeader className="mb-6">
+            <SheetTitle className="text-center text-red-600">Disable 2FA</SheetTitle>
+            <SheetDescription className="text-center text-sm text-gray-500">
+               Confirm 2FA removal by entering your code
+            </SheetDescription>
+          </SheetHeader>
+          <div className="space-y-4 pb-4">
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
+               <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+               <p className="text-sm text-red-700">
+                 Disabling 2FA makes your account less secure. Are you sure?
+               </p>
+            </div>
+
+             <Input
+               type="text"
+               inputMode="numeric"
+               maxLength={6}
+               placeholder="Enter 2FA Code"
+               className="text-center text-xl tracking-widest h-12"
+               value={token}
+               onChange={(e) => setToken(e.target.value.replace(/[^0-9]/g, ''))}
+             />
+
+             <Button
+               onClick={handleDisable2FA}
+               variant="destructive"
+               className="w-full h-12"
+               disabled={token.length !== 6 || is2FALoading}
+             >
+               {is2FALoading ? "Disabling..." : "Disable 2FA"}
+             </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Change Password Sheet */}
       <Sheet open={showChangePasswordSheet} onOpenChange={setShowChangePasswordSheet}>

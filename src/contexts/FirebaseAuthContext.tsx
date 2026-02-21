@@ -50,6 +50,7 @@ export interface UserProfile {
   settlements: { [groupId: string]: { [personId: string]: { toReceive: number; toPay: number } } }; // CORRECTED: Group-aware settlement tracking
   createdAt: string;
   emailVerified?: boolean; // Email verification status
+  is2FAEnabled?: boolean; // Two-Factor Authentication status
   favoriteGroups?: string[]; // Array of favorite group IDs
   showBalanceToOthers: boolean; // Privacy setting for wallet balance visibility
   currency?: string; // Currency code (e.g., 'PKR', 'USD', 'EUR') — defaults to PKR
@@ -102,6 +103,11 @@ interface FirebaseAuthContextType {
   toggleFavoriteGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>;
   getFavoriteGroups: () => string[];
   deleteAccount: () => Promise<{ success: boolean; error?: string }>;
+  is2FAVerified: boolean;
+  verify2FA: (token: string) => Promise<{ success: boolean; error?: string }>;
+  setup2FA: () => Promise<{ success: boolean; secret?: string; qrCode?: string; error?: string }>;
+  confirm2FASetup: (token: string) => Promise<{ success: boolean; error?: string }>;
+  disable2FA: (token: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const FirebaseAuthContext = createContext<FirebaseAuthContextType | undefined>(undefined);
@@ -110,6 +116,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [is2FAVerified, setIs2FAVerified] = useState(false);
 
   // Effect to handle Firebase Auth state changes
   useEffect(() => {
@@ -262,6 +269,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
               settlements: userData.settlements || {},
               createdAt: userData.createdAt,
               emailVerified: isVerified,
+              is2FAEnabled: userData.is2FAEnabled || false,
               favoriteGroups: userData.favoriteGroups || [],
               showBalanceToOthers: userData.showBalanceToOthers ?? false
             };
@@ -1206,6 +1214,84 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Check 2FA verification status in session
+  useEffect(() => {
+    if (user && user.is2FAEnabled) {
+      const isSessionVerified = sessionStorage.getItem(`2fa_verified_${user.uid}`);
+      if (isSessionVerified === 'true') {
+        setIs2FAVerified(true);
+      } else {
+        setIs2FAVerified(false);
+      }
+    } else {
+      setIs2FAVerified(false);
+    }
+  }, [user?.uid, user?.is2FAEnabled]);
+
+  const verify2FA = async (token: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: "User not authenticated" };
+    try {
+      const result = await callSecureApi('/api/2fa/verify', { token });
+      if (result.success) {
+        setIs2FAVerified(true);
+        sessionStorage.setItem(`2fa_verified_${user.uid}`, 'true');
+        return { success: true };
+      }
+      return { success: false, error: result.error || "Verification failed" };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  };
+
+  const setup2FA = async (): Promise<{ success: boolean; secret?: string; qrCode?: string; error?: string }> => {
+    if (!user) return { success: false, error: "User not authenticated" };
+    try {
+      const result = await callSecureApi('/api/2fa/setup', {});
+      if (result.success) {
+        return { success: true, secret: result.secret, qrCode: result.qrCode };
+      }
+      return { success: false, error: result.error || "Setup failed" };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  };
+
+  const confirm2FASetup = async (token: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: "User not authenticated" };
+    try {
+      const result = await callSecureApi('/api/2fa/verify-setup', { token });
+      if (result.success) {
+        // Optimistic update
+        const updatedUser = { ...user, is2FAEnabled: true };
+        setUser(updatedUser);
+        setIs2FAVerified(true); // Auto-verify on setup
+        sessionStorage.setItem(`2fa_verified_${user.uid}`, 'true');
+        return { success: true };
+      }
+      return { success: false, error: result.error || "Confirmation failed" };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  };
+
+  const disable2FA = async (token: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: "User not authenticated" };
+    try {
+      const result = await callSecureApi('/api/2fa/disable', { token });
+      if (result.success) {
+        // Optimistic update
+        const updatedUser = { ...user, is2FAEnabled: false };
+        setUser(updatedUser);
+        setIs2FAVerified(false);
+        sessionStorage.removeItem(`2fa_verified_${user.uid}`);
+        return { success: true };
+      }
+      return { success: false, error: result.error || "Disable failed" };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  };
+
   return (
     <FirebaseAuthContext.Provider value={{
       user,
@@ -1240,7 +1326,12 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       toggleFavoriteGroup,
       getFavoriteGroups,
       createGroup,
-      deleteAccount
+      deleteAccount,
+      is2FAVerified,
+      verify2FA,
+      setup2FA,
+      confirm2FASetup,
+      disable2FA
     }}>
       {children}
     </FirebaseAuthContext.Provider>
