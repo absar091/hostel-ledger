@@ -4,6 +4,7 @@ import { Users, Plus, Search, Filter, Eye, Star } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
+import MobileHeader from "@/components/MobileHeader";
 import AppContainer from "@/components/AppContainer";
 import MemberSettlementSheet from "@/components/MemberSettlementSheet";
 import PageGuide from "@/components/PageGuide";
@@ -158,6 +159,9 @@ const Groups = () => {
 
       <AppContainer className="bg-[#F8F9FA]">
         <DesktopHeader />
+
+        {/* Mobile Header */}
+        <MobileHeader />
 
         {/* Header Section */}
         <header className="p-4 lg:p-8 pb-4">

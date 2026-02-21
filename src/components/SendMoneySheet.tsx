@@ -104,6 +104,14 @@ export default function SendMoneySheet({ isOpen, onClose, prefilledRecipient }: 
                 side="bottom"
                 className="h-[85vh] sm:h-[600px] rounded-t-3xl p-0 flex flex-col border-t border-[#4a6850]/10 z-[100]"
             >
+                {/* Loading Overlay */}
+                {isSubmitting && (
+                    <div className="absolute inset-0 z-[150] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-200">
+                        <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
+                        <h3 className="text-lg font-black text-slate-900">{t('sheets.add_expense.processing')}</h3>
+                    </div>
+                )}
+
                 <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-3 mb-1 shrink-0" />
 
                 <SheetHeader className="px-6 pb-2 text-center shrink-0">
@@ -207,16 +215,9 @@ export default function SendMoneySheet({ isOpen, onClose, prefilledRecipient }: 
                             "bg-gradient-to-br from-[#4a6850] to-[#2d4a33] hover:from-[#3d5a44] hover:to-[#223d28]"
                         )}
                     >
-                        {isSubmitting ? (
-                            <div className="flex items-center gap-2">
-                                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                {t('send_money.sending')}
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-2">
-                                {t('send_money.send_btn')} <Banknote className="w-5 h-5" />
-                            </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                            {t('send_money.send_btn')} <Banknote className="w-5 h-5" />
+                        </div>
                     </Button>
                 </div>
 

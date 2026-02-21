@@ -18,13 +18,12 @@ const sanitizeAmount = (amount: string | number): number => {
 const normalizeMembers = (members: any, currentUserId?: string): any[] => {
   if (!members) return [];
 
-  const membersArray = Array.isArray(members)
+  const membersArray = (Array.isArray(members)
     ? members
     : Object.entries(members).map(([key, value]: [string, any]) => ({
       ...value,
       id: value.id || key, // Ensure the key is used as the member id
-      isCurrentUser: false // Reset client-side property, ignore DB value
-    }));
+    }))).map((m: any) => ({ ...m, isCurrentUser: false })); // Reset client-side property for ALL members
 
   console.log('Validating members:', membersArray.map((m: any) => ({
     id: m.id,
@@ -232,7 +231,7 @@ interface FirebaseDataContextType {
   claimMemberProfile: (groupId: string, memberId: string) => Promise<{ success: boolean; error?: string }>;
   payMyDebt: (groupId: string, toMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   markPaymentAsPaid: (groupId: string, fromMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
-  addMoneyToWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string }>;
+  addMoneyToWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
   getGroupById: (groupId: string) => Group | undefined;
   fetchGroupDetail: (groupId: string) => Promise<Group | null>;
   getTransactionsByGroup: (groupId: string) => Transaction[];
@@ -727,24 +726,12 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       if (member.isTemporary && member.deletionCondition === 'TIME_LIMIT' && user.email) {
         // Send email notification about auto-deletion
         try {
-          const response = await fetch('/api/send-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: user.email,
-              subject: `Temporary Member Alert: ${newMember.name}`,
-              html: `
-                 <div style="font-family: sans-serif; padding: 20px;">
-                   <h2>Temporary Member Added</h2>
-                   <p>You added <b>${newMember.name}</b> as a temporary member to group <b>${group.name}</b>.</p>
-                   <p>This member is scheduled to be automatically removed on <b>${new Date(newMember.expiresAt!).toLocaleDateString()}</b>.</p>
-                   <p>Please ensure all debts are settled before this date.</p>
-                 </div>
-               `
-            })
+          await callSecureApi('/api/send-temp-member-alert', {
+            to: user.email,
+            memberName: newMember.name,
+            groupName: group.name,
+            expiryDate: newMember.expiresAt
           });
-
-          if (!response.ok) console.warn("Failed to send temp member notification");
         } catch (e) {
           console.error("Error sending email", e);
         }
@@ -1037,7 +1024,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addMoneyToWallet = async (amount: number, note?: string): Promise<{ success: boolean; error?: string }> => {
+  const addMoneyToWallet = async (amount: number, note?: string): Promise<{ success: boolean; error?: string; transaction?: Transaction }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
     const validation = validateAmount(amount);

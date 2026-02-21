@@ -18,6 +18,7 @@ import { sendExternalInvitation } from "@/lib/api";
 import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
+import MobileHeader from "@/components/MobileHeader";
 import AppContainer from "@/components/AppContainer";
 import Avatar from "@/components/Avatar";
 import Logo from "@/components/Logo";
@@ -33,6 +34,7 @@ import PageGuide from "@/components/PageGuide";
 import ShareButton from "@/components/ShareButton";
 import TransactionDetailModal from "@/components/TransactionDetailModal";
 import UsernameMigration from "@/components/UsernameMigration";
+import { TransactionList } from "@/components/TransactionList";
 import { toast } from "sonner";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import {
@@ -613,6 +615,9 @@ const Dashboard = () => {
     const result = await addMoneyToWallet(amount, note);
     if (result.success) {
       toast.success(t('common.success'), { description: `Added ${formatAmount(amount)} to wallet` });
+      if (result.transaction) {
+        navigate("/receipt", { state: { transaction: result.transaction, type: "wallet_add" } });
+      }
     } else {
       toast.error(result.error || "Failed to add money");
     }
@@ -667,70 +672,8 @@ const Dashboard = () => {
         {/* Desktop Header */}
         <DesktopHeader />
 
-        {/* Mobile Header - Minimalist Style with Real Logo */}
-        <header className="lg:hidden sticky top-0 z-30 bg-[#F8F9FA]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img
-              src="/only-logo.png"
-              alt="Hostel Ledger"
-              className="w-10 h-10 rounded-xl shadow-lg"
-            />
-            <div>
-              <h1 className="text-xs font-bold uppercase tracking-widest text-gray-500">
-                Hostel Ledger
-              </h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Offline/Sync Indicator - Auto-syncs in background */}
-            {offline ? (
-              <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 rounded-full px-3 py-1.5">
-                <WifiOff className="w-3.5 h-3.5 text-orange-600" />
-                <span className="text-xs font-bold text-orange-700">
-                  {t('common.offline')}
-                </span>
-                {pendingCount > 0 && (
-                  <span className="ml-1 bg-orange-600 text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center">
-                    {pendingCount}
-                  </span>
-                )}
-              </div>
-            ) : isSyncing ? (
-              <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1.5">
-                <RefreshCw className="w-3.5 h-3.5 text-blue-600 animate-spin" />
-                <span className="text-xs font-bold text-blue-700">
-                  {t('common.syncing')}
-                </span>
-              </div>
-            ) : pendingCount > 0 ? (
-              <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1.5">
-                <RefreshCw className="w-3.5 h-3.5 text-green-600" />
-                <span className="text-xs font-bold text-green-700">
-                  {pendingCount} pending
-                </span>
-              </div>
-            ) : null}
-
-            {isInstalled ? (
-              <button className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600">
-                <NotificationIcon />
-              </button>
-            ) : (
-              <PWAInstallButton />
-            )}
-
-            <button
-              onClick={() => navigate("/profile")}
-              className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden"
-            >
-              <div className="w-full h-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center">
-                <span className="text-lg font-black text-white">
-                  {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-                </span>
-              </div>
-            </button>
-          </div>
-        </header>
+        {/* Mobile Header */}
+        <MobileHeader />
         {/* Username Migration Prompt */}
         <UsernameMigration />
 
@@ -741,28 +684,28 @@ const Dashboard = () => {
           </div>
 
           {/* Greeting Section - Moved further down with more spacing */}
-          <section className="mt-16 lg:mt-20 mb-10 lg:mb-12">
+          <section className="mt-16 lg:mt-20 mb-8 lg:mb-10">
             <p className="text-gray-500 font-semibold text-sm">{t('dashboard.welcome_back')}</p>
-            <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-gray-900">
+            <h2 className="text-4xl lg:text-5xl font-black tracking-tighter text-gray-900">
               {user?.name || "User"}
             </h2>
-            <div className="mt-4 flex flex-wrap gap-2.5">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1.5 shadow-sm">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+            <div className="mt-6 flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 select-none">
+              <div className="flex-shrink-0 inline-flex items-center gap-2.5 rounded-2xl bg-white border border-slate-100 px-4 py-2.5 shadow-sm hover:shadow-md transition-all active:scale-95">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   {t('dashboard.groups')}
                 </span>
-                <span className="text-xs font-black text-slate-800 tabular-nums">
+                <span className="text-sm font-black text-slate-900 tabular-nums bg-slate-100 px-2.5 py-0.5 rounded-lg min-w-[2rem] text-center">
                   {groups.length}
                 </span>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1.5 shadow-sm">
-                <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600">
+              <div className="flex-shrink-0 inline-flex items-center gap-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-100/50 backdrop-blur-sm px-4 py-2.5 shadow-sm hover:shadow-md transition-all active:scale-95">
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">
                   {t('dashboard.pending_payments')}
                 </span>
-                <span className="text-xs font-black text-emerald-700 tabular-nums">
+                <span className="text-sm font-black text-emerald-700 tabular-nums bg-emerald-100/50 px-2.5 py-0.5 rounded-lg min-w-[2rem] text-center">
                   {pendingPaymentCounts.total}
                 </span>
-                <span className="text-[10px] font-bold text-emerald-600/80">
+                <span className="text-[10px] font-bold text-emerald-600/70 ml-0.5">
                   ({t('dashboard.pay_receive', { pay: pendingPaymentCounts.toPayCount, receive: pendingPaymentCounts.toReceiveCount })})
                 </span>
               </div>
@@ -806,6 +749,7 @@ const Dashboard = () => {
                   onClick={handleDismissNotificationPrompt}
                   disabled={isEnablingNotifications}
                   className="w-8 h-8 rounded-full hover:bg-blue-200 flex items-center justify-center transition-colors flex-shrink-0"
+                  aria-label="Dismiss notification prompt"
                 >
                   <X className="w-4 h-4 text-blue-700" />
                 </button>
@@ -902,6 +846,7 @@ const Dashboard = () => {
                 <button
                   onClick={() => setShowAddMoney(true)}
                   className="glass p-2.5 lg:p-3 rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
+                  aria-label="Add money to wallet"
                 >
                   <Plus className="w-4 lg:w-5 h-4 lg:h-5 text-white" />
                 </button>
@@ -1302,7 +1247,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-4 gap-3">
               <button
                 onClick={handlePersonalExpense}
-                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-100 dark:border-emerald-800/50 active:scale-95 transition-all shadow-sm"
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-100 dark:border-emerald-800/50 active:scale-95 transition-all shadow-sm hover:shadow-md"
               >
                 <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-md">
                   <Plus className="w-6 h-6 font-bold" />
@@ -1314,7 +1259,7 @@ const Dashboard = () => {
 
               <button
                 onClick={handleAddExpense}
-                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all shadow-sm hover:shadow-md"
               >
                 <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
                   <CreditCard className="w-6 h-6 text-slate-600 dark:text-slate-400" />
@@ -1326,7 +1271,7 @@ const Dashboard = () => {
 
               <button
                 onClick={handleNewGroup}
-                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all shadow-sm hover:shadow-md"
               >
                 <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
                   <Users className="w-6 h-6 text-slate-600 dark:text-slate-400" />
@@ -1338,7 +1283,7 @@ const Dashboard = () => {
 
               <button
                 onClick={() => navigate("/personal-space")}
-                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all shadow-sm hover:shadow-md"
               >
                 <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
                   <Send className="w-6 h-6 text-slate-600 dark:text-slate-400" />
@@ -1363,7 +1308,7 @@ const Dashboard = () => {
 
               <button
                 onClick={() => setShowAddMoney(true)}
-                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all shadow-sm hover:shadow-md"
               >
                 <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
                   <Wallet className="w-6 h-6 text-slate-600 dark:text-slate-400" />
@@ -1474,17 +1419,16 @@ const Dashboard = () => {
           </section>
 
           {/* Recent Activity */}
-          {/* Mobile Version - With Date Grouping */}
-          <section className="lg:hidden mt-8">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
-              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <h3 className="font-black tracking-tighter text-sm">
+          <section className="mt-8 lg:mt-12">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-md">
+              <div className="px-6 py-4 lg:px-8 lg:py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <h3 className="font-black tracking-tighter text-sm lg:text-base">
                   {t('dashboard.recent_activity')}
                 </h3>
                 {allTransactions.length > 3 && (
                   <button
                     onClick={() => navigate("/activity")}
-                    className="text-xs font-black text-primary dark:text-emerald-400"
+                    className="text-xs lg:text-sm font-black text-primary dark:text-emerald-400 hover:underline"
                   >
                     {t('dashboard.view_all')}
                   </button>
@@ -1492,723 +1436,59 @@ const Dashboard = () => {
               </div>
 
               {allTransactions.length > 0 ? (
-                <div className="p-3">
-                  {/* Today's Transactions */}
-                  {todayTransactions.length > 0 && (
-                    <div className="mb-4">
-                      <div className="px-3 py-2">
-                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">
-                          {t('common.today')}
-                        </h4>
-                      </div>
-                      {todayTransactions.slice(0, 3).map((transaction) => {
-                        const transactionGroup = groups.find(
-                          (g) => g.id === transaction.groupId,
-                        );
-                        const isPayer = transaction.paidBy === user?.uid;
-                        const userParticipant = transaction.participants?.find(
-                          (p: any) => p.id === user?.uid,
-                        );
-                        const isParticipant = !!userParticipant;
-
-                        const typeLabel =
-                          transaction.type === "expense"
-                            ? isPayer
-                              ? "You paid"
-                              : isParticipant
-                                ? "You owe"
-                                : "Group expense"
-                            : transaction.type === "payment"
-                              ? transaction.paidBy === user?.uid ||
-                                transaction.from === user?.uid
-                                ? "Payment sent"
-                                : "Payment received"
-                              : "Wallet";
-
-                        const displayAmount =
-                          transaction.type === "expense"
-                            ? isPayer
-                              ? transaction.amount
-                              : isParticipant
-                                ? userParticipant.amount
-                                : 0
-                            : transaction.amount;
-
-                        return (
-                          <button
-                            key={transaction.id}
-                            onClick={() => setSelectedTransaction(transaction)}
-                            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 active:scale-[0.99] transition-all text-left"
-                          >
-                            <div
-                              className={`w-10 h-10 rounded-lg flex items-center justify-center ${transaction.type === "expense"
-                                ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
-                                : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
-                                }`}
-                            >
-                              {transaction.type === "expense" ? (
-                                <ArrowUpRight className="w-4 h-4" />
-                              ) : transaction.type === "payment" ? (
-                                <ArrowDownLeft className="w-4 h-4" />
-                              ) : (
-                                <CreditCard className="w-4 h-4" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-sm text-slate-900 dark:text-white truncate">
-                                {transaction.title}
-                              </p>
-                              <p className="text-xs text-slate-500 truncate">
-                                {typeLabel}
-                                {transactionGroup &&
-                                  ` • ${transactionGroup.name}`}
-                                {" • "}
-                                {new Date(
-                                  transaction.timestamp || transaction.date,
-                                ).toLocaleTimeString("en-US", {
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                })}
-                              </p>
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                              <p
-                                className={`font-black text-sm tabular-nums ${transaction.type === "expense"
-                                  ? isPayer || isParticipant
-                                    ? "text-rose-500"
-                                    : "text-slate-400"
-                                  : "text-slate-900 dark:text-white"
-                                  }`}
-                              >
-                                {transaction.type === "expense" &&
-                                  !isPayer &&
-                                  !isParticipant
-                                  ? "-"
-                                  : formatAmount(displayAmount)}
-                              </p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
+                <div className="p-3 lg:p-4">
+                  <TransactionList
+                    title={t('common.today')}
+                    transactions={todayTransactions.slice(0, 3)}
+                    groups={groups}
+                    userId={user?.uid}
+                    onSelectTransaction={setSelectedTransaction}
+                    formatAmount={formatAmount}
+                  />
+                  <TransactionList
+                    title={t('common.yesterday')}
+                    transactions={yesterdayTransactions.slice(0, 2)}
+                    groups={groups}
+                    userId={user?.uid}
+                    onSelectTransaction={setSelectedTransaction}
+                    formatAmount={formatAmount}
+                    showSeparator
+                  />
+                  {todayTransactions.length + yesterdayTransactions.length < 3 && (
+                    <TransactionList
+                      title="Older"
+                      transactions={olderTransactions.slice(
+                        0,
+                        3 - todayTransactions.length - yesterdayTransactions.length
+                      )}
+                      groups={groups}
+                      userId={user?.uid}
+                      onSelectTransaction={setSelectedTransaction}
+                      formatAmount={formatAmount}
+                      showSeparator
+                      dateFormat="date"
+                    />
                   )}
-
-                  {/* Yesterday's Transactions */}
-                  {yesterdayTransactions.length > 0 && (
-                    <div className="mb-4">
-                      <div className="px-3 py-2 border-t border-slate-100 dark:border-slate-800">
-                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">
-                          {t('common.yesterday')}
-                        </h4>
-                      </div>
-                      {yesterdayTransactions.slice(0, 2).map((transaction) => {
-                        const transactionGroup = groups.find(
-                          (g) => g.id === transaction.groupId,
-                        );
-                        const isPayer = transaction.paidBy === user?.uid;
-                        const userParticipant = transaction.participants?.find(
-                          (p: any) => p.id === user?.uid,
-                        );
-                        const isParticipant = !!userParticipant;
-
-                        const typeLabel =
-                          transaction.type === "expense"
-                            ? isPayer
-                              ? "You paid"
-                              : isParticipant
-                                ? "You owe"
-                                : "Group expense"
-                            : transaction.type === "payment"
-                              ? transaction.paidBy === user?.uid ||
-                                transaction.from === user?.uid
-                                ? "Payment sent"
-                                : "Payment received"
-                              : "Wallet";
-
-                        const displayAmount =
-                          transaction.type === "expense"
-                            ? isPayer
-                              ? transaction.amount
-                              : isParticipant
-                                ? userParticipant.amount
-                                : 0
-                            : transaction.amount;
-
-                        return (
-                          <button
-                            key={transaction.id}
-                            onClick={() => setSelectedTransaction(transaction)}
-                            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 active:scale-[0.99] transition-all text-left"
-                          >
-                            <div
-                              className={`w-10 h-10 rounded-lg flex items-center justify-center ${transaction.type === "expense"
-                                ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
-                                : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
-                                }`}
-                            >
-                              {transaction.type === "expense" ? (
-                                <ArrowUpRight className="w-4 h-4" />
-                              ) : transaction.type === "payment" ? (
-                                <ArrowDownLeft className="w-4 h-4" />
-                              ) : (
-                                <CreditCard className="w-4 h-4" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-sm text-slate-900 dark:text-white truncate">
-                                {transaction.title}
-                              </p>
-                              <p className="text-xs text-slate-500 truncate">
-                                {typeLabel}
-                                {transactionGroup &&
-                                  ` • ${transactionGroup.name}`}
-                                {" • "}
-                                {new Date(
-                                  transaction.timestamp || transaction.date,
-                                ).toLocaleTimeString("en-US", {
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                })}
-                              </p>
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                              <p
-                                className={`font-black text-sm tabular-nums ${transaction.type === "expense"
-                                  ? isPayer || isParticipant
-                                    ? "text-rose-500"
-                                    : "text-slate-400"
-                                  : "text-slate-900 dark:text-white"
-                                  }`}
-                              >
-                                {transaction.type === "expense" &&
-                                  !isPayer &&
-                                  !isParticipant
-                                  ? "-"
-                                  : formatAmount(displayAmount)}
-                              </p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Older Transactions */}
-                  {olderTransactions.length > 0 &&
-                    todayTransactions.length + yesterdayTransactions.length <
-                    3 && (
-                      <div>
-                        <div className="px-3 py-2 border-t border-slate-100 dark:border-slate-800">
-                          <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">
-                            Older
-                          </h4>
-                        </div>
-                        {olderTransactions
-                          .slice(
-                            0,
-                            3 -
-                            todayTransactions.length -
-                            yesterdayTransactions.length,
-                          )
-                          .map((transaction) => {
-                            const transactionGroup = groups.find(
-                              (g) => g.id === transaction.groupId,
-                            );
-                            const isPayer = transaction.paidBy === user?.uid;
-                            const userParticipant =
-                              transaction.participants?.find(
-                                (p: any) => p.id === user?.uid,
-                              );
-                            const isParticipant = !!userParticipant;
-
-                            const typeLabel =
-                              transaction.type === "expense"
-                                ? isPayer
-                                  ? "You paid"
-                                  : isParticipant
-                                    ? "You owe"
-                                    : "Group expense"
-                                : transaction.type === "payment"
-                                  ? transaction.paidBy === user?.uid ||
-                                    transaction.from === user?.uid
-                                    ? "Payment sent"
-                                    : "Payment received"
-                                  : "Wallet";
-
-                            const displayAmount =
-                              transaction.type === "expense"
-                                ? isPayer
-                                  ? transaction.amount
-                                  : isParticipant
-                                    ? userParticipant.amount
-                                    : 0
-                                : transaction.amount;
-
-                            return (
-                              <button
-                                key={transaction.id}
-                                onClick={() =>
-                                  setSelectedTransaction(transaction)
-                                }
-                                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 active:scale-[0.99] transition-all text-left"
-                              >
-                                <div
-                                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${transaction.type === "expense"
-                                    ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
-                                    : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
-                                    }`}
-                                >
-                                  {transaction.type === "expense" ? (
-                                    <ArrowUpRight className="w-4 h-4" />
-                                  ) : transaction.type === "payment" ? (
-                                    <ArrowDownLeft className="w-4 h-4" />
-                                  ) : (
-                                    <CreditCard className="w-4 h-4" />
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-bold text-sm text-slate-900 dark:text-white truncate">
-                                    {transaction.title}
-                                  </p>
-                                  <p className="text-xs text-slate-500 truncate">
-                                    {typeLabel}
-                                    {transactionGroup &&
-                                      ` • ${transactionGroup.name}`}
-                                    {" • "}
-                                    {transaction.date}
-                                  </p>
-                                </div>
-                                <div className="text-right flex-shrink-0">
-                                  <p
-                                    className={`font-black text-sm tabular-nums ${transaction.type === "expense"
-                                      ? isPayer || isParticipant
-                                        ? "text-rose-500"
-                                        : "text-slate-400"
-                                      : "text-slate-900 dark:text-white"
-                                      }`}
-                                  >
-                                    {transaction.type === "expense" &&
-                                      !isPayer &&
-                                      !isParticipant
-                                      ? "-"
-                                      : formatAmount(displayAmount)}
-                                  </p>
-                                </div>
-                              </button>
-                            );
-                          })}
-                      </div>
-                    )}
                 </div>
               ) : (
-                <div className="p-8 text-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#4a6850]/20 to-[#5a7860]/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                    <span className="text-xl">💸</span>
+                <div className="p-8 lg:p-12 text-center">
+                  <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-br from-[#4a6850]/20 to-[#5a7860]/20 rounded-2xl lg:rounded-3xl flex items-center justify-center mx-auto mb-3 lg:mb-4">
+                    <span className="text-xl lg:text-2xl">💸</span>
                   </div>
-                  <h3 className="text-sm font-black text-gray-900 dark:text-white mb-1 tracking-tight">
+                  <h3 className="text-sm lg:text-lg font-black text-gray-900 dark:text-white mb-1 lg:mb-2 tracking-tight">
                     Ready to get started?
                   </h3>
-                  <p className="text-slate-500 dark:text-slate-400 mb-4 text-xs">
+                  <p className="text-slate-500 dark:text-slate-400 mb-4 lg:mb-6 text-xs lg:text-sm">
                     Your financial journey begins here! 🚀
                   </p>
                   <button
                     onClick={
                       groups.length === 0 ? handleNewGroup : handleAddExpense
                     }
-                    className="py-2 px-4 bg-gradient-to-r from-[#4a6850] to-[#5a7860] text-white font-bold text-sm rounded-xl active:scale-95 transition-all"
+                    className="py-2 px-4 lg:py-3 lg:px-6 bg-gradient-to-r from-[#4a6850] to-[#5a7860] text-white font-bold text-sm lg:text-base rounded-xl lg:rounded-2xl hover:from-[#3d5643] hover:to-[#4a6850] hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     {groups.length === 0
                       ? "Create Your First Group"
-                      : "Add Your First Expense"}
-                  </button>
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Desktop Version - Enhanced with Date Grouping */}
-          <section className="hidden lg:block mt-12">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
-              <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <h3 className="font-black tracking-tighter">Recent Activity</h3>
-                {allTransactions.length > 3 && (
-                  <button
-                    onClick={() => navigate("/activity")}
-                    className="text-sm font-black text-primary dark:text-emerald-400 hover:underline"
-                  >
-                    View All
-                  </button>
-                )}
-              </div>
-
-              {allTransactions.length > 0 ? (
-                <div className="p-4">
-                  {/* Today's Transactions */}
-                  {todayTransactions.length > 0 && (
-                    <div className="mb-6">
-                      <div className="px-4 py-2">
-                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">
-                          Today
-                        </h4>
-                      </div>
-                      {todayTransactions.slice(0, 3).map((transaction) => {
-                        const transactionGroup = groups.find(
-                          (g) => g.id === transaction.groupId,
-                        );
-                        const isPayer = transaction.paidBy === user?.uid;
-                        const userParticipant = transaction.participants?.find(
-                          (p: any) => p.id === user?.uid,
-                        );
-                        const isParticipant = !!userParticipant;
-
-                        const typeLabel =
-                          transaction.type === "expense"
-                            ? isPayer
-                              ? "You paid"
-                              : isParticipant
-                                ? "You owe"
-                                : "Group expense"
-                            : transaction.type === "payment"
-                              ? transaction.paidBy === user?.uid ||
-                                transaction.from === user?.uid
-                                ? "Payment sent"
-                                : "Payment received"
-                              : "Wallet";
-
-                        const displayAmount =
-                          transaction.type === "expense"
-                            ? isPayer
-                              ? transaction.amount
-                              : isParticipant
-                                ? userParticipant.amount
-                                : 0
-                            : transaction.amount;
-
-                        return (
-                          <button
-                            key={transaction.id}
-                            onClick={() => setSelectedTransaction(transaction)}
-                            className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:scale-[1.01] active:scale-[0.99] transition-all text-left"
-                          >
-                            <div
-                              className={`w-12 h-12 rounded-xl flex items-center justify-center ${transaction.type === "expense"
-                                ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
-                                : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
-                                }`}
-                            >
-                              {transaction.type === "expense" ? (
-                                <ArrowUpRight className="w-5 h-5" />
-                              ) : transaction.type === "payment" ? (
-                                <ArrowDownLeft className="w-5 h-5" />
-                              ) : (
-                                <CreditCard className="w-5 h-5" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-slate-900 dark:text-white truncate">
-                                {transaction.title}
-                              </p>
-                              <p className="text-xs text-slate-500 truncate">
-                                {typeLabel}
-                                {transactionGroup &&
-                                  ` • ${transactionGroup.name}`}
-                                {" • "}
-                                {new Date(
-                                  transaction.timestamp || transaction.date,
-                                ).toLocaleTimeString("en-US", {
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                })}
-                              </p>
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                              <p
-                                className={`font-black tabular-nums ${transaction.type === "expense"
-                                  ? isPayer || isParticipant
-                                    ? "text-rose-500"
-                                    : "text-slate-400"
-                                  : "text-slate-900 dark:text-white"
-                                  }`}
-                              >
-                                {transaction.type === "expense" &&
-                                  !isPayer &&
-                                  !isParticipant
-                                  ? "-"
-                                  : formatAmount(displayAmount)}
-                              </p>
-                              <p className="text-xs text-slate-400">
-                                {transaction.type === "expense"
-                                  ? isPayer
-                                    ? "Paid by you"
-                                    : isParticipant
-                                      ? "You owe"
-                                      : "Not involved"
-                                  : transaction.paidBy === user?.uid ||
-                                    transaction.from === user?.uid
-                                    ? "Sent"
-                                    : "Received"}
-                              </p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Yesterday's Transactions */}
-                  {yesterdayTransactions.length > 0 && (
-                    <div className="mb-6">
-                      <div className="px-4 py-2 border-t border-slate-100 dark:border-slate-800">
-                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">
-                          Yesterday
-                        </h4>
-                      </div>
-                      {yesterdayTransactions.slice(0, 2).map((transaction) => {
-                        const transactionGroup = groups.find(
-                          (g) => g.id === transaction.groupId,
-                        );
-                        const isPayer = transaction.paidBy === user?.uid;
-                        const userParticipant = transaction.participants?.find(
-                          (p: any) => p.id === user?.uid,
-                        );
-                        const isParticipant = !!userParticipant;
-
-                        const typeLabel =
-                          transaction.type === "expense"
-                            ? isPayer
-                              ? "You paid"
-                              : isParticipant
-                                ? "You owe"
-                                : "Group expense"
-                            : transaction.type === "payment"
-                              ? transaction.paidBy === user?.uid ||
-                                transaction.from === user?.uid
-                                ? "Payment sent"
-                                : "Payment received"
-                              : "Wallet";
-
-                        const displayAmount =
-                          transaction.type === "expense"
-                            ? isPayer
-                              ? transaction.amount
-                              : isParticipant
-                                ? userParticipant.amount
-                                : 0
-                            : transaction.amount;
-
-                        return (
-                          <button
-                            key={transaction.id}
-                            onClick={() => setSelectedTransaction(transaction)}
-                            className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:scale-[1.01] active:scale-[0.99] transition-all text-left"
-                          >
-                            <div
-                              className={`w-12 h-12 rounded-xl flex items-center justify-center ${transaction.type === "expense"
-                                ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
-                                : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
-                                }`}
-                            >
-                              {transaction.type === "expense" ? (
-                                <ArrowUpRight className="w-5 h-5" />
-                              ) : transaction.type === "payment" ? (
-                                <ArrowDownLeft className="w-5 h-5" />
-                              ) : (
-                                <CreditCard className="w-5 h-5" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-slate-900 dark:text-white truncate">
-                                {transaction.title}
-                              </p>
-                              <p className="text-xs text-slate-500 truncate">
-                                {typeLabel}
-                                {transactionGroup &&
-                                  ` • ${transactionGroup.name}`}
-                                {" • "}
-                                {new Date(
-                                  transaction.timestamp || transaction.date,
-                                ).toLocaleTimeString("en-US", {
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                })}
-                              </p>
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                              <p
-                                className={`font-black tabular-nums ${transaction.type === "expense"
-                                  ? isPayer || isParticipant
-                                    ? "text-rose-500"
-                                    : "text-slate-400"
-                                  : "text-slate-900 dark:text-white"
-                                  }`}
-                              >
-                                {transaction.type === "expense" &&
-                                  !isPayer &&
-                                  !isParticipant
-                                  ? "-"
-                                  : formatAmount(displayAmount)}
-                              </p>
-                              <p className="text-xs text-slate-400">
-                                {transaction.type === "expense"
-                                  ? isPayer
-                                    ? "Paid by you"
-                                    : isParticipant
-                                      ? "You owe"
-                                      : "Not involved"
-                                  : transaction.paidBy === user?.uid ||
-                                    transaction.from === user?.uid
-                                    ? "Sent"
-                                    : "Received"}
-                              </p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Older Transactions */}
-                  {olderTransactions.length > 0 &&
-                    todayTransactions.length + yesterdayTransactions.length <
-                    3 && (
-                      <div>
-                        <div className="px-4 py-2 border-t border-slate-100 dark:border-slate-800">
-                          <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">
-                            Older
-                          </h4>
-                        </div>
-                        {olderTransactions
-                          .slice(
-                            0,
-                            3 -
-                            todayTransactions.length -
-                            yesterdayTransactions.length,
-                          )
-                          .map((transaction) => {
-                            const transactionGroup = groups.find(
-                              (g) => g.id === transaction.groupId,
-                            );
-                            const isPayer = transaction.paidBy === user?.uid;
-                            const userParticipant =
-                              transaction.participants?.find(
-                                (p: any) => p.id === user?.uid,
-                              );
-                            const isParticipant = !!userParticipant;
-
-                            const typeLabel =
-                              transaction.type === "expense"
-                                ? isPayer
-                                  ? "You paid"
-                                  : isParticipant
-                                    ? "You owe"
-                                    : "Group expense"
-                                : transaction.type === "payment"
-                                  ? transaction.paidBy === user?.uid ||
-                                    transaction.from === user?.uid
-                                    ? "Payment sent"
-                                    : "Payment received"
-                                  : "Wallet";
-
-                            const displayAmount =
-                              transaction.type === "expense"
-                                ? isPayer
-                                  ? transaction.amount
-                                  : isParticipant
-                                    ? userParticipant.amount
-                                    : 0
-                                : transaction.amount;
-
-                            return (
-                              <button
-                                key={transaction.id}
-                                onClick={() =>
-                                  setSelectedTransaction(transaction)
-                                }
-                                className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:scale-[1.01] active:scale-[0.99] transition-all text-left"
-                              >
-                                <div
-                                  className={`w-12 h-12 rounded-xl flex items-center justify-center ${transaction.type === "expense"
-                                    ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
-                                    : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
-                                    }`}
-                                >
-                                  {transaction.type === "expense" ? (
-                                    <ArrowUpRight className="w-5 h-5" />
-                                  ) : transaction.type === "payment" ? (
-                                    <ArrowDownLeft className="w-5 h-5" />
-                                  ) : (
-                                    <CreditCard className="w-5 h-5" />
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-bold text-slate-900 dark:text-white truncate">
-                                    {transaction.title}
-                                  </p>
-                                  <p className="text-xs text-slate-500 truncate">
-                                    {typeLabel}
-                                    {transactionGroup &&
-                                      ` • ${transactionGroup.name}`}
-                                    {" • "}
-                                    {transaction.date}
-                                  </p>
-                                </div>
-                                <div className="text-right flex-shrink-0">
-                                  <p
-                                    className={`font-black tabular-nums ${transaction.type === "expense"
-                                      ? isPayer || isParticipant
-                                        ? "text-rose-500"
-                                        : "text-slate-400"
-                                      : "text-slate-900 dark:text-white"
-                                      }`}
-                                  >
-                                    {transaction.type === "expense" &&
-                                      !isPayer &&
-                                      !isParticipant
-                                      ? "-"
-                                      : formatAmount(displayAmount)}
-                                  </p>
-                                  <p className="text-xs text-slate-400">
-                                    {transaction.type === "expense"
-                                      ? isPayer
-                                        ? "Paid by you"
-                                        : isParticipant
-                                          ? "You owe"
-                                          : "Not involved"
-                                      : transaction.paidBy === user?.uid ||
-                                        transaction.from === user?.uid
-                                        ? "Sent"
-                                        : "Received"}
-                                  </p>
-                                </div>
-                              </button>
-                            );
-                          })}
-                      </div>
-                    )}
-                </div>
-              ) : (
-                <div className="p-12 text-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-[#4a6850]/20 to-[#5a7860]/20 rounded-3xl flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl">💸</span>
-                  </div>
-                  <h3 className="text-lg font-black text-gray-900 dark:text-white mb-2 tracking-tight">
-                    Ready to get started?
-                  </h3>
-                  <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">
-                    Your financial journey begins here! 🚀
-                  </p>
-                  <button
-                    onClick={
-                      groups.length === 0 ? handleNewGroup : handleAddExpense
-                    }
-                    className="py-3 px-6 bg-gradient-to-r from-[#4a6850] to-[#5a7860] text-white font-black rounded-2xl hover:from-[#3d5643] hover:to-[#4a6850] hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl"
-                  >
-                    {groups.length === 0
-                      ? "🎉 Create Your First Group"
                       : "Add Your First Expense"}
                   </button>
                 </div>

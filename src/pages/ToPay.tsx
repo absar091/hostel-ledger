@@ -10,6 +10,7 @@ import PageGuide from "@/components/PageGuide";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import Avatar from "@/components/Avatar";
 import { useTranslation } from "react-i18next";
+import MobileHeader from "@/components/MobileHeader";
 
 interface PersonToPay {
   id: string;
@@ -87,8 +88,11 @@ const ToPay = () => {
     peopleIOwe.forEach(person => {
       // If the name is the fallback (contains the ID substring), trigger a fetch
       // Also check if the group members array is empty, which indicates lazy loading state
+      // OR if this specific person is not found in the group members list
       const group = groups.find(g => g.id === person.groupId);
-      if (group && (!group.members || group.members.length === 0)) {
+      const memberFound = group?.members?.some(m => m.id === person.id);
+
+      if (group && (!group.members || group.members.length === 0 || !memberFound)) {
         fetchGroupDetail(person.groupId);
       }
     });
@@ -124,33 +128,7 @@ const ToPay = () => {
       <AppContainer className="bg-white pb-8">
         {/* Desktop Header */}
         <DesktopHeader />
-
-        {/* iPhone-style top accent border - Mobile only */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-700 via-rose-500 to-rose-700 z-50 shadow-sm"></div>
-
-        {/* App Header - iPhone Style Enhanced with Rose Theme */}
-        <div className="bg-white border-b border-rose-500/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(244,63,94,0.08)]">
-          <div className="flex items-center justify-between">
-            {/* App Logo and Name - Enhanced */}
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-rose-500 to-rose-700 rounded-2xl flex items-center justify-center shadow-lg">
-                <img
-                  src="/only-logo.png"
-                  alt="Hostel Ledger"
-                  className="w-6 h-6 object-contain filter brightness-0 invert"
-                />
-              </div>
-              <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
-            </div>
-
-            {/* Header Actions - Enhanced */}
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 bg-gradient-to-br from-rose-500 to-rose-700 rounded-3xl flex items-center justify-center shadow-lg">
-                <ArrowUpRight className="w-7 h-7 text-white font-bold" />
-              </div>
-            </div>
-          </div>
-        </div>
+        <MobileHeader title={t('to_pay.title')} showBackButton={true} />
 
         {/* Page Guide */}
         <PageGuide
@@ -166,22 +144,13 @@ const ToPay = () => {
           onClose={handleClosePageGuide}
         />
 
-        {/* Header - iPhone Style Enhanced */}
-        <header className="px-4 pt-8 pb-4">
-          <div className="flex items-center gap-3 mb-6">
-            <button
-              onClick={() => navigate(-1)}
-              className="w-10 h-10 rounded-2xl bg-rose-500/10 shadow-sm border border-rose-500/20 flex items-center justify-center hover:bg-rose-500/20 transition-all"
-            >
-              <ArrowLeft className="w-5 h-5 text-rose-500 font-bold" />
-            </button>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">{t('to_pay.title')}</h1>
-          </div>
-
+        {/* People List */}
+        <main className="px-4 pt-6">
           {/* Total Summary Card - iPhone Style with Rose Theme */}
-          <div className="bg-gradient-to-br from-[#fef3f2] to-[#fef8f7] rounded-3xl p-7 shadow-lg border border-rose-100 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-[#fef3f2] to-[#fef8f7] rounded-3xl p-8 shadow-lg border border-rose-100 relative overflow-hidden mb-6">
             {/* Decorative circles to match dashboard */}
-            <div className="absolute -right-6 -top-6 w-24 h-24 bg-rose-500/5 rounded-full pointer-events-none"></div>
+            <div className="absolute -right-8 -top-8 w-32 h-32 bg-rose-500/5 rounded-full pointer-events-none"></div>
+            <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-500/5 rounded-full pointer-events-none"></div>
 
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-2">
@@ -196,15 +165,12 @@ const ToPay = () => {
               <div className="text-sm text-rose-500 font-bold">
                 {t('to_pay.to_count_people', {
                   count: peopleIOwe.length,
-                  people: t(peopleIOwe.length === 1 ? 'to_pay.person_singular' : 'to_pay.person_plural')
+                  people: t(peopleIOwe.length === 1 ? 'to_pay.person_singular' : 'to_pay.person_plural', { count: peopleIOwe.length })
                 })}
               </div>
             </div>
           </div>
-        </header>
 
-        {/* People List */}
-        <main className="px-4">
           {peopleIOwe.length > 0 ? (
             <div className="space-y-3">
               {peopleIOwe.map((person) => (
