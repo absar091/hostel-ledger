@@ -357,6 +357,7 @@ const authenticate = async (req, res, next) => {
 
 // ============================================
 // 2FA Endpoints
+console.log('✅ 2FA Endpoints (setup, verify-setup, verify, disable) are registered.');
 // ============================================
 
 // 2FA Status (Public) - Verify 2FA module is loaded
@@ -368,7 +369,7 @@ app.get('/api/2fa/status', (req, res) => {
  * Setup 2FA
  * Generates a secret and returns a QR code
  */
-app.post('/api/2fa/setup', authenticate, async (req, res) => {
+app.post('/api/2fa/setup', (req, res, next) => { console.log(`🔹 2FA Setup Request from IP: ${req.ip}`); next(); }, authenticate, async (req, res) => {
   try {
     const userId = req.user.uid;
 
