@@ -184,9 +184,13 @@ const Signup = () => {
 
       // Move to password step
       setCurrentView('password');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Email check failed:", error);
-      toast.error(t('common.error'), { description: "Failed to verify email. Please try again." });
+      if (error.message && error.message.includes("Too many attempts")) {
+        toast.error(t('auth.max_attempts_reached'));
+      } else {
+        toast.error(t('common.error'), { description: "Failed to verify email. Please try again." });
+      }
     } finally {
       setIsLoading(false);
     }
