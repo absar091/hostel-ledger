@@ -40,14 +40,26 @@ const JoinGroup = () => {
             const handleJoin = async () => {
                 if (groupId) {
                     try {
-                        await claimEmailInvite(groupId);
-                        toast.success("Joined group successfully!");
+                        const result = await claimEmailInvite(groupId);
+                        if (result.success) {
+                            toast.success("Joined group successfully!");
+                            setStatus('redirect');
+                            navigate(`/group/${groupId}`, { replace: true });
+                        } else {
+                            console.error("Failed to join group automatically", result.error);
+                            toast.error(result.error || "Failed to join group");
+                            setStatus('error');
+                            navigate('/', { replace: true });
+                        }
                     } catch (e) {
                         console.error("Failed to join group automatically", e);
+                        toast.error("An error occurred while joining the group.");
+                        setStatus('error');
+                        navigate('/', { replace: true });
                     }
+                } else {
+                    navigate('/', { replace: true });
                 }
-                setStatus('redirect');
-                navigate(`/group/${groupId}`, { replace: true });
             };
             handleJoin();
         } else {
