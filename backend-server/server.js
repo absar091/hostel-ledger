@@ -9,6 +9,7 @@ const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
 const { loadEmailTemplate } = require('./utils/email');
 const { validateCreateGroup } = require('./utils/validation');
+const { sanitize } = require('./utils/sanitize');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
 const pkg = require('./package.json');
@@ -398,7 +399,15 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     return res.status(400).json({ success: false, error: validationError });
   }
 
-  const { name, emoji, members, invitedUsernames, invitedEmails, coverPhoto } = req.body;
+  let { name, emoji, members, invitedUsernames, invitedEmails, coverPhoto } = req.body;
+
+  // Sanitize Inputs
+  name = sanitize(name);
+  emoji = sanitize(emoji);
+  if (members && Array.isArray(members)) {
+    members = members.map(m => ({ ...m, name: sanitize(m.name) }));
+  }
+
   const userId = req.user.uid;
   const notificationPromises = [];
 
@@ -1710,7 +1719,10 @@ app.post('/api/get-individual-debts', generalLimiter, authenticate, async (req, 
 
 // Add Expense endpoint (Secure)
 app.post('/api/add-expense', generalLimiter, async (req, res) => {
-  const { groupId, amount, paidBy, participants, note, place } = req.body;
+  let { groupId, amount, paidBy, participants, note, place } = req.body;
+  note = sanitize(note);
+  place = sanitize(place);
+
   const currentUserId = req.user.uid;
 
   if (!groupId || !amount || !paidBy || !participants || participants.length === 0) {
@@ -2071,7 +2083,10 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
 // Record Payment endpoint (Secure)
 app.post('/api/record-payment', generalLimiter, async (req, res) => {
-  const { groupId, fromMember, toMember, amount, method, note } = req.body;
+  let { groupId, fromMember, toMember, amount, method, note } = req.body;
+  note = sanitize(note);
+  method = sanitize(method);
+
   const currentUserId = req.user.uid;
 
   if (!groupId || !fromMember || !toMember || !amount || !method) {
@@ -2377,7 +2392,9 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
 
 // Update Wallet endpoint (Manual adjustments - Secure)
 app.post('/api/update-wallet', generalLimiter, async (req, res) => {
-  const { amount, type, note } = req.body; // type: 'add' or 'deduct'
+  let { amount, type, note } = req.body; // type: 'add' or 'deduct'
+  note = sanitize(note);
+
   const currentUserId = req.user.uid;
 
   if (typeof amount !== 'number' || amount <= 0 || !['add', 'deduct'].includes(type)) {
@@ -3041,7 +3058,9 @@ app.post('/api/remove-member', authenticate, async (req, res) => {
 app.post('/api/update-group', authenticate, async (req, res) => {
   try {
     const userId = req.user.uid;
-    const { groupId, name, emoji } = req.body;
+    let { groupId, name, emoji } = req.body;
+    name = sanitize(name);
+    emoji = sanitize(emoji);
 
     if (!groupId) {
       return res.status(400).json({ success: false, error: 'Group ID is required' });
@@ -3422,7 +3441,9 @@ app.post('/api/cleanup-unverified-users', adminAuth, async (req, res) => {
  * Money does NOT move until the receiver accepts.
  */
 app.post('/api/send-money', authenticate, async (req, res) => {
-  const { recipientUsername, amount, note } = req.body;
+  let { recipientUsername, amount, note } = req.body;
+  note = sanitize(note);
+
   const senderUid = req.user.uid;
 
   if (!recipientUsername || !amount) {
@@ -3657,11 +3678,14 @@ app.use('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Hostel Ledger Email API server running on port ${PORT}`);
-  console.log(`📧 SMTP configured for: ${process.env.SMTP_USER}`);
-  console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-});
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Hostel Ledger Email API server running on port ${PORT}`);
+    console.log(`📧 SMTP configured for: ${process.env.SMTP_USER}`);
+    console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  });
+}
 
 module.exports = app;
