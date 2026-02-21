@@ -194,10 +194,34 @@ const emailLimiter = rateLimit({
 // General rate limiter for API endpoints
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // limit each IP to 200 requests per windowMs
+  max: 300, // limit each IP to 300 requests per windowMs (Increased slightly)
   message: {
     success: false,
     error: 'Too many requests, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Global Rate Limit per Minute (Burst Protection)
+const globalMinuteLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60, // limit each IP to 60 requests per minute
+  message: {
+    success: false,
+    error: 'Too many requests, please slow down.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Global Rate Limit per Hour (Sustained Usage)
+const globalHourLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 1000, // limit each IP to 1000 requests per hour
+  message: {
+    success: false,
+    error: 'Hourly request limit reached. Please try again later.'
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -307,7 +331,10 @@ app.get('/api/push-test', (req, res) => {
   });
 });
 
-// Apply general rate limiting to API endpoints only
+// Apply rate limiting layers to API endpoints
+// Order matters: Minute (Burst) -> Hour (Sustained) -> General (15m window)
+app.use('/api', globalMinuteLimiter);
+app.use('/api', globalHourLimiter);
 app.use('/api', generalLimiter);
 
 // Stricter rate limiting for creation endpoints
