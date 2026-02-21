@@ -756,6 +756,7 @@ const GroupDetail = () => {
             paymentDetails: selectedMember.paymentDetails,
             phone: selectedMember.phone,
             isTemporary: selectedMember.isTemporary,
+            walletBalance: selectedMember.walletBalance,
           }}
           transactions={memberTransactions}
           settlementInfo={{
