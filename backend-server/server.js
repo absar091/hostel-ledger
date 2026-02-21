@@ -2222,9 +2222,11 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     };
 
     // 2. Update Other User (if they exist)
+    let otherUserBalanceBefore = 0;
+    let otherUserBalanceAfter = 0;
     if (otherUser && otherPerson.userId) {
-      let otherUserBalanceBefore = otherUser.walletBalance || 0;
-      let otherUserBalanceAfter = otherUserBalanceBefore;
+      otherUserBalanceBefore = otherUser.walletBalance || 0;
+      otherUserBalanceAfter = otherUserBalanceBefore;
 
       if (isPaying) {
         // Current user paid -> Other user receives
