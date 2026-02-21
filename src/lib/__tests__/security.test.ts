@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { RateLimiter, validateCSRFToken } from '../security';
+import { RateLimiter, validateCSRFToken, generateCSRFToken } from '../security';
 
 describe('RateLimiter', () => {
     beforeEach(() => {
@@ -123,6 +123,35 @@ describe('RateLimiter', () => {
             // T=1001. Elapsed=1001. Remaining = 0.
             expect(limiter.getRemainingTime('user1')).toBe(0);
         });
+    });
+});
+
+describe('generateCSRFToken', () => {
+    it('should generate a string of length 64', () => {
+        const token = generateCSRFToken();
+        expect(typeof token).toBe('string');
+        expect(token.length).toBe(64);
+    });
+
+    it('should generate a valid hex string', () => {
+        const token = generateCSRFToken();
+        expect(token).toMatch(/^[0-9a-f]{64}$/);
+    });
+
+    it('should generate unique tokens', () => {
+        const token1 = generateCSRFToken();
+        const token2 = generateCSRFToken();
+        expect(token1).not.toBe(token2);
+    });
+
+    it('should use crypto.getRandomValues', () => {
+        const getRandomValuesSpy = vi.spyOn(crypto, 'getRandomValues');
+        generateCSRFToken();
+        expect(getRandomValuesSpy).toHaveBeenCalled();
+        const callArgs = getRandomValuesSpy.mock.calls[0][0];
+        expect(callArgs).toBeInstanceOf(Uint8Array);
+        expect(callArgs.length).toBe(32);
+        getRandomValuesSpy.mockRestore();
     });
 });
 
