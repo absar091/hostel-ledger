@@ -500,6 +500,30 @@ const emailService = {
             subject: `New Expense: ${safeTitle} (Rs ${data.amount})`,
             html
         });
+    },
+
+    /**
+     * Send Temporary Member Alert
+     */
+    sendTempMemberAlert: async (email, memberName, groupName, expiryDate) => {
+        const safeMember = escapeHtml(memberName);
+        const safeGroup = escapeHtml(groupName);
+        const safeDate = escapeHtml(expiryDate);
+
+        const html = getCommonTemplate(
+            'Temporary Member Added',
+            `<p>You added <strong>${safeMember}</strong> as a temporary member to group <strong>${safeGroup}</strong>.</p>
+             <p>This member is scheduled to be automatically removed on <strong>${safeDate}</strong>.</p>
+             <p>Please ensure all debts are settled before this date.</p>`,
+            '',
+            true
+        );
+
+        return sendEmailSafe({
+            to: email,
+            subject: `Temporary Member Alert: ${safeMember}`,
+            html
+        });
     }
 };
 
