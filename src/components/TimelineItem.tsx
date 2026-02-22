@@ -233,8 +233,6 @@ const arePropsEqual = (prevProps: TimelineItemProps, nextProps: TimelineItemProp
   }
 
   // 2. Compare participants array deeply
-  // Since participants arrays are small (usually < 10 items), JSON.stringify is fast enough
-  // and handles deep equality for the participant objects.
   const prevP = prevProps.participants;
   const nextP = nextProps.participants;
 
@@ -242,7 +240,19 @@ const arePropsEqual = (prevProps: TimelineItemProps, nextProps: TimelineItemProp
   if (!prevP || !nextP) return false; // One is undefined/null but not both (checked above)
   if (prevP.length !== nextP.length) return false;
 
-  return JSON.stringify(prevP) === JSON.stringify(nextP);
+  for (let i = 0; i < prevP.length; i++) {
+    const p1 = prevP[i];
+    const p2 = nextP[i];
+    if (
+      p1.name !== p2.name ||
+      p1.amount !== p2.amount ||
+      p1.isTemporary !== p2.isTemporary
+    ) {
+      return false;
+    }
+  }
+
+  return true;
 };
 
 export { arePropsEqual };

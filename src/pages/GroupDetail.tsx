@@ -75,14 +75,40 @@ const GroupDetail = () => {
   const rawGroup = fullGroup || partialGroup;
 
   // Defensive: Ensure members is always an array (Firebase may return object)
-  const group = rawGroup ? {
+  const group = useMemo(() => rawGroup ? {
     ...rawGroup,
     members: Array.isArray(rawGroup.members)
       ? rawGroup.members
       : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
-  } : null;
+  } : null, [rawGroup]);
 
-  const transactions = id ? getTransactionsByGroup(id) : [];
+  const transactions = useMemo(() => id ? getTransactionsByGroup(id) : [], [id, getTransactionsByGroup]);
+
+  // Memoize ledger transactions to stabilize references for TimelineItem
+  const ledgerTransactions = useMemo(() => {
+    return transactions.map((item) => ({
+      ...item,
+      paidByResolved: item.type === "expense" ? (
+        (() => {
+          // Use consistent naming logic
+          if (item.paidBy === user?.uid) return t('group.you_label');
+          if (group && item.paidBy === group.createdBy) return t('group.owner');
+          const member = group?.members.find(m => m.id === item.paidBy);
+          return member?.name || item.paidByName;
+        })()
+      ) : undefined,
+      participantsResolved: item.type === "expense" ? item.participants?.map(p => ({
+        ...p,
+        name: (() => {
+          if (p.id === user?.uid) return t('group.you_label'); // Your share
+          if (group && p.id === group.createdBy) return t('group.owner'); // Owner's share
+          const member = group?.members.find(m => m.id === p.id); // Valid member name
+          return member?.name || p.name;
+        })()
+      })) : undefined,
+    }));
+  }, [transactions, group, user?.uid, t]);
+
   const settlements = id ? getSettlements(id) : {};
 
   // Calculate total amount to receive in this group
@@ -419,9 +445,9 @@ const GroupDetail = () => {
       <main className="px-4 py-4">
         {activeTab === "ledger" && (
           <div className="space-y-3 animate-fade-in">
-            {transactions.length > 0 ? (
+            {ledgerTransactions.length > 0 ? (
               <div className="space-y-3">
-                {transactions.map((item, index) => (
+                {ledgerTransactions.map((item, index) => (
                   <div
                     key={item.id}
                     className="animate-slide-up bg-white rounded-3xl shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 overflow-hidden"
@@ -432,24 +458,8 @@ const GroupDetail = () => {
                       title={item.title}
                       amount={item.amount}
                       date={item.date}
-                      paidBy={item.type === "expense" ? (
-                        (() => {
-                          // Use consistent naming logic
-                          if (item.paidBy === user?.uid) return t('group.you_label');
-                          if (item.paidBy === group.createdBy) return t('group.owner');
-                          const member = group.members.find(m => m.id === item.paidBy);
-                          return member?.name || item.paidByName;
-                        })()
-                      ) : undefined}
-                      participants={item.type === "expense" ? item.participants?.map(p => ({
-                        ...p,
-                        name: (() => {
-                          if (p.id === user?.uid) return t('group.you_label'); // Your share
-                          if (p.id === group.createdBy) return t('group.owner'); // Owner's share
-                          const member = group.members.find(m => m.id === p.id); // Valid member name
-                          return member?.name || p.name;
-                        })()
-                      })) : undefined}
+                      paidBy={item.paidByResolved}
+                      participants={item.participantsResolved}
                       from={item.type === "payment" ? item.fromName : undefined}
                       to={item.type === "payment" ? item.toName : undefined}
                       method={item.type === "payment" ? item.method : undefined}
