@@ -232,7 +232,7 @@ const MemberDetailSheet = ({
           )}
 
           {/* Quick Actions - Both directions now available */}
-          <div className="flex gap-3 mb-6">
+          <div className="flex flex-col gap-3 mb-6">
             {/* Receive Payment Button */}
             {theyOweYou > 0 && (
               <Tooltip>

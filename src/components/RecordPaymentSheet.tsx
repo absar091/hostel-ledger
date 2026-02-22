@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, Banknote, Smartphone, ChevronRight, Info, CreditCard } from "lucide-react";
+import { Check, Banknote, Smartphone, ChevronRight, Info, CreditCard, Wallet } from "lucide-react";
 import Avatar from "./Avatar";
 import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
@@ -353,6 +353,12 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                               <span className="px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-wider">{t('common.no_debt')}</span>
                             )}
                           </div>
+                          {(member as any).walletBalance !== undefined && (member as any).walletBalance !== null && (
+                            <div className="flex items-center gap-1 text-[11px] font-black text-blue-600 bg-blue-50 w-fit px-1.5 py-0.5 rounded-lg border border-blue-100 mt-1">
+                              <Wallet className="w-3 h-3" />
+                              <span>{formatAmount((member as any).walletBalance)}</span>
+                            </div>
+                          )}
                           <div className="text-xs font-bold truncate">
                             {isSettled ? (
                               <span className="text-emerald-600 font-black">✅ {t('common.all_settled')}</span>
