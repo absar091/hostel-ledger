@@ -475,8 +475,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         const userRef = ref(database, `users/${firebaseUser.uid}`);
         await set(userRef, userProfile);
 
-        // Create username index for lookups
-        const usernameRef = ref(database, `usernames/${sanitizedUsername}`);
+        // Create username index for lookups (encode dots as commas for Firebase keys)
+        const storageKey = sanitizedUsername.replace(/\./g, ',');
+        const usernameRef = ref(database, `usernames/${storageKey}`);
         await set(usernameRef, {
           uid: firebaseUser.uid,
           createdAt: new Date().toISOString()
@@ -1204,7 +1205,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         return false; // Invalid length
       }
 
-      const usernameRef = ref(database, `usernames/${normalizedUsername}`);
+      // Encode dots as commas for Firebase keys
+      const storageKey = normalizedUsername.replace(/\./g, ',');
+      const usernameRef = ref(database, `usernames/${storageKey}`);
       const snapshot = await get(usernameRef);
 
       return !snapshot.exists(); // Available if doesn't exist

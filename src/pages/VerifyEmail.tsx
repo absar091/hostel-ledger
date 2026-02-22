@@ -121,7 +121,7 @@ const VerifyEmail = () => {
 
           // Clean up session storage
           sessionStorage.removeItem('pendingSignup');
-          toast.success(t('auth.reset_success'));
+          toast.success(t('auth.email_verified_success'));
 
           // CHECK FOR PENDING JOIN
           const pendingJoin = localStorage.getItem('pendingJoinGroup');
@@ -237,7 +237,7 @@ const VerifyEmail = () => {
 
           // Clean up session storage
           sessionStorage.removeItem('pendingSignup');
-          toast.success(t('auth.reset_success'));
+          toast.success(t('auth.email_verified_success'));
 
           // CHECK FOR PENDING JOIN
           const pendingJoin = localStorage.getItem('pendingJoinGroup');
