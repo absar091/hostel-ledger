@@ -7,9 +7,12 @@ const testCases = [
   { input: '<img src=x onerror=alert(1)>', expected: '', desc: 'Image onerror' },
   { input: 'Hello <script>alert("XSS")</script> World', expected: 'Hello  World', desc: 'Embedded script' },
   { input: '   Trim Me   ', expected: 'Trim Me', desc: 'Whitespace trimming' },
-  { input: 123, expected: 123, desc: 'Non-string input' },
-  { input: null, expected: null, desc: 'Null input' },
-  { input: undefined, expected: undefined, desc: 'Undefined input' },
+  { input: 123, expected: '123', desc: 'Number converted to string' },
+  { input: null, expected: '', desc: 'Null input returns empty string' },
+  { input: undefined, expected: '', desc: 'Undefined input returns empty string' },
+  { input: { a: 1 }, expected: '', desc: 'Object input rejected' },
+  { input: [1, 2], expected: '', desc: 'Array input rejected' },
+  { input: true, expected: 'true', desc: 'Boolean converted to string' },
   { input: '<a href="javascript:alert(1)">Click me</a>', expected: 'Click me', desc: 'Javascript href' }
 ];
 
