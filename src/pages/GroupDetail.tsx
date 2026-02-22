@@ -38,7 +38,7 @@ const GroupDetail = () => {
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<{ id: string; name: string; balance: number; paymentDetails?: any; phone?: string; isTemporary?: boolean; isOwner?: boolean } | null>(null);
+  const [selectedMember, setSelectedMember] = useState<{ id: string; name: string; balance: number; paymentDetails?: any; phone?: string; isTemporary?: boolean; isOwner?: boolean; walletBalance?: number; } | null>(null);
   const [showMemberDetail, setShowMemberDetail] = useState(false);
   const [showMemberSettlement, setShowMemberSettlement] = useState(false);
   const [settlementMember, setSettlementMember] = useState<{ id: string; name: string; avatar?: string; isTemporary?: boolean } | null>(null);
@@ -224,6 +224,7 @@ const GroupDetail = () => {
     email: (m as any).email,
     isPending: (m as any).isPending,
     userId: (m as any).userId,
+    walletBalance: (m as any).walletBalance,
   }));
   const currentUser = group.members.find((m) => m.isCurrentUser);
 

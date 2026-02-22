@@ -169,6 +169,7 @@ export interface GroupMember {
   tempId?: string;
   deletionCondition?: 'SETTLED' | 'TIME_LIMIT' | null;
   expiresAt?: number | null;
+  walletBalance?: number;
   deletionNotified?: boolean;
   photoURL?: string | null;
 }
