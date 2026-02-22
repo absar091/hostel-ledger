@@ -2639,6 +2639,12 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
       serverTimestamp: serverTime,
       walletBalanceBefore: currentBalance,
       walletBalanceAfter: newBalance,
+      walletBalances: {
+        [currentUserId]: {
+          before: currentBalance,
+          after: newBalance
+        }
+      },
       userId: currentUserId,
       createdAt: new Date().toISOString()
     };
