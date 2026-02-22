@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Share2, Copy, Check, MessageCircle, Send } from "@/lib/icons";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ShareButtonProps {
   className?: string;
@@ -81,12 +82,20 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
   if (variant === "icon") {
     return (
       <div className="relative">
-        <button
-          onClick={handleNativeShare}
-          className={`w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors ${className}`}
-        >
-          <Share2 className="w-5 h-5 text-gray-700" />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={handleNativeShare}
+              aria-label="Share App"
+              className={`w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors ${className}`}
+            >
+              <Share2 className="w-5 h-5 text-gray-700" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Share App</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     );
   }
@@ -141,9 +150,10 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
                 <h3 className="text-lg font-bold text-gray-900">Share Hostel Ledger</h3>
                 <button
                   onClick={() => setShowShareMenu(false)}
+                  aria-label="Close share menu"
                   className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
                 >
-                  <span className="text-gray-600 text-lg">×</span>
+                  <span className="text-gray-600 text-lg" aria-hidden="true">×</span>
                 </button>
               </div>
               <p className="text-sm text-gray-500 mt-2">
