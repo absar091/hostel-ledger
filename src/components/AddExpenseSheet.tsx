@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, ChevronRight, AlertCircle, WifiOff, UserPlus, Clock, Ban } from "lucide-react";
+import { Check, ChevronRight, AlertCircle, WifiOff, UserPlus, Clock, Ban, Wallet } from "lucide-react";
 import Avatar from "./Avatar";
 import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
@@ -483,10 +483,15 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                               <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.invited')}</span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 mt-0.5">
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                             {member.balance !== undefined && member.balance !== null && (
                               <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-lg border border-emerald-100">
                                 {formatAmount(member.balance)}
+                              </span>
+                            )}
+                            {(member as any).walletBalance !== undefined && (member as any).walletBalance !== null && (
+                              <span className="text-[11px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-lg border border-blue-100 flex items-center gap-1">
+                                <Wallet className="w-3 h-3" /> {formatAmount((member as any).walletBalance)}
                               </span>
                             )}
                             {member.isTemporary && (
@@ -556,12 +561,17 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                                 <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.invited')}</span>
                               )}
                             </div>
-                            <div className="flex items-center gap-2 mt-0.5">
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                               {member.balance !== undefined && member.balance !== null && (
                                 <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-lg border border-emerald-100">
                                   {formatAmount(member.balance)}
                                 </span>
                               )}
+                            {(member as any).walletBalance !== undefined && (member as any).walletBalance !== null && (
+                              <span className="text-[11px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-lg border border-blue-100 flex items-center gap-1">
+                                <Wallet className="w-3 h-3" /> {formatAmount((member as any).walletBalance)}
+                              </span>
+                            )}
                               {member.isTemporary && (
                                 <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600">
                                   {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
