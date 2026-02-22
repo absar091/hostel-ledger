@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, Banknote, Smartphone, ChevronRight, Info, CreditCard } from "lucide-react";
+import { Check, Banknote, Smartphone, ChevronRight, Info, CreditCard, Wallet } from "lucide-react";
 import Avatar from "./Avatar";
 import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
@@ -48,7 +48,7 @@ interface RecordPaymentSheetProps {
     amount: number;
     method: "cash" | "online";
     note: string;
-  }) => void;
+  }) => Promise<void>;
 }
 
 const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSheetProps) => {
@@ -64,6 +64,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
   const [note, setNote] = useState("");
   const [fullGroupData, setFullGroupData] = useState<Group | null>(null);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Get members from selected group (exclude "You") and sort by those who owe money
   const otherMembers = useMemo(() => {
@@ -150,10 +151,11 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
     setAmount("");
     setMethod("cash");
     setNote("");
+    setIsSubmitting(false);
     onClose();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Final validation before submission
     const amountValue = parseFloat(amount);
 
@@ -190,14 +192,20 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
       return;
     }
 
-    onSubmit({
-      groupId: selectedGroup,
-      fromMember,
-      amount: amountValue,
-      method,
-      note: note.trim(),
-    });
-    handleClose();
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        groupId: selectedGroup,
+        fromMember,
+        amount: amountValue,
+        method,
+        note: note.trim(),
+      });
+      handleClose();
+    } catch (error) {
+      console.error("Record payment error:", error);
+      setIsSubmitting(false);
+    }
   };
 
   const canProceed = () => {
@@ -222,6 +230,15 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
   return (
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 shadow-[0_-20px_60px_rgba(74,104,80,0.1)] z-[100]">
+
+        {/* Loading Overlay */}
+        {isSubmitting && (
+          <div className="absolute inset-0 z-[150] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-200">
+            <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
+            <h3 className="text-lg font-black text-slate-900">{t('sheets.add_expense.processing')}</h3>
+          </div>
+        )}
+
         <SheetHeader className="flex-shrink-0 mb-6 pt-2">
           {/* Handle Bar */}
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
@@ -336,6 +353,12 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                               <span className="px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-wider">{t('common.no_debt')}</span>
                             )}
                           </div>
+                          {(member as any).walletBalance !== undefined && (member as any).walletBalance !== null && (
+                            <div className="flex items-center gap-1 text-[11px] font-black text-blue-600 bg-blue-50 w-fit px-1.5 py-0.5 rounded-lg border border-blue-100 mt-1">
+                              <Wallet className="w-3 h-3" />
+                              <span>{formatAmount((member as any).walletBalance)}</span>
+                            </div>
+                          )}
                           <div className="text-xs font-bold truncate">
                             {isSettled ? (
                               <span className="text-emerald-600 font-black">✅ {t('common.all_settled')}</span>

@@ -1,7 +1,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import Avatar from "./Avatar";
-import { ArrowDownLeft, ArrowUpRight, HandCoins, Calendar, MapPin, CreditCard, Banknote, ArrowRight } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, HandCoins, Calendar, MapPin, CreditCard, Banknote, ArrowRight, Wallet } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -31,6 +31,7 @@ interface MemberDetailSheetProps {
   member: {
     name: string;
     balance: number;
+    walletBalance?: number;
     paymentDetails?: {
       jazzCash?: string;
       easypaisa?: string;
@@ -157,6 +158,28 @@ const MemberDetailSheet = ({
               )}
             </div>
 
+            {/* Wallet Balance Display */}
+            {member.walletBalance !== undefined && member.walletBalance !== null && (
+              <div className="bg-gradient-to-br from-indigo-500/10 to-blue-500/10 rounded-3xl p-5 border border-indigo-500/20 mb-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 shadow-sm">
+                      <Wallet className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-gray-900 text-sm tracking-tight">Wallet Balance</h3>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wide">Visible to group</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-black text-xl text-indigo-700 tracking-tight">
+                      Rs {member.walletBalance.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Separate Debt Display - NOT auto-balanced */}
             <div className="mt-3 space-y-2 text-center">
               {theyOweYou > 0 && (
@@ -209,7 +232,7 @@ const MemberDetailSheet = ({
           )}
 
           {/* Quick Actions - Both directions now available */}
-          <div className="flex gap-3 mb-6">
+          <div className="flex flex-col gap-3 mb-6">
             {/* Receive Payment Button */}
             {theyOweYou > 0 && (
               <Tooltip>

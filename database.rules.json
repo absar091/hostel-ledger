@@ -47,11 +47,18 @@
     },
     "userTransactions": {
       "$uid": {
+        ".indexOn": [
+          "groupId"
+        ],
         ".read": "$uid === auth.uid",
         ".write": "$uid === auth.uid && auth != null"
       }
     },
     "verificationCodes": {
+      ".read": false,
+      ".write": false
+    },
+    "userSecrets": {
       ".read": false,
       ".write": false
     },

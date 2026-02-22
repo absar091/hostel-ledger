@@ -192,6 +192,7 @@ const PWAInstallButton = () => {
         onClick={handleInstallClick}
         variant="outline"
         size="sm"
+        aria-label="Install App"
         className="flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-200 hover:from-emerald-100 hover:to-emerald-200 text-emerald-700 hover:text-emerald-800 transition-all duration-200 shadow-sm hover:shadow-md"
       >
         {getInstallIcon()}

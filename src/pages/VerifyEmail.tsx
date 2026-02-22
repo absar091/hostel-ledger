@@ -115,7 +115,6 @@ const VerifyEmail = () => {
               : firebaseUser.displayName || "User";
 
             await sendWelcomeEmail(email, userName);
-            console.log('✅ Welcome email sent successfully');
           } catch (emailError) {
             console.warn('⚠️ Welcome email failed (non-critical):', emailError);
           }
@@ -129,8 +128,6 @@ const VerifyEmail = () => {
           if (pendingJoin) {
             try {
               const { groupId } = JSON.parse(pendingJoin);
-              console.log('🔗 Redirecting to pending group join:', groupId);
-              // navigate to JoinGroup page which will handle the claiming logic
               navigate(`/join/${groupId}`, { replace: true });
               return;
             } catch (e) {
@@ -234,7 +231,6 @@ const VerifyEmail = () => {
               : firebaseUser.displayName || "User";
 
             await sendWelcomeEmail(email, userName);
-            console.log('✅ Welcome email sent successfully');
           } catch (emailError) {
             console.warn('⚠️ Welcome email failed (non-critical):', emailError);
           }
@@ -248,7 +244,6 @@ const VerifyEmail = () => {
           if (pendingJoin) {
             try {
               const { groupId } = JSON.parse(pendingJoin);
-              console.log('🔗 Redirecting to pending group join:', groupId);
               navigate(`/join/${groupId}`, { replace: true });
               return;
             } catch (e) {
@@ -277,28 +272,8 @@ const VerifyEmail = () => {
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
-      {/* Top Accent Border - iPhone Style */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
-
-      {/* App Header - iPhone Style Enhanced with #4a6850 */}
-      <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-4 pb-5 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
-        <div className="flex items-center justify-center">
-          {/* App Logo and Name - Enhanced */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
-              <img
-                src="/only-logo.png"
-                alt="Hostel Ledger"
-                className="w-6 h-6 object-contain filter brightness-0 invert"
-              />
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
-              <p className="text-xs text-[#4a6850]/80 font-bold">{t('sidebar.motto')}</p>
-            </div>
-          </div>
-          <LanguageSelector />
-        </div>
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSelector />
       </div>
 
       {/* Page Guide */}

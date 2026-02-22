@@ -59,7 +59,7 @@ const TimelineItemBase = ({
     return (
       <button
         onClick={onClick}
-        className="w-full bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 border border-[#4a6850]/20 rounded-3xl p-5 text-left hover:bg-gradient-to-br hover:from-[#4a6850]/10 hover:to-[#3d5643]/10 hover:border-[#4a6850]/30 transition-all shadow-lg hover:shadow-xl"
+        className="w-full bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 border border-[#4a6850]/20 rounded-3xl p-5 text-left hover:bg-gradient-to-br hover:from-[#4a6850]/10 hover:to-[#3d5643]/10 hover:border-[#4a6850]/30 transition-all shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 active:scale-[0.98]"
       >
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center shrink-0 shadow-lg">
@@ -84,7 +84,7 @@ const TimelineItemBase = ({
     return (
       <button
         onClick={onClick}
-        className="w-full bg-gradient-to-br from-red-50 to-orange-50 border border-red-200/50 rounded-3xl p-5 text-left hover:bg-gradient-to-br hover:from-red-100/50 hover:to-orange-100/50 hover:border-red-300/50 transition-all shadow-lg hover:shadow-xl"
+        className="w-full bg-gradient-to-br from-red-50 to-orange-50 border border-red-200/50 rounded-3xl p-5 text-left hover:bg-gradient-to-br hover:from-red-100/50 hover:to-orange-100/50 hover:border-red-300/50 transition-all shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 active:scale-[0.98]"
       >
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shrink-0 shadow-lg">
@@ -110,7 +110,7 @@ const TimelineItemBase = ({
     return (
       <button
         onClick={onClick}
-        className={`w-full rounded-3xl p-5 text-left transition-all shadow-lg hover:shadow-xl ${isPayer
+        className={`w-full rounded-3xl p-5 text-left transition-all shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 active:scale-[0.98] ${isPayer
           ? 'bg-gradient-to-br from-red-50 to-orange-50 border border-red-200/50 hover:from-red-100/50 hover:to-orange-100/50 hover:border-red-300/50'
           : 'bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/50 hover:from-emerald-100/50 hover:to-teal-100/50 hover:border-emerald-300/50'
           }`}
@@ -149,7 +149,7 @@ const TimelineItemBase = ({
   return (
     <button
       onClick={onClick}
-      className="w-full bg-white border border-[#4a6850]/10 rounded-3xl p-5 shadow-lg text-left hover:shadow-xl hover:border-[#4a6850]/20 transition-all"
+      className="w-full bg-white border border-[#4a6850]/10 rounded-3xl p-5 shadow-lg text-left hover:shadow-xl hover:border-[#4a6850]/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 active:scale-[0.98]"
     >
       <div className="flex items-start gap-4">
         {paidBy ? (

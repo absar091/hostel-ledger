@@ -1,26 +1,27 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Plus, Search, Filter, Eye, TrendingUp, TrendingDown, Star } from "lucide-react";
+import { Users, Plus, Search, Filter, Eye, Star } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
+import MobileHeader from "@/components/MobileHeader";
 import AppContainer from "@/components/AppContainer";
-import CreateGroupSheet from "@/components/CreateGroupSheet";
 import MemberSettlementSheet from "@/components/MemberSettlementSheet";
 import PageGuide from "@/components/PageGuide";
 import { toast } from "sonner";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { useTranslation } from "react-i18next";
 
 const Groups = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, getSettlements, toggleFavoriteGroup, getFavoriteGroups } = useFirebaseAuth();
-  const { groups, createGroup } = useFirebaseData();
+  const { groups, createGroup, fetchGroupDetail } = useFirebaseData();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
 
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("groups");
-  const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [showGroupsGuide, setShowGroupsGuide] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSettlement, setShowSettlement] = useState(false);
@@ -58,36 +59,6 @@ const Groups = () => {
 
   const handleGroupClick = (groupId: string) => {
     navigate(`/group/${groupId}`);
-  };
-
-  const handleGroupSubmit = async (data: {
-    name: string;
-    emoji: string;
-    members: { name: string; phone?: string; paymentDetails?: any }[];
-    coverPhoto?: string;
-  }) => {
-    const groupData: any = {
-      name: data.name,
-      emoji: data.emoji,
-      members: data.members.map((m) => ({
-        name: m.name,
-        phone: m.phone,
-        paymentDetails: m.paymentDetails,
-      })),
-    };
-
-    // Only add coverPhoto if it exists (Firebase doesn't allow undefined)
-    if (data.coverPhoto) {
-      groupData.coverPhoto = data.coverPhoto;
-    }
-
-    const result = await createGroup(groupData);
-
-    if (result.success) {
-      toast.success(`Created group "${data.name}"`);
-    } else {
-      toast.error(result.error || "Failed to create group");
-    }
   };
 
   // Toggle favorite
@@ -144,6 +115,29 @@ const Groups = () => {
     return filtered;
   }, [groups, searchQuery, activeFilter, groupSettlementsMap, favoriteGroups]);
 
+  // Ensure member details are loaded for groups with settlements
+  useEffect(() => {
+    filteredGroups.forEach(group => {
+      const groupSettlements = groupSettlementsMap[group.id] || {};
+
+      // Calculate member to settle with logic (same as render)
+      const memberToSettle = Object.entries(groupSettlements).reduce((max, [memberId, settlement]: [string, any]) => {
+        const totalAmount = (settlement.toReceive || 0) + (settlement.toPay || 0);
+        const maxAmount = (max.settlement?.toReceive || 0) + (max.settlement?.toPay || 0);
+        return totalAmount > maxAmount ? { memberId, settlement } : max;
+      }, { memberId: '', settlement: null as any });
+
+      // If we have a member to settle but they aren't in the loaded members list
+      if (memberToSettle.memberId) {
+        const memberLoaded = group.members && group.members.some(m => m.id === memberToSettle.memberId);
+        if (!memberLoaded) {
+          // Fetch full group details to get member names
+          fetchGroupDetail(group.id);
+        }
+      }
+    });
+  }, [filteredGroups, groupSettlementsMap, fetchGroupDetail]);
+
   // Get gradient colors for group cards
   const getGroupGradient = (group: any, index: number) => {
     if (group.isPersonal) {
@@ -165,6 +159,9 @@ const Groups = () => {
 
       <AppContainer className="bg-[#F8F9FA]">
         <DesktopHeader />
+
+        {/* Mobile Header */}
+        <MobileHeader />
 
         {/* Header Section */}
         <header className="p-4 lg:p-8 pb-4">
@@ -251,7 +248,8 @@ const Groups = () => {
               }, { memberId: '', settlement: null as any });
 
               const memberObj = group.members.find(m => m.id === memberToSettle.memberId);
-              const memberName = memberObj?.name || (memberToSettle.memberId ? `Member (${memberToSettle.memberId.substring(0, 5)})` : '');
+              // Use translated fallback string instead of hardcoded english
+              const memberName = memberObj?.name || (memberToSettle.memberId ? t('common.member_fallback', { username: memberToSettle.memberId.substring(0, 5) }) : '');
               const isTemporary = memberObj?.isTemporary || false;
 
               const handleSettleClick = (e: React.MouseEvent) => {

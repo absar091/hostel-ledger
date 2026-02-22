@@ -31,27 +31,6 @@ export const generateVerificationCode = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Send email using backend API
-const sendEmailWithAPI = async (emailData: {
-  to: string;
-  subject: string;
-  html: string;
-  text?: string;
-}) => {
-  try {
-    console.log('📧 Sending email via backend API to:', emailData.to);
-
-    // Use secure API call which attaches the auth token
-    const result = await callSecureApi('/api/send-email', emailData);
-
-    console.log('✅ Email sent successfully via API:', result.messageId);
-    return { success: true, messageId: result.messageId };
-  } catch (error: any) {
-    console.error('❌ API email error:', error);
-    throw error;
-  }
-};
-
 // Send verification email using backend API
 const sendVerificationEmailAPI = async (email: string, code: string, name: string) => {
   try {
@@ -364,38 +343,7 @@ export const sendPasswordResetEmail = async (email: string, resetLink: string, n
   }
 };
 
-export const sendTransactionEmail = async (
-  email: string,
-  transaction: any,
-  userType: 'payer' | 'participant'
-) => {
-  try {
-    console.log('📧 Sending transaction notification to:', email);
-    console.log('📧 Using API URL:', EMAIL_CONFIG.apiUrl);
-
-    const emailData = {
-      to: email,
-      subject: `💰 ${userType === 'payer' ? 'Expense Added' : 'New Expense'} - ${transaction.title}`,
-      html: `
-        <h2>Transaction Notification</h2>
-        <p><strong>Transaction:</strong> ${transaction.title}</p>
-        <p><strong>Amount:</strong> Rs ${transaction.amount}</p>
-        <p><strong>Type:</strong> ${userType === 'payer' ? 'You paid this amount' : 'You are part of this expense'}</p>
-        <p><strong>Group:</strong> ${transaction.groupName}</p>
-      `
-    };
-
-    const result = await sendEmailWithAPI(emailData);
-    console.log('✅ Transaction email sent via backend API');
-    return result;
-  } catch (error: any) {
-    console.error('❌ Transaction email failed:', error);
-    throw new Error(`Failed to send transaction email: ${error.message}`);
-  }
-};
-
 // Legacy function exports for backward compatibility
-export { sendEmailWithAPI as sendEmailAPI };
 export { sendVerificationEmailAPI };
 export { sendVerificationEmailNewAPI };
 export { sendPasswordResetEmailAPI };

@@ -49,7 +49,16 @@ const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
-      // Send password reset email using Firebase
+      // First check if user exists (Explicit check as requested)
+      const exists = await checkEmailExists(email);
+
+      if (!exists) {
+        toast.error("No account found with this email address.");
+        setIsLoading(false);
+        return;
+      }
+
+      // If exists, proceed to send reset email
       toast.loading("Sending reset email...", { id: "sending-reset" });
       const result = await sendPasswordResetEmail(email);
       toast.dismiss("sending-reset");
@@ -59,20 +68,10 @@ const ForgotPassword = () => {
         toast.success(t('auth.reset_instructions_sent'), { description: "Password reset email sent! Check your inbox." });
       } else {
         // Handle specific Firebase errors
-        if (result.error?.includes('user-not-found')) {
-          // Check if user exists in backend (Invited but not signed up)
-          const existsInDb = await checkEmailExists(email);
-
-          if (existsInDb) {
-            // It's an invited user!
-            toast.error("This email is linked to an INVITED account. Please Sign Up to set your password.");
-            // Optional: You could set an error state here to show a "Go to Sign Up" button in the UI
-          } else {
-            // Genuine non-existent user
-            // Security: Don't reveal if user exists or not. Show success message (fake success).
-            setEmailSent(true);
-            toast.success(t('auth.reset_instructions_sent'));
-          }
+        if (result.error?.includes('user-not-found') || result.error === "No account found with this email address") {
+          // Since checkEmailExists returned true, but Firebase Auth says user not found,
+          // it must be an INVITED user (exists in DB but not Auth)
+          toast.error("This email is linked to an INVITED account. Please Sign Up to set your password.");
         } else if (result.error?.includes('too-many-requests')) {
           toast.error("Too many reset attempts. Please wait a few minutes before trying again.");
         } else {
@@ -91,26 +90,8 @@ const ForgotPassword = () => {
   if (emailSent) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-4">
-        {/* Top Accent Border - iPhone Style */}
-        <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
-
-        {/* App Header - iPhone Style Enhanced with #4a6850 */}
-        <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
-          <div className="flex items-center justify-between max-w-sm mx-auto">
-            <div className="w-10" />
-            {/* App Logo and Name - Enhanced */}
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
-                <img
-                  src="/only-logo.png"
-                  alt="Hostel Ledger"
-                  className="w-6 h-6 object-contain filter brightness-0 invert"
-                />
-              </div>
-              <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
-            </div>
-            <LanguageSelector />
-          </div>
+        <div className="absolute top-4 right-4 z-50">
+          <LanguageSelector />
         </div>
 
         <div className="w-full max-w-md pt-20">
@@ -168,29 +149,8 @@ const ForgotPassword = () => {
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
-      {/* Top Accent Border - iPhone Style */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50"></div>
-
-      {/* App Header - iPhone Style Enhanced with #4a6850 */}
-      <div className="fixed top-0 left-0 right-0 bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
-        <div className="flex items-center justify-between max-w-sm mx-auto">
-          <div className="w-10" />
-          {/* App Logo and Name - Enhanced */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
-              <img
-                src="/only-logo.png"
-                alt="Hostel Ledger"
-                className="w-6 h-6 object-contain filter brightness-0 invert"
-              />
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
-              <p className="text-xs text-[#4a6850]/80 font-bold">{t('sidebar.motto')}</p>
-            </div>
-          </div>
-          <LanguageSelector />
-        </div>
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSelector />
       </div>
 
       {/* Page Guide */}
@@ -214,11 +174,6 @@ const ForgotPassword = () => {
           <p className="text-[#4a6850]/80 font-bold leading-relaxed">
             {t('auth.forgot_password_subtitle')}
           </p>
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-2xl">
-            <p className="text-sm text-blue-800 font-bold">
-              💡 {t('auth.reset_note')}
-            </p>
-          </div>
         </div>
 
 

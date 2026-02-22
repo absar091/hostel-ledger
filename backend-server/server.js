@@ -7,8 +7,11 @@ const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
 const { loadEmailTemplate } = require('./utils/email');
 const { validateCreateGroup } = require('./utils/validation');
+const { sanitize } = require('./utils/sanitize');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
 const pkg = require('./package.json');
@@ -35,6 +38,55 @@ function normalizeMembers(members) {
     id: value.id || key // Use stored id if present, otherwise the Firebase key
   }));
 }
+
+// --- Helper: Sync Wallet Balance to Groups ---
+const syncWalletBalanceToGroups = async (db, userId, balance, isEnabled) => {
+  try {
+    const userGroupsRef = db.ref(`userGroups/${userId}`);
+    const snapshot = await userGroupsRef.get();
+
+    if (!snapshot.exists()) return;
+
+    const groupIds = Object.keys(snapshot.val());
+    const updates = {};
+
+    // We need to find the member entry for this user in each group
+    // This requires fetching each group, which is expensive (N+1)
+    // Optimization: Run fetches in parallel
+    const groupFetchPromises = groupIds.map(gid => db.ref(`groups/${gid}`).get());
+    const groupSnapshots = await Promise.all(groupFetchPromises);
+
+    groupSnapshots.forEach(groupSnap => {
+      if (!groupSnap.exists()) return;
+      const groupData = groupSnap.val();
+      const groupId = groupSnap.key;
+      const members = groupData.members;
+
+      if (!members) return;
+
+      if (Array.isArray(members)) {
+        const memberIndex = members.findIndex(m => m.userId === userId || m.id === userId);
+        if (memberIndex !== -1) {
+          updates[`groups/${groupId}/members/${memberIndex}/walletBalance`] = isEnabled ? balance : null;
+        }
+      } else {
+        // Object based members
+        const memberKey = Object.keys(members).find(key => members[key].userId === userId || members[key].id === userId);
+        if (memberKey) {
+          updates[`groups/${groupId}/members/${memberKey}/walletBalance`] = isEnabled ? balance : null;
+        }
+      }
+    });
+
+    if (Object.keys(updates).length > 0) {
+      await db.ref().update(updates);
+      console.log(`✅ Synced wallet balance for user ${userId} to ${Object.keys(updates).length} group paths (Enabled: ${isEnabled})`);
+    }
+
+  } catch (error) {
+    console.error('❌ Failed to sync wallet balance to groups:', error);
+  }
+};
 
 // Initialize Firebase Admin SDK using environment variables
 try {
@@ -104,8 +156,9 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // Allow any Vercel preview deployment
-    if (origin.endsWith('.vercel.app')) {
+    // Allow Vercel preview deployments for the hostel-ledger project
+    // Matches https://hostel-ledger-*.vercel.app
+    if (/^https:\/\/hostel-ledger(-.+)?\.vercel\.app$/.test(origin)) {
       return callback(null, true);
     }
 
@@ -124,6 +177,9 @@ app.use(express.json());
 
 const emailService = require('./services/emailService');
 const expenseLogic = require('./utils/expenseLogic');
+const { processTransactions, calculateDebtSummary } = require('./utils/debtLogic');
+const { verifyImageOwnership } = require('./utils/imageSecurity');
+const adminAuth = require('./middleware/adminAuth');
 
 // Rate limiting for email endpoints - very generous limits for testing
 const emailLimiter = rateLimit({
@@ -156,6 +212,30 @@ const strictEmailLimiter = rateLimit({
   message: {
     success: false,
     error: 'Daily invitation limit reached. Please try again tomorrow to protect against spam.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// STRICT Rate Limiter for Email Existence Checks (Anti-Enumeration)
+const strictEmailCheckLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // Limit to 10 checks per hour per IP
+  message: {
+    success: false,
+    error: 'Too many attempts. Please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate Limiter for User Search (Anti-Scraping/Enumeration)
+const userSearchLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // Limit to 30 searches per 15 mins per IP
+  message: {
+    success: false,
+    error: 'Too many search attempts. Please try again later.'
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -275,6 +355,190 @@ const authenticate = async (req, res, next) => {
   }
 };
 
+// ============================================
+// 2FA Endpoints
+console.log('✅ 2FA Endpoints (setup, verify-setup, verify, disable) are registered.');
+// ============================================
+
+// 2FA Status (Public) - Verify 2FA module is loaded
+app.get('/api/2fa/status', (req, res) => {
+  res.json({ success: true, message: '2FA Module Active' });
+});
+
+/**
+ * Setup 2FA
+ * Generates a secret and returns a QR code
+ */
+app.post('/api/2fa/setup', (req, res, next) => { console.log(`🔹 2FA Setup Request from IP: ${req.ip}`); next(); }, authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+
+    // Generate secret
+    const secret = speakeasy.generateSecret({
+      name: `HostelLedger (${req.user.email || 'User'})`
+    });
+
+    // Store secret temporarily
+    // We store it in a restricted root node 'userSecrets' so it's not exposed to the client
+    await admin.database().ref(`userSecrets/${userId}/tempSecret`).set(secret.base32);
+
+    // Generate QR Code
+    QRCode.toDataURL(secret.otpauth_url, (err, data_url) => {
+      if (err) {
+        return res.status(500).json({ success: false, error: 'Failed to generate QR code' });
+      }
+
+      res.json({
+        success: true,
+        secret: secret.base32, // Allow manual entry
+        qrCode: data_url
+      });
+    });
+
+  } catch (error) {
+    console.error('2FA setup error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * Verify 2FA Setup
+ * Validates the token against the temp secret and enables 2FA
+ */
+app.post('/api/2fa/verify-setup', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'Token is required' });
+    }
+
+    // Get temp secret
+    const snap = await admin.database().ref(`userSecrets/${userId}/tempSecret`).get();
+
+    if (!snap.exists()) {
+      return res.status(400).json({ success: false, error: 'No 2FA setup in progress' });
+    }
+
+    const secret = snap.val();
+
+    // Verify token
+    const verified = speakeasy.totp.verify({
+      secret: secret,
+      encoding: 'base32',
+      token: token
+    });
+
+    if (verified) {
+      // Save secret permanently and enable 2FA
+      const updates = {};
+      updates[`userSecrets/${userId}/secret`] = secret;
+      updates[`userSecrets/${userId}/tempSecret`] = null;
+      updates[`users/${userId}/is2FAEnabled`] = true;
+
+      await admin.database().ref().update(updates);
+
+      console.log(`✅ 2FA enabled for user ${userId}`);
+      res.json({ success: true, message: '2FA enabled successfully' });
+    } else {
+      res.status(400).json({ success: false, error: 'Invalid verification code' });
+    }
+
+  } catch (error) {
+    console.error('2FA verify setup error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * Verify 2FA Token (Login Challenge)
+ */
+app.post('/api/2fa/verify', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'Token is required' });
+    }
+
+    // Get secret
+    const snap = await admin.database().ref(`userSecrets/${userId}/secret`).get();
+
+    if (!snap.exists()) {
+      return res.status(400).json({ success: false, error: '2FA is not enabled for this account' });
+    }
+
+    const secret = snap.val();
+
+    // Verify token
+    const verified = speakeasy.totp.verify({
+      secret: secret,
+      encoding: 'base32',
+      token: token
+    });
+
+    if (verified) {
+      res.json({ success: true, message: 'Verification successful' });
+    } else {
+      res.status(400).json({ success: false, error: 'Invalid verification code' });
+    }
+
+  } catch (error) {
+    console.error('2FA verify error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * Disable 2FA
+ */
+app.post('/api/2fa/disable', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'Token is required' });
+    }
+
+    // Get secret
+    const snap = await admin.database().ref(`userSecrets/${userId}/secret`).get();
+
+    if (!snap.exists()) {
+      return res.status(400).json({ success: false, error: '2FA is not enabled' });
+    }
+
+    const secret = snap.val();
+
+    // Verify token
+    const verified = speakeasy.totp.verify({
+      secret: secret,
+      encoding: 'base32',
+      token: token
+    });
+
+    if (verified) {
+      // Remove secret and disable 2FA
+      const updates = {};
+      updates[`userSecrets/${userId}/secret`] = null;
+      updates[`users/${userId}/is2FAEnabled`] = false;
+
+      await admin.database().ref().update(updates);
+
+      console.log(`✅ 2FA disabled for user ${userId}`);
+      res.json({ success: true, message: '2FA disabled successfully' });
+    } else {
+      res.status(400).json({ success: false, error: 'Invalid verification code' });
+    }
+
+  } catch (error) {
+    console.error('2FA disable error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 // Delete Image Endpoint (Secure)
 app.post('/api/delete-image', authenticate, async (req, res) => {
   try {
@@ -284,8 +548,13 @@ app.post('/api/delete-image', authenticate, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing publicId' });
     }
 
-    // Optional: Verify that the publicId belongs to the user or is relevant to the app
-    // For now, we trust the authenticated user is deleting their own profile picture or an image they have access to.
+    // Verify that the publicId belongs to the user or is a cover photo of a group they created
+    const isOwner = await verifyImageOwnership(admin.database(), req.user.uid, publicId);
+
+    if (!isOwner) {
+      console.warn(`⚠️ User ${req.user.uid} attempted to delete image ${publicId} but ownership verification failed.`);
+      return res.status(403).json({ success: false, error: 'Unauthorized: You do not have permission to delete this image.' });
+    }
 
     console.log(`🗑️ Deleting image from Cloudinary: ${publicId} by user ${req.user.uid}`);
 
@@ -316,7 +585,15 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     return res.status(400).json({ success: false, error: validationError });
   }
 
-  const { name, emoji, members, invitedUsernames, invitedEmails, coverPhoto } = req.body;
+  let { name, emoji, members, invitedUsernames, invitedEmails, coverPhoto } = req.body;
+
+  // Sanitize Inputs
+  name = sanitize(name);
+  emoji = sanitize(emoji);
+  if (members && Array.isArray(members)) {
+    members = members.map(m => ({ ...m, name: sanitize(m.name) }));
+  }
+
   const userId = req.user.uid;
   const notificationPromises = [];
 
@@ -327,15 +604,23 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
     // 1a. Fetch User Name first (so we don't store "You" in DB)
     const userSnap = await admin.database().ref(`users/${userId}`).get();
-    const userName = userSnap.exists() ? userSnap.val().name : "User";
+    const userData = userSnap.exists() ? userSnap.val() : {};
+    const userName = userData.name || "User";
+    const userEmail = userData.email || null;
 
     // 1b. Resolve Invited Usernames (Existing Users)
     const resolvedUsers = [];
     if (invitedUsernames && invitedUsernames.length > 0) {
-      const resolved = await Promise.all(invitedUsernames.map(async (username) => {
-        const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9._]/g, '');
-        const storageKey = cleanUsername.replace(/\./g, ',');
-        const s = await admin.database().ref(`usernames/${storageKey}`).get();
+      // Optimize: Deduplicate to prevent redundant DB calls
+      const uniqueUsernames = [...new Set(invitedUsernames)];
+
+      const resolved = await Promise.all(uniqueUsernames.map(async (username) => {
+        const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
+
+        // Optimize: Skip empty usernames to prevent fetching the entire 'usernames' node (major performance/security fix)
+        if (!cleanUsername) return null;
+
+        const s = await admin.database().ref(`usernames/${cleanUsername}`).get();
         if (s.exists()) {
           const uidData = s.val();
           const inviteeUid = typeof uidData === 'string' ? uidData : (uidData?.uid || uidData?.userId || null);
@@ -358,6 +643,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
           name: userName,
           isCurrentUser: true,
           userId: userId,
+          email: userEmail,
           paymentDetails: {},
           isAdmin: true
         },
@@ -562,7 +848,12 @@ const calculateExpenseSplit = (totalAmount, participants, payerId) => {
 const calculateExpenseSettlements = expenseLogic.calculateExpenseSettlements;
 
 // --- New Endpoint: Get Valid User Details ---
-app.post('/api/get-valid-user-details', authenticate, async (req, res) => {
+// Apply stricter rate limiting for user search
+app.post('/api/get-valid-user-details', userSearchLimiter, authenticate, async (req, res) => {
+  // Add random delay to mitigate timing attacks (500ms - 1500ms)
+  const randomDelay = Math.floor(Math.random() * 1000) + 500;
+  await new Promise(resolve => setTimeout(resolve, randomDelay));
+
   try {
     const { username } = req.body;
 
@@ -709,6 +1000,7 @@ app.post('/api/respond-invitation', authenticate, async (req, res) => {
       const memberEntry = {
         id: memberIndex !== -1 ? membersArray[memberIndex].id : `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         name: userData.name || (memberIndex !== -1 ? membersArray[memberIndex].name : 'Member'),
+        email: userData.email || null,
         isRegistered: true,
         type: 'registered',
         userId: userId,
@@ -839,6 +1131,7 @@ app.post('/api/claim-email-invite', authenticate, async (req, res) => {
     // Update the member entry to link it to this user
     await admin.database().ref(`groups/${groupId}/members/${matchedMemberId}`).update({
       userId: userId,
+      email: userData.email || null,
       isRegistered: true,
       type: 'registered',
       name: userData.name || matchedMember.name,
@@ -886,67 +1179,61 @@ app.post('/api/claim-email-invite', authenticate, async (req, res) => {
 // Apply authentication middleware to ALL /api routes EXCEPT public ones
 app.use('/api', (req, res, next) => {
   // Public endpoints that don't need auth
-  const publicEndpoints = ['/push-test', '/check-email-exists', '/verification/request', '/verification/verify']; // Example: /api/push-test is public
+  // Note: Cleanup endpoints are "public" for user auth but secured by adminAuth middleware
+  const publicEndpoints = [
+    '/push-test',
+    '/check-email-exists',
+    '/verification/request',
+    '/verification/verify',
+    '/verification/check',
+    '/cleanup-temp-members',
+    '/cleanup-unverified-users'
+  ];
   if (publicEndpoints.includes(req.path)) {
     return next();
   }
   authenticate(req, res, next);
 });
 
-// Generic email sending endpoint
-// Generic email sending endpoint
-app.post('/api/send-email', emailLimiter, async (req, res) => {
+// Send Temporary Member Alert Endpoint (Secure - No raw HTML)
+app.post('/api/send-temp-member-alert', emailLimiter, async (req, res) => {
   try {
-    const { to, subject, html, text } = req.body;
+    const { to, memberName, groupName, expiryDate } = req.body;
 
-    // Validate input
-    if (!to || !subject || !html) {
+    // Validate inputs
+    if (!to || !memberName || !groupName || !expiryDate) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: to, subject, html'
+        error: 'Missing required fields: to, memberName, groupName, expiryDate'
       });
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(to)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid email address'
-      });
+    // Format Date (assuming timestamp or ISO string)
+    const dateObj = new Date(expiryDate);
+    if (isNaN(dateObj.getTime())) {
+      return res.status(400).json({ success: false, error: 'Invalid expiryDate' });
     }
+    const formattedDate = dateObj.toLocaleDateString();
 
-    // Send email using emailService
-    console.log('📧 Sending email via emailService...');
-    const result = await emailService.sendEmailSafe({
-      to,
-      subject,
-      html,
-      text: text || ''
-    });
+    await emailService.sendTempMemberAlert(to, memberName, groupName, formattedDate);
 
-    if (result.success) {
-      console.log('✅ Email sent successfully:', result.messageId);
-      res.json({
-        success: true,
-        messageId: result.messageId,
-        provider: result.provider
-      });
-    } else {
-      console.error('❌ Failed to send email:', result.error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to send email: ' + result.error
-      });
-    }
+    console.log(`✅ Temp member alert sent to ${to}`);
+    res.json({ success: true, message: 'Alert sent successfully' });
 
   } catch (error) {
-    console.error('❌ Email sending error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to send email: ' + error.message
-    });
+    console.error('❌ Temp member alert error:', error);
+    res.status(500).json({ success: false, error: 'Failed to send alert: ' + error.message });
   }
+});
+
+// Generic email sending endpoint
+// DEPRECATED: This endpoint is disabled for security reasons to prevent open relay abuse.
+app.post('/api/send-email', emailLimiter, async (req, res) => {
+  console.warn('⚠️ Access attempt to deprecated/insecure send-email endpoint');
+  return res.status(410).json({
+    success: false,
+    error: 'This endpoint is deprecated for security reasons. Please use specific transaction/alert endpoints.'
+  });
 });
 
 // Verification email endpoint
@@ -1168,8 +1455,53 @@ app.post('/api/verification/verify', generalLimiter, async (req, res) => {
   }
 });
 
+/**
+ * Check if a valid verification code exists
+ */
+app.post('/api/verification/check', generalLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+
+    const docId = Buffer.from(email.toLowerCase()).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
+    const docRef = admin.firestore().collection('verificationCodes').doc(docId);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return res.json({ success: true, hasCode: false });
+    }
+
+    const record = docSnap.data();
+    const now = new Date();
+
+    // Check expiry
+    if (now > record.expiresAt.toDate()) {
+      return res.json({ success: true, hasCode: false, expired: true });
+    }
+
+    // Check if already verified
+    if (record.verified) {
+      return res.json({ success: true, hasCode: false, verified: true });
+    }
+
+    res.json({ success: true, hasCode: true, attempts: record.attempts });
+
+  } catch (error) {
+    console.error('❌ Verification check error:', error);
+    res.status(500).json({ success: false, error: 'Failed to check verification code' });
+  }
+});
+
 // Email existence check endpoint (Production-hardened)
-app.post('/api/check-email-exists', generalLimiter, async (req, res) => {
+// Applies strict rate limiting and random delays to prevent enumeration and timing attacks
+app.post('/api/check-email-exists', strictEmailCheckLimiter, async (req, res) => {
+  // Add random delay to mitigate timing attacks (500ms - 1500ms)
+  const randomDelay = Math.floor(Math.random() * 1000) + 500;
+  await new Promise(resolve => setTimeout(resolve, randomDelay));
+
   try {
     const { email } = req.body;
 
@@ -1528,9 +1860,56 @@ app.delete('/api/push-unsubscribe/:userId', generalLimiter, async (req, res) => 
  * FINANCIAL MUTATION ENDPOINTS
  */
 
+// Get Individual Debts Endpoint (Performance Optimized)
+app.post('/api/get-individual-debts', generalLimiter, authenticate, async (req, res) => {
+  try {
+    const { groupId, personId } = req.body;
+    const currentUserId = req.user.uid;
+
+    if (!groupId || !personId) {
+      return res.status(400).json({ success: false, error: 'groupId and personId are required' });
+    }
+
+    const db = admin.database();
+
+    // Query userTransactions for the current user, filtered by groupId
+    // This relies on the index we added to database.rules.json
+    const snapshot = await db.ref(`userTransactions/${currentUserId}`)
+      .orderByChild('groupId')
+      .equalTo(groupId)
+      .once('value');
+
+    if (!snapshot.exists()) {
+      return res.json({
+        success: true,
+        youOwe: [],
+        theyOwe: [],
+        totalYouOwe: 0,
+        totalTheyOwe: 0,
+        netAmount: 0
+      });
+    }
+
+    const transactions = snapshot.val();
+
+    // Process transactions to calculate debts
+    const debts = processTransactions(transactions, currentUserId, personId);
+    const summary = calculateDebtSummary(debts);
+
+    res.json({ success: true, ...summary });
+
+  } catch (error) {
+    console.error('Error fetching individual debts:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch debts' });
+  }
+});
+
 // Add Expense endpoint (Secure)
 app.post('/api/add-expense', generalLimiter, async (req, res) => {
-  const { groupId, amount, paidBy, participants, note, place } = req.body;
+  let { groupId, amount, paidBy, participants, note, place } = req.body;
+  note = sanitize(note);
+  place = sanitize(place);
+
   const currentUserId = req.user.uid;
 
   if (!groupId || !amount || !paidBy || !participants || participants.length === 0) {
@@ -1575,14 +1954,35 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     const member = membersArray.find(m => m.userId === currentUserId || m.id === currentUserId);
 
     // CRITICAL FIX: Hydrate members with emails from 'users' node
+    // Optimization: Collect updates for lazy migration (store email in group member)
+    const emailUpdates = {};
+    const isMembersArray = Array.isArray(group.members);
+
     try {
-      const memberHydrationPromises = membersArray.map(async (m) => {
+      const memberHydrationPromises = membersArray.map(async (m, index) => {
         if (m.userId && !m.email) {
           try {
             const userSnap = await db.ref(`users/${m.userId}`).get();
             if (userSnap.exists()) {
               const userData = userSnap.val();
-              return { ...m, email: userData.email };
+              const email = userData.email;
+
+              if (email) {
+                // Determine path for lazy update
+                if (isMembersArray) {
+                   emailUpdates[`groups/${groupId}/members/${index}/email`] = email;
+                } else {
+                   // Object based: Find key
+                   const memberKey = Object.keys(group.members).find(k => {
+                       const mem = group.members[k];
+                       return (mem.id && mem.id === m.id) || k === m.id;
+                   });
+                   if (memberKey) {
+                       emailUpdates[`groups/${groupId}/members/${memberKey}/email`] = email;
+                   }
+                }
+                return { ...m, email };
+              }
             }
           } catch (err) {
             console.error(`⚠️ Failed to hydrate email for user ${m.userId}:`, err.message);
@@ -1635,6 +2035,8 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
     // 5. Build multi-path update object
     const updates = {};
+    // Merge lazy email migration updates
+    Object.assign(updates, emailUpdates);
     const transactionId = db.ref('transactions').push().key;
     const timestamp = Date.now();
     const serverTime = admin.database.ServerValue.TIMESTAMP;
@@ -1642,13 +2044,23 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     const isCurrentUserPayer = paidBy === currentUserId;
 
     // A. Update Wallet Balance if current user is payer
-    let walletBalanceAfter = user.walletBalance || 0;
+    let walletBalanceBefore = user.walletBalance || 0;
+    let walletBalanceAfter = walletBalanceBefore;
+    const walletBalancesSnapshot = {};
+
     if (isCurrentUserPayer) {
-      if ((user.walletBalance || 0) < amount) {
+      if (walletBalanceBefore < amount) {
         return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
       }
       walletBalanceAfter -= amount;
-      updates[`users/${currentUserId}/walletBalance`] = walletBalanceAfter;
+      // Use atomic increment to prevent race conditions
+      updates[`users/${currentUserId}/walletBalance`] = admin.database.ServerValue.increment(-amount);
+
+      // Snapshot for Payer
+      walletBalancesSnapshot[currentUserId] = {
+        before: walletBalanceBefore,
+        after: walletBalanceAfter
+      };
     }
 
     // B. Create Transaction Record
@@ -1671,7 +2083,9 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       })),
       place: place || null,
       note: note || null,
+      walletBalanceBefore: isCurrentUserPayer ? walletBalanceBefore : null,
       walletBalanceAfter,
+      walletBalances: walletBalancesSnapshot,
       createdAt: new Date().toISOString(),
       serverTimestamp: serverTime
     };
@@ -1763,6 +2177,13 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
     // 6. Execute Atomic Update
     await db.ref().update(updates);
+
+    // --- SYNC WALLET BALANCE ---
+    if (isCurrentUserPayer) {
+      // Fire and forget
+      syncWalletBalanceToGroups(db, currentUserId, walletBalanceAfter, user.showBalanceToOthers || false)
+        .catch(err => console.error("Wallet sync failed:", err));
+    }
 
     // 7. Await Notifications (CRITICAL for Vercel/Serverless)
     // Run them BEFORE res.json to ensure the process isn't killed before they finish
@@ -1860,7 +2281,10 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
 // Record Payment endpoint (Secure)
 app.post('/api/record-payment', generalLimiter, async (req, res) => {
-  const { groupId, fromMember, toMember, amount, method, note } = req.body;
+  let { groupId, fromMember, toMember, amount, method, note } = req.body;
+  note = sanitize(note);
+  method = sanitize(method);
+
   const currentUserId = req.user.uid;
 
   if (!groupId || !fromMember || !toMember || !amount || !method) {
@@ -1955,10 +2379,13 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
         return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
       }
       currentUserBalanceAfter -= amount;
+      // Use atomic increment
+      updates[`users/${currentUserId}/walletBalance`] = admin.database.ServerValue.increment(-amount);
     } else {
       currentUserBalanceAfter += amount;
+      // Use atomic increment
+      updates[`users/${currentUserId}/walletBalance`] = admin.database.ServerValue.increment(amount);
     }
-    updates[`users/${currentUserId}/walletBalance`] = currentUserBalanceAfter;
 
     walletBalancesSnapshot[currentUserId] = {
       before: currentUserBalanceBefore,
@@ -1966,21 +2393,26 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     };
 
     // 2. Update Other User (if they exist)
+    let otherUserBalanceBefore = 0;
+    let otherUserBalanceAfter = 0;
     if (otherUser && otherPerson.userId) {
-      let otherUserBalanceBefore = otherUser.walletBalance || 0;
-      let otherUserBalanceAfter = otherUserBalanceBefore;
+      otherUserBalanceBefore = otherUser.walletBalance || 0;
+      otherUserBalanceAfter = otherUserBalanceBefore;
 
       if (isPaying) {
         // Current user paid -> Other user receives
         otherUserBalanceAfter += amount;
+        // Use atomic increment
+        updates[`users/${otherPerson.userId}/walletBalance`] = admin.database.ServerValue.increment(amount);
       } else {
         // Current user received -> Other user paid
         if (otherUserBalanceBefore < amount) {
           return res.status(400).json({ success: false, error: 'Other user has insufficient wallet balance' });
         }
         otherUserBalanceAfter -= amount;
+        // Use atomic increment
+        updates[`users/${otherPerson.userId}/walletBalance`] = admin.database.ServerValue.increment(-amount);
       }
-      updates[`users/${otherPerson.userId}/walletBalance`] = otherUserBalanceAfter;
 
       walletBalancesSnapshot[otherPerson.userId] = {
         before: otherUserBalanceBefore,
@@ -2074,6 +2506,17 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     // 5. Execute Atomic Update
     await db.ref().update(updates);
 
+    // --- SYNC WALLET BALANCE ---
+    // Current User
+    syncWalletBalanceToGroups(db, currentUserId, currentUserBalanceAfter, user.showBalanceToOthers || false)
+      .catch(err => console.error("Wallet sync failed (current):", err));
+
+    // Other User
+    if (otherUser && otherPerson.userId) {
+      syncWalletBalanceToGroups(db, otherPerson.userId, otherUserBalanceAfter, otherUser.showBalanceToOthers || false)
+        .catch(err => console.error("Wallet sync failed (other):", err));
+    }
+
     // 7. Notifications (Awaited for Vercel/Serverless)
     console.log('🚀 Triggering Notifications for Payment:', transactionId);
     try {
@@ -2149,7 +2592,9 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
 
 // Update Wallet endpoint (Manual adjustments - Secure)
 app.post('/api/update-wallet', generalLimiter, async (req, res) => {
-  const { amount, type, note } = req.body; // type: 'add' or 'deduct'
+  let { amount, type, note } = req.body; // type: 'add' or 'deduct'
+  note = sanitize(note);
+
   const currentUserId = req.user.uid;
 
   if (typeof amount !== 'number' || amount <= 0 || !['add', 'deduct'].includes(type)) {
@@ -2168,21 +2613,21 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
     const user = userSnap.val();
     const currentBalance = user.walletBalance || 0;
 
+    const updates = {};
     let newBalance = currentBalance;
     if (type === 'add') {
       newBalance += amount;
+      updates[`users/${currentUserId}/walletBalance`] = admin.database.ServerValue.increment(amount);
     } else {
       if (currentBalance < amount) {
         return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
       }
       newBalance -= amount;
+      updates[`users/${currentUserId}/walletBalance`] = admin.database.ServerValue.increment(-amount);
     }
 
     const transactionId = db.ref('transactions').push().key;
     const serverTime = admin.database.ServerValue.TIMESTAMP;
-
-    const updates = {};
-    updates[`users/${currentUserId}/walletBalance`] = newBalance;
 
     // Record internal wallet transaction
     const walletTransaction = {
@@ -2195,6 +2640,12 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
       serverTimestamp: serverTime,
       walletBalanceBefore: currentBalance,
       walletBalanceAfter: newBalance,
+      walletBalances: {
+        [currentUserId]: {
+          before: currentBalance,
+          after: newBalance
+        }
+      },
       userId: currentUserId,
       createdAt: new Date().toISOString()
     };
@@ -2214,10 +2665,15 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
 
     await db.ref().update(updates);
 
+    // --- SYNC WALLET BALANCE ---
+    syncWalletBalanceToGroups(db, currentUserId, newBalance, user.showBalanceToOthers || false)
+      .catch(err => console.error("Wallet sync failed:", err));
+
     res.json({
       success: true,
       balance: newBalance,
-      transactionId
+      transactionId,
+      transaction: walletTransaction
     });
 
   } catch (error) {
@@ -2228,7 +2684,8 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
 
 
 // Cleanup Temporary Members endpoint (Server-Authoritative)
-app.post('/api/cleanup-temp-members', generalLimiter, async (req, res) => {
+// Secured by Admin Key (for cron jobs)
+app.post('/api/cleanup-temp-members', generalLimiter, adminAuth, async (req, res) => {
   try {
     const db = admin.database();
     const groupsRef = db.ref('groups');
@@ -2808,7 +3265,9 @@ app.post('/api/remove-member', authenticate, async (req, res) => {
 app.post('/api/update-group', authenticate, async (req, res) => {
   try {
     const userId = req.user.uid;
-    const { groupId, name, emoji } = req.body;
+    let { groupId, name, emoji } = req.body;
+    name = sanitize(name);
+    emoji = sanitize(emoji);
 
     if (!groupId) {
       return res.status(400).json({ success: false, error: 'Group ID is required' });
@@ -2875,6 +3334,36 @@ app.post('/api/update-group', authenticate, async (req, res) => {
   } catch (error) {
     console.error('❌ Update group error:', error);
     res.status(500).json({ success: false, error: 'Failed to update group: ' + error.message });
+  }
+});
+
+// Sync Wallet Balance to Groups Endpoint
+app.post('/api/sync-balance-to-groups', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { showBalanceToOthers } = req.body;
+
+    const db = admin.database();
+    const userSnap = await db.ref(`users/${userId}`).get();
+
+    if (!userSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const userData = userSnap.val();
+    const currentBalance = userData.walletBalance || 0;
+
+    // Use value from body if provided, otherwise fallback to DB (though body is preferred for immediate toggle)
+    const isEnabled = showBalanceToOthers !== undefined ? showBalanceToOthers : (userData.showBalanceToOthers || false);
+
+    // Call helper (we await it here because this is an explicit sync request)
+    await syncWalletBalanceToGroups(db, userId, currentBalance, isEnabled);
+
+    res.json({ success: true, message: 'Wallet balance synced to groups' });
+
+  } catch (error) {
+    console.error('❌ Sync balance error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
   }
 });
 
@@ -3026,7 +3515,8 @@ app.post('/api/merge-members', authenticate, async (req, res) => {
 });
 
 // Cleanup Unverified Users Endpoint (Admin/Secure)
-app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
+// Secured by Admin Key (for cron jobs)
+app.post('/api/cleanup-unverified-users', adminAuth, async (req, res) => {
   try {
     const db = admin.database();
     const verificationRef = db.ref('emailVerification');
@@ -3049,11 +3539,11 @@ app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
     const errors = [];
     const firestore = admin.firestore();
 
-    for (const [uid, accountData] of Object.entries(accounts)) {
+    const cleanupPromises = Object.entries(accounts).map(async ([uid, accountData]) => {
       try {
         // Skip if already verified (double check)
         if (accountData.emailVerified) {
-          continue;
+          return null; // Skip
         }
 
         console.log('🗑️ Deleting unverified account:', uid);
@@ -3069,49 +3559,69 @@ app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
           }
         }
 
-        // 2. Delete user profile from Realtime Database
-        await db.ref(`users/${uid}`).remove();
-
-        // 3. Delete email verification record from Realtime Database
-        await db.ref(`emailVerification/${uid}`).remove();
+        // 2 & 3. Delete user profile and email verification record from Realtime Database in parallel
+        await Promise.all([
+          db.ref(`users/${uid}`).remove(),
+          db.ref(`emailVerification/${uid}`).remove()
+        ]);
 
         // 4. Delete verification codes (Legacy RTDB & Firestore)
         if (accountData.email) {
+          const codeCleanupPromises = [];
+
           // RTDB (Legacy/Invalid Path Handling)
-          try {
-            // Firebase keys cannot contain '.', but if stored somehow, we try to delete
-            // If the key was sanitized (e.g. replaced . with ,), we need to match that logic
-            // Assuming direct email usage as key is problematic in RTDB, but we try anyway
-            // or just skip if it throws
-            await db.ref(`verificationCodes/${accountData.email}`).remove();
-          } catch (e) {
-            console.warn('Could not delete RTDB verification codes for user:', e.message);
-          }
+          codeCleanupPromises.push((async () => {
+            try {
+              // Firebase keys cannot contain '.', but if stored somehow, we try to delete
+              // If the key was sanitized (e.g. replaced . with ,), we need to match that logic
+              // Assuming direct email usage as key is problematic in RTDB, but we try anyway
+              // or just skip if it throws
+              await db.ref(`verificationCodes/${accountData.email}`).remove();
+            } catch (e) {
+              console.warn('Could not delete RTDB verification codes for user:', e.message);
+            }
+          })());
 
           // Firestore (Current)
-          try {
-            const verificationCodesRef = firestore.collection('verificationCodes');
-            const snapshotCodes = await verificationCodesRef.where('email', '==', accountData.email).get();
-            if (!snapshotCodes.empty) {
-              const batch = firestore.batch();
-              snapshotCodes.forEach(doc => {
-                batch.delete(doc.ref);
-              });
-              await batch.commit();
-              console.log('Deleted Firestore verification codes for user');
+          codeCleanupPromises.push((async () => {
+            try {
+              const verificationCodesRef = firestore.collection('verificationCodes');
+              const snapshotCodes = await verificationCodesRef.where('email', '==', accountData.email).get();
+              if (!snapshotCodes.empty) {
+                const batch = firestore.batch();
+                snapshotCodes.forEach(doc => {
+                  batch.delete(doc.ref);
+                });
+                await batch.commit();
+                console.log('Deleted Firestore verification codes for user');
+              }
+            } catch (e) {
+              console.warn('Could not delete Firestore verification codes for user:', e.message);
             }
-          } catch (e) {
-            console.warn('Could not delete Firestore verification codes for user:', e.message);
-          }
+          })());
+
+          await Promise.all(codeCleanupPromises);
         }
 
-        deletedCount++;
+        return { success: true, uid };
 
       } catch (err) {
         console.error(`Failed to delete user ${uid}:`, err);
-        errors.push({ uid, error: err.message });
+        return { success: false, uid, error: err.message };
       }
-    }
+    });
+
+    const results = await Promise.all(cleanupPromises);
+
+    // Process results
+    results.forEach(result => {
+      if (!result) return; // Skipped
+      if (result.success) {
+        deletedCount++;
+      } else {
+        errors.push({ uid: result.uid, error: result.error });
+      }
+    });
 
     console.log(`✅ Cleanup completed. Deleted ${deletedCount} unverified accounts`);
 
@@ -3130,6 +3640,7 @@ app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
 
 
 
+
 // --- P2P Lending / Send Money Endpoints ---
 
 /**
@@ -3138,7 +3649,9 @@ app.post('/api/cleanup-unverified-users', authenticate, async (req, res) => {
  * Money does NOT move until the receiver accepts.
  */
 app.post('/api/send-money', authenticate, async (req, res) => {
-  const { recipientUsername, amount, note } = req.body;
+  let { recipientUsername, amount, note } = req.body;
+  note = sanitize(note);
+
   const senderUid = req.user.uid;
 
   if (!recipientUsername || !amount) {
@@ -3185,6 +3698,12 @@ app.post('/api/send-money', authenticate, async (req, res) => {
 
     if (!sender || !recipient) {
       return res.status(404).json({ success: false, error: 'User profile not found' });
+    }
+
+    // CHECK: Insufficient Funds (Defense in Depth)
+    // Prevent creating requests if the sender doesn't have funds currently.
+    if ((sender.walletBalance || 0) < amount) {
+      return res.status(400).json({ success: false, error: 'Insufficient funds. Please top up your wallet.' });
     }
 
     // 3. Create Pending Transaction
@@ -3313,14 +3832,16 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
     const receiver = receiverSnap.val();
     const amount = Number(tx.amount);
 
+    // CHECK: Insufficient Funds (Prevent negative balance)
     const senderBalanceBefore = sender.walletBalance || 0;
-    const receiverBalanceBefore = receiver.walletBalance || 0;
+    if (senderBalanceBefore < amount) {
+      return res.status(400).json({ success: false, error: 'Sender has insufficient funds to complete this transaction.' });
+    }
 
-    // 2. Calculate new balances
-    // Sender LOSES money (they sent it)
+    // 2. Calculate projected balances (for UI sync only)
+    // Note: The DB update uses atomic increment, so these local values are just estimates for the UI sync
     const senderBalanceAfter = senderBalanceBefore - amount;
-    // Receiver GAINS money (they accepted it)
-    const receiverBalanceAfter = receiverBalanceBefore + amount;
+    const receiverBalanceAfter = (receiver.walletBalance || 0) + amount;
 
     // 3. Batched Updates
     updates[`p2p_transactions/${transactionId}/status`] = 'completed';
@@ -3332,11 +3853,20 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
     updates[`user_p2p_transactions/${tx.to}/${transactionId}/status`] = 'completed';
     updates[`user_p2p_transactions/${tx.to}/${transactionId}/completedAt`] = now;
 
-    // Update Wallets
-    updates[`users/${tx.from}/walletBalance`] = senderBalanceAfter;
-    updates[`users/${tx.to}/walletBalance`] = receiverBalanceAfter;
+    // Update Wallets ATOMICALLY (Fixes Race Condition / Lost Update)
+    updates[`users/${tx.from}/walletBalance`] = admin.database.ServerValue.increment(-amount);
+    updates[`users/${tx.to}/walletBalance`] = admin.database.ServerValue.increment(amount);
 
     await db.ref().update(updates);
+
+    // --- SYNC WALLET BALANCE ---
+    // We use the projected values. Even if slightly stale due to race,
+    // it's better than blocking or re-fetching.
+    syncWalletBalanceToGroups(db, tx.from, senderBalanceAfter, sender.showBalanceToOthers || false)
+      .catch(err => console.error("Wallet sync failed (sender):", err));
+
+    syncWalletBalanceToGroups(db, tx.to, receiverBalanceAfter, receiver.showBalanceToOthers || false)
+      .catch(err => console.error("Wallet sync failed (receiver):", err));
 
     // 4. Notify Sender
     try {
@@ -3367,11 +3897,14 @@ app.use('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Hostel Ledger Email API server running on port ${PORT}`);
-  console.log(`📧 SMTP configured for: ${process.env.SMTP_USER}`);
-  console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-});
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Hostel Ledger Email API server running on port ${PORT}`);
+    console.log(`📧 SMTP configured for: ${process.env.SMTP_USER}`);
+    console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL}`);
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  });
+}
 
 module.exports = app;

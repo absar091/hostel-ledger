@@ -34,6 +34,7 @@ import { getLanguage, DEFAULT_LANGUAGE } from '@/lib/languages';
 import CurrencySelectionSheet from '@/components/CurrencySelectionSheet';
 import LanguageSelectionSheet from '@/components/LanguageSelectionSheet';
 import { Globe, DollarSign } from 'lucide-react';
+import MobileHeader from '@/components/MobileHeader';
 
 const Settings = () => {
     const { t, i18n } = useTranslation();
@@ -197,19 +198,7 @@ const Settings = () => {
 
             <AppContainer className="bg-[#FBFCFB] pb-32">
                 <DesktopHeader />
-
-                {/* Theme Consistent Large Title Header - Mobile only */}
-                <div className="lg:hidden bg-white/50 backdrop-blur-xl border-b border-[#4a6850]/5 pt-12 pb-4 px-5 sticky top-0 z-40">
-                    <div className="flex items-center justify-between mb-1">
-                        <button
-                            onClick={() => navigate(-1)}
-                            className="text-[#4a6850] font-bold flex items-center gap-1 active:opacity-60 transition-opacity"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </button>
-                    </div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">{t('settings.title')}</h1>
-                </div>
+                <MobileHeader title={t('settings.title')} showBackButton={true} />
 
                 <main className="max-w-2xl mx-auto pt-6 sm:pt-10 px-4 pb-32">
                     {/* Simplified Preferences Section */}

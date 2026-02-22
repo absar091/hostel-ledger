@@ -12,6 +12,7 @@ const NotificationIcon = () => {
   return (
     <Button
       onClick={handleNotificationClick}
+      aria-label="Notifications"
       variant="outline"
       size="sm"
       className="flex items-center justify-center w-10 h-10 p-0 bg-white border-gray-200 hover:bg-gray-50 text-gray-600 hover:text-gray-700 transition-all duration-200 shadow-sm hover:shadow-md rounded-full"

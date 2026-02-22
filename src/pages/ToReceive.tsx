@@ -10,6 +10,7 @@ import PageGuide from "@/components/PageGuide";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import Avatar from "@/components/Avatar";
 import { useTranslation } from "react-i18next";
+import MobileHeader from "@/components/MobileHeader";
 
 interface PersonToReceiveFrom {
   id: string;
@@ -32,7 +33,7 @@ const ToReceive = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useFirebaseAuth();
-  const { groups } = useFirebaseData();
+  const { groups, fetchGroupDetail } = useFirebaseData();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   const [showPageGuide, setShowPageGuide] = useState(false);
 
@@ -79,7 +80,21 @@ const ToReceive = () => {
 
     // Sort by amount (highest first)
     return people.sort((a, b) => b.amount - a.amount);
-  }, [groups, user]);
+  }, [groups, user, t]);
+
+  // Fetch group details if member names are missing
+  useEffect(() => {
+    peopleWhoOweMe.forEach(person => {
+      // If the group members array is empty, which indicates lazy loading state
+      // OR if this specific person is not found in the group members list
+      const group = groups.find(g => g.id === person.groupId);
+      const memberFound = group?.members?.some(m => m.id === person.id);
+
+      if (group && (!group.members || group.members.length === 0 || !memberFound)) {
+        fetchGroupDetail(person.groupId);
+      }
+    });
+  }, [peopleWhoOweMe, groups, fetchGroupDetail]);
 
   const totalToReceive = peopleWhoOweMe.reduce((sum, person) => sum + person.amount, 0);
 
@@ -110,33 +125,7 @@ const ToReceive = () => {
       <AppContainer className="bg-white pb-8">
         {/* Desktop Header */}
         <DesktopHeader />
-
-        {/* iPhone-style top accent border - Mobile only */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2f4336] via-[#4a6850] to-[#2f4336] z-50 shadow-sm"></div>
-
-        {/* App Header - iPhone Style Enhanced with #4a6850 */}
-        <div className="bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
-          <div className="flex items-center justify-between">
-            {/* App Logo and Name - Enhanced */}
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-2xl flex items-center justify-center shadow-lg">
-                <img
-                  src="/only-logo.png"
-                  alt="Hostel Ledger"
-                  className="w-6 h-6 object-contain filter brightness-0 invert"
-                />
-              </div>
-              <h1 className="text-xl font-black text-gray-900 tracking-tight">Hostel Ledger</h1>
-            </div>
-
-            {/* Header Actions - Enhanced */}
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl flex items-center justify-center shadow-lg">
-                <ArrowDownLeft className="w-7 h-7 text-white font-bold" />
-              </div>
-            </div>
-          </div>
-        </div>
+        <MobileHeader title={t('to_receive.title')} showBackButton={true} />
 
         {/* Page Guide */}
         <PageGuide
@@ -152,38 +141,33 @@ const ToReceive = () => {
           onClose={handleClosePageGuide}
         />
 
-        {/* Header - iPhone Style Enhanced */}
-        <header className="px-4 pt-8 pb-4">
-          <div className="flex items-center gap-3 mb-6">
-            <button
-              onClick={() => navigate(-1)}
-              className="w-10 h-10 rounded-2xl bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
-            >
-              <ArrowLeft className="w-5 h-5 text-[#4a6850] font-bold" />
-            </button>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">{t('to_receive.title')}</h1>
-          </div>
-
-          {/* Total Summary Card - iPhone Style with #4a6850 */}
-          <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-7 shadow-[0_25px_70px_rgba(74,104,80,0.4)] text-white border-t-2 border-[#5a7860]/40">
-            <div className="flex items-center gap-3 mb-2">
-              <ArrowDownLeft className="w-6 h-6 text-white/90 font-bold" />
-              <span className="text-sm text-white/90 font-black tracking-wide uppercase">{t('to_receive.total_amount')}</span>
-            </div>
-            <div className="text-5xl font-black mb-3 tracking-tighter tabular-nums drop-shadow-sm">
-              Rs {totalToReceive.toLocaleString()}
-            </div>
-            <div className="text-sm text-white/90 font-bold">
-              {t('to_receive.from_count_people', {
-                count: peopleWhoOweMe.length,
-                people: t(peopleWhoOweMe.length === 1 ? 'to_receive.person_singular' : 'to_receive.person_plural')
-              })}
-            </div>
-          </div>
-        </header>
-
         {/* People List */}
-        <main className="px-4">
+        <main className="px-4 pt-6">
+          {/* Total Summary Card - iPhone Style with #4a6850 */}
+          <div className="bg-gradient-to-br from-[#e8f5e9] to-[#f1f8f4] rounded-3xl p-8 shadow-lg border border-[#4a6850]/10 relative overflow-hidden mb-6">
+            {/* Decorative circles to match dashboard */}
+            <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#4a6850]/5 rounded-full pointer-events-none"></div>
+            <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-[#4a6850]/5 rounded-full pointer-events-none"></div>
+
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-2xl bg-[#4a6850]/10 flex items-center justify-center">
+                  <ArrowDownLeft className="w-5 h-5 text-[#4a6850]" strokeWidth={3} />
+                </div>
+                <span className="text-sm text-[#4a6850]/70 font-black tracking-wide uppercase">{t('to_receive.total_amount')}</span>
+              </div>
+              <div className="text-5xl font-black mb-3 tracking-tighter tabular-nums text-[#4a6850]">
+                Rs {totalToReceive.toLocaleString()}
+              </div>
+              <div className="text-sm text-[#4a6850] font-bold">
+                {t('to_receive.from_count_people', {
+                  count: peopleWhoOweMe.length,
+                  people: t(peopleWhoOweMe.length === 1 ? 'to_receive.person_singular' : 'to_receive.person_plural', { count: peopleWhoOweMe.length })
+                })}
+              </div>
+            </div>
+          </div>
+
           {peopleWhoOweMe.length > 0 ? (
             <div className="space-y-3">
               {peopleWhoOweMe.map((person) => (
