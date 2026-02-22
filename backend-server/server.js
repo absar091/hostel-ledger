@@ -3680,6 +3680,12 @@ app.post('/api/send-money', authenticate, async (req, res) => {
       return res.status(404).json({ success: false, error: 'User profile not found' });
     }
 
+    // CHECK: Insufficient Funds (Defense in Depth)
+    // Prevent creating requests if the sender doesn't have funds currently.
+    if ((sender.walletBalance || 0) < amount) {
+      return res.status(400).json({ success: false, error: 'Insufficient funds. Please top up your wallet.' });
+    }
+
     // 3. Create Pending Transaction
     const transactionId = db.ref('p2p_transactions').push().key;
     const now = new Date().toISOString();
@@ -3806,14 +3812,16 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
     const receiver = receiverSnap.val();
     const amount = Number(tx.amount);
 
+    // CHECK: Insufficient Funds (Prevent negative balance)
     const senderBalanceBefore = sender.walletBalance || 0;
-    const receiverBalanceBefore = receiver.walletBalance || 0;
+    if (senderBalanceBefore < amount) {
+      return res.status(400).json({ success: false, error: 'Sender has insufficient funds to complete this transaction.' });
+    }
 
-    // 2. Calculate new balances
-    // Sender LOSES money (they sent it)
+    // 2. Calculate projected balances (for UI sync only)
+    // Note: The DB update uses atomic increment, so these local values are just estimates for the UI sync
     const senderBalanceAfter = senderBalanceBefore - amount;
-    // Receiver GAINS money (they accepted it)
-    const receiverBalanceAfter = receiverBalanceBefore + amount;
+    const receiverBalanceAfter = (receiver.walletBalance || 0) + amount;
 
     // 3. Batched Updates
     updates[`p2p_transactions/${transactionId}/status`] = 'completed';
@@ -3825,13 +3833,15 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
     updates[`user_p2p_transactions/${tx.to}/${transactionId}/status`] = 'completed';
     updates[`user_p2p_transactions/${tx.to}/${transactionId}/completedAt`] = now;
 
-    // Update Wallets
-    updates[`users/${tx.from}/walletBalance`] = senderBalanceAfter;
-    updates[`users/${tx.to}/walletBalance`] = receiverBalanceAfter;
+    // Update Wallets ATOMICALLY (Fixes Race Condition / Lost Update)
+    updates[`users/${tx.from}/walletBalance`] = admin.database.ServerValue.increment(-amount);
+    updates[`users/${tx.to}/walletBalance`] = admin.database.ServerValue.increment(amount);
 
     await db.ref().update(updates);
 
     // --- SYNC WALLET BALANCE ---
+    // We use the projected values. Even if slightly stale due to race,
+    // it's better than blocking or re-fetching.
     syncWalletBalanceToGroups(db, tx.from, senderBalanceAfter, sender.showBalanceToOthers || false)
       .catch(err => console.error("Wallet sync failed (sender):", err));
 
