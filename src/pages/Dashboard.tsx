@@ -677,19 +677,17 @@ const Dashboard = () => {
         {/* Username Migration Prompt */}
         <UsernameMigration />
 
-        <main className="flex-1 w-full max-w-5xl mx-auto p-4 lg:p-6 space-y-6 pb-24 lg:pb-8">
+        <main className="flex-1 w-full max-w-5xl mx-auto p-4 lg:p-6 space-y-3 lg:space-y-6 pb-24 lg:pb-8">
           {/* Invitations List - Shows only when there are pending invitations */}
-          <div className="mt-20 lg:mt-24 mb-[-2rem]">
             <InvitationsList />
-          </div>
 
-          {/* Greeting Section - Moved further down with more spacing */}
-          <section className="mt-16 lg:mt-20 mb-10 lg:mb-12">
+          {/* Greeting Section - Compacted for better fit */}
+          <section className="mt-4 lg:mt-8 mb-2 lg:mb-6">
             <p className="text-gray-500 font-semibold text-sm">{t('dashboard.welcome_back')}</p>
             <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-gray-900">
               {user?.name || "User"}
             </h2>
-            <div className="mt-4 flex flex-wrap gap-2.5">
+            <div className="mt-2 flex flex-row items-center gap-3 overflow-x-auto no-scrollbar pb-1">
               <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1.5 shadow-sm">
                 <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
                   {t('dashboard.groups')}
@@ -757,8 +755,8 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* PRIMARY CARD: Enhanced with last transaction time - Moved further down */}
-          <section className="mesh-gradient rounded-3xl p-5 lg:p-6 text-white shadow-2xl shadow-[#4a6850]/30 relative">
+          {/* PRIMARY CARD: Enhanced with last transaction time */}
+          <section className="mesh-gradient rounded-3xl p-4 lg:p-6 text-white shadow-2xl shadow-[#4a6850]/30 relative">
             <div className="relative z-10">
               <div className="flex justify-between items-start">
                 <div>
@@ -1037,11 +1035,11 @@ const Dashboard = () => {
 
           {/* SECONDARY CARDS: To Receive and You Owe - Android Style */}
           {/* Mobile Version - Android Material Design Style */}
-          <section className="lg:hidden grid grid-cols-2 gap-4 mb-8">
+          <section className="lg:hidden grid grid-cols-2 gap-3 mb-4">
             {/* To Receive Card - Android Style with Your Theme */}
             <button
               onClick={() => navigate("/to-receive")}
-              className="bg-gradient-to-br from-[#e8f5e9] to-[#f1f8f4] p-5 rounded-3xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all text-left relative overflow-hidden group"
+              className="bg-gradient-to-br from-[#e8f5e9] to-[#f1f8f4] p-4 rounded-3xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all text-left relative overflow-hidden group"
             >
               {/* Decorative circle */}
               <div className="absolute -right-6 -top-6 w-24 h-24 bg-[#4a6850]/5 rounded-full"></div>
@@ -1075,7 +1073,7 @@ const Dashboard = () => {
             {/* You Owe Card - Android Style with Your Theme */}
             <button
               onClick={() => navigate("/to-pay")}
-              className="bg-gradient-to-br from-[#fef3f2] to-[#fef8f7] p-5 rounded-3xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all text-left relative overflow-hidden group"
+              className="bg-gradient-to-br from-[#fef3f2] to-[#fef8f7] p-4 rounded-3xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all text-left relative overflow-hidden group"
             >
               {/* Decorative circle */}
               <div className="absolute -right-6 -top-6 w-24 h-24 bg-rose-500/5 rounded-full"></div>
