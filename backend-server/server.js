@@ -2043,14 +2043,23 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     const isCurrentUserPayer = paidBy === currentUserId;
 
     // A. Update Wallet Balance if current user is payer
-    let walletBalanceAfter = user.walletBalance || 0;
+    let walletBalanceBefore = user.walletBalance || 0;
+    let walletBalanceAfter = walletBalanceBefore;
+    const walletBalancesSnapshot = {};
+
     if (isCurrentUserPayer) {
-      if ((user.walletBalance || 0) < amount) {
+      if (walletBalanceBefore < amount) {
         return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
       }
       walletBalanceAfter -= amount;
       // Use atomic increment to prevent race conditions
       updates[`users/${currentUserId}/walletBalance`] = admin.database.ServerValue.increment(-amount);
+
+      // Snapshot for Payer
+      walletBalancesSnapshot[currentUserId] = {
+        before: walletBalanceBefore,
+        after: walletBalanceAfter
+      };
     }
 
     // B. Create Transaction Record
@@ -2073,7 +2082,9 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       })),
       place: place || null,
       note: note || null,
+      walletBalanceBefore: isCurrentUserPayer ? walletBalanceBefore : null,
       walletBalanceAfter,
+      walletBalances: walletBalancesSnapshot,
       createdAt: new Date().toISOString(),
       serverTimestamp: serverTime
     };
