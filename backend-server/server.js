@@ -1158,6 +1158,7 @@ app.post('/api/respond-invitation', authenticate, async (req, res) => {
         name: userData.name || (memberIndex !== -1 ? membersArray[memberIndex].name : 'Member'),
         email: userData.email || null,
         isRegistered: true,
+      isPending: false,
         type: 'registered',
         userId: userId,
         joinedAt: now,
@@ -1289,6 +1290,7 @@ app.post('/api/claim-email-invite', authenticate, async (req, res) => {
       userId: userId,
       email: userData.email || null,
       isRegistered: true,
+      isPending: false,
       type: 'registered',
       name: userData.name || matchedMember.name,
       claimedAt: new Date().toISOString()
@@ -1321,6 +1323,10 @@ app.post('/api/claim-email-invite', authenticate, async (req, res) => {
     res.json({
       success: true,
       message: 'Successfully joined the group!',
+      emoji: groupData.emoji || '👥',
+      coverPhoto: groupData.coverPhoto || null,
+      memberCount: groupData.memberCount || 0,
+      createdBy: groupData.createdBy || '',
       groupId,
       groupName: groupData.name
     });
