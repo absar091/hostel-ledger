@@ -98,7 +98,11 @@ const GroupSettingsSheet = ({
     <>
       <Sheet open={open} onOpenChange={onClose}>
         <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white shadow-[0_25px_70px_rgba(74,104,80,0.3)] border-t-2 border-[#4a6850]/20 z-[100]">
-          <SheetHeader className="flex-shrink-0 mb-6 bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-3xl border-b border-[#4a6850]/10">
+          {/* Updated Header to match AddExpenseSheet style */}
+          <SheetHeader className="flex-shrink-0 mb-6 pt-2">
+            {/* Handle Bar */}
+            <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
+
             <SheetTitle className="text-center font-black text-xl tracking-tight text-gray-900">Group Settings</SheetTitle>
             <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
               Manage group details, members, and preferences
@@ -133,7 +137,8 @@ const GroupSettingsSheet = ({
                         }
                       }}
                       disabled={!isOwner}
-                      className={`w-14 h-14 rounded-3xl text-2xl flex items-center justify-center transition-all shadow-lg hover:shadow-xl ${selectedEmoji === emoji
+                      // Reduced size from w-14 h-14 to w-12 h-12
+                      className={`w-12 h-12 rounded-3xl text-2xl flex items-center justify-center transition-all shadow-lg hover:shadow-xl ${selectedEmoji === emoji
                         ? "bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white scale-110 border-2 border-[#4a6850]"
                         : "bg-white hover:bg-[#4a6850]/5 border border-[#4a6850]/10 hover:border-[#4a6850]/20"
                         } ${!isOwner ? "cursor-not-allowed opacity-70" : ""}`}
@@ -198,7 +203,8 @@ const GroupSettingsSheet = ({
                 {group.members.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center gap-4 p-5 rounded-3xl bg-white border border-[#4a6850]/10 shadow-lg hover:shadow-xl hover:border-[#4a6850]/20 transition-all"
+                    // Reduced padding from p-5 to p-3
+                    className="flex items-center gap-4 p-3 rounded-3xl bg-white border border-[#4a6850]/10 shadow-lg hover:shadow-xl hover:border-[#4a6850]/20 transition-all"
                   >
                     <Avatar name={member.name} size="sm" />
                     <div className="flex-1 min-w-0">

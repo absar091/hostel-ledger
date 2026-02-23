@@ -85,8 +85,8 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto pb-4">
-          {/* Amount Input - iPhone Style */}
-          <div className="text-center py-8">
+          {/* Amount Input - iPhone Style - Compact Padding */}
+          <div className="text-center py-4">
             <div className="text-4xl font-black text-gray-900 mb-6 tracking-tighter tabular-nums">
               {formatAmount(parseFloat(amount) || 0)}
             </div>
@@ -100,27 +100,27 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
             />
           </div>
 
-          {/* Quick Amount Buttons - iPhone Style */}
-          <div className="mb-8">
-            <label className="text-sm font-black text-[#4a6850]/80 mb-4 block uppercase tracking-wide">
+          {/* Quick Amount Buttons - Compact Horizontal Scroll */}
+          <div className="mb-4">
+            <label className="text-sm font-black text-[#4a6850]/80 mb-2 block uppercase tracking-wide">
               {t('sheets.add_money.quick_amounts_label')}
             </label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar px-1">
               {quickAmounts.map((quickAmount) => (
                 <button
                   key={quickAmount}
                   onClick={() => setAmount(quickAmount.toString())}
-                  className="p-4 rounded-3xl bg-white hover:bg-[#4a6850]/5 transition-all text-center border border-[#4a6850]/10 shadow-lg hover:shadow-xl hover:border-[#4a6850]/20"
+                  className="flex-shrink-0 min-w-[80px] p-3 rounded-2xl bg-white hover:bg-[#4a6850]/5 transition-all text-center border border-[#4a6850]/10 shadow-md hover:shadow-lg hover:border-[#4a6850]/20"
                 >
-                  <div className="font-black text-gray-900 tracking-tight">{formatAmount(quickAmount)}</div>
+                  <div className="font-black text-gray-900 tracking-tight text-sm">{formatAmount(quickAmount)}</div>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Note - iPhone Style */}
-          <div className="mb-8">
-            <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
+          <div className="mb-4">
+            <label className="text-sm font-black text-[#4a6850]/80 mb-2 block uppercase tracking-wide">
               {t('sheets.add_money.note_label')}
             </label>
             <Input
