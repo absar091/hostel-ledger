@@ -98,4 +98,14 @@ function validateCreateGroup(body) {
   return null;
 }
 
-module.exports = { validateCreateGroup };
+/**
+ * Validates that the amount is a positive number.
+ * @param {any} amount - The amount to validate.
+ * @returns {boolean} - True if valid, false otherwise.
+ */
+function validateAmount(amount) {
+  // Must be a number type, not NaN, finite, and greater than 0
+  return typeof amount === 'number' && !isNaN(amount) && isFinite(amount) && amount > 0;
+}
+
+module.exports = { validateCreateGroup, validateAmount };
