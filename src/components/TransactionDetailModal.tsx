@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useRef, useState } from "react";
 import { ArrowUpRight, ArrowDownLeft, CreditCard, Users, User, X, Share2, Copy, Download, Image } from "lucide-react";
 import { toast } from "sonner";
@@ -24,7 +25,11 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
     // DYNAMICALLY RESOLVE NAMES (Fixes "Paid by You" bug)
     // 1. Resolve Payer Name
     const payerMember = transactionGroup?.members.find((m: any) => m.id === transaction.paidBy);
-    const resolvedPaidByName = transaction.paidBy === user?.uid
+
+    // Improved check: Match by ID OR by userId (for invited members)
+    const isCurrentUserPayer = transaction.paidBy === user?.uid || (payerMember && payerMember.userId === user?.uid);
+
+    const resolvedPaidByName = isCurrentUserPayer
         ? "You"
         : (payerMember?.name || transaction.paidByName || "Unknown");
 
@@ -33,14 +38,22 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
     // 2. Resolve Participant Names
     const participantsList = Array.isArray(transaction.participants)
         ? transaction.participants
-        : transaction.participants ? Object.values(transaction.participants) : [];
+        : transaction.participants ? Object.entries(transaction.participants).map(([id, data]: [string, any]) => ({ id, ...data })) : [];
 
     const resolvedParticipants = participantsList.map((p: any) => {
         const member = transactionGroup?.members.find((m: any) => m.id === p.id);
-        const name = p.id === user?.uid
+        const isCurrentUserParticipant = p.id === user?.uid || (member && member.userId === user?.uid);
+
+        const name = isCurrentUserParticipant
             ? "You"
             : (member?.name || p.name || "Unknown");
-        return { ...p, name, isTemporary: member?.isTemporary || p.isTemporary };
+
+        return {
+            ...p,
+            name,
+            isTemporary: member?.isTemporary || p.isTemporary,
+            userId: member?.userId // Store userId for later lookup
+        };
     });
 
     const handleCopyId = () => {
@@ -221,10 +234,15 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 </button>
                             </div>
 
-                            {transaction.type === 'expense' && transaction.paidBy !== user?.uid && (
+                            {/* Badge Logic Fixed: Check if user is payer properly, and use resolvedParticipants */}
+                            {transaction.type === 'expense' && !isCurrentUserPayer && (
                                 <div className="mb-2">
                                     {(() => {
-                                        const userPart = transaction.participants?.find((p: any) => p.id === user?.uid);
+                                        // Use resolvedParticipants to handle object/array and userId lookup
+                                        const userPart = resolvedParticipants.find((p: any) =>
+                                            p.id === user?.uid || (p.userId && p.userId === user?.uid)
+                                        );
+
                                         if (userPart) {
                                             return (
                                                 <div className="inline-flex items-center px-3 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100 shadow-sm">
@@ -279,7 +297,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                         <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Paid by</div>
                                         <div className="flex items-center gap-2">
                                             <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">
-                                                {transactionGroup?.createdBy === transaction.paidBy && transaction.paidBy !== user?.uid ? "Group Owner" : resolvedPaidByName}
+                                                {transactionGroup?.createdBy === transaction.paidBy && !isCurrentUserPayer ? "Group Owner" : resolvedPaidByName}
                                             </div>
                                             {isTemporaryPayer && (
                                                 <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
@@ -334,11 +352,12 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
 
                                         {resolvedParticipants?.map((participant: any, index: number) => {
                                             const isOwner = transactionGroup?.createdBy === participant.id;
+                                            const isMe = participant.id === user?.uid || (participant.userId && participant.userId === user?.uid);
                                             return (
                                                 <div key={index} className="flex justify-between items-center gap-2">
                                                     <div className="flex items-center gap-2 flex-1 min-w-0">
                                                         <span className="font-semibold text-gray-900 truncate text-sm lg:text-base">
-                                                            {isOwner && participant.id !== user?.uid ? "Group Owner" : participant.name}
+                                                            {isOwner && !isMe ? "Group Owner" : participant.name}
                                                         </span>
                                                         {isOwner && (
                                                             <span className="bg-yellow-100 text-yellow-700 text-[8px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
@@ -394,7 +413,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                     showBalance = true;
                                 }
                                 // Fallback logic for older transactions (Only accurate for Recorder)
-                                else if ((transaction.type === 'expense' && transaction.paidBy === user?.uid) ||
+                                else if ((transaction.type === 'expense' && isCurrentUserPayer) ||
                                     (transaction.type === 'payment' && transaction.from === user?.uid)) {
                                     balanceBefore = transaction.walletBalanceBefore;
                                     balanceAfter = transaction.walletBalanceAfter;
@@ -617,7 +636,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 showBalance = true;
                             }
                             // Fallback logic for older transactions (Only accurate for Recorder)
-                            else if ((transaction.type === 'expense' && transaction.paidBy === user?.uid) ||
+                            else if ((transaction.type === 'expense' && isCurrentUserPayer) ||
                                 (transaction.type === 'payment' && transaction.from === user?.uid)) {
                                 balanceBefore = transaction.walletBalanceBefore;
                                 balanceAfter = transaction.walletBalanceAfter;
