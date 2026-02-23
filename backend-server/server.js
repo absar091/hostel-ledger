@@ -10,7 +10,7 @@ const cloudinary = require('cloudinary').v2;
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const { loadEmailTemplate } = require('./utils/email');
-const { validateCreateGroup } = require('./utils/validation');
+const { validateCreateGroup, validateAmount } = require('./utils/validation');
 const { sanitize } = require('./utils/sanitize');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
@@ -1916,6 +1916,10 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
   }
 
+  if (!validateAmount(amount)) {
+    return res.status(400).json({ success: false, error: 'Amount must be a positive number' });
+  }
+
   try {
     const db = admin.database();
 
@@ -2291,6 +2295,10 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
   }
 
+  if (!validateAmount(amount)) {
+    return res.status(400).json({ success: false, error: 'Amount must be a positive number' });
+  }
+
   try {
     const db = admin.database();
 
@@ -2597,7 +2605,7 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
 
   const currentUserId = req.user.uid;
 
-  if (typeof amount !== 'number' || amount <= 0 || !['add', 'deduct'].includes(type)) {
+  if (!validateAmount(amount) || !['add', 'deduct'].includes(type)) {
     return res.status(400).json({ success: false, error: 'Invalid parameters: amount must be a positive number and type must be add or deduct' });
   }
 
@@ -3654,12 +3662,12 @@ app.post('/api/send-money', authenticate, async (req, res) => {
 
   const senderUid = req.user.uid;
 
-  if (!recipientUsername || !amount) {
-    return res.status(400).json({ success: false, error: 'Recipient and amount are required' });
+  if (!recipientUsername) {
+    return res.status(400).json({ success: false, error: 'Recipient is required' });
   }
 
-  if (amount <= 0) {
-    return res.status(400).json({ success: false, error: 'Amount must be positive' });
+  if (!validateAmount(amount)) {
+    return res.status(400).json({ success: false, error: 'Amount must be a positive number' });
   }
 
   try {
