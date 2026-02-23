@@ -2207,7 +2207,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     const timestamp = Date.now();
     const serverTime = admin.database.ServerValue.TIMESTAMP;
 
-    const isCurrentUserPayer = paidBy === currentUserId;
+    const isCurrentUserPayer = paidBy === currentUserId || (payer && payer.userId === currentUserId);
 
     // A. Update Wallet Balance if current user is payer
     let walletBalanceBefore = user.walletBalance || 0;
@@ -2539,8 +2539,8 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     const timestamp = Date.now();
     const serverTime = admin.database.ServerValue.TIMESTAMP;
 
-    const isReceiving = toMember === currentUserId;
-    const isPaying = fromMember === currentUserId;
+    const isReceiving = toMember === currentUserId || (toPerson && toPerson.userId === currentUserId);
+    const isPaying = fromMember === currentUserId || (fromPerson && fromPerson.userId === currentUserId);
 
     if (!isReceiving && !isPaying) {
       return res.status(403).json({ success: false, error: 'You must be either the payer or the receiver' });
