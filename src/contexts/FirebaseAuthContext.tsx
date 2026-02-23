@@ -104,7 +104,7 @@ interface FirebaseAuthContextType {
   getFavoriteGroups: () => string[];
   deleteAccount: () => Promise<{ success: boolean; error?: string }>;
   is2FAVerified: boolean;
-  verify2FA: (token: string) => Promise<{ success: boolean; error?: string }>;
+  verify2FA: (token: string, isTrusted?: boolean, deviceInfo?: any) => Promise<{ success: boolean; error?: string }>;
   setup2FA: () => Promise<{ success: boolean; secret?: string; qrCode?: string; error?: string }>;
   confirm2FASetup: (token: string) => Promise<{ success: boolean; error?: string }>;
   disable2FA: (token: string) => Promise<{ success: boolean; error?: string }>;
@@ -1217,27 +1217,57 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Check 2FA verification status in session
+  // Check 2FA verification status (Session OR Trusted Device)
   useEffect(() => {
-    if (user && user.is2FAEnabled) {
-      const isSessionVerified = sessionStorage.getItem(`2fa_verified_${user.uid}`);
-      if (isSessionVerified === 'true') {
-        setIs2FAVerified(true);
-      } else {
+    const check2FAStatus = async () => {
+      if (user && user.is2FAEnabled) {
+        // 1. Check Session Storage (Short-term)
+        const isSessionVerified = sessionStorage.getItem(`2fa_verified_${user.uid}`);
+        if (isSessionVerified === 'true') {
+          setIs2FAVerified(true);
+          return;
+        }
+
+        // 2. Check Local Storage (Trusted Device - Long-term)
+        const deviceToken = localStorage.getItem(`device_token_${user.uid}`);
+        if (deviceToken) {
+          try {
+            const result = await callSecureApi('/api/2fa/check-trust', { deviceToken });
+            if (result.success && result.trusted) {
+              setIs2FAVerified(true);
+              sessionStorage.setItem(`2fa_verified_${user.uid}`, 'true'); // Promote to session
+              return;
+            } else {
+              // Token invalid or expired
+              localStorage.removeItem(`device_token_${user.uid}`);
+            }
+          } catch (e) {
+            console.error('Failed to verify trusted device', e);
+          }
+        }
+
+        // Default: Not verified
         setIs2FAVerified(false);
+      } else {
+        setIs2FAVerified(false); // Not enabled, so not verified but gate won't trigger
       }
-    } else {
-      setIs2FAVerified(false);
-    }
+    };
+
+    check2FAStatus();
   }, [user?.uid, user?.is2FAEnabled]);
 
-  const verify2FA = async (token: string): Promise<{ success: boolean; error?: string }> => {
+  const verify2FA = async (token: string, isTrusted: boolean = false, deviceInfo: any = {}): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
     try {
-      const result = await callSecureApi('/api/2fa/verify', { token });
+      const result = await callSecureApi('/api/2fa/verify', { token, isTrusted, deviceInfo });
       if (result.success) {
         setIs2FAVerified(true);
         sessionStorage.setItem(`2fa_verified_${user.uid}`, 'true');
+
+        if (result.deviceToken) {
+          localStorage.setItem(`device_token_${user.uid}`, result.deviceToken);
+        }
+
         return { success: true };
       }
       return { success: false, error: result.error || "Verification failed" };

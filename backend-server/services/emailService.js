@@ -525,6 +525,28 @@ const emailService = {
             html
         });
     }
+,
+    /**
+     * Send 2FA Reset Email
+     */
+    send2FAReset: async (email, resetLink, name) => {
+        const safeName = escapeHtml(name);
+        const html = getCommonTemplate(
+            'Disable 2FA Request',
+            `<p>Hi ${safeName},</p>
+             <p>We received a request to disable Two-Factor Authentication on your account. If you didn't make this request, please change your password immediately.</p>
+             <p>To disable 2FA, click the button below:</p>`,
+            `<a href="${resetLink}" class="button" style="background-color: #d32f2f;">Disable 2FA</a>`,
+            false // Critical security email
+        );
+
+        return sendEmailByType('auth', {
+            to: email,
+            subject: 'Action Required: Disable 2FA',
+            html
+        });
+    }
+
 };
 
 module.exports = emailService;

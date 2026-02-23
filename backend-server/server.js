@@ -457,7 +457,7 @@ app.post('/api/2fa/verify-setup', authenticate, async (req, res) => {
 app.post('/api/2fa/verify', authenticate, async (req, res) => {
   try {
     const userId = req.user.uid;
-    const { token } = req.body;
+    const { token, isTrusted, deviceInfo } = req.body;
 
     if (!token) {
       return res.status(400).json({ success: false, error: 'Token is required' });
@@ -480,13 +480,169 @@ app.post('/api/2fa/verify', authenticate, async (req, res) => {
     });
 
     if (verified) {
-      res.json({ success: true, message: 'Verification successful' });
+      let deviceToken = null;
+
+      // Handle Trusted Device Registration
+      if (isTrusted) {
+        // Generate a secure random token for the device
+        deviceToken = require('crypto').randomBytes(32).toString('hex');
+
+        const deviceData = {
+          token: deviceToken,
+          userAgent: deviceInfo?.userAgent || req.headers['user-agent'] || 'Unknown',
+          ip: req.ip, // Capture IP for security auditing
+          location: deviceInfo?.location || null, // Optional if provided by client
+          createdAt: new Date().toISOString(),
+          lastUsed: new Date().toISOString()
+        };
+
+        // Store under users/{uid}/trustedDevices/{deviceToken}
+        await admin.database().ref(`users/${userId}/trustedDevices/${deviceToken}`).set(deviceData);
+        console.log(`✅ Registered trusted device for user ${userId}`);
+      }
+
+      res.json({
+        success: true,
+        message: 'Verification successful',
+        deviceToken: deviceToken
+      });
     } else {
       res.status(400).json({ success: false, error: 'Invalid verification code' });
     }
 
   } catch (error) {
     console.error('2FA verify error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * Check if a device is trusted
+ */
+app.post('/api/2fa/check-trust', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { deviceToken } = req.body;
+
+    if (!deviceToken) {
+      return res.status(400).json({ success: false, error: 'Device token is required' });
+    }
+
+    const deviceRef = admin.database().ref(`users/${userId}/trustedDevices/${deviceToken}`);
+    const snapshot = await deviceRef.get();
+
+    if (snapshot.exists()) {
+      // Update last used timestamp
+      await deviceRef.update({ lastUsed: new Date().toISOString() });
+      return res.json({ success: true, trusted: true });
+    } else {
+      return res.json({ success: true, trusted: false });
+    }
+
+  } catch (error) {
+    console.error('2FA check trust error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * Initiate 2FA Reset (Email Link)
+ */
+app.post('/api/2fa/initiate-reset', strictEmailLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+
+    // Verify user exists in Auth
+    let userRecord;
+    try {
+      userRecord = await admin.auth().getUserByEmail(email);
+    } catch (e) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const userId = userRecord.uid;
+    const userRef = admin.database().ref(`users/${userId}`);
+    const userSnap = await userRef.get();
+
+    if (!userSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'User profile not found' });
+    }
+
+    const userData = userSnap.val();
+
+    // Check if 2FA is actually enabled
+    if (!userData.is2FAEnabled) {
+      return res.status(400).json({ success: false, error: '2FA is not enabled for this account' });
+    }
+
+    // Generate a reset token (stored in DB with expiry)
+    const resetToken = require('crypto').randomBytes(32).toString('hex');
+    const expiresAt = Date.now() + 30 * 60 * 1000; // 30 minutes
+
+    await admin.database().ref(`userSecrets/${userId}/resetToken`).set({
+      token: resetToken,
+      expiresAt: expiresAt
+    });
+
+    // Frontend URL handling
+    const frontendUrl = process.env.FRONTEND_URL || 'https://app.hostelledger.aarx.online';
+    const resetLink = `${frontendUrl}/recover-account?token=${resetToken}&uid=${userId}&mode=reset2fa`;
+
+    // Send Email
+    await emailService.send2FAReset(email, resetLink, userData.name || 'User');
+
+    res.json({ success: true, message: 'Reset link sent to your email' });
+
+  } catch (error) {
+    console.error('2FA initiate reset error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * Complete 2FA Reset (Disable via Token)
+ */
+app.post('/api/2fa/complete-reset', generalLimiter, async (req, res) => {
+  try {
+    const { uid, token } = req.body;
+
+    if (!uid || !token) {
+      return res.status(400).json({ success: false, error: 'Missing parameters' });
+    }
+
+    const secretRef = admin.database().ref(`userSecrets/${uid}/resetToken`);
+    const snapshot = await secretRef.get();
+
+    if (!snapshot.exists()) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired token' });
+    }
+
+    const data = snapshot.val();
+
+    if (data.token !== token) {
+      return res.status(400).json({ success: false, error: 'Invalid token' });
+    }
+
+    if (Date.now() > data.expiresAt) {
+      return res.status(400).json({ success: false, error: 'Token expired' });
+    }
+
+    // Success - Disable 2FA
+    const updates = {};
+    updates[`userSecrets/${uid}/secret`] = null;
+    updates[`userSecrets/${uid}/resetToken`] = null; // Consume token
+    updates[`users/${uid}/is2FAEnabled`] = false;
+
+    await admin.database().ref().update(updates);
+
+    res.json({ success: true, message: '2FA disabled successfully' });
+
+  } catch (error) {
+    console.error('2FA complete reset error:', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
