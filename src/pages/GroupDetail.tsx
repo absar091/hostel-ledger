@@ -465,9 +465,16 @@ const GroupDetail = () => {
                   <Plus className="w-7 h-7 text-[#4a6850] font-bold" />
                 </div>
                 <h3 className="text-base font-black text-gray-900 mb-1.5 tracking-tight">{t('group.no_transactions')}</h3>
-                <p className="text-[#4a6850]/80 text-xs font-bold">
+                <p className="text-[#4a6850]/80 text-xs font-bold mb-4">
                   {t('group.add_expense_started')}
                 </p>
+                <Button
+                  onClick={() => setShowAddExpense(true)}
+                  className="bg-[#4a6850]/10 hover:bg-[#4a6850]/20 text-[#4a6850] hover:text-[#3d5643] font-black rounded-xl shadow-none border border-[#4a6850]/10"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {t('activity.add_first_expense')}
+                </Button>
               </div>
             )}
           </div>
