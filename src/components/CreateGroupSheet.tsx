@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
   const { t } = useTranslation();
   console.log("🚀 3-STEP CreateGroupSheet loaded!");
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [groupName, setGroupName] = useState("");
   const [groupEmoji, setGroupEmoji] = useState("🏠");
@@ -271,7 +272,19 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
               {/* Cover Photo - Simplified for cleaner step 1 */}
               <div>
                 <div className="text-center mb-4">
-                  <div className="w-24 h-24 mx-auto bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl flex items-center justify-center border-2 border-dashed border-[#4a6850]/20 relative overflow-hidden group hover:border-[#4a6850]/40 transition-all cursor-pointer" onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}>
+                  <div
+                    className="w-24 h-24 mx-auto bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl flex items-center justify-center border-2 border-dashed border-[#4a6850]/20 relative overflow-hidden group hover:border-[#4a6850]/40 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:outline-none"
+                    onClick={() => fileInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        fileInputRef.current?.click();
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={coverPhoto ? t('sheets.create_group.change_photo') : t('sheets.create_group.add_photo')}
+                  >
                     {coverPhoto ? (
                       <img src={coverPhoto} alt="Cover" className="w-full h-full object-cover" />
                     ) : (
@@ -281,6 +294,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                       </div>
                     )}
                     <input
+                      ref={fileInputRef}
                       type="file"
                       accept="image/*"
                       onChange={handleCoverPhotoUpload}
@@ -312,8 +326,10 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                     <button
                       key={e}
                       onClick={() => setGroupEmoji(e)}
+                      aria-label={`Select ${e} emoji`}
+                      aria-pressed={groupEmoji === e}
                       className={cn(
-                        "aspect-square rounded-xl flex items-center justify-center text-2xl transition-all shadow-sm",
+                        "aspect-square rounded-xl flex items-center justify-center text-2xl transition-all shadow-sm focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:outline-none",
                         groupEmoji === e
                           ? "bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white scale-110 shadow-lg ring-2 ring-[#4a6850]/20"
                           : "bg-white hover:bg-[#4a6850]/5 border border-[#4a6850]/10"

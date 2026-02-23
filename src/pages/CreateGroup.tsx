@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Search, Plus, X, Upload, CheckCircle2, AlertTriangle, Mail } from "lucide-react";
 import AppContainer from "@/components/AppContainer";
@@ -45,6 +45,7 @@ const EMOJI_OPTIONS = ["🏠", "🍽️", "✈️", "🎉", "🛒", "☕", "🎬
 export default function CreateGroupPage() {
     const navigate = useNavigate();
     const { createGroup, user } = useFirebaseAuth();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Steps: 1 = Details, 2 = Members, 3 = Review
     const [step, setStep] = useState(1);
@@ -227,6 +228,7 @@ export default function CreateGroupPage() {
                             <div className="text-center">
                                 <div className="relative w-24 h-24 mx-auto mb-4 group">
                                     <input
+                                        ref={fileInputRef}
                                         type="file"
                                         accept="image/*"
                                         className="hidden"
@@ -255,8 +257,17 @@ export default function CreateGroupPage() {
                                     />
 
                                     <div
-                                        className={`w-full h-full rounded-3xl shadow-sm border border-gray-100 flex items-center justify-center text-4xl overflow-hidden cursor-pointer transition-all ${coverPhoto ? 'border-0' : 'bg-white'}`}
-                                        onClick={() => document.getElementById('cover-upload')?.click()}
+                                        className={`w-full h-full rounded-3xl shadow-sm border border-gray-100 flex items-center justify-center text-4xl overflow-hidden cursor-pointer transition-all ${coverPhoto ? 'border-0' : 'bg-white'} focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:outline-none`}
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-label={coverPhoto ? "Change group cover photo" : "Upload group cover photo"}
+                                        onClick={() => fileInputRef.current?.click()}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                fileInputRef.current?.click();
+                                            }
+                                        }}
                                     >
                                         {coverPhoto ? (
                                             <img src={coverPhoto} alt="Cover" className="w-full h-full object-cover" />
@@ -269,7 +280,7 @@ export default function CreateGroupPage() {
                                         className="absolute -bottom-2 -right-2 bg-gray-900 text-white p-1.5 rounded-full cursor-pointer hover:scale-110 transition-transform z-10"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            document.getElementById('cover-upload')?.click();
+                                            fileInputRef.current?.click();
                                         }}
                                     >
                                         <Upload className="w-3 h-3" />
@@ -290,7 +301,13 @@ export default function CreateGroupPage() {
 
                                 <div className="flex gap-2 justify-center flex-wrap mb-6">
                                     {EMOJI_OPTIONS.map(e => (
-                                        <button key={e} onClick={() => setEmoji(e)} className={`text-xl p-2 rounded-xl transition-all ${emoji === e ? 'bg-[#4a6850] scale-110 shadow-lg' : 'bg-white hover:bg-gray-100'}`}>
+                                        <button
+                                            key={e}
+                                            onClick={() => setEmoji(e)}
+                                            aria-label={`Select ${e} emoji`}
+                                            aria-pressed={emoji === e}
+                                            className={`text-xl p-2 rounded-xl transition-all ${emoji === e ? 'bg-[#4a6850] scale-110 shadow-lg' : 'bg-white hover:bg-gray-100'}`}
+                                        >
                                             {e}
                                         </button>
                                     ))}
