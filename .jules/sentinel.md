@@ -1,0 +1,4 @@
+## 2026-01-25 - Denial of Service via Global Transaction Query
+**Vulnerability:** The `/api/record-payment` endpoint performed a global query on the `transactions` node (`orderByChild('timestamp').startAt(...)`) to detect duplicate payments. As the number of transactions grows, this query becomes increasingly expensive, potentially leading to database timeouts and service denial. An attacker could exploit this by flooding the system with transactions and then triggering this endpoint.
+**Learning:** Checking for uniqueness or idempotency against a global dataset is non-scalable in NoSQL databases like Firebase Realtime Database. Global indexes are expensive to query without strict scoping.
+**Prevention:** Always scope queries to the smallest possible dataset (e.g., a specific user or group). For idempotency, rely on unique client-generated IDs (`clientTxnId`) or checked against a limited window of *user-specific* data.

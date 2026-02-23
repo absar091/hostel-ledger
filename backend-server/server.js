@@ -2477,21 +2477,43 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     const group = groupSnap.val();
     const user = userSnap.val();
 
+    // Idempotency Check (Client provided ID)
+    let clientTxnId = req.body.clientTxnId;
+    if (clientTxnId) {
+      const processedRef = db.ref(`processedTxns/${clientTxnId}`);
+      const processedSnap = await processedRef.get();
+      if (processedSnap.exists()) {
+        const data = processedSnap.val();
+        console.log(`♻️ Idempotency hit: Returning existing transaction for ${clientTxnId}`);
+        return res.json({
+          success: true,
+          transactionId: data.transactionId,
+          duplicate: true,
+          message: 'Transaction already processed'
+        });
+      }
+    }
+
+    // Legacy Duplicate Check (Optimized: Scope to User)
     // Check for duplicate payment (same from/to/amount/group within 30 seconds)
-    const recentPaymentsSnap = await db.ref('transactions')
-      .orderByChild('timestamp')
-      .startAt(Date.now() - 30000)
+    // Optimization: Query userTransactions for the current user instead of global transactions to prevent DoS
+    const recentUserTxnsSnap = await db.ref(`userTransactions/${currentUserId}`)
+      .limitToLast(10) // Check last 10 transactions of the user (sufficient for manual actions)
       .get();
 
-    if (recentPaymentsSnap.exists()) {
-      const recentPayments = recentPaymentsSnap.val();
-      const isDuplicate = Object.values(recentPayments).some((tx) =>
+    if (recentUserTxnsSnap.exists()) {
+      const recentTxns = recentUserTxnsSnap.val();
+      const timeWindow = Date.now() - 30000;
+
+      const isDuplicate = Object.values(recentTxns).some((tx) =>
+        tx.timestamp > timeWindow && // Ensure it's recent
         tx.type === 'payment' &&
         tx.from === fromMember &&
         tx.to === toMember &&
         tx.amount === amount &&
         tx.groupId === groupId
       );
+
       if (isDuplicate) {
         return res.status(409).json({ success: false, error: 'Duplicate payment detected. This payment was already recorded within the last 30 seconds.' });
       }
@@ -2618,6 +2640,16 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     };
 
     updates[`transactions/${transactionId}`] = newTransaction;
+
+    // Record processed transaction for idempotency
+    if (clientTxnId) {
+      updates[`processedTxns/${clientTxnId}`] = {
+        transactionId,
+        uid: currentUserId,
+        timestamp: serverTime,
+        createdAt: new Date().toISOString()
+      };
+    }
 
     // C. Add to userTransaction lists for relevant members (Denormalized)
     const transactionSummaryBase = {
