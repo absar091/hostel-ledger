@@ -532,6 +532,15 @@ app.post('/api/2fa/check-trust', authenticate, async (req, res) => {
     const snapshot = await deviceRef.get();
 
     if (snapshot.exists()) {
+      const deviceData = snapshot.val();
+      const currentUA = req.headers['user-agent'] || 'Unknown';
+
+      // Enhanced Security: Check User Agent Mismatch
+      if (deviceData.userAgent && deviceData.userAgent !== currentUA) {
+        console.warn(`⚠️ Trusted device UA mismatch for user ${userId}. Stored: ${deviceData.userAgent}, Current: ${currentUA}`);
+        return res.json({ success: true, trusted: false, reason: 'device_mismatch' });
+      }
+
       // Update last used timestamp
       await deviceRef.update({ lastUsed: new Date().toISOString() });
       return res.json({ success: true, trusted: true });
