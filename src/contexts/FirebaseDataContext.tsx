@@ -1198,14 +1198,21 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   const fetchGroupDetail = useCallback(async (groupId: string): Promise<Group | null> => {
     try {
       if (navigator.onLine) {
-        const groupRef = ref(database, `groups/${groupId}`);
-        const snapshot = await get(groupRef);
-        if (snapshot.exists()) {
-          const data = snapshot.val();
+        // Fetch both group data and user's specific status in parallel
+        const [groupSnap, userGroupSnap] = await Promise.all([
+          get(ref(database, `groups/${groupId}`)),
+          get(ref(database, `userGroups/${user?.uid}/${groupId}`))
+        ]);
+
+        if (groupSnap.exists()) {
+          const data = groupSnap.val();
+          const userGroupData = userGroupSnap.exists() ? userGroupSnap.val() : {};
+
           // Normalize members: Firebase may return object instead of array
           const fullGroup = {
             id: groupId,
             ...data,
+            status: userGroupData.status, // Attach the user's status (e.g., 'invited')
             members: normalizeMembers(data.members, user?.uid)
           };
 

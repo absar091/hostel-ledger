@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useInvitations } from "@/hooks/useInvitations";
+import { respondInvitation } from "@/lib/api";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import {
   Tooltip,
@@ -84,6 +86,71 @@ const GroupDetail = () => {
 
   const transactions = id ? getTransactionsByGroup(id) : [];
   const settlements = id ? getSettlements(id) : {};
+  const { invitations } = useInvitations();
+
+  // Check for pending invitation
+  if (group && group.status === 'invited') {
+    const invitation = invitations.find(i => i.groupId === group.id);
+
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
+        <div className="bg-white rounded-3xl p-8 shadow-xl max-w-md w-full text-center border border-gray-100">
+          <div className="w-20 h-20 mx-auto bg-blue-50 rounded-full flex items-center justify-center mb-6">
+            <span className="text-4xl">{group.emoji || "👋"}</span>
+          </div>
+          <h2 className="text-2xl font-black mb-2 text-gray-900">You're Invited!</h2>
+          <p className="mb-8 text-gray-600">
+            You have been invited to join <strong className="text-gray-900">{group.name}</strong>.
+            {invitation && (
+              <span className="block mt-2 text-sm text-gray-500">
+                Invited by {invitation.invitedBy}
+              </span>
+            )}
+          </p>
+          <div className="flex gap-4 justify-center w-full">
+            <Button
+              variant="outline"
+              className="flex-1 rounded-xl h-12"
+              onClick={async () => {
+                if (!invitation) return;
+                try {
+                  await respondInvitation(invitation.invitationId, false);
+                  toast.success("Invitation declined");
+                  navigate('/');
+                } catch (e) {
+                  toast.error("Failed to decline");
+                }
+              }}
+              disabled={!invitation}
+            >
+              Decline
+            </Button>
+            <Button
+              className="flex-1 rounded-xl h-12 bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={async () => {
+                if (!invitation) return;
+                try {
+                  const res = await respondInvitation(invitation.invitationId, true);
+                  if (res.success) {
+                    toast.success("Welcome to the group! 🎉");
+                    // Reload to refresh permissions and state
+                    window.location.reload();
+                  } else {
+                    toast.error(res.error || "Failed to join");
+                  }
+                } catch (e) {
+                  toast.error("Failed to accept");
+                }
+              }}
+              disabled={!invitation}
+            >
+              Accept Invitation
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Calculate total amount to receive in this group
   const groupTotalToReceive = Object.values(settlements).reduce((total, settlement) => {
