@@ -769,7 +769,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
 
       {/* Temp Member Dialog */}
       <Dialog open={showTempMemberInput} onOpenChange={setShowTempMemberInput}>
-        <DialogContent className="rounded-3xl p-6 z-[110] bg-white border border-[#4a6850]/20 shadow-[0_25px_70px_rgba(74,104,80,0.2)]">
+        <DialogContent className="rounded-3xl p-6 bg-white border border-[#4a6850]/20 shadow-[0_25px_70px_rgba(74,104,80,0.2)]">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-gray-900 tracking-tight">{t('sheets.add_expense.dialog_title')}</DialogTitle>
             <DialogDescription className="text-sm text-[#4a6850]/80 font-bold">
