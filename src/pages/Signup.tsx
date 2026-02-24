@@ -21,7 +21,7 @@ import { generateVerificationCode } from "@/lib/verificationStore";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import PageGuide from "@/components/PageGuide";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import LanguageSelector from "@/components/LanguageSelector";
 
 const Signup = () => {
@@ -84,6 +84,7 @@ const Signup = () => {
   };
 
   const passwordStrength = calculatePasswordStrength(formData.password);
+  const passwordsMatch = formData.password && formData.confirmPassword && formData.password === formData.confirmPassword;
 
   // Validation functions
   const validateBasicInfo = () => {
@@ -292,7 +293,7 @@ const Signup = () => {
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                   <Input
-                    id="firstName"
+                    id="firstName" autoComplete="given-name"
                     value={formData.firstName}
                     onChange={(e) => handleInputChange('firstName', e.target.value)}
                     placeholder="Absar"
@@ -309,7 +310,7 @@ const Signup = () => {
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                   <Input
-                    id="lastName"
+                    id="lastName" autoComplete="family-name"
                     value={formData.lastName}
                     onChange={(e) => handleInputChange('lastName', e.target.value)}
                     placeholder="Ahmad Rao"
@@ -327,7 +328,7 @@ const Signup = () => {
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
-                  id="email"
+                  id="email" autoComplete="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   type="email"
@@ -349,7 +350,7 @@ const Signup = () => {
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#4a6850]/60 font-bold">@</span>
                 <Input
-                  id="username"
+                  id="username" autoComplete="username"
                   value={formData.username}
                   onChange={(e) => handleInputChange('username', e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))}
                   placeholder="john_doe"
@@ -432,7 +433,7 @@ const Signup = () => {
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
-                  id="password"
+                  id="password" autoComplete="new-password"
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
                   type={showPassword ? "text" : "password"}
@@ -491,13 +492,22 @@ const Signup = () => {
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
-                  id="confirmPassword"
+                  id="confirmPassword" autoComplete="new-password"
                   value={formData.confirmPassword}
                   onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
                   className="h-14 pl-12 pr-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl bg-white transition-all"
                 />
+                {formData.confirmPassword && (
+                  <div className="absolute right-12 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                    {passwordsMatch ? (
+                      <Check className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <X className="w-5 h-5 text-red-500" />
+                    )}
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -507,6 +517,12 @@ const Signup = () => {
                   {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              {formData.confirmPassword && (
+                <p className={`text-sm mt-2 font-bold flex items-center gap-2 ${passwordsMatch ? 'text-green-500' : 'text-red-500'}`}>
+                  {passwordsMatch ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                  {passwordsMatch ? t('auth.passwords_match') : t('auth.passwords_dont_match')}
+                </p>
+              )}
               {errors.confirmPassword && (
                 <p className="text-red-500 text-sm mt-2 font-bold">{errors.confirmPassword}</p>
               )}
@@ -525,7 +541,13 @@ const Signup = () => {
                   className="border-2 data-[state=checked]:bg-[#4a6850] data-[state=checked]:border-[#4a6850] w-5 h-5"
                 />
                 <label htmlFor="terms" className="text-sm text-[#4a6850]/80 cursor-pointer flex-1 font-bold">
-                  {t('auth.terms_privacy_agree')}
+                  <Trans
+                    i18nKey="auth.terms_privacy_agree"
+                    components={{
+                      1: <Link to="/terms-of-service" className="underline text-[#4a6850] hover:text-[#3d5643]" target="_blank" rel="noopener noreferrer" />,
+                      2: <Link to="/privacy-policy" className="underline text-[#4a6850] hover:text-[#3d5643]" target="_blank" rel="noopener noreferrer" />
+                    }}
+                  />
                 </label>
               </div>
               {(errors.termsAccepted || errors.privacyAccepted) && (

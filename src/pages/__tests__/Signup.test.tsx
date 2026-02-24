@@ -20,6 +20,7 @@ vi.mock('react-i18next', () => ({
       changeLanguage: () => new Promise(() => {}),
     },
   }),
+  Trans: ({ i18nKey }: { i18nKey: string }) => <span>{i18nKey}</span>,
 }));
 
 vi.mock('@/contexts/FirebaseAuthContext', () => ({
