@@ -7,7 +7,7 @@ import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ChevronLeft, Loader2, Mail } from "lucide-react";
-import { callSecureApi } from "@/lib/api";
+import { callPublicApi } from "@/lib/api";
 
 const RecoverAccount = () => {
   const { user } = useFirebaseAuth();
@@ -32,15 +32,16 @@ const RecoverAccount = () => {
     setIsLoading(true);
     try {
       // Call the backend endpoint to send reset email
-      const result = await callSecureApi('/api/2fa/initiate-reset', { email });
+      const result = await callPublicApi('/api/2fa/initiate-reset', { email });
       if (result.success) {
         setIsSent(true);
         toast.success("Reset link sent to your email");
       } else {
         toast.error(result.error || "Failed to send reset link");
       }
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "An error occurred";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -51,15 +52,16 @@ const RecoverAccount = () => {
 
     setIsLoading(true);
     try {
-      const result = await callSecureApi('/api/2fa/complete-reset', { uid, token });
+      const result = await callPublicApi('/api/2fa/complete-reset', { uid, token });
       if (result.success) {
         toast.success("2FA Disabled Successfully");
         navigate('/'); // Redirect to dashboard (now unlocked)
       } else {
         toast.error(result.error || "Failed to disable 2FA");
       }
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "An error occurred";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
