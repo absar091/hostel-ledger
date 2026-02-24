@@ -7,7 +7,15 @@ const sanitizeHtml = require('sanitize-html');
  * @returns {string} - The sanitized string.
  */
 function sanitize(input) {
-  if (typeof input !== 'string') return input;
+  // Coerce numbers/booleans to string
+  if (typeof input === 'number' || typeof input === 'boolean') {
+    return String(input);
+  }
+
+  // Reject objects, arrays, null, undefined, or other non-strings
+  if (typeof input !== 'string') {
+    return '';
+  }
 
   // Strip all tags and attributes
   return sanitizeHtml(input, {
