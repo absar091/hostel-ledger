@@ -251,7 +251,7 @@ const getCommonTemplate = (title, content, actionButton = '', showUnsubscribe = 
         <a href="https://app.hostelledger.aarx.online/settings">Preferences</a>
         ${showUnsubscribe ? `• <a href="https://app.hostelledger.aarx.online/settings" style="color: #666; font-weight: bold; text-decoration: underline;">Unsubscribe</a>` : ''}
       </p>
-      <p>Copyright© ${new Date().getFullYear()} Hostel Ledger. All rights reserved.
+      <p>© ${new Date().getFullYear()} Hostel Ledger.
       </p>
     </div>
   </div>
