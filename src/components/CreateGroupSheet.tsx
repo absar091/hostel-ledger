@@ -558,6 +558,10 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                   )}
                 </p>
               </div>
+
+              <p className="text-[10px] text-center text-gray-500 mt-2 px-4 leading-tight">
+                By creating a group, you agree to our <a href="/terms-of-service#group-creation-terms" target="_blank" className="font-bold text-[#4a6850] underline">Group Creation Terms</a> and <a href="/privacy-policy#group-privacy" target="_blank" className="font-bold text-[#4a6850] underline">Group Privacy Policy</a>.
+              </p>
             </div>
           )}
         </div>

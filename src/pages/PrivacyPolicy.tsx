@@ -27,6 +27,7 @@ const PrivacyPolicy = () => {
               <li><strong>Transaction Data:</strong> Expense details, amounts, dates, locations, and notes you enter.</li>
               <li><strong>Group Data:</strong> Group names, member lists, and invitation statuses.</li>
               <li><strong>Device Info:</strong> Information about your device for PWA functionality and push notifications.</li>
+              <li><strong>Device Trust Data:</strong> Information used to verify trusted devices for Two-Factor Authentication (2FA) security.</li>
             </ul>
           </section>
 
@@ -40,7 +41,7 @@ const PrivacyPolicy = () => {
             </ul>
           </section>
 
-          <section>
+          <section id="group-privacy">
             <h2 className="text-lg font-bold text-gray-900 mb-2">3. Group & Invitation Privacy</h2>
             <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-3">
               <p className="text-blue-900 text-sm font-semibold">
