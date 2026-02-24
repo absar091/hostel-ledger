@@ -504,7 +504,7 @@ export default function CreateGroupPage() {
                                     />
                                 </div>
                                 <label htmlFor="terms" className="text-sm text-gray-600 leading-tight">
-                                    I agree to the <a href="/terms-of-service" target="_blank" className="font-bold text-[#4a6850] underline">Terms of Service</a> (specifically <a href="/terms-of-service#group-creation-terms" target="_blank" className="font-bold text-[#4a6850] underline">Group Creation</a>) and <a href="/privacy-policy" target="_blank" className="font-bold text-[#4a6850] underline">Privacy Policy</a> (specifically <a href="/privacy-policy#group-privacy" target="_blank" className="font-bold text-[#4a6850] underline">Group Privacy</a>).
+                                    I agree to the <a href="/terms-of-service" target="_blank" className="font-bold text-[#4a6850] underline">Terms of Service</a> (specifically <a href="/group-terms" target="_blank" className="font-bold text-[#4a6850] underline">Group Creation</a>) and <a href="/privacy-policy" target="_blank" className="font-bold text-[#4a6850] underline">Privacy Policy</a> (specifically <a href="/group-privacy" target="_blank" className="font-bold text-[#4a6850] underline">Group Privacy</a>).
                                 </label>
                             </div>
 
