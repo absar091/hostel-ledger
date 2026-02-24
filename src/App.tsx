@@ -226,7 +226,9 @@ const AppRoutes = () => (
     <Route path="/join/:id" element={<JoinGroup />} />
     <Route path="/personal-space" element={<ProtectedRoute><PersonalSpace /></ProtectedRoute>} />
     <Route path="/receipt" element={<ProtectedRoute><ReceiptPage /></ProtectedRoute>} />
-    <Route path="*" element={<NotFound />} />
+
+
+        <Route path="*" element={<NotFound />} />
   </Routes>
 );
 

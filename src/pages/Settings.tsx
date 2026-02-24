@@ -41,6 +41,7 @@ const Settings = () => {
     const { t, i18n } = useTranslation();
     const { user, updateUserProfile, logout } = useFirebaseAuth();
     const navigate = useNavigate();
+    const { exportData } = useFileExport();
     const {
         isSupported: pushSupported,
         isSubscribed: isPushSubscribed,
