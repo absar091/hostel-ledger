@@ -124,6 +124,7 @@ const TermsOfService = () => {
               <li>Email verification is required to activate your account</li>
               <li>You are responsible for maintaining the confidentiality of your account credentials</li>
               <li>You must notify us immediately of any unauthorized access to your account</li>
+              <li>We recommend enabling Two-Factor Authentication (2FA) for enhanced security</li>
             </ul>
           </section>
 
@@ -151,7 +152,7 @@ const TermsOfService = () => {
               <p className="text-gray-700 font-semibold">Hostel Ledger is a TRACKING tool, NOT a payment processor:</p>
               <ul className="list-disc list-inside text-gray-700 space-y-2">
                 <li>We do NOT process actual money transfers</li>
-                <li>We do NOT integrate with JazzCash, Easypaisa, or banking systems</li>
+                <li>We do NOT integrate with external mobile wallets, bank accounts, or payment gateways</li>
                 <li>We do NOT hold, transfer, or manage your funds</li>
                 <li>All actual payments must be made outside the app using your preferred method</li>
                 <li>The app only helps you TRACK and RECORD these payments</li>
@@ -173,7 +174,7 @@ const TermsOfService = () => {
           </section>
 
           {/* Group Creation & Management */}
-          <section>
+          <section id="group-creation-terms">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Group Creation & Administration</h2>
             <p className="text-gray-700 leading-relaxed mb-2">
               Users who create groups ("Admins") bear specific responsibilities:
@@ -368,12 +369,12 @@ const TermsOfService = () => {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Governing Law and Dispute Resolution</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              These Terms shall be governed by and construed in accordance with the laws of Pakistan, without regard to its
+              These Terms shall be governed by and construed in accordance with the laws of the United Kingdom, without regard to its
               conflict of law provisions.
             </p>
             <p className="text-gray-700 leading-relaxed">
               Any disputes arising from these Terms or your use of the Service shall be resolved through good faith negotiations.
-              If negotiations fail, disputes shall be subject to the exclusive jurisdiction of the courts of Pakistan.
+              If negotiations fail, disputes shall be subject to the exclusive jurisdiction of the courts of London, United Kingdom.
             </p>
           </section>
 
