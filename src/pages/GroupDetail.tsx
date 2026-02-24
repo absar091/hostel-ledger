@@ -692,17 +692,26 @@ const GroupDetail = () => {
                 <h3 className="font-black text-gray-900 text-base tracking-tight">{t('group.top_contributor')}</h3>
               </div>
               <div className="flex items-center gap-4">
-                <Avatar name={topSpender.name} size="lg" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-black text-gray-900 text-base mb-1 tracking-tight truncate">
-                    {topSpender.isCurrentUser ? t('group.you_label') : topSpender.name}
+                {topSpender ? (
+                  <>
+                    <Avatar name={topSpender?.name || ""} size="lg" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-black text-gray-900 text-base mb-1 tracking-tight truncate">
+                        {topSpender.isCurrentUser ? t('group.you_label') : topSpender.name}
+                      </div>
+                      <div className="text-xs text-[#4a6850] font-bold">
+                        {topSpender.totalPaid > 0
+                          ? t('group.paid_amount', { amount: formatAmount(topSpender.totalPaid) })
+                          : t('group.no_expenses_paid')}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex-1 text-center py-2">
+                    <div className="animate-pulse bg-gray-200 h-10 w-10 rounded-full mx-auto mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
                   </div>
-                  <div className="text-xs text-[#4a6850] font-bold">
-                    {topSpender.totalPaid > 0
-                      ? t('group.paid_amount', { amount: formatAmount(topSpender.totalPaid) })
-                      : t('group.no_expenses_paid')}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
