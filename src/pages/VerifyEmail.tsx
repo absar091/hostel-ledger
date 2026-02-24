@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Shield, ArrowLeft, RefreshCw } from "lucide-react";
-import { verifyVerificationCode, resendVerificationCode, getVerificationTimeRemaining } from "@/lib/verificationStore";
+import { verifyVerificationCode, resendVerificationCode } from "@/lib/verificationStore";
 import { sendVerificationEmail, sendWelcomeEmail } from "@/lib/email";
 import { useTranslation } from "react-i18next";
 import LanguageSelector from "@/components/LanguageSelector";
@@ -22,7 +22,7 @@ const VerifyEmail = () => {
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [resendCooldown, setResendCooldown] = useState(60);
   const [showPageGuide, setShowPageGuide] = useState(false);
 
   const email = location.state?.email || user?.email || "";
@@ -60,13 +60,11 @@ const VerifyEmail = () => {
     window.history.pushState(null, '', window.location.pathname);
     window.addEventListener('popstate', handlePopState);
 
-    const updateTimer = async () => {
-      const remaining = await getVerificationTimeRemaining(email);
-      setTimeRemaining(remaining);
-    };
 
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
+    // Resend cooldown timer
+    const interval = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
 
     return () => {
       clearInterval(interval);
@@ -74,11 +72,6 @@ const VerifyEmail = () => {
     };
   }, [email, navigate, isAuthLoading]);
 
-  const formatTime = (ms: number) => {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
 
   const handleVerify = async () => {
     if (!code || code.length !== 6) {
@@ -158,8 +151,8 @@ const VerifyEmail = () => {
   };
 
   const handleResend = async () => {
-    if (timeRemaining > 0) {
-      toast.error(t('auth.resend_available_in', { time: formatTime(timeRemaining) }));
+    if (resendCooldown > 0) {
+      toast.error(t('auth.resend_available_in', { time: resendCooldown + 's' }));
       return;
     }
 
@@ -170,6 +163,7 @@ const VerifyEmail = () => {
       const success = await resendVerificationCode(email);
 
       if (success) {
+        setResendCooldown(60);
         toast.success(t('auth.reset_instructions_sent'), { description: "New verification code sent to your email!" });
       } else {
         toast.error(t('common.error'), { description: "Failed to resend code. Please try again." });
@@ -355,9 +349,9 @@ const VerifyEmail = () => {
           <div className="text-center pt-6 border-t border-[#4a6850]/20">
             <p className="text-[#4a6850]/80 mb-6 font-bold">{t('auth.no_account')}</p>
 
-            {timeRemaining > 0 ? (
+            {resendCooldown > 0 ? (
               <p className="text-sm text-[#4a6850]/80 font-bold">
-                {t('auth.resend_available_in', { time: formatTime(timeRemaining) })}
+                {t('auth.resend_available_in', { time: resendCooldown + 's' })}
               </p>
             ) : (
               <Button
