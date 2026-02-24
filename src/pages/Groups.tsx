@@ -180,9 +180,13 @@ const Groups = () => {
           <div className="flex flex-col lg:flex-row lg:flex-wrap items-stretch lg:items-center gap-3 lg:gap-4">
             <div className="flex-1 lg:min-w-[300px]">
               <div className="relative group">
-                <Search className="absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 w-4 lg:w-5 h-4 lg:h-5 text-slate-400 group-focus-within:text-[#4a6850] transition-colors" />
+                <Search
+                  className="absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 w-4 lg:w-5 h-4 lg:h-5 text-slate-400 group-focus-within:text-[#4a6850] transition-colors"
+                  aria-hidden="true"
+                />
                 <input
                   type="text"
+                  aria-label="Search groups, members, or expenses"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-white border-none rounded-xl py-2 lg:py-3 pl-10 lg:pl-12 pr-3 lg:pr-4 focus:ring-2 focus:ring-[#4a6850] shadow-sm text-sm placeholder:text-slate-400"

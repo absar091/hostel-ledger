@@ -38,8 +38,12 @@ const LanguageSelectionSheet = ({ open, onClose, selectedLanguage, onSelect }: L
 
                 <div className="px-6 pb-4">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4a6850]/50" />
+                        <Search
+                            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4a6850]/50"
+                            aria-hidden="true"
+                        />
                         <Input
+                            aria-label="Search language"
                             placeholder="Search language..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
