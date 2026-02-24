@@ -183,6 +183,7 @@ export interface Group {
   createdBy: string;
   createdAt: string;
   isPersonal?: boolean; // NEW: Flag for private tracking
+  status?: 'invited' | 'joined' | 'archived' | string;
 }
 
 export interface Transaction {
@@ -351,6 +352,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                   createdBy: meta.createdBy,
                   createdAt: meta.createdAt || new Date().toISOString(),
                   isPersonal: meta.isPersonal || false,
+                  status: meta.status,
                   members: [] // Empty members initially - will be lazy loaded on demand
                 } as Group;
               });
@@ -389,7 +391,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               }
               // ------------------------------------------------
 
-              return newGroups.sort((a, b) =>
+              return newGroups.filter(g => g.status !== "invited").sort((a, b) =>
                 new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
               );
             });
