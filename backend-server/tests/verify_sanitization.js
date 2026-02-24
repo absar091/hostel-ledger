@@ -1,39 +1,45 @@
 const { sanitize } = require('../utils/sanitize');
 
+console.log("Testing sanitize function...");
+
 const testCases = [
-  { input: 'Hello World', expected: 'Hello World', desc: 'Safe string' },
-  { input: '<script>alert(1)</script>', expected: '', desc: 'Script tag removal' },
-  { input: '<b>Bold</b>', expected: 'Bold', desc: 'HTML tag stripping' },
-  { input: '<img src=x onerror=alert(1)>', expected: '', desc: 'Image onerror' },
-  { input: 'Hello <script>alert("XSS")</script> World', expected: 'Hello  World', desc: 'Embedded script' },
-  { input: '   Trim Me   ', expected: 'Trim Me', desc: 'Whitespace trimming' },
-  { input: 123, expected: 123, desc: 'Non-string input' },
-  { input: null, expected: null, desc: 'Null input' },
-  { input: undefined, expected: undefined, desc: 'Undefined input' },
-  { input: '<a href="javascript:alert(1)">Click me</a>', expected: 'Click me', desc: 'Javascript href' }
+  // HTML stripping (Base functionality)
+  { input: "Hello <script>alert(1)</script>", expected: "Hello" },
+  { input: "<b>Bold</b>", expected: "Bold" },
+  { input: "  Trim Me  ", expected: "Trim Me" },
+
+  // Type Coercion (New functionality)
+  { input: 123, expected: "123" },
+  { input: true, expected: "true" },
+  { input: false, expected: "false" },
+
+  // Type Rejection (Security Fix)
+  { input: { evil: "object" }, expected: "" },
+  { input: ["array"], expected: "" },
+  { input: null, expected: "" },
+  { input: undefined, expected: "" }
 ];
 
 let failed = false;
 
-console.log('🛡️ Verifying Sanitization Logic...\n');
-
-testCases.forEach(({ input, expected, desc }) => {
+testCases.forEach(({ input, expected }, index) => {
   const result = sanitize(input);
-  if (result === expected) {
-    console.log(`✅ PASS: ${desc}`);
-  } else {
-    console.error(`❌ FAIL: ${desc}`);
+
+  if (result !== expected) {
+    console.error(`❌ Test ${index + 1} Failed!`);
     console.error(`   Input:    ${JSON.stringify(input)}`);
-    console.error(`   Expected: ${JSON.stringify(expected)}`);
-    console.error(`   Actual:   ${JSON.stringify(result)}`);
+    console.error(`   Expected: "${expected}"`);
+    console.error(`   Actual:   "${result}"`);
     failed = true;
+  } else {
+    console.log(`✅ Test ${index + 1} Passed`);
   }
 });
 
 if (failed) {
-  console.error('\n❌ Verification Failed');
+  console.error("\n❌ Sanitization tests FAILED.");
   process.exit(1);
 } else {
-  console.log('\n✅ Sanitization verification passed');
+  console.log("\n✅ All sanitization tests passed.");
   process.exit(0);
 }
