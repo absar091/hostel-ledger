@@ -315,8 +315,9 @@ export default function CreateGroupPage() {
                             </div>
 
                             <div>
-                                <label className="text-xs font-bold text-gray-500 uppercase ml-1 mb-2 block">Group Name</label>
+                                <label htmlFor="group-name" className="text-xs font-bold text-gray-500 uppercase ml-1 mb-2 block">Group Name</label>
                                 <Input
+                                    id="group-name"
                                     className="h-14 text-lg font-bold bg-white border-gray-200 rounded-2xl"
                                     placeholder="e.g. Home Sweet Home"
                                     value={name}
@@ -342,15 +343,19 @@ export default function CreateGroupPage() {
                                 {/* Search */}
                                 <div className="flex gap-2 mb-4">
                                     <div className="relative flex-1">
-                                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <Search
+                                            className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                            aria-hidden="true"
+                                        />
                                         <Input
                                             className="pl-9 h-12 bg-gray-50 border-transparent rounded-xl"
                                             placeholder="Search username..."
                                             value={searchQuery}
                                             onChange={e => setSearchQuery(e.target.value)}
+                                            aria-label="Search username"
                                         />
                                     </div>
-                                    <Button onClick={handleSearch} disabled={!searchQuery || isSearching} className="h-12 bg-gray-900 rounded-xl w-12 p-0 flex items-center justify-center">
+                                    <Button onClick={handleSearch} disabled={!searchQuery || isSearching} className="h-12 bg-gray-900 rounded-xl w-12 p-0 flex items-center justify-center" aria-label="Search">
                                         {isSearching ? "..." : <Search className="w-5 h-5" />}
                                     </Button>
                                 </div>
@@ -398,6 +403,7 @@ export default function CreateGroupPage() {
                                                 placeholder="friend@email.com"
                                                 value={inviteEmail}
                                                 onChange={e => setInviteEmail(e.target.value)}
+                                                aria-label="Friend's email"
                                             />
                                             <Button onClick={addInviteMember} className="bg-blue-600 h-10 px-4 rounded-xl font-bold">
                                                 Invite
@@ -415,6 +421,7 @@ export default function CreateGroupPage() {
                                             placeholder="Name (e.g. John)"
                                             value={manualName}
                                             onChange={e => setManualName(e.target.value)}
+                                            aria-label="Manual member name"
                                         />
                                         <Button onClick={addManualMember} disabled={!manualName} className="bg-gray-200 text-gray-600 h-10 px-4 rounded-xl font-bold hover:bg-gray-300">
                                             Add

@@ -13,9 +13,13 @@ const DesktopHeader = () => {
       {/* Search Bar */}
       <div className="flex-1 max-w-xl">
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+            aria-hidden="true"
+          />
           <input
             type="text"
+            aria-label="Search transactions, groups, or members"
             placeholder="Search transactions, groups, or members..."
             className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4a6850] focus:border-transparent transition-all"
           />
