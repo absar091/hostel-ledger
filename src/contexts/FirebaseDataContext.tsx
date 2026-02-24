@@ -183,6 +183,7 @@ export interface Group {
   createdBy: string;
   createdAt: string;
   isPersonal?: boolean; // NEW: Flag for private tracking
+  status?: 'invited' | 'joined' | 'archived';
 }
 
 export interface Transaction {
@@ -1269,7 +1270,17 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getAllTransactions = (): Transaction[] => {
-    return transactions;
+    // Filter out transactions from groups where the user is only 'invited'
+    return transactions.filter(t => {
+      // Wallet transactions (no groupId or 'wallet') are always shown
+      if (!t.groupId || t.groupId === 'wallet' || t.type.startsWith('wallet')) return true;
+
+      const group = groups.find(g => g.id === t.groupId);
+      // If group exists and status is 'invited' (not joined), hide transaction
+      if (group && group.status === 'invited') return false;
+
+      return true;
+    });
   };
 
   const checkAccountDeletionEligibility = async (): Promise<{ eligible: boolean; reason?: string }> => {
