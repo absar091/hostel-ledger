@@ -9,6 +9,7 @@ interface AvatarProps {
 }
 
 const getInitials = (name: string) => {
+  if (!name || typeof name !== 'string') return "?";
   return name
     .split(" ")
     .map((n) => n[0])
@@ -26,13 +27,19 @@ const getColorFromName = (name: string) => {
     "bg-pink-500",
     "bg-orange-500",
   ];
+  if (!name || typeof name !== 'string') return colors[0];
   const index = name.charCodeAt(0) % colors.length;
+  // Handle NaN if charCodeAt is weird (shouldn't be for non-empty string)
+  if (isNaN(index)) return colors[0];
   return colors[index];
 };
 
 const Avatar = ({ name, photoURL, size = "md", className }: AvatarProps) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
+
+  // Fallback for invalid name
+  const safeName = name || "User";
 
   const sizeClasses = {
     sm: "w-8 h-8 text-xs",
@@ -47,7 +54,7 @@ const Avatar = ({ name, photoURL, size = "md", className }: AvatarProps) => {
     <div
       className={cn(
         "rounded-full flex items-center justify-center font-semibold text-white shrink-0 relative overflow-hidden",
-        !showImage && getColorFromName(name),
+        !showImage && getColorFromName(safeName),
         sizeClasses[size],
         className
       )}
@@ -59,7 +66,7 @@ const Avatar = ({ name, photoURL, size = "md", className }: AvatarProps) => {
           )}
           <img
             src={photoURL}
-            alt={name}
+            alt={safeName}
             className="w-full h-full object-cover"
             onLoad={() => setImageLoading(false)}
             onError={() => {
@@ -69,7 +76,7 @@ const Avatar = ({ name, photoURL, size = "md", className }: AvatarProps) => {
           />
         </>
       ) : (
-        getInitials(name)
+        getInitials(safeName)
       )}
     </div>
   );
