@@ -1,3 +1,4 @@
+import { AuthHelp } from "@/components/AuthHelp";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -344,6 +345,7 @@ const Signup = () => {
               </p>
             </div>
 
+          <div className="mt-4"><AuthHelp /></div>
             {/* Username Field - Collaborative Feature */}
             <div>
               <label htmlFor="username" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.username')}</label>
@@ -591,6 +593,7 @@ const Signup = () => {
             </Link>
           </p>
         </div>
+          <div className="mt-4"><AuthHelp /></div>
       </div>
     </div>
   );

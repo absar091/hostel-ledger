@@ -1,3 +1,4 @@
+import { AuthHelp } from "@/components/AuthHelp";
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -161,6 +162,7 @@ const Login = () => {
             {t('auth.forgot_password')}
           </Link>
         </p>
+        <div className="mt-8"><AuthHelp /></div>
       </div>
     </div>
   );
