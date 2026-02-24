@@ -288,10 +288,11 @@ const Signup = () => {
           <div className="space-y-8">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.first_name')}</label>
+                <label htmlFor="firstName" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.first_name')}</label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                   <Input
+                    id="firstName"
                     value={formData.firstName}
                     onChange={(e) => handleInputChange('firstName', e.target.value)}
                     placeholder="Absar"
@@ -304,10 +305,11 @@ const Signup = () => {
               </div>
 
               <div>
-                <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.last_name')}</label>
+                <label htmlFor="lastName" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.last_name')}</label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                   <Input
+                    id="lastName"
                     value={formData.lastName}
                     onChange={(e) => handleInputChange('lastName', e.target.value)}
                     placeholder="Ahmad Rao"
@@ -321,10 +323,11 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.email')}</label>
+              <label htmlFor="email" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.email')}</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
+                  id="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   type="email"
@@ -342,10 +345,11 @@ const Signup = () => {
 
             {/* Username Field - Collaborative Feature */}
             <div>
-              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.username')}</label>
+              <label htmlFor="username" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.username')}</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#4a6850]/60 font-bold">@</span>
                 <Input
+                  id="username"
                   value={formData.username}
                   onChange={(e) => handleInputChange('username', e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))}
                   placeholder="john_doe"
@@ -379,10 +383,11 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.university')}</label>
+              <label htmlFor="university" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.university')}</label>
               <div className="relative">
                 <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
+                  id="university"
                   value={formData.university}
                   onChange={(e) => handleInputChange('university', e.target.value)}
                   placeholder="University of Punjab"
@@ -423,10 +428,11 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.password')}</label>
+              <label htmlFor="password" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.password')}</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
+                  id="password"
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
                   type={showPassword ? "text" : "password"}
@@ -437,6 +443,7 @@ const Signup = () => {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4a6850]/60 hover:text-[#4a6850] transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -480,10 +487,11 @@ const Signup = () => {
             )}
 
             <div>
-              <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.confirm_password')}</label>
+              <label htmlFor="confirmPassword" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">{t('auth.confirm_password')}</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
                 <Input
+                  id="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                   type={showConfirmPassword ? "text" : "password"}
@@ -494,6 +502,7 @@ const Signup = () => {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4a6850]/60 hover:text-[#4a6850] transition-colors"
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                 >
                   {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -507,6 +516,7 @@ const Signup = () => {
             <div>
               <div className="flex items-center space-x-4 p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl border border-[#4a6850]/20 shadow-lg">
                 <Checkbox
+                  id="terms"
                   checked={formData.termsAccepted && formData.privacyAccepted}
                   onCheckedChange={(checked) => {
                     handleInputChange('termsAccepted', checked);
@@ -514,7 +524,7 @@ const Signup = () => {
                   }}
                   className="border-2 data-[state=checked]:bg-[#4a6850] data-[state=checked]:border-[#4a6850] w-5 h-5"
                 />
-                <label className="text-sm text-[#4a6850]/80 cursor-pointer flex-1 font-bold">
+                <label htmlFor="terms" className="text-sm text-[#4a6850]/80 cursor-pointer flex-1 font-bold">
                   {t('auth.terms_privacy_agree')}
                 </label>
               </div>
