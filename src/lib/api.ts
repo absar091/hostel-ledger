@@ -1,16 +1,11 @@
 /**
- * Helper to call secure backend APIs with Firebase ID Token
+ * Internal helper to handle API calls
  */
-export const callSecureApi = async (endpoint: string, body: any) => {
-    const { auth } = await import('./firebase');
-    const user = auth.currentUser;
-
-    if (!user) {
-        throw new Error("User not authenticated for API call");
+const callApi = async (endpoint: string, body: any, token?: string) => {
+    // Check for network connectivity first
+    if (!navigator.onLine) {
+        throw new Error('No internet connection. Please check your network.');
     }
-
-    // Use cached token (only refreshes if expired) — avoid forced refresh delay
-    const idToken = await user.getIdToken();
 
     // Add 15s timeout so requests don't hang forever
     const controller = new AbortController();
@@ -18,12 +13,18 @@ export const callSecureApi = async (endpoint: string, body: any) => {
 
     try {
         console.log(`[API] Calling ${endpoint}...`);
+
+        const headers: HeadersInit = {
+            'Content-Type': 'application/json'
+        };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const response = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${idToken}`
-            },
+            headers,
             body: JSON.stringify(body),
             signal: controller.signal
         });
@@ -50,8 +51,35 @@ export const callSecureApi = async (endpoint: string, body: any) => {
         if (error.name === 'AbortError') {
             throw new Error('Request timed out. Please check your internet connection and try again.');
         }
+        // If fetch fails due to network error (e.g. offline but navigator didn't catch it yet)
+        if (error.message === 'Failed to fetch') {
+             throw new Error('Network error. Please check your connection.');
+        }
         throw error;
     }
+};
+
+/**
+ * Helper to call secure backend APIs with Firebase ID Token
+ */
+export const callSecureApi = async (endpoint: string, body: any) => {
+    const { auth } = await import('./firebase');
+    const user = auth.currentUser;
+
+    if (!user) {
+        throw new Error("User not authenticated for API call");
+    }
+
+    // Use cached token (only refreshes if expired) — avoid forced refresh delay
+    const idToken = await user.getIdToken();
+    return callApi(endpoint, body, idToken);
+};
+
+/**
+ * Helper to call public backend APIs without authentication
+ */
+export const callPublicApi = async (endpoint: string, body: any) => {
+    return callApi(endpoint, body);
 };
 
 // Invitation Wrapper Functions
