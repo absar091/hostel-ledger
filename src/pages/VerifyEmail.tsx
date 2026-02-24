@@ -16,7 +16,7 @@ const VerifyEmail = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { markEmailAsVerified, firebaseUser, user } = useFirebaseAuth();
+  const { markEmailAsVerified, firebaseUser, user, isLoading: isAuthLoading } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
 
   const [code, setCode] = useState("");
@@ -25,7 +25,7 @@ const VerifyEmail = () => {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [showPageGuide, setShowPageGuide] = useState(false);
 
-  const email = location.state?.email || "";
+  const email = location.state?.email || user?.email || "";
   const type = location.state?.type || "signup";
 
   useEffect(() => {
@@ -41,6 +41,9 @@ const VerifyEmail = () => {
 
   // Update countdown timer and prevent back navigation
   useEffect(() => {
+    // Wait for auth to load
+    if (isAuthLoading) return;
+
     if (!email) {
       navigate("/signup");
       return;
@@ -69,7 +72,7 @@ const VerifyEmail = () => {
       clearInterval(interval);
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [email, navigate]);
+  }, [email, navigate, isAuthLoading]);
 
   const formatTime = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
@@ -269,6 +272,14 @@ const VerifyEmail = () => {
       setIsLoading(false);
     }
   };
+
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#4a6850]/20 border-t-[#4a6850] rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
