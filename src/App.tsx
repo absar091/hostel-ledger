@@ -230,7 +230,17 @@ const AppRoutes = () => (
   </Routes>
 );
 
-const App = () => (
+const App = () => {
+  useEffect(() => {
+    // Request persistent storage to prevent data eviction
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().then(isPersisted => {
+        console.log(`Persistent storage granted: ${isPersisted}`);
+      });
+    }
+  }, []);
+
+  return (
   <ErrorBoundary>
     <div className="min-h-screen bg-background">
       <QueryClientProvider client={queryClient}>
@@ -277,6 +287,7 @@ const App = () => (
       </QueryClientProvider>
     </div>
   </ErrorBoundary>
-);
+  );
+};
 
 export default App;

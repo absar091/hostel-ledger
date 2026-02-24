@@ -76,6 +76,21 @@ registerRoute(
   })
 );
 
+// Cache Firebase JS SDK
+registerRoute(
+  ({ url }) => url.origin === 'https://www.gstatic.com' && url.pathname.startsWith('/firebasejs/'),
+  new StaleWhileRevalidate({
+    cacheName: 'firebase-sdk-cache',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 20,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+      }),
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+    ],
+  })
+);
+
 // ROBUST NAVIGATION FALLBACK: Serve index.html for all navigation requests
 // ROBUST NAVIGATION FALLBACK: Serve index.html for all navigation requests
 const navigationHandler = async (params: any) => {

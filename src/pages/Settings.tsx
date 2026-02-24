@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
+import { useFileExport } from "@/hooks/useFileExport";
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useOneSignalPush } from '@/hooks/useOneSignalPush';
@@ -33,7 +34,7 @@ import { getCurrency, DEFAULT_CURRENCY } from '@/lib/currency';
 import { getLanguage, DEFAULT_LANGUAGE } from '@/lib/languages';
 import CurrencySelectionSheet from '@/components/CurrencySelectionSheet';
 import LanguageSelectionSheet from '@/components/LanguageSelectionSheet';
-import { Globe, DollarSign } from 'lucide-react';
+import { Globe, DollarSign, Download } from 'lucide-react';
 import MobileHeader from '@/components/MobileHeader';
 
 const Settings = () => {
@@ -286,6 +287,18 @@ const Settings = () => {
                                 "{t('settings.language_support_notice')}"
                             </p>
                         </div>
+                    </Section>
+
+                    <Section title="Data Management">
+                        <SettingItem
+                            icon={Download}
+                            label="Export Data"
+                            description="Save your groups and transactions to a file"
+                            iconBg="bg-green-100"
+                            iconColor="text-green-600"
+                            onClick={exportData}
+                            showChevron={true}
+                        />
                     </Section>
 
                     <CurrencySelectionSheet
