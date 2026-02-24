@@ -10,6 +10,7 @@ function validateCreateGroup(body) {
   }
 
   const { name, emoji, members, invitedUsernames, invitedEmails, coverPhoto } = body;
+  const MAX_ITEMS = 50;
 
   // 1. Validate Name (Required)
   if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -41,6 +42,9 @@ function validateCreateGroup(body) {
     if (!Array.isArray(members)) {
       return 'Members must be an array.';
     }
+    if (members.length > MAX_ITEMS) {
+      return `Too many members. Maximum allowed is ${MAX_ITEMS}.`;
+    }
     for (let i = 0; i < members.length; i++) {
       const m = members[i];
       if (typeof m !== 'object' || m === null) {
@@ -64,6 +68,9 @@ function validateCreateGroup(body) {
     if (!Array.isArray(invitedUsernames)) {
       return 'Invited usernames must be an array.';
     }
+    if (invitedUsernames.length > MAX_ITEMS) {
+      return `Too many invited usernames. Maximum allowed is ${MAX_ITEMS}.`;
+    }
     for (let i = 0; i < invitedUsernames.length; i++) {
       const u = invitedUsernames[i];
       if (typeof u !== 'string' || u.trim().length === 0) {
@@ -76,6 +83,9 @@ function validateCreateGroup(body) {
   if (invitedEmails !== undefined && invitedEmails !== null) {
     if (!Array.isArray(invitedEmails)) {
       return 'Invited emails must be an array.';
+    }
+    if (invitedEmails.length > MAX_ITEMS) {
+      return `Too many invited emails. Maximum allowed is ${MAX_ITEMS}.`;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     for (let i = 0; i < invitedEmails.length; i++) {

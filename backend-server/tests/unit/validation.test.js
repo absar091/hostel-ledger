@@ -106,6 +106,24 @@ describe('validateCreateGroup', () => {
     expect(validateCreateGroup(invalidBody)).toContain('Please add at least one member');
   });
 
+  it('should fail if members array exceeds limit (50)', () => {
+    const tooManyMembers = new Array(51).fill({ name: 'User' });
+    const invalidBody = { name: 'Group', members: tooManyMembers };
+    expect(validateCreateGroup(invalidBody)).toContain('Too many members');
+  });
+
+  it('should fail if invitedUsernames array exceeds limit (50)', () => {
+    const tooManyUsernames = new Array(51).fill('user');
+    const invalidBody = { name: 'Group', invitedUsernames: tooManyUsernames };
+    expect(validateCreateGroup(invalidBody)).toContain('Too many invited usernames');
+  });
+
+  it('should fail if invitedEmails array exceeds limit (50)', () => {
+    const tooManyEmails = new Array(51).fill('user@example.com');
+    const invalidBody = { name: 'Group', invitedEmails: tooManyEmails };
+    expect(validateCreateGroup(invalidBody)).toContain('Too many invited emails');
+  });
+
   it('should fail if body is missing', () => {
     expect(validateCreateGroup(undefined)).toContain('missing or invalid');
     expect(validateCreateGroup(null)).toContain('missing or invalid');
