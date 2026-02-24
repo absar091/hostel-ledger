@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { FirebaseAuthProvider, useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { FirebaseDataProvider } from "@/contexts/FirebaseDataContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
@@ -16,35 +16,35 @@ import { OfflineScreen } from "@/components/OfflineScreen";
 import { UpdateNotification } from "@/components/UpdateNotification";
 import { useTranslation } from "react-i18next";
 
-// Direct imports for better reliability in production
-import Index from "./pages/Index";
-import Groups from "./pages/Groups";
-import CreateGroup from "./pages/CreateGroup";
-import GroupDetail from "./pages/GroupDetail";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import VerifyEmail from "./pages/VerifyEmail";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import Profile from "./pages/Profile";
-import Budget from "./pages/Budget";
-import PersonalSpace from "./pages/PersonalSpace";
-import Activity from "./pages/Activity";
-import DownloadApp from "./pages/DownloadApp";
-import InstallApp from "./pages/InstallApp";
-import InstallGuide from "./pages/InstallGuide";
-import About from "./pages/About";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import ToReceive from "./pages/ToReceive";
-import ToPay from "./pages/ToPay";
-import Notifications from "./pages/Notifications";
-import Security from "./pages/Security";
-import JoinGroup from "./pages/JoinGroup";
-import NotFound from "./pages/NotFound";
-import Settings from "./pages/Settings";
-import ReceiptPage from "./pages/ReceiptPage";
-import VerificationPage from "./pages/VerificationPage";
+// Lazy load pages for better performance
+const Index = lazy(() => import("./pages/Index"));
+const Groups = lazy(() => import("./pages/Groups"));
+const CreateGroup = lazy(() => import("./pages/CreateGroup"));
+const GroupDetail = lazy(() => import("./pages/GroupDetail"));
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Budget = lazy(() => import("./pages/Budget"));
+const PersonalSpace = lazy(() => import("./pages/PersonalSpace"));
+const Activity = lazy(() => import("./pages/Activity"));
+const DownloadApp = lazy(() => import("./pages/DownloadApp"));
+const InstallApp = lazy(() => import("./pages/InstallApp"));
+const InstallGuide = lazy(() => import("./pages/InstallGuide"));
+const About = lazy(() => import("./pages/About"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const ToReceive = lazy(() => import("./pages/ToReceive"));
+const ToPay = lazy(() => import("./pages/ToPay"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const Security = lazy(() => import("./pages/Security"));
+const JoinGroup = lazy(() => import("./pages/JoinGroup"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Settings = lazy(() => import("./pages/Settings"));
+const ReceiptPage = lazy(() => import("./pages/ReceiptPage"));
+const VerificationPage = lazy(() => import("./pages/VerificationPage"));
 
 
 const queryClient = new QueryClient({
@@ -195,39 +195,41 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppRoutes = () => (
-  <Routes>
-    {/* Verification Routes */}
-    <Route path="/verify-sheets" element={<VerificationPage />} />
-    <Route path="/verify-2fa" element={<TwoFactorVerification />} />
+  <Suspense fallback={<SplashScreen />}>
+    <Routes>
+      {/* Verification Routes */}
+      <Route path="/verify-sheets" element={<VerificationPage />} />
+      <Route path="/verify-2fa" element={<TwoFactorVerification />} />
 
-    <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-    <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
-    <Route path="/verify-email" element={<VerifyEmail />} />
-    <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-    <Route path="/reset-password" element={<ResetPassword />} />
-    <Route path="/download-app" element={<ProtectedRoute><DownloadApp /></ProtectedRoute>} />
-    <Route path="/install-app" element={<InstallApp />} />
-    <Route path="/install-guide" element={<InstallGuide />} />
-    <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-    <Route path="/create-group" element={<ProtectedRoute><CreateGroup /></ProtectedRoute>} />
-    <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
-    <Route path="/group/:id" element={<ProtectedRoute><GroupDetail /></ProtectedRoute>} />
-    <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-    <Route path="/budget" element={<ProtectedRoute><Budget /></ProtectedRoute>} />
-    <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
-    <Route path="/to-receive" element={<ProtectedRoute><ToReceive /></ProtectedRoute>} />
-    <Route path="/to-pay" element={<ProtectedRoute><ToPay /></ProtectedRoute>} />
-    <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-    <Route path="/security" element={<ProtectedRoute><Security /></ProtectedRoute>} />
-    <Route path="/about" element={<ProtectedRoute><About /></ProtectedRoute>} />
-    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-    <Route path="/terms-of-service" element={<TermsOfService />} />
-    <Route path="/join/:id" element={<JoinGroup />} />
-    <Route path="/personal-space" element={<ProtectedRoute><PersonalSpace /></ProtectedRoute>} />
-    <Route path="/receipt" element={<ProtectedRoute><ReceiptPage /></ProtectedRoute>} />
-    <Route path="*" element={<NotFound />} />
-  </Routes>
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/download-app" element={<ProtectedRoute><DownloadApp /></ProtectedRoute>} />
+      <Route path="/install-app" element={<InstallApp />} />
+      <Route path="/install-guide" element={<InstallGuide />} />
+      <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+      <Route path="/create-group" element={<ProtectedRoute><CreateGroup /></ProtectedRoute>} />
+      <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
+      <Route path="/group/:id" element={<ProtectedRoute><GroupDetail /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/budget" element={<ProtectedRoute><Budget /></ProtectedRoute>} />
+      <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
+      <Route path="/to-receive" element={<ProtectedRoute><ToReceive /></ProtectedRoute>} />
+      <Route path="/to-pay" element={<ProtectedRoute><ToPay /></ProtectedRoute>} />
+      <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/security" element={<ProtectedRoute><Security /></ProtectedRoute>} />
+      <Route path="/about" element={<ProtectedRoute><About /></ProtectedRoute>} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/terms-of-service" element={<TermsOfService />} />
+      <Route path="/join/:id" element={<JoinGroup />} />
+      <Route path="/personal-space" element={<ProtectedRoute><PersonalSpace /></ProtectedRoute>} />
+      <Route path="/receipt" element={<ProtectedRoute><ReceiptPage /></ProtectedRoute>} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  </Suspense>
 );
 
 const App = () => {
