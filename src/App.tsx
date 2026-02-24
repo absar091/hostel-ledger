@@ -26,6 +26,7 @@ import Signup from "./pages/Signup";
 import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import RecoverAccount from "./pages/RecoverAccount";
 import Profile from "./pages/Profile";
 import Budget from "./pages/Budget";
 import PersonalSpace from "./pages/PersonalSpace";
@@ -204,6 +205,7 @@ const AppRoutes = () => (
     <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
     <Route path="/verify-email" element={<VerifyEmail />} />
     <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+    <Route path="/recover-account" element={<PublicRoute><RecoverAccount /></PublicRoute>} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/download-app" element={<ProtectedRoute><DownloadApp /></ProtectedRoute>} />
     <Route path="/install-app" element={<InstallApp />} />
