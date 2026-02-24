@@ -37,6 +37,8 @@ import InstallGuide from "./pages/InstallGuide";
 import About from "./pages/About";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import GroupTerms from "./pages/GroupTerms";
+import GroupPrivacy from "./pages/GroupPrivacy";
 import ToReceive from "./pages/ToReceive";
 import ToPay from "./pages/ToPay";
 import Notifications from "./pages/Notifications";
@@ -225,6 +227,8 @@ const AppRoutes = () => (
     <Route path="/about" element={<ProtectedRoute><About /></ProtectedRoute>} />
     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
     <Route path="/terms-of-service" element={<TermsOfService />} />
+    <Route path="/group-terms" element={<GroupTerms />} />
+    <Route path="/group-privacy" element={<GroupPrivacy />} />
     <Route path="/join/:id" element={<JoinGroup />} />
     <Route path="/personal-space" element={<ProtectedRoute><PersonalSpace /></ProtectedRoute>} />
     <Route path="/receipt" element={<ProtectedRoute><ReceiptPage /></ProtectedRoute>} />
