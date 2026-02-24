@@ -197,6 +197,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   // Effect to handle Real-time User Profile Subscription
   useEffect(() => {
     let unsubscribeUser: () => void;
+    let isInitialLoad = true;
     let unsubscribeVerification: () => void;
 
     const setupSubscription = async () => {
@@ -274,6 +275,38 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
               showBalanceToOthers: userData.showBalanceToOthers ?? false
             };
 
+                        // 2FA Verification Logic (Integrated to prevent race conditions)
+            let verified = is2FAVerified;
+            if (userProfile.is2FAEnabled) {
+                // 1. Session Check (Sync)
+                const isSessionVerified = sessionStorage.getItem(`2fa_verified_${uid}`);
+                if (isSessionVerified === 'true') {
+                    verified = true;
+                } else {
+                    // 2. Trusted Device Check (Async - only on initial load)
+                    const deviceToken = localStorage.getItem(`device_token_${uid}`);
+                    if (deviceToken && isInitialLoad) {
+                       try {
+                           const result = await callSecureApi('/api/2fa/check-trust', { deviceToken });
+                           if (result.success && result.trusted) {
+                               verified = true;
+                               sessionStorage.setItem(`2fa_verified_${uid}`, 'true');
+                           } else {
+                               localStorage.removeItem(`device_token_${uid}`);
+                               verified = false;
+                           }
+                       } catch (e) {
+                           console.error('Failed to verify trust', e);
+                           verified = false;
+                       }
+                    } else if (!deviceToken) {
+                        verified = false;
+                    }
+                }
+            }
+
+            setIs2FAVerified(verified);
+            isInitialLoad = false;
             setUser(userProfile);
             logger.setUserId(uid);
             setIsLoading(false);
@@ -1217,44 +1250,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Check 2FA verification status (Session OR Trusted Device)
-  useEffect(() => {
-    const check2FAStatus = async () => {
-      if (user && user.is2FAEnabled) {
-        // 1. Check Session Storage (Short-term)
-        const isSessionVerified = sessionStorage.getItem(`2fa_verified_${user.uid}`);
-        if (isSessionVerified === 'true') {
-          setIs2FAVerified(true);
-          return;
-        }
 
-        // 2. Check Local Storage (Trusted Device - Long-term)
-        const deviceToken = localStorage.getItem(`device_token_${user.uid}`);
-        if (deviceToken) {
-          try {
-            const result = await callSecureApi('/api/2fa/check-trust', { deviceToken });
-            if (result.success && result.trusted) {
-              setIs2FAVerified(true);
-              sessionStorage.setItem(`2fa_verified_${user.uid}`, 'true'); // Promote to session
-              return;
-            } else {
-              // Token invalid or expired
-              localStorage.removeItem(`device_token_${user.uid}`);
-            }
-          } catch (e) {
-            console.error('Failed to verify trusted device', e);
-          }
-        }
-
-        // Default: Not verified
-        setIs2FAVerified(false);
-      } else {
-        setIs2FAVerified(false); // Not enabled, so not verified but gate won't trigger
-      }
-    };
-
-    check2FAStatus();
-  }, [user?.uid, user?.is2FAEnabled]);
 
   const verify2FA = async (token: string, isTrusted: boolean = false, deviceInfo: any = {}): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
