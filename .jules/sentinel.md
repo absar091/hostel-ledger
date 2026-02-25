@@ -7,3 +7,8 @@
 **Vulnerability:** The `sanitize` utility function in `backend-server/utils/sanitize.js` only processed strings and returned non-string inputs (objects, arrays, numbers) as-is. This could allow an attacker to bypass sanitization by sending complex types (e.g., `{ "evil": "payload" }` or `["payload"]`) where a string was expected, potentially causing frontend crashes (DoS) or structural injection issues in the database.
 **Learning:** Checking `typeof input !== 'string'` and returning the input directly is dangerous when the consumer expects a string. Sanitization functions must strictly enforce the output type to match expectations.
 **Prevention:** The sanitization function was updated to coerce primitives (numbers, booleans) to strings and reject all other types (objects, arrays, null, undefined) by returning an empty string. This ensures type safety and prevents type confusion attacks.
+
+## 2026-02-05 - Authenticated Phishing via Email Injection
+**Vulnerability:** The `/api/send-password-reset` endpoint accepted a `resetLink` from the client without validation, allowing authenticated attackers to send phishing links (e.g., `http://evil.com`) via the official Hostel Ledger email. Additionally, the `name` parameter was not escaped in the email body, allowing HTML injection.
+**Learning:** Never trust client-provided links in email templates. Authenticated endpoints can still be abused to attack other users ("Authenticated Phishing"). HTML content in emails must always be escaped.
+**Prevention:** Validate all URLs against an allowlist (e.g., `FRONTEND_URL`, `allowedOrigins`) on the server. Always escape dynamic content in HTML templates.

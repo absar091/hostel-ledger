@@ -1448,6 +1448,31 @@ app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, resetLink, name' });
     }
 
+    // Security: Validate resetLink domain to prevent phishing/open redirect
+    try {
+      const url = new URL(resetLink);
+      const origin = url.origin;
+      let isAllowed = allowedOrigins.includes(origin);
+
+      // Check localhost dynamic ports
+      if (!isAllowed && /^http:\/\/localhost:[0-9]+$/.test(origin)) {
+        isAllowed = true;
+      }
+
+      // Check Vercel previews (Strict: only allow exact matches from allowedOrigins for now to prevent subdomain takeover)
+      // The regex /^https:\/\/hostel-ledger(-.+)?\.vercel\.app$/ is too permissive as it allows any project starting with hostel-ledger
+      // if (!isAllowed && /^https:\/\/hostel-ledger(-.+)?\.vercel\.app$/.test(origin)) {
+      //   isAllowed = true;
+      // }
+
+      if (!isAllowed) {
+        console.warn(`⚠️ Blocked suspicious reset link domain: ${origin}`);
+        return res.status(400).json({ success: false, error: 'Invalid reset link domain' });
+      }
+    } catch (e) {
+      return res.status(400).json({ success: false, error: 'Invalid reset link format' });
+    }
+
     await emailService.sendPasswordReset(email, resetLink, name);
     console.log('✅ Password reset email sent');
     res.json({ success: true, message: 'Password reset email sent' });

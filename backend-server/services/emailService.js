@@ -405,9 +405,10 @@ const emailService = {
      * But keeping this as a backup or for custom flows.
      */
     sendPasswordReset: async (email, resetLink, name) => {
+        const safeName = escapeHtml(name);
         const html = getCommonTemplate(
             'Reset Password',
-            `<p>Hi ${name},</p>
+            `<p>Hi ${safeName},</p>
              <p>We received a request to reset your password. If you didn't make the request, just ignore this email.</p>
              <p>Otherwise, you can reset your password using this link:</p>`,
             `<a href="${resetLink}" class="button">Reset Password</a>`,
