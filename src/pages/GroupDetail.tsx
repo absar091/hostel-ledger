@@ -725,7 +725,7 @@ const GroupDetail = () => {
               </div>
               <div className="flex -space-x-3 mb-3">
                 {group.members.slice(0, 5).map((member) => (
-                  <Avatar key={member.id} name={member.name} size="md" />
+                  <Avatar key={member.id} name={member.name || ""} size="md" />
                 ))}
                 {group.members.length > 5 && (
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 border-2 border-white flex items-center justify-center text-xs font-black text-[#4a6850] shadow-lg">
