@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useFirebaseAuth } from './FirebaseAuthContext';
 import { formatCurrency as formatCurrencyUtil, getCurrency, getCurrencySymbol, DEFAULT_CURRENCY, type Currency } from '@/lib/currency';
 
@@ -19,15 +19,25 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useFirebaseAuth();
 
     const currencyCode = user?.currency || DEFAULT_CURRENCY;
-    const currency = getCurrency(currencyCode);
-    const symbol = getCurrencySymbol(currencyCode);
+    // Memoize currency object and symbol to prevent unnecessary re-renders
+    const currency = useMemo(() => getCurrency(currencyCode), [currencyCode]);
+    const symbol = useMemo(() => getCurrencySymbol(currencyCode), [currencyCode]);
 
-    const formatAmount = (amount: number): string => {
+    // Memoize formatAmount to ensure stable function reference for consumers
+    const formatAmount = useCallback((amount: number): string => {
         return formatCurrencyUtil(amount, currencyCode);
-    };
+    }, [currencyCode]);
+
+    // Memoize context value to prevent re-renders of all consumers
+    const value = useMemo(() => ({
+        currencyCode,
+        currency,
+        formatAmount,
+        symbol
+    }), [currencyCode, currency, formatAmount, symbol]);
 
     return (
-        <CurrencyContext.Provider value={{ currencyCode, currency, formatAmount, symbol }}>
+        <CurrencyContext.Provider value={value}>
             {children}
         </CurrencyContext.Provider>
     );
