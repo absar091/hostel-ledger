@@ -548,6 +548,81 @@ const emailService = {
         });
     }
 
+,
+    /**
+     * Send 2FA Enabled Alert
+     */
+    send2FAEnabledAlert: async (email, name, details) => {
+        const safeName = escapeHtml(name);
+        const { device, browser, os, ip, location } = details;
+        const safeDevice = escapeHtml(device);
+        const safeBrowser = escapeHtml(browser);
+        const safeOS = escapeHtml(os);
+        const safeIP = escapeHtml(ip);
+        const safeLocation = escapeHtml(`${location.city}, ${location.region}, ${location.country}`);
+        const safeTime = escapeHtml(new Date().toLocaleString('en-US', { timeZone: location.timezone }));
+
+        const html = getCommonTemplate(
+            '🔐 2FA Enabled Successfully',
+            `<p>Hi ${safeName},</p>
+             <p>Two-Factor Authentication (2FA) has been enabled on your Hostel Ledger account. This adds an extra layer of security to your account.</p>
+
+             <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Device:</strong> ${safeDevice} (${safeOS}, ${safeBrowser})</p>
+                <p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Location:</strong> ${safeLocation}</p>
+                <p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>IP Address:</strong> ${safeIP}</p>
+                <p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Time:</strong> ${safeTime}</p>
+             </div>
+
+             <p>If you did not enable 2FA, please contact support immediately.</p>`,
+            `<a href="https://app.hostelledger.aarx.online/settings" class="button">View Security Settings</a>`,
+            false // Security alert
+        );
+
+        return sendEmailByType('auth', {
+            to: email,
+            subject: 'Security Alert: 2FA Enabled',
+            html
+        });
+    },
+
+    /**
+     * Send 2FA Disabled Alert
+     */
+    send2FADisabledAlert: async (email, name, details) => {
+        const safeName = escapeHtml(name);
+        const { device, browser, os, ip, location } = details;
+        const safeDevice = escapeHtml(device);
+        const safeBrowser = escapeHtml(browser);
+        const safeOS = escapeHtml(os);
+        const safeIP = escapeHtml(ip);
+        const safeLocation = escapeHtml(`${location.city}, ${location.region}, ${location.country}`);
+        const safeTime = escapeHtml(new Date().toLocaleString('en-US', { timeZone: location.timezone }));
+
+        const html = getCommonTemplate(
+            '⚠️ 2FA Disabled',
+            `<p>Hi ${safeName},</p>
+             <p>Two-Factor Authentication (2FA) has been <strong>disabled</strong> on your Hostel Ledger account.</p>
+
+             <div style="background-color: #fff3f3; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #ffcdd2;">
+                <p style="margin: 5px 0; font-size: 14px; color: #b71c1c;"><strong>Device:</strong> ${safeDevice} (${safeOS}, ${safeBrowser})</p>
+                <p style="margin: 5px 0; font-size: 14px; color: #b71c1c;"><strong>Location:</strong> ${safeLocation}</p>
+                <p style="margin: 5px 0; font-size: 14px; color: #b71c1c;"><strong>IP Address:</strong> ${safeIP}</p>
+                <p style="margin: 5px 0; font-size: 14px; color: #b71c1c;"><strong>Time:</strong> ${safeTime}</p>
+             </div>
+
+             <p>If you did not disable 2FA, your account may be compromised. Please secure your account immediately.</p>`,
+            `<a href="https://app.hostelledger.aarx.online/settings" class="button" style="background-color: #d32f2f;">Secure My Account</a>`,
+            false // Security alert
+        );
+
+        return sendEmailByType('auth', {
+            to: email,
+            subject: 'Security Alert: 2FA Disabled',
+            html
+        });
+    }
+
 };
 
 module.exports = emailService;

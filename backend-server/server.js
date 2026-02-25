@@ -12,6 +12,7 @@ const QRCode = require('qrcode');
 const { loadEmailTemplate } = require('./utils/email');
 const { validateCreateGroup, validateAmount } = require('./utils/validation');
 const { sanitize } = require('./utils/sanitize');
+const { getDeviceFromUA, getLocationFromIP } = require('./utils/deviceInfo');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
 const pkg = require('./package.json');
@@ -439,6 +440,26 @@ app.post('/api/2fa/verify-setup', authenticate, async (req, res) => {
 
       await admin.database().ref().update(updates);
 
+
+      // Fetch user details for email (Added by Jules)
+      const userSnap = await admin.database().ref(`users/${userId}`).get();
+      const userData = userSnap.exists() ? userSnap.val() : {};
+      const email = userData.email || req.user.email;
+      const name = userData.name || 'User';
+
+      // Get Device & Location Info
+      const ip = req.ip;
+      const userAgent = req.headers['user-agent'];
+      const { browser, os, device } = getDeviceFromUA(userAgent);
+      const location = await getLocationFromIP(ip);
+
+      // Send Alert
+      if (email) {
+          emailService.send2FAEnabledAlert(email, name, {
+              device, browser, os, ip, location
+          }).catch(err => console.error('Failed to send 2FA alert:', err));
+      }
+
       console.log(`✅ 2FA enabled for user ${userId}`);
       res.json({ success: true, message: '2FA enabled successfully' });
     } else {
@@ -648,6 +669,26 @@ app.post('/api/2fa/complete-reset', generalLimiter, async (req, res) => {
 
     await admin.database().ref().update(updates);
 
+
+    // Fetch user details (Added by Jules)
+    const userSnap = await admin.database().ref(`users/${uid}`).get();
+    const userData = userSnap.exists() ? userSnap.val() : {};
+    const email = userData.email;
+    const name = userData.name || 'User';
+
+    // Get Device & Location Info
+    const ip = req.ip;
+    const userAgent = req.headers['user-agent'];
+    const { browser, os, device } = getDeviceFromUA(userAgent);
+    const location = await getLocationFromIP(ip);
+
+    // Send Alert
+    if (email) {
+        emailService.send2FADisabledAlert(email, name, {
+            device, browser, os, ip, location
+        }).catch(err => console.error('Failed to send 2FA alert:', err));
+    }
+
     res.json({ success: true, message: '2FA disabled successfully' });
 
   } catch (error) {
@@ -691,6 +732,26 @@ app.post('/api/2fa/disable', authenticate, async (req, res) => {
       updates[`users/${userId}/is2FAEnabled`] = false;
 
       await admin.database().ref().update(updates);
+
+
+      // Fetch user details (Added by Jules)
+      const userSnap = await admin.database().ref(`users/${userId}`).get();
+      const userData = userSnap.exists() ? userSnap.val() : {};
+      const email = userData.email || req.user.email;
+      const name = userData.name || 'User';
+
+      // Get Device & Location Info
+      const ip = req.ip;
+      const userAgent = req.headers['user-agent'];
+      const { browser, os, device } = getDeviceFromUA(userAgent);
+      const location = await getLocationFromIP(ip);
+
+      // Send Alert
+      if (email) {
+          emailService.send2FADisabledAlert(email, name, {
+              device, browser, os, ip, location
+          }).catch(err => console.error('Failed to send 2FA alert:', err));
+      }
 
       console.log(`✅ 2FA disabled for user ${userId}`);
       res.json({ success: true, message: '2FA disabled successfully' });
