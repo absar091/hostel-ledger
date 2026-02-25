@@ -342,55 +342,16 @@ const emailService = {
 
     /**
      * Send Password Reset Email
-     * Note: Keeping getCommonTemplate logic for now or needs a template
-     * Currently reusing the logic but we should create a template.
-     * For now, I'll keep the inline one or migrate it if a template existed.
-     * No password-reset.html exists, so I'll create inline HTML that matches the style or create a file.
-     * User didn't provide password-reset HTML, so I will stick to inline but update style.
+     * Uses template: password-reset.html
      */
     sendPasswordReset: async (email, resetLink, name) => {
         const safeName = escapeHtml(name);
-        // Using 2fa-reset.html as base if appropriate or inline.
-        // Let's stick to inline but styled better, or ideally reuse a generic template.
-        // Actually, let's use the inline construction but cleaner.
+        const html = await loadEmailTemplate('password-reset', {
+            USER_NAME: safeName,
+            RESET_LINK: resetLink
+        });
 
-        // However, to keep it consistent, I should probably create password-reset.html?
-        // But I don't have the design for it.
-        // I will use a simple inline HTML that mimics the new style.
-
-        const html = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Reset Password</title>
-</head>
-<body style="margin:0;padding:0;background:#F8F9FA;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-    <table width="100%" cellpadding="0" cellspacing="0">
-        <tr>
-            <td align="center" style="padding:40px 16px;">
-                <div style="margin-bottom:28px;display:flex;align-items:center;gap:10px;justify-content:center;">
-                    <img src="https://app.hostelledger.aarx.online/only-logo.png" alt="Hostel Ledger" width="30" height="30" />
-                    <span style="font-family:Inter,Arial,sans-serif;font-size:19px;font-weight:700;letter-spacing:0.6px;color:#1F4D3A;">HOSTEL LEDGER</span>
-                </div>
-                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:32px;box-shadow:0 25px 70px rgba(74,104,80,0.15);overflow:hidden;border:1px solid rgba(74,104,80,0.1);">
-                    <tr><td style="padding:28px 32px 0;font-size:22px;font-weight:700;color:#1f2937;">Reset Password</td></tr>
-                    <tr><td style="padding:14px 32px 0;font-size:15px;color:#4b5563;line-height:1.7;">
-                        Hello ${safeName},<br><br>We received a request to reset your password.
-                    </td></tr>
-                    <tr><td align="center" style="padding:32px 32px;">
-                        <a href="${resetLink}" style="background:linear-gradient(135deg,#4a6850,#3d5643);color:#ffffff;padding:16px 40px;border-radius:24px;text-decoration:none;font-weight:700;display:inline-block;">Reset Password</a>
-                    </td></tr>
-                </table>
-                <div style="margin-top:28px;border-top:1px solid #e5e7eb;padding-top:16px;text-align:center;font-size:11.5px;color:#6b7280;">
-                    © 2026 Hostel Ledger. All rights reserved.
-                </div>
-            </td>
-        </tr>
-    </table>
-</body>
-</html>`;
+        if (!html) return { success: false, error: 'Template loading failed' };
 
         return sendEmailByType('auth', {
             to: email,
@@ -452,29 +413,20 @@ const emailService = {
 
     /**
      * Send Temporary Member Alert
+     * Uses template: temp-member-alert.html
      */
     sendTempMemberAlert: async (email, memberName, groupName, expiryDate) => {
         const safeMember = escapeHtml(memberName);
         const safeGroup = escapeHtml(groupName);
         const safeDate = escapeHtml(expiryDate);
 
-        // Inline simple template matching new style
-        const html = `
-<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:0;background:#F8F9FA;font-family:sans-serif;">
-    <table width="100%" cellpadding="0" cellspacing="0">
-        <tr><td align="center" style="padding:40px 16px;">
-            <div style="margin-bottom:20px;font-weight:bold;color:#1F4D3A;">HOSTEL LEDGER</div>
-            <div style="background:#fff;padding:30px;border-radius:20px;max-width:500px;">
-                <h2 style="margin-top:0;">Temporary Member Added</h2>
-                <p>You added <strong>${safeMember}</strong> to <strong>${safeGroup}</strong>.</p>
-                <p>Auto-removal scheduled for: <strong>${safeDate}</strong></p>
-            </div>
-        </td></tr>
-    </table>
-</body>
-</html>`;
+        const html = await loadEmailTemplate('temp-member-alert', {
+            MEMBER_NAME: safeMember,
+            GROUP_NAME: safeGroup,
+            EXPIRY_DATE: safeDate
+        });
+
+        if (!html) return { success: false, error: 'Template loading failed' };
 
         return sendEmailSafe({
             to: email,
