@@ -623,6 +623,14 @@ app.post('/api/2fa/initiate-reset', strictEmailLimiter, async (req, res) => {
     const resetLink = `${frontendUrl}/recover-account?token=${resetToken}&uid=${userId}&mode=reset2fa`;
 
     // Send Email
+
+    // Get Device & Location Info
+    const ip = req.ip;
+    const userAgent = req.headers['user-agent'];
+    const { browser, os, device } = getDeviceFromUA(userAgent);
+    const location = await getLocationFromIP(ip);
+
+    await emailService.send2FAReset(email, resetLink, userData.name || 'User', { device, browser, os, ip, location });
     await emailService.send2FAReset(email, resetLink, userData.name || 'User');
 
     res.json({ success: true, message: 'Reset link sent to your email' });

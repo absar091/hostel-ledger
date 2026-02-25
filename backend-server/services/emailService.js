@@ -530,12 +530,34 @@ const emailService = {
     /**
      * Send 2FA Reset Email
      */
-    send2FAReset: async (email, resetLink, name) => {
+    send2FAReset: async (email, resetLink, name, details = null) => {
         const safeName = escapeHtml(name);
+
+        let detailsHtml = '';
+        if (details) {
+            const { device, browser, os, ip, location } = details;
+            const safeDevice = escapeHtml(device);
+            const safeBrowser = escapeHtml(browser);
+            const safeOS = escapeHtml(os);
+            const safeIP = escapeHtml(ip);
+            const safeLocation = escapeHtml(`${location.city}, ${location.region}, ${location.country}`);
+            const safeTime = escapeHtml(new Date().toLocaleString('en-US', { timeZone: location.timezone || 'UTC' }));
+
+            detailsHtml = `
+             <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #ffe0b2;">
+                <p style="margin: 0 0 10px 0; font-weight: bold; color: #e65100;">Request Details:</p>
+                <p style="margin: 5px 0; font-size: 14px; color: #555;"><strong>Device:</strong> ${safeDevice} (${safeOS}, ${safeBrowser})</p>
+                <p style="margin: 5px 0; font-size: 14px; color: #555;"><strong>Location:</strong> ${safeLocation}</p>
+                <p style="margin: 5px 0; font-size: 14px; color: #555;"><strong>IP Address:</strong> ${safeIP}</p>
+                <p style="margin: 5px 0; font-size: 14px; color: #555;"><strong>Time:</strong> ${safeTime}</p>
+             </div>`;
+        }
+
         const html = getCommonTemplate(
             'Disable 2FA Request',
             `<p>Hi ${safeName},</p>
              <p>We received a request to disable Two-Factor Authentication on your account. If you didn't make this request, please change your password immediately.</p>
+             ${detailsHtml}
              <p>To disable 2FA, click the button below:</p>`,
             `<a href="${resetLink}" class="button" style="background-color: #d32f2f;">Disable 2FA</a>`,
             false // Critical security email
