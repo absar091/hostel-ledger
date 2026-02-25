@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ArrowUpRight, ArrowDownLeft, CreditCard } from "@/lib/icons";
 import { type Transaction, type Group } from "@/contexts/FirebaseDataContext";
 import { cn } from "@/lib/utils";
@@ -11,7 +12,8 @@ interface TransactionItemProps {
   dateFormat?: "time" | "date";
 }
 
-export const TransactionItem = ({
+// Memoized to prevent re-renders when parent list updates but item data hasn't changed
+export const TransactionItem = memo(({
   transaction,
   groups,
   userId,
@@ -123,4 +125,6 @@ export const TransactionItem = ({
       </div>
     </button>
   );
-};
+});
+
+TransactionItem.displayName = "TransactionItem";
