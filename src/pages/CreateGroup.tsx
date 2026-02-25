@@ -454,7 +454,11 @@ export default function CreateGroupPage() {
                                                 {m.type === 'manual' && !(m as ManualMember).email && <p className="text-[10px] text-gray-400 font-bold">Manual Entry</p>}
                                             </div>
                                         </div>
-                                        <button onClick={() => setMembers(members.filter((_, idx) => idx !== i))} className="p-2 text-gray-400 hover:text-red-500">
+                                        <button
+                                            onClick={() => setMembers(members.filter((_, idx) => idx !== i))}
+                                            className="p-2 text-gray-400 hover:text-red-500"
+                                            aria-label={`Remove ${m.name}`}
+                                        >
                                             <X className="w-4 h-4" />
                                         </button>
                                     </div>
