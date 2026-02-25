@@ -305,10 +305,11 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                   </div>
                 </div>
 
-                <label className="text-xs font-black text-[#4a6850]/80 mb-2 block uppercase mx-1">
+                <label htmlFor="group-name" className="text-xs font-black text-[#4a6850]/80 mb-2 block uppercase mx-1">
                   {t('sheets.create_group.group_name_label')}
                 </label>
                 <Input
+                  id="group-name"
                   placeholder={t('sheets.create_group.group_name_placeholder')}
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
@@ -432,7 +433,11 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                           <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span> {t('sheets.create_group.email_invite')} • {t('sheets.create_group.new_user')}
                         </span>
                       </div>
-                      <button onClick={() => handleRemoveEmailInvite(email)} className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors">
+                      <button
+                        onClick={() => handleRemoveEmailInvite(email)}
+                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                        aria-label={`Remove ${email}`}
+                      >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -454,7 +459,11 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> {t('sheets.create_group.app_user')} • {t('sheets.create_group.invite_sent')}
                         </span>
                       </div>
-                      <button onClick={() => handleRemoveInvite(username)} className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors">
+                      <button
+                        onClick={() => handleRemoveInvite(username)}
+                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                        aria-label={`Remove ${username}`}
+                      >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -468,7 +477,11 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                         <span className="font-black block text-gray-900 text-sm truncate">{member.name}</span>
                         <span className="text-[10px] text-gray-400 font-bold">{t('sheets.create_group.temp_member')}</span>
                       </div>
-                      <button onClick={() => handleRemoveMember(member.name)} className="w-8 h-8 rounded-full bg-gray-200 hover:bg-red-100 hover:text-red-500 flex items-center justify-center text-gray-500 transition-colors">
+                      <button
+                        onClick={() => handleRemoveMember(member.name)}
+                        className="w-8 h-8 rounded-full bg-gray-200 hover:bg-red-100 hover:text-red-500 flex items-center justify-center text-gray-500 transition-colors"
+                        aria-label={`Remove ${member.name}`}
+                      >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -485,6 +498,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                   </h4>
                   <div className="flex gap-2">
                     <Input
+                      aria-label="Manual member name"
                       placeholder={t('sheets.create_group.temp_name_placeholder')}
                       value={memberName}
                       onChange={(e) => setMemberName(e.target.value)}
