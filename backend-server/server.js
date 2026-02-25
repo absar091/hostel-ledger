@@ -1358,7 +1358,8 @@ app.use('/api', (req, res, next) => {
     '/verification/verify',
     '/verification/check',
     '/cleanup-temp-members',
-    '/cleanup-unverified-users'
+    '/cleanup-unverified-users',
+    '/send-transaction-alert'
   ];
   if (publicEndpoints.includes(req.path)) {
     return next();
@@ -1475,28 +1476,13 @@ app.post('/api/send-welcome', emailLimiter, async (req, res) => {
 });
 
 // Transaction alert email endpoint
+// DEPRECATED: This endpoint is disabled for security reasons (potential phishing vector).
 app.post('/api/send-transaction-alert', emailLimiter, async (req, res) => {
-  try {
-    const { email, name, transactionType, amount, groupName, date, description } = req.body;
-
-    if (!email || !name || !transactionType || !amount || !groupName || !date || !description) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields'
-      });
-    }
-
-    await emailService.sendTransactionAlert({
-      email, name, transactionType, amount, groupName, date, description
-    });
-
-    console.log('✅ Transaction alert email sent');
-    res.json({ success: true, message: 'Transaction alert email sent' });
-
-  } catch (error) {
-    console.error('❌ Transaction alert email error:', error);
-    res.status(500).json({ success: false, error: 'Failed to send transaction alert email: ' + error.message });
-  }
+  console.warn('⚠️ Access attempt to deprecated/insecure send-transaction-alert endpoint');
+  return res.status(410).json({
+    success: false,
+    error: 'This endpoint is deprecated for security reasons.'
+  });
 });
 
 // Error handling middleware
