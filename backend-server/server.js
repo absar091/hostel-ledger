@@ -439,6 +439,22 @@ app.post('/api/2fa/verify-setup', authenticate, async (req, res) => {
 
       await admin.database().ref().update(updates);
 
+      // Send Email Notification
+      try {
+        const userSnap = await admin.database().ref(`users/${userId}`).get();
+        const userData = userSnap.val() || {};
+        if (userData.email) {
+            await emailService.send2FAEnabled(userData.email, userData.name || 'User', {
+                deviceName: req.headers['user-agent'] || 'Unknown Device',
+                location: 'IP: ' + req.ip,
+                ip: req.ip,
+                timestamp: new Date().toLocaleString()
+            });
+        }
+      } catch (emailErr) {
+        console.error('Failed to send 2FA enabled email:', emailErr);
+      }
+
       console.log(`✅ 2FA enabled for user ${userId}`);
       res.json({ success: true, message: '2FA enabled successfully' });
     } else {
@@ -648,6 +664,22 @@ app.post('/api/2fa/complete-reset', generalLimiter, async (req, res) => {
 
     await admin.database().ref().update(updates);
 
+    // Send Email Notification
+    try {
+        const userSnap = await admin.database().ref(`users/${uid}`).get();
+        const userData = userSnap.val() || {};
+        if (userData.email) {
+            await emailService.send2FADisabled(userData.email, userData.name || 'User', {
+                deviceName: req.headers['user-agent'] || 'Unknown Device',
+                location: 'IP: ' + req.ip,
+                ip: req.ip,
+                timestamp: new Date().toLocaleString()
+            });
+        }
+    } catch (emailErr) {
+        console.error('Failed to send 2FA disabled email:', emailErr);
+    }
+
     res.json({ success: true, message: '2FA disabled successfully' });
 
   } catch (error) {
@@ -691,6 +723,22 @@ app.post('/api/2fa/disable', authenticate, async (req, res) => {
       updates[`users/${userId}/is2FAEnabled`] = false;
 
       await admin.database().ref().update(updates);
+
+      // Send Email Notification
+      try {
+        const userSnap = await admin.database().ref(`users/${userId}`).get();
+        const userData = userSnap.val() || {};
+        if (userData.email) {
+            await emailService.send2FADisabled(userData.email, userData.name || 'User', {
+                deviceName: req.headers['user-agent'] || 'Unknown Device',
+                location: 'IP: ' + req.ip,
+                ip: req.ip,
+                timestamp: new Date().toLocaleString()
+            });
+        }
+      } catch (emailErr) {
+        console.error('Failed to send 2FA disabled email:', emailErr);
+      }
 
       console.log(`✅ 2FA disabled for user ${userId}`);
       res.json({ success: true, message: '2FA disabled successfully' });
