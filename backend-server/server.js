@@ -2370,7 +2370,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     const walletBalancesSnapshot = {};
 
     if (isCurrentUserPayer) {
-      if (walletBalanceBefore < amount) {
+      if (walletBalanceBefore < amount && !user.allowNegativeBalance) {
         return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
       }
       walletBalanceAfter -= amount;
@@ -2737,7 +2737,7 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     let currentUserBalanceAfter = currentUserBalanceBefore;
 
     if (isPaying) {
-      if (currentUserBalanceBefore < amount) {
+      if (currentUserBalanceBefore < amount && !user.allowNegativeBalance) {
         return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
       }
       currentUserBalanceAfter -= amount;
@@ -2768,7 +2768,8 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
         updates[`users/${otherPerson.userId}/walletBalance`] = admin.database.ServerValue.increment(amount);
       } else {
         // Current user received -> Other user paid
-        if (otherUserBalanceBefore < amount) {
+        const otherUserAllowsNegative = otherUser && otherUser.allowNegativeBalance;
+        if (otherUserBalanceBefore < amount && !otherUserAllowsNegative) {
           return res.status(400).json({ success: false, error: 'Other user has insufficient wallet balance' });
         }
         otherUserBalanceAfter -= amount;
@@ -2996,7 +2997,7 @@ app.post('/api/update-wallet', generalLimiter, async (req, res) => {
       newBalance += amount;
       updates[`users/${currentUserId}/walletBalance`] = admin.database.ServerValue.increment(amount);
     } else {
-      if (currentBalance < amount) {
+      if (currentBalance < amount && !user.allowNegativeBalance) {
         return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
       }
       newBalance -= amount;
@@ -4114,7 +4115,7 @@ app.post('/api/send-money', authenticate, async (req, res) => {
 
     // CHECK: Insufficient Funds (Defense in Depth)
     // Prevent creating requests if the sender doesn't have funds currently.
-    if ((sender.walletBalance || 0) < amount) {
+    if ((sender.walletBalance || 0) < amount && !sender.allowNegativeBalance) {
       return res.status(400).json({ success: false, error: 'Insufficient funds. Please top up your wallet.' });
     }
 
@@ -4250,7 +4251,7 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
 
     // CHECK: Insufficient Funds (Prevent negative balance)
     const senderBalanceBefore = sender.walletBalance || 0;
-    if (senderBalanceBefore < amount) {
+    if (senderBalanceBefore < amount && !sender.allowNegativeBalance) {
       return res.status(400).json({ success: false, error: 'Sender has insufficient funds to complete this transaction.' });
     }
 

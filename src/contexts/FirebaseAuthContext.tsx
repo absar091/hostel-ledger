@@ -52,7 +52,8 @@ export interface UserProfile {
   emailVerified?: boolean; // Email verification status
   is2FAEnabled?: boolean; // Two-Factor Authentication status
   favoriteGroups?: string[]; // Array of favorite group IDs
-  showBalanceToOthers: boolean; // Privacy setting for wallet balance visibility
+  showBalanceToOthers: boolean;
+  allowNegativeBalance?: boolean; // Privacy setting for wallet balance visibility
   currency?: string; // Currency code (e.g., 'PKR', 'USD', 'EUR') — defaults to PKR
   language?: string; // Language code (e.g., 'en', 'ur', 'hi') — defaults to en
 }
@@ -272,7 +273,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
               emailVerified: isVerified,
               is2FAEnabled: userData.is2FAEnabled || false,
               favoriteGroups: userData.favoriteGroups || [],
-              showBalanceToOthers: userData.showBalanceToOthers ?? false
+              showBalanceToOthers: userData.showBalanceToOthers ?? false,
+              allowNegativeBalance: userData.allowNegativeBalance ?? false
             };
 
                         // 2FA Verification Logic (Integrated to prevent race conditions)
@@ -340,7 +342,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
               settlements: {},
               createdAt: new Date().toISOString(),
               emailVerified: false,
-              showBalanceToOthers: false
+              showBalanceToOthers: false,
+          allowNegativeBalance: false
             };
 
             try {
@@ -502,7 +505,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           walletBalance: 0,
           settlements: {},
           createdAt: new Date().toISOString(),
-          showBalanceToOthers: false
+          showBalanceToOthers: false,
+          allowNegativeBalance: false
         };
 
         const userRef = ref(database, `users/${firebaseUser.uid}`);
