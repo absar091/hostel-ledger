@@ -9,6 +9,8 @@ vi.mock('react-i18next', () => ({
     t: (key: string) => {
         if (key === 'sheets.create_group.group_name_label') return 'Group Name';
         if (key === 'common.continue') return 'Continue';
+        if (key === 'sheets.create_group.temp_name_placeholder') return 'Manual Member Name';
+        if (key === 'sheets.create_group.username_placeholder') return 'Username Invite';
         return key;
     },
   }),
@@ -56,10 +58,12 @@ describe('CreateGroupSheet Accessibility', () => {
     fireEvent.click(nextButton);
 
     // Step 2
-    // Manual Member Input
     await waitFor(() => {
-        // We need to find the input by aria-label "Manual member name"
-        expect(screen.getByLabelText('Manual member name')).toBeDefined();
+        // Manual Member Input
+        expect(screen.getByLabelText('Manual Member Name')).toBeDefined();
+
+        // Username Invite Input
+        expect(screen.getByLabelText('Username Invite')).toBeDefined();
     });
   });
 });
