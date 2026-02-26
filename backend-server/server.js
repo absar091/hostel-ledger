@@ -10,7 +10,7 @@ const cloudinary = require('cloudinary').v2;
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const { loadEmailTemplate } = require('./utils/email');
-const { validateCreateGroup, validateAmount } = require('./utils/validation');
+const { validateCreateGroup, validateAmount, isValidFirebaseId } = require('./utils/validation');
 const { sanitize } = require('./utils/sanitize');
 const { getDeviceFromUA, getLocationFromIP } = require('./utils/deviceInfo');
 // Note: web-push removed - using OneSignal for push notifications
@@ -1167,6 +1167,10 @@ app.post('/api/respond-invitation', authenticate, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Invitation ID is required' });
     }
 
+    if (!isValidFirebaseId(invitationId)) {
+      return res.status(400).json({ success: false, error: 'Invalid invitation ID format' });
+    }
+
     // Get the invitation from userInvitations
     const userInvRef = admin.database().ref(`userInvitations/${userId}/${invitationId}`);
     const invSnap = await userInvRef.get();
@@ -1332,6 +1336,10 @@ app.post('/api/claim-email-invite', authenticate, async (req, res) => {
 
     if (!groupId) {
       return res.status(400).json({ success: false, error: 'Group ID is required' });
+    }
+
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
     }
 
     // Get the group
@@ -2127,6 +2135,16 @@ app.post('/api/get-individual-debts', generalLimiter, authenticate, async (req, 
       return res.status(400).json({ success: false, error: 'groupId and personId are required' });
     }
 
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+    // personId can be a Firebase ID or just a string index if manually created, but usually safer to validate.
+    // Manual members have IDs like `member_...`. This contains underscore, which is allowed.
+    // If it's malicious path, isValidFirebaseId catches it.
+    if (!isValidFirebaseId(personId)) {
+      return res.status(400).json({ success: false, error: 'Invalid person ID format' });
+    }
+
     const db = admin.database();
 
     // Query userTransactions for the current user, filtered by groupId
@@ -2171,6 +2189,13 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
   if (!groupId || !amount || !paidBy || !participants || participants.length === 0) {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
+  }
+
+  if (!isValidFirebaseId(groupId)) {
+    return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+  }
+  if (!isValidFirebaseId(paidBy)) {
+    return res.status(400).json({ success: false, error: 'Invalid payer ID format' });
   }
 
   if (!validateAmount(amount)) {
@@ -2550,6 +2575,13 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
 
   if (!groupId || !fromMember || !toMember || !amount || !method) {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
+  }
+
+  if (!isValidFirebaseId(groupId)) {
+    return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+  }
+  if (!isValidFirebaseId(fromMember) || !isValidFirebaseId(toMember)) {
+    return res.status(400).json({ success: false, error: 'Invalid member ID format' });
   }
 
   if (!validateAmount(amount)) {
@@ -3114,6 +3146,10 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Group ID and username are required' });
     }
 
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
     const db = admin.database();
 
     // 1. Resolve invitee username to UID
@@ -3311,6 +3347,10 @@ app.post('/api/send-external-invitation', strictEmailLimiter, async (req, res) =
       return res.status(400).json({ success: false, error: 'Email and Group ID are required' });
     }
 
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -3439,6 +3479,10 @@ app.post('/api/delete-group', authenticate, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Group ID is required' });
     }
 
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
     const db = admin.database();
     const groupRef = db.ref(`groups/${groupId}`);
     const groupSnap = await groupRef.get();
@@ -3498,6 +3542,13 @@ app.post('/api/remove-member', authenticate, async (req, res) => {
 
     if (!groupId || !memberId) {
       return res.status(400).json({ success: false, error: 'Group ID and Member ID are required' });
+    }
+
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+    if (!isValidFirebaseId(memberId)) {
+      return res.status(400).json({ success: false, error: 'Invalid member ID format' });
     }
 
     const db = admin.database();
@@ -3568,6 +3619,10 @@ app.post('/api/update-group', authenticate, async (req, res) => {
 
     if (!groupId) {
       return res.status(400).json({ success: false, error: 'Group ID is required' });
+    }
+
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
     }
 
     if (!name && !emoji) {
@@ -3674,6 +3729,13 @@ app.post('/api/merge-members', authenticate, async (req, res) => {
 
     if (!groupId || !fromMemberId || !toMemberId) {
       return res.status(400).json({ success: false, error: 'groupId, fromMemberId, and toMemberId are required' });
+    }
+
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+    if (!isValidFirebaseId(fromMemberId) || !isValidFirebaseId(toMemberId)) {
+      return res.status(400).json({ success: false, error: 'Invalid member ID format' });
     }
 
     if (fromMemberId === toMemberId) {
@@ -4074,6 +4136,10 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
 
   if (!transactionId) {
     return res.status(400).json({ success: false, error: 'Transaction ID required' });
+  }
+
+  if (!isValidFirebaseId(transactionId)) {
+    return res.status(400).json({ success: false, error: 'Invalid transaction ID format' });
   }
 
   try {

@@ -118,4 +118,24 @@ function validateAmount(amount) {
   return typeof amount === 'number' && !isNaN(amount) && isFinite(amount) && amount > 0;
 }
 
-module.exports = { validateCreateGroup, validateAmount };
+/**
+ * Validates that the ID is a safe Firebase key (alphanumeric, -, _).
+ * Prevents path traversal and injection.
+ * @param {string} id - The ID to validate.
+ * @returns {boolean} - True if valid, false otherwise.
+ */
+function isValidFirebaseId(id) {
+  if (!id || typeof id !== 'string') {
+    return false;
+  }
+  // Allow alphanumeric, hyphen, underscore.
+  // Standard Firebase Push IDs look like -N5...
+  // UUIDs are alphanumeric with hyphens.
+  // Must be at least 1 char, max 128 (arbitrary safe limit, usually ~20-36)
+  if (id.length > 128) return false;
+
+  // Regex: Only allow a-z, A-Z, 0-9, -, _
+  return /^[a-zA-Z0-9_-]+$/.test(id);
+}
+
+module.exports = { validateCreateGroup, validateAmount, isValidFirebaseId };
