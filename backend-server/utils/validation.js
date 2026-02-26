@@ -149,4 +149,51 @@ function isValidFirebaseId(id) {
   return /^[a-zA-Z0-9_-]+$/.test(id);
 }
 
-module.exports = { validateCreateGroup, validateAmount, isValidFirebaseId };
+const MAX_NOTE_LENGTH = 500;
+const MAX_PLACE_LENGTH = 100;
+const MAX_METHOD_LENGTH = 50;
+
+/**
+ * Validates the length of a note.
+ * @param {string|null} note - The note to validate.
+ * @returns {string|null} - Error message if invalid, null if valid.
+ */
+function validateNote(note) {
+  if (note === null || note === undefined) return null;
+  if (typeof note !== 'string') return 'Note must be a string.';
+  if (note.length > MAX_NOTE_LENGTH) return `Note must be ${MAX_NOTE_LENGTH} characters or less.`;
+  return null;
+}
+
+/**
+ * Validates the length of a place.
+ * @param {string|null} place - The place to validate.
+ * @returns {string|null} - Error message if invalid, null if valid.
+ */
+function validatePlace(place) {
+  if (place === null || place === undefined) return null;
+  if (typeof place !== 'string') return 'Place name must be a string.';
+  if (place.length > MAX_PLACE_LENGTH) return `Place name must be ${MAX_PLACE_LENGTH} characters or less.`;
+  return null;
+}
+
+/**
+ * Validates the length of a payment method.
+ * @param {string|null} method - The method to validate.
+ * @returns {string|null} - Error message if invalid, null if valid.
+ */
+function validateMethod(method) {
+  if (method === null || method === undefined) return null;
+  if (typeof method !== 'string') return 'Payment method must be a string.';
+  if (method.length > MAX_METHOD_LENGTH) return `Payment method must be ${MAX_METHOD_LENGTH} characters or less.`;
+  return null;
+}
+
+module.exports = {
+  validateCreateGroup,
+  validateAmount,
+  isValidFirebaseId,
+  validateNote,
+  validatePlace,
+  validateMethod
+};
