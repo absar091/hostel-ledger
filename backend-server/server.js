@@ -1448,6 +1448,13 @@ app.post('/api/send-temp-member-alert', emailLimiter, async (req, res) => {
       });
     }
 
+    // Security: Only allow users to alert themselves
+    // Must verify against the authenticated user's email to prevent open relay abuse
+    const userEmail = req.user.email;
+    if (!userEmail || userEmail.toLowerCase() !== to.toLowerCase()) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You can only send alerts to your own email address.' });
+    }
+
     // Format Date (assuming timestamp or ISO string)
     const dateObj = new Date(expiryDate);
     if (isNaN(dateObj.getTime())) {
@@ -1569,28 +1576,13 @@ app.post('/api/send-welcome', emailLimiter, async (req, res) => {
 });
 
 // Transaction alert email endpoint
+// DEPRECATED: This endpoint is disabled for security reasons (Unused functionality / Open Relay risk)
 app.post('/api/send-transaction-alert', emailLimiter, async (req, res) => {
-  try {
-    const { email, name, transactionType, amount, groupName, date, description } = req.body;
-
-    if (!email || !name || !transactionType || !amount || !groupName || !date || !description) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields'
-      });
-    }
-
-    await emailService.sendTransactionAlert({
-      email, name, transactionType, amount, groupName, date, description
-    });
-
-    console.log('✅ Transaction alert email sent');
-    res.json({ success: true, message: 'Transaction alert email sent' });
-
-  } catch (error) {
-    console.error('❌ Transaction alert email error:', error);
-    res.status(500).json({ success: false, error: 'Failed to send transaction alert email: ' + error.message });
-  }
+  console.warn('⚠️ Access attempt to deprecated/insecure send-transaction-alert endpoint');
+  return res.status(410).json({
+    success: false,
+    error: 'This endpoint is deprecated and disabled for security reasons.'
+  });
 });
 
 // Error handling middleware

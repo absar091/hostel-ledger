@@ -12,3 +12,8 @@
 **Vulnerability:** The `/api/send-password-reset` endpoint accepted a `resetLink` from the client without validation, allowing authenticated attackers to send phishing links (e.g., `http://evil.com`) via the official Hostel Ledger email. Additionally, the `name` parameter was not escaped in the email body, allowing HTML injection.
 **Learning:** Never trust client-provided links in email templates. Authenticated endpoints can still be abused to attack other users ("Authenticated Phishing"). HTML content in emails must always be escaped.
 **Prevention:** Validate all URLs against an allowlist (e.g., `FRONTEND_URL`, `allowedOrigins`) on the server. Always escape dynamic content in HTML templates.
+
+## 2026-02-18 - Open Relay via Authenticated Email Endpoints
+**Vulnerability:** Found `send-transaction-alert` and `send-temp-member-alert` endpoints that allowed any authenticated user to send emails to arbitrary addresses with arbitrary content. This could be abused for spam or phishing campaigns using the application's trusted email domain.
+**Learning:** Authentication is not Authorization. Just because a user is logged in doesn't mean they should be allowed to send emails to anyone. Implicit authentication via global middleware can sometimes mask the lack of specific authorization logic in individual endpoints.
+**Prevention:** Strictly validate that the target of a sensitive action (like sending an email) is the authenticated user themselves, or that the user has explicit permission (e.g., is a group admin) to target the recipient. Deprecate and disable unused endpoints to reduce the attack surface.
