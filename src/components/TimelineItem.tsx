@@ -1,6 +1,6 @@
 import { memo } from "react";
 import Avatar from "./Avatar";
-import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car, Wallet, Plus } from "lucide-react";
+import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car, Wallet, Plus, Users } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Participant {
@@ -15,6 +15,7 @@ interface TimelineItemProps {
   amount: number;
   date: string;
   paidBy?: string;
+  payers?: { name: string; amount: number }[];
   participants?: Participant[];
   from?: string;
   to?: string;
@@ -39,6 +40,7 @@ const TimelineItemBase = ({
   amount,
   date,
   paidBy,
+  payers,
   participants,
   from,
   to,
@@ -152,7 +154,16 @@ const TimelineItemBase = ({
       className="w-full bg-white border border-[#4a6850]/10 rounded-3xl p-5 shadow-lg text-left hover:shadow-xl hover:border-[#4a6850]/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 active:scale-[0.98]"
     >
       <div className="flex items-start gap-4">
-        {paidBy ? (
+        {payers && payers.length > 1 ? (
+          <div className="relative">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white flex items-center justify-center font-bold text-sm shadow-lg border-2 border-white">
+               +{payers.length}
+            </div>
+            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-sm border border-gray-100">
+               <Users className="w-3 h-3 text-[#4a6850]" />
+            </div>
+          </div>
+        ) : paidBy ? (
           <div className="relative">
             <Avatar name={paidBy} size="md" />
             {isPayerOwner && (
@@ -170,7 +181,7 @@ const TimelineItemBase = ({
         <div className="flex-1 min-w-0">
           <div className="font-black text-gray-900 tracking-tight text-lg truncate">{title}</div>
           <div className="text-sm text-gray-600 font-bold truncate flex items-center gap-1">
-            Paid by {paidBy}
+            {payers && payers.length > 1 ? `Paid by ${payers.length} people` : `Paid by ${paidBy}`}
             {isPayerOwner && (
               <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
             )}
@@ -221,6 +232,7 @@ const arePropsEqual = (prevProps: TimelineItemProps, nextProps: TimelineItemProp
     prevProps.amount !== nextProps.amount ||
     prevProps.date !== nextProps.date ||
     prevProps.paidBy !== nextProps.paidBy ||
+    (prevProps.payers?.length !== nextProps.payers?.length) ||
     prevProps.isPayerOwner !== nextProps.isPayerOwner || // Check optimization
     prevProps.from !== nextProps.from ||
     prevProps.to !== nextProps.to ||

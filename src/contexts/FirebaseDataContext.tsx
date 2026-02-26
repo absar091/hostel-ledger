@@ -195,6 +195,7 @@ export interface Transaction {
   date: string;
   paidBy: string;
   paidByName: string;
+  payers?: { id: string; name: string; amount: number; userId?: string | null }[];
   participants?: { id: string; name: string; amount: number; isTemporary?: boolean }[];
   from?: string;
   fromName?: string;
@@ -226,7 +227,7 @@ interface FirebaseDataContextType {
   addMemberToGroup: (groupId: string, member: { id?: string; name: string; paymentDetails?: PaymentDetails; phone?: string; isTemporary?: boolean; deletionCondition?: 'SETTLED' | 'TIME_LIMIT' | null }) => Promise<{ success: boolean; error?: string; memberId?: string }>;
   removeMemberFromGroup: (groupId: string, memberId: string) => Promise<{ success: boolean; error?: string }>;
   updateMemberPaymentDetails: (groupId: string, memberId: string, paymentDetails: PaymentDetails, phone?: string) => Promise<{ success: boolean; error?: string }>;
-  addExpense: (data: { groupId: string; amount: number; paidBy: string; participants: string[]; note: string; place: string; clientTxnId?: string }) => Promise<{ success: boolean; error?: string; transaction?: Transaction; duplicate?: boolean }>;
+  addExpense: (data: { groupId: string; amount: number; paidBy: string; payers?: { id: string; amount: number }[]; participants: string[]; note: string; place: string; clientTxnId?: string }) => Promise<{ success: boolean; error?: string; transaction?: Transaction; duplicate?: boolean }>;
   recordPayment: (data: { groupId: string; fromMember: string; toMember: string; amount: number; method: "cash" | "online"; note?: string }) => Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
   mergeMembers: (groupId: string, fromMemberId: string, toMemberId: string) => Promise<{ success: boolean; error?: string }>;
   claimMemberProfile: (groupId: string, memberId: string) => Promise<{ success: boolean; error?: string }>;
@@ -832,15 +833,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addExpense = async (data: {
-    groupId: string;
-    amount: number;
-    paidBy: string;
-    participants: string[];
-    note: string;
-    place: string;
-    clientTxnId?: string;
-  }): Promise<{ success: boolean; error?: string; transaction?: Transaction; duplicate?: boolean }> => {
+  const addExpense = async (data: { groupId: string; amount: number; paidBy: string; payers?: { id: string; amount: number }[]; participants: string[]; note: string; place: string; clientTxnId?: string }): Promise<{ success: boolean; error?: string; transaction?: Transaction; duplicate?: boolean }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
     // Generate or use existing clientTxnId
@@ -851,6 +844,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       if (!navigator.onLine) {
         logger.info("Device offline, saving expense to IndexedDB", { groupId: data.groupId });
         const offlineId = await saveOfflineExpense({
+          payers: data.payers,
           groupId: data.groupId,
           amount: data.amount,
           paidBy: data.paidBy,
@@ -865,6 +859,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       logger.info("Adding expense via secure API", { groupId: data.groupId, amount: data.amount, clientTxnId });
 
       const result = await callSecureApi('/api/add-expense', {
+        payers: data.payers,
         groupId: data.groupId,
         amount: data.amount,
         paidBy: data.paidBy,
@@ -896,6 +891,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
       if (isNetworkError) {
         const offlineId = await saveOfflineExpense({
+          payers: data.payers,
           groupId: data.groupId,
           amount: data.amount,
           paidBy: data.paidBy,

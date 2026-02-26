@@ -1,57 +1,50 @@
 /**
  * Logic for calculating debt summaries
- * Ported from src/lib/debtTracking.ts
+ * Updated to support Multi-Payer logic
  */
 
+const { calculateMultiPayerSettlements } = require('./expenseLogic');
+
 /**
- * Create debt entries from expense splits
- * @param {string} expenseId
- * @param {string} expenseTitle
- * @param {string} expenseDate
- * @param {Array<{participantId: string, amount: number}>} splits
- * @param {string} payerId
- * @param {string} currentUserId
- * @param {string} [otherPersonId] - Optional: Filter for debts involving this person
+ * Convert calculated settlements into debt entry objects for the UI
  */
-const createDebtEntries = (
+const createDebtEntriesFromSettlements = (
     expenseId,
     expenseTitle,
     expenseDate,
-    splits,
-    payerId,
+    settlements,
     currentUserId,
     otherPersonId = null
 ) => {
     const debts = [];
 
-    splits.forEach(split => {
-        if (split.participantId === payerId) return; // Payer doesn't owe themselves
-
-        // Case 1: Current User is the Participant (You Owe Payer)
-        if (split.participantId === currentUserId) {
-            // If filtering by person, Payer must be that person
-            if (otherPersonId && payerId !== otherPersonId) return;
+    settlements.forEach(s => {
+        // Case 1: You Owe Them (Debtor = Me, Creditor = Them)
+        if (s.debtorId === currentUserId) {
+            // If filtering by person, Creditor must be that person
+            if (otherPersonId && s.creditorId !== otherPersonId) return;
 
             debts.push({
-                id: `${expenseId}_${currentUserId}_${payerId}`,
+                id: `${expenseId}_${currentUserId}_${s.creditorId}`,
                 expenseId,
                 expenseTitle,
-                amount: split.amount, // Positive = you owe them
+                amount: s.amount, // Positive = you owe them
                 date: expenseDate,
                 createdAt: new Date().toISOString(),
                 settled: false
             });
         }
-        // Case 2: Current User is the Payer (Participant Owes You)
-        else if (payerId === currentUserId) {
-            // If filtering by person, Participant must be that person
-            if (otherPersonId && split.participantId !== otherPersonId) return;
+
+        // Case 2: They Owe You (Debtor = Them, Creditor = Me)
+        else if (s.creditorId === currentUserId) {
+            // If filtering by person, Debtor must be that person
+            if (otherPersonId && s.debtorId !== otherPersonId) return;
 
             debts.push({
-                id: `${expenseId}_${split.participantId}_${currentUserId}`,
+                id: `${expenseId}_${s.debtorId}_${currentUserId}`,
                 expenseId,
                 expenseTitle,
-                amount: -split.amount, // Negative = they owe you
+                amount: -s.amount, // Negative = they owe you
                 date: expenseDate,
                 createdAt: new Date().toISOString(),
                 settled: false
@@ -96,27 +89,43 @@ const processTransactions = (transactions, currentUserId, personId) => {
 
     txList.forEach(tx => {
         if (tx.type === 'expense') {
-            // Check involvement
-            let participants = [];
-            if (Array.isArray(tx.participants)) {
-                participants = tx.participants;
+            // Check involvement (Optimization: check if either user is involved at all)
+            // But we need to calculate settlements first to know WHO owes WHO.
+            // However, we can skip if neither user is in participants OR payers.
+
+            let participants = Array.isArray(tx.participants) ? tx.participants : [];
+            let payers = [];
+
+            // Normalize Payers
+            if (tx.payers && Array.isArray(tx.payers)) {
+                payers = tx.payers.map(p => ({ participantId: p.id, amount: Number(p.amount) }));
+            } else if (tx.paidBy) {
+                // Legacy: Single payer
+                payers = [{ participantId: tx.paidBy, amount: Number(tx.amount) }];
             }
 
-            const personInvolved = participants.some(p => p.id === personId) || tx.paidBy === personId;
-            const userInvolved = participants.some(p => p.id === currentUserId) || tx.paidBy === currentUserId;
+            // Normalize Splits
+            const splits = participants.map(p => ({ participantId: p.id, amount: Number(p.amount) }));
 
-            if (personInvolved && userInvolved) {
-                 const newDebts = createDebtEntries(
-                     tx.id,
-                     tx.title || 'Expense',
-                     tx.date || new Date(tx.createdAt).toISOString(),
-                     participants.map(p => ({ participantId: p.id, amount: p.amount })),
-                     tx.paidBy,
-                     currentUserId,
-                     personId // Apply Filter to fix 3-way split bug
-                 );
-                 debts.push(...newDebts);
+            // Optimization: If neither current user nor personId are in splits/payers, skip
+            const allInvolvedIds = new Set([...splits.map(s => s.participantId), ...payers.map(p => p.participantId)]);
+            if (!allInvolvedIds.has(currentUserId) || !allInvolvedIds.has(personId)) {
+                return;
             }
+
+            // Calculate Settlements
+            const settlements = calculateMultiPayerSettlements(splits, payers);
+
+            // Create Debt Entries
+            const newDebts = createDebtEntriesFromSettlements(
+                tx.id,
+                tx.title || 'Expense',
+                tx.date || new Date(tx.createdAt).toISOString(),
+                settlements,
+                currentUserId,
+                personId
+            );
+            debts.push(...newDebts);
         }
 
         if (tx.type === 'payment') {
@@ -148,8 +157,10 @@ const processTransactions = (transactions, currentUserId, personId) => {
     return debts;
 };
 
+// Export createDebtEntries for backward compatibility if needed, though it's removed here
+// We can re-export a dummy if strictly required by imports, but searching code showed no other imports than server.js which imports { processTransactions, calculateDebtSummary }
+
 module.exports = {
-    createDebtEntries,
     calculateDebtSummary,
     processTransactions
 };
