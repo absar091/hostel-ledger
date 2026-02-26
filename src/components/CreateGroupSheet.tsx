@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Plus, Users, ChevronDown, ChevronUp, Phone, CreditCard, ChevronRight, Image as ImageIcon } from "lucide-react";
+import { X, Plus, Users, ChevronDown, ChevronUp, Phone, CreditCard, ChevronRight, Image as ImageIcon, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Avatar from "./Avatar";
 import { cn } from "@/lib/utils";
@@ -357,6 +357,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-900/40 font-bold text-lg">@</span>
                     <Input
                       placeholder={t('sheets.create_group.username_placeholder')}
+                      aria-label={t('sheets.create_group.username_placeholder')}
                       value={inviteInput}
                       onChange={(e) => setInviteInput(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ""))}
                       className="h-12 pl-10 rounded-xl bg-white border-blue-200 focus:border-blue-400 font-bold text-base"
@@ -373,7 +374,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                     disabled={isCheckingUsername || !inviteInput}
                     className="h-12 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black shadow-md shadow-blue-200"
                   >
-                    {isCheckingUsername ? "..." : t('sheets.create_group.add_btn')}
+                    {isCheckingUsername ? <Loader2 className="w-4 h-4 animate-spin" /> : t('sheets.create_group.add_btn')}
                   </Button>
                 </div>
 
@@ -384,6 +385,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                     <div className="flex gap-2">
                       <Input
                         placeholder={t('sheets.create_group.email_placeholder')}
+                        aria-label={t('sheets.create_group.email_placeholder')}
                         value={emailInput}
                         onChange={(e) => setEmailInput(e.target.value)}
                         className="h-10 rounded-lg text-sm bg-white"
@@ -416,6 +418,15 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                       <span className="text-xs text-[#4a6850] font-bold block">{t('sheets.create_group.admin')}</span>
                     </div>
                   </div>
+
+                  {/* EMPTY STATE - Start Adding Friends */}
+                  {invitedEmails.length === 0 && invitedUsernames.length === 0 && groupMembers.length === 0 && (
+                    <div className="text-center py-4 px-2 animate-fade-in border border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                      <p className="text-xs text-gray-400 font-bold">
+                        👋 {t('sheets.create_group.invite_friends_tip', 'Start adding friends above!')}
+                      </p>
+                    </div>
+                  )}
 
                   {/* INVITED EMAILS (New Users) */}
                   {invitedEmails.map(email => (
@@ -498,7 +509,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                   </h4>
                   <div className="flex gap-2">
                     <Input
-                      aria-label="Manual member name"
+                      aria-label={t('sheets.create_group.temp_name_placeholder')}
                       placeholder={t('sheets.create_group.temp_name_placeholder')}
                       value={memberName}
                       onChange={(e) => setMemberName(e.target.value)}
