@@ -1,0 +1,5 @@
+        // Current user received -> Other user paid
+        const otherUserAllowsNegative = otherUser && otherUser.allowNegativeBalance;
+        if (otherUserBalanceBefore < amount && !otherUserAllowsNegative) {
+          return res.status(400).json({ success: false, error: 'Other user has insufficient wallet balance' });
+        }

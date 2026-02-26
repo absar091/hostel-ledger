@@ -20,7 +20,8 @@ import {
     MessageCircle,
     Check,
     LogOut,
-    Share2
+    Share2,
+    Wallet
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
@@ -253,6 +254,35 @@ const Settings = () => {
                                             }
                                         } catch (error) {
                                             console.error("Privacy update error:", error);
+                                            toast.error(t('common.error_occurred'));
+                                        } finally {
+                                            setUpdatingPrivacy(false);
+                                        }
+                                    }}
+                                    disabled={updatingPrivacy}
+                                />
+                            }
+                        />
+                        <SettingItem
+                            icon={Wallet}
+                            label={t('settings.expense_tracking_mode')}
+                            description={t('settings.expense_tracking_desc')}
+                            iconBg="bg-[#4a6850]/10"
+                            iconColor="text-[#4a6850]"
+                            action={
+                                <Switch
+                                    checked={user?.allowNegativeBalance ?? false}
+                                    onCheckedChange={async (checked) => {
+                                        setUpdatingPrivacy(true);
+                                        try {
+                                            const result = await updateUserProfile({ allowNegativeBalance: checked });
+                                            if (result.success) {
+                                                toast.success(t('settings.expense_tracking_success', { status: checked ? t('common.enabled') : t('common.disabled') }));
+                                            } else {
+                                                toast.error(result.error || t('settings.expense_tracking_error'));
+                                            }
+                                        } catch (error) {
+                                            console.error("Tracking mode update error:", error);
                                             toast.error(t('common.error_occurred'));
                                         } finally {
                                             setUpdatingPrivacy(false);

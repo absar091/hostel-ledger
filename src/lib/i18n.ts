@@ -143,6 +143,10 @@ const resources = {
                 "balance_desc": "Visible to group members",
                 "privacy_error": "Failed to update visibility",
                 "privacy_success": "Balance visibility {{status}}",
+                "expense_tracking_mode": "Expense Tracking Mode",
+                "expense_tracking_desc": "Allow adding expenses without pre-loading wallet",
+                "expense_tracking_success": "Expense tracking mode {{status}}",
+                "expense_tracking_error": "Failed to update tracking mode",
                 "currency_updated_toast": "Currency updated to {{code}}",
                 "language_updated_toast": "Language updated to {{name}}"
             },
@@ -942,6 +946,10 @@ const resources = {
                 "balance_desc": "گروپ ممبران کو نظر آتا ہے",
                 "privacy_error": "نمایاں پن کو اپ ڈیٹ کرنے میں ناکامی",
                 "privacy_success": "رقم کی نمائش {{status}} ہوگئی"
+                "expense_tracking_mode": "اخراجات ٹریکنگ موڈ",
+                "expense_tracking_desc": "والٹ میں رقم ڈالے بغیر اخراجات شامل کریں",
+                "expense_tracking_success": "اخراجات ٹریکنگ موڈ {{status}}",
+                "expense_tracking_error": "ٹریکنگ موڈ اپ ڈیٹ کرنے میں ناکامی",
             },
             "profile": {
                 "title": "میرا پروفائل",
