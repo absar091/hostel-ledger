@@ -669,6 +669,11 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                     className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
                     maxLength={100}
                   />
+                  <div className="flex justify-end mt-1 px-4">
+                    <span className={cn("text-[10px] font-bold transition-colors", note.length >= 100 ? "text-red-500" : "text-[#4a6850]/40")}>
+                      {note.length}/100
+                    </span>
+                  </div>
                 </div>
 
                 {!selectedGroupData?.isPersonal && (
@@ -684,6 +689,11 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                       className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
                       maxLength={100}
                     />
+                    <div className="flex justify-end mt-1 px-4">
+                      <span className={cn("text-[10px] font-bold transition-colors", place.length >= 100 ? "text-red-500" : "text-[#4a6850]/40")}>
+                        {place.length}/100
+                      </span>
+                    </div>
                   </div>
                 )}
 
