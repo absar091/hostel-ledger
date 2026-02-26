@@ -240,7 +240,7 @@ const Dashboard = () => {
   const allTransactions = getAllTransactions();
 
   // Calculate time since last transaction
-  const getTimeSinceLastTransaction = () => {
+  const lastTransactionTime = useMemo(() => {
     if (allTransactions.length === 0) return t('dashboard.no_tx_yet');
 
     const lastTransaction = allTransactions[0]; // Most recent transaction
@@ -261,9 +261,7 @@ const Dashboard = () => {
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays === 1) return t('dashboard.updated_day');
     return t('dashboard.updated_days', { count: diffInDays });
-  };
-
-  const lastTransactionTime = getTimeSinceLastTransaction();
+  }, [allTransactions, t]);
 
   const dashboardHighlights = useMemo(() => {
     return [
@@ -283,7 +281,7 @@ const Dashboard = () => {
   }, [groups.length, allTransactions.length, offline, pendingCount]);
 
   // Group transactions by date (Today, Yesterday, Older)
-  const groupTransactionsByDate = (transactions: Transaction[]) => {
+  const { todayTransactions, yesterdayTransactions, olderTransactions } = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -294,7 +292,7 @@ const Dashboard = () => {
     const yesterdayTransactions: Transaction[] = [];
     const olderTransactions: Transaction[] = [];
 
-    transactions.forEach((transaction) => {
+    allTransactions.forEach((transaction) => {
       const transactionDate = new Date(
         transaction.timestamp || transaction.date,
       );
@@ -310,10 +308,7 @@ const Dashboard = () => {
     });
 
     return { todayTransactions, yesterdayTransactions, olderTransactions };
-  };
-
-  const { todayTransactions, yesterdayTransactions, olderTransactions } =
-    groupTransactionsByDate(allTransactions);
+  }, [allTransactions]);
 
   // Calculate totals using new settlement system
   const walletBalance = getWalletBalance();
@@ -342,21 +337,23 @@ const Dashboard = () => {
   // Calculate percentage change for after settlements
   const afterSettlementsBalance = walletBalance + settlementDelta;
 
+  // Persist day-to-day settlement delta
+  useEffect(() => {
+    if (user?.uid) {
+      const today = new Date().toISOString().split("T")[0];
+      const todayKey = `settlementDelta_${user.uid}_${today}`;
+      localStorage.setItem(todayKey, settlementDelta.toString());
+    }
+  }, [user?.uid, settlementDelta]);
+
   // Calculate day-to-day change for Settlement Delta using localStorage
-  const calculateDayToDay = () => {
+  const dayToDay = useMemo(() => {
     if (!user?.uid) return { change: 0, direction: "same" };
 
-    const today = new Date().toISOString().split("T")[0];
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayKey = yesterday.toISOString().split("T")[0];
-
-    // Storage keys for daily settlement deltas
-    const todayKey = `settlementDelta_${user.uid}_${today}`;
     const yesterdayStorageKey = `settlementDelta_${user.uid}_${yesterdayKey}`;
-
-    // Store today's settlement delta
-    localStorage.setItem(todayKey, settlementDelta.toString());
 
     // Get yesterday's settlement delta
     const yesterdaySettlementDelta = parseFloat(
@@ -390,9 +387,7 @@ const Dashboard = () => {
       absoluteChange: absoluteChange,
       isFirstDay: false,
     };
-  };
-
-  const dayToDay = calculateDayToDay();
+  }, [user?.uid, settlementDelta]);
 
   // Prepare groups data for sheets
   const groupsForSheets = useMemo(() => {
