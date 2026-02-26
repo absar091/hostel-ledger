@@ -68,6 +68,7 @@ const Sidebar = () => {
       <button
         onClick={toggleSidebar}
         className="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
+        aria-label={isOpen ? t('sidebar.collapse') : t('sidebar.expand')}
       >
         {isOpen ? (
           <ChevronLeft className="w-4 h-4 text-gray-600" />
@@ -101,6 +102,7 @@ const Sidebar = () => {
                 !isOpen && "justify-center"
               )}
               title={!isOpen ? item.label : undefined}
+              aria-label={item.label}
             >
               {/* Active indicator bar */}
               {active && (
