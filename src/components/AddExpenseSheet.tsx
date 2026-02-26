@@ -429,11 +429,12 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                     <span className="text-sm font-black text-[#4a6850]">{selectedGroupData.name}</span>
                   </div>
                 )}
-                <p className="text-[#4a6850]/60 text-sm font-bold mb-4">{t('sheets.add_expense.amount_prompt')}</p>
+                <label htmlFor="add-expense-amount" className="text-[#4a6850]/60 text-sm font-bold mb-4 block cursor-pointer">{t('sheets.add_expense.amount_prompt')}</label>
                 <div className="text-4xl font-black text-gray-900 mb-8 tracking-tighter tabular-nums">
                   {formatAmount(parseFloat(amount) || 0)}
                 </div>
                 <Input
+                  id="add-expense-amount"
                   type="number"
                   placeholder={t('sheets.add_expense.amount_label')}
                   value={amount}
@@ -657,10 +658,11 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                 )}
 
                 <div>
-                  <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
+                  <label htmlFor="add-expense-note" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
                     {selectedGroupData?.isPersonal ? t('sheets.add_expense.add_note') : t('sheets.add_expense.optional_note')}
                   </label>
                   <Input
+                    id="add-expense-note"
                     placeholder={selectedGroupData?.isPersonal ? t('sheets.add_expense.note_placeholder') : t('sheets.add_expense.optional_note_placeholder')}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
@@ -671,10 +673,11 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
 
                 {!selectedGroupData?.isPersonal && (
                   <div>
-                    <label className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
+                    <label htmlFor="add-expense-place" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
                       {t('sheets.add_expense.where')}
                     </label>
                     <Input
+                      id="add-expense-place"
                       placeholder={t('sheets.add_expense.where_placeholder')}
                       value={place}
                       onChange={(e) => setPlace(e.target.value)}
