@@ -1492,6 +1492,16 @@ app.post('/api/send-verification', emailLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, code, name' });
     }
 
+    // Strict Input Validation to prevent Content Injection
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({ success: false, error: 'Invalid verification code format (must be 6 digits)' });
+    }
+
+    // Strict email check (No HTML characters allowed)
+    if (!/^[^\s@<>"'`]+@[^\s@<>"'`]+\.[^\s@<>"'`]+$/.test(email)) {
+      return res.status(400).json({ success: false, error: 'Invalid email format' });
+    }
+
     await emailService.sendVerification(email, code, name);
     console.log('✅ Verification email sent');
     res.json({ success: true, message: 'Verification email sent successfully' });
@@ -1508,6 +1518,16 @@ app.post('/api/send-verification-new', emailLimiter, async (req, res) => {
     if (!email || !code || !name) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
     }
+
+    // Strict Input Validation
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({ success: false, error: 'Invalid verification code format (must be 6 digits)' });
+    }
+
+    if (!/^[^\s@<>"'`]+@[^\s@<>"'`]+\.[^\s@<>"'`]+$/.test(email)) {
+      return res.status(400).json({ success: false, error: 'Invalid email format' });
+    }
+
     await emailService.sendVerification(email, code, name);
     res.json({ success: true, message: 'Verification email sent successfully' });
   } catch (e) {
