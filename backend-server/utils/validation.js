@@ -11,6 +11,8 @@ function validateCreateGroup(body) {
 
   const { name, emoji, members, invitedUsernames, invitedEmails, coverPhoto } = body;
   const MAX_ITEMS = 50;
+  // Stricter regex: No < > " ' ` allowed to prevent HTML injection
+  const emailRegex = /^[^\s@<>"'`]+@[^\s@<>"'`]+\.[^\s@<>"'`]+$/;
 
   // 1. Validate Name (Required)
   if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -59,7 +61,16 @@ function validateCreateGroup(body) {
       if (m.uid && typeof m.uid !== 'string') return `Member at index ${i} has invalid uid.`;
       if (m.username && typeof m.username !== 'string') return `Member at index ${i} has invalid username.`;
       if (m.type && typeof m.type !== 'string') return `Member at index ${i} has invalid type.`;
-      if (m.email && typeof m.email !== 'string') return `Member at index ${i} has invalid email.`;
+
+      // Strict email validation for members
+      if (m.email) {
+        if (typeof m.email !== 'string') {
+           return `Member at index ${i} has invalid email type.`;
+        }
+        if (!emailRegex.test(m.email)) {
+           return `Member at index ${i} has invalid email format.`;
+        }
+      }
     }
   }
 
@@ -87,7 +98,7 @@ function validateCreateGroup(body) {
     if (invitedEmails.length > MAX_ITEMS) {
       return `Too many invited emails. Maximum allowed is ${MAX_ITEMS}.`;
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     for (let i = 0; i < invitedEmails.length; i++) {
       const email = invitedEmails[i];
       if (typeof email !== 'string' || !emailRegex.test(email)) {
