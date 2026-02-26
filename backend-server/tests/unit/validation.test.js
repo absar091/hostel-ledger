@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateCreateGroup } from '../../utils/validation';
+import { validateCreateGroup, isValidFirebaseId } from '../../utils/validation';
 
 describe('validateCreateGroup', () => {
   it('should pass with valid minimal input', () => {
@@ -127,5 +127,42 @@ describe('validateCreateGroup', () => {
   it('should fail if body is missing', () => {
     expect(validateCreateGroup(undefined)).toContain('missing or invalid');
     expect(validateCreateGroup(null)).toContain('missing or invalid');
+  });
+});
+
+describe('isValidFirebaseId', () => {
+  it('should return true for valid Firebase Push IDs', () => {
+    expect(isValidFirebaseId('-N5s8j2k3l4m5n6o7p8q')).toBe(true);
+    expect(isValidFirebaseId('valid_id_123')).toBe(true);
+    expect(isValidFirebaseId('user-id-123')).toBe(true);
+    expect(isValidFirebaseId('abcXYZ123-_')).toBe(true);
+  });
+
+  it('should return false for IDs with path traversal characters', () => {
+    expect(isValidFirebaseId('../users')).toBe(false);
+    expect(isValidFirebaseId('users/123')).toBe(false);
+    expect(isValidFirebaseId('/etc/passwd')).toBe(false);
+    expect(isValidFirebaseId('..')).toBe(false);
+  });
+
+  it('should return false for IDs with forbidden characters', () => {
+    expect(isValidFirebaseId('user.name')).toBe(false);
+    expect(isValidFirebaseId('user#name')).toBe(false);
+    expect(isValidFirebaseId('user$name')).toBe(false);
+    expect(isValidFirebaseId('user[name]')).toBe(false);
+    expect(isValidFirebaseId('user\\name')).toBe(false);
+  });
+
+  it('should return false for empty or non-string inputs', () => {
+    expect(isValidFirebaseId('')).toBe(false);
+    expect(isValidFirebaseId(null)).toBe(false);
+    expect(isValidFirebaseId(undefined)).toBe(false);
+    expect(isValidFirebaseId(123)).toBe(false);
+    expect(isValidFirebaseId({})).toBe(false);
+  });
+
+  it('should return false for overly long IDs', () => {
+    const longId = 'a'.repeat(129);
+    expect(isValidFirebaseId(longId)).toBe(false);
   });
 });
