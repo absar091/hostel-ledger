@@ -474,7 +474,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
 
               {/* Amount - Compact */}
               <div>
-                <label className="text-xs font-black text-[#4a6850]/80 mb-2 block uppercase tracking-wide">
+                <label htmlFor="record-payment-amount" className="text-xs font-black text-[#4a6850]/80 mb-2 block uppercase tracking-wide">
                   {t('sheets.record_payment.amount_label')}
                 </label>
                 <div className="text-center mb-4">
@@ -482,6 +482,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     {formatAmount(parseFloat(amount) || 0)}
                   </div>
                   <Input
+                    id="record-payment-amount"
                     type="number"
                     placeholder={t('sheets.record_payment.amount_label')}
                     value={amount}
@@ -546,10 +547,11 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
 
               {/* Note - Compact */}
               <div>
-                <label className="text-xs font-black text-[#4a6850]/80 mb-2 block uppercase tracking-wide">
+                <label htmlFor="record-payment-note" className="text-xs font-black text-[#4a6850]/80 mb-2 block uppercase tracking-wide">
                   {t('sheets.record_payment.note_label')}
                 </label>
                 <Input
+                  id="record-payment-note"
                   placeholder={t('sheets.record_payment.note_label')}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
