@@ -82,8 +82,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
   const [step, setStep] = useState(1);
   const [selectedGroup, setSelectedGroup] = useState(initialGroupId || "");
   const [amount, setAmount] = useState("");
-  const [paidBy: finalPaidBy,
-        payers: finalPayers, setPaidBy] = useState("");
+  const [paidBy, setPaidBy] = useState("");
   const [participants, setParticipants] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [place, setPlace] = useState("");
