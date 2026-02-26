@@ -17,3 +17,8 @@
 **Vulnerability:** Found `send-transaction-alert` and `send-temp-member-alert` endpoints that allowed any authenticated user to send emails to arbitrary addresses with arbitrary content. This could be abused for spam or phishing campaigns using the application's trusted email domain.
 **Learning:** Authentication is not Authorization. Just because a user is logged in doesn't mean they should be allowed to send emails to anyone. Implicit authentication via global middleware can sometimes mask the lack of specific authorization logic in individual endpoints.
 **Prevention:** Strictly validate that the target of a sensitive action (like sending an email) is the authenticated user themselves, or that the user has explicit permission (e.g., is a group admin) to target the recipient. Deprecate and disable unused endpoints to reduce the attack surface.
+
+## 2026-02-18 - Denial of Service via Unbounded Strings
+**Vulnerability:** Transaction endpoints (`add-expense`, `record-payment`, `send-money`, `update-wallet`) accepted free-text inputs (`note`, `place`, `method`) without any length validation. This could allow an attacker to send excessively large strings (e.g., megabytes of data), causing high memory consumption during sanitization and processing, potentially leading to Denial of Service (DoS) or excessive database storage usage.
+**Learning:** Sanitization alone is not enough; validation of constraints (length, type, format) must happen *before* or during processing. Unbounded inputs are a classic resource exhaustion vector.
+**Prevention:** Enforce strict length limits (e.g., 500 chars for notes) on all string inputs at the API boundary before any heavy processing or storage.

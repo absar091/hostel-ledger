@@ -10,7 +10,14 @@ const cloudinary = require('cloudinary').v2;
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const { loadEmailTemplate } = require('./utils/email');
-const { validateCreateGroup, validateAmount, isValidFirebaseId } = require('./utils/validation');
+const {
+  validateCreateGroup,
+  validateAmount,
+  isValidFirebaseId,
+  validateNote,
+  validatePlace,
+  validateMethod
+} = require('./utils/validation');
 const { sanitize } = require('./utils/sanitize');
 const { getDeviceFromUA, getLocationFromIP } = require('./utils/deviceInfo');
 // Note: web-push removed - using OneSignal for push notifications
@@ -2202,6 +2209,14 @@ app.post('/api/get-individual-debts', generalLimiter, authenticate, async (req, 
 // Add Expense endpoint (Secure)
 app.post('/api/add-expense', generalLimiter, async (req, res) => {
   let { groupId, amount, paidBy, participants, note, place } = req.body;
+
+  // Validate Lengths
+  const noteError = validateNote(note);
+  if (noteError) return res.status(400).json({ success: false, error: noteError });
+
+  const placeError = validatePlace(place);
+  if (placeError) return res.status(400).json({ success: false, error: placeError });
+
   note = sanitize(note);
   place = sanitize(place);
 
@@ -2588,6 +2603,14 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 // Record Payment endpoint (Secure)
 app.post('/api/record-payment', generalLimiter, async (req, res) => {
   let { groupId, fromMember, toMember, amount, method, note } = req.body;
+
+  // Validate Lengths
+  const noteError = validateNote(note);
+  if (noteError) return res.status(400).json({ success: false, error: noteError });
+
+  const methodError = validateMethod(method);
+  if (methodError) return res.status(400).json({ success: false, error: methodError });
+
   note = sanitize(note);
   method = sanitize(method);
 
@@ -2942,6 +2965,11 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
 // Update Wallet endpoint (Manual adjustments - Secure)
 app.post('/api/update-wallet', generalLimiter, async (req, res) => {
   let { amount, type, note } = req.body; // type: 'add' or 'deduct'
+
+  // Validate Length
+  const noteError = validateNote(note);
+  if (noteError) return res.status(400).json({ success: false, error: noteError });
+
   note = sanitize(note);
 
   const currentUserId = req.user.uid;
@@ -4029,6 +4057,11 @@ app.post('/api/cleanup-unverified-users', adminAuth, async (req, res) => {
  */
 app.post('/api/send-money', authenticate, async (req, res) => {
   let { recipientUsername, amount, note } = req.body;
+
+  // Validate Length
+  const noteError = validateNote(note);
+  if (noteError) return res.status(400).json({ success: false, error: noteError });
+
   note = sanitize(note);
 
   const senderUid = req.user.uid;
