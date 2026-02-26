@@ -945,7 +945,7 @@ const resources = {
                 "push_not_supported": "سپورٹ نہیں ہے",
                 "balance_desc": "گروپ ممبران کو نظر آتا ہے",
                 "privacy_error": "نمایاں پن کو اپ ڈیٹ کرنے میں ناکامی",
-                "privacy_success": "رقم کی نمائش {{status}} ہوگئی"
+                "privacy_success": "رقم کی نمائش {{status}} ہوگئی",
                 "expense_tracking_mode": "اخراجات ٹریکنگ موڈ",
                 "expense_tracking_desc": "والٹ میں رقم ڈالے بغیر اخراجات شامل کریں",
                 "expense_tracking_success": "اخراجات ٹریکنگ موڈ {{status}}",
