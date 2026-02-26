@@ -361,7 +361,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
               {step === 4 && t('sheets.add_expense.step_split')}
               {step === 5 && (selectedGroupData?.isPersonal ? t('sheets.add_expense.step_review') : t('sheets.add_expense.step_details'))}
             </SheetTitle>
-            <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
+            <SheetDescription className="text-center text-sm text-[#4a6850] font-bold">
               {t('sheets.add_expense.details_prompt')}
             </SheetDescription>
           </SheetHeader>
@@ -385,7 +385,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
             {/* Step 1: Select Group - Compact Mobile Style */}
             {step === 1 && (
               <div className="space-y-3 animate-fade-in">
-                <p className="text-sm text-[#4a6850]/80 mb-4 text-center font-bold">
+                <p className="text-sm text-[#4a6850] mb-4 text-center font-bold">
                   {t('sheets.add_expense.group_prompt')}
                 </p>
                 {groups.map((group) => (
@@ -405,7 +405,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                     <div className="flex-1 text-left min-w-0">
                       <span className="font-black text-gray-900 tracking-tight block truncate">{group.name}</span>
                       {(group.memberCount || group.members.length) > 0 && (
-                        <p className="text-xs text-[#4a6850]/80 font-bold">
+                        <p className="text-xs text-[#4a6850] font-bold">
                           {t('sheets.add_expense.member_count', { count: group.memberCount || group.members.length })}
                         </p>
                       )}
@@ -429,7 +429,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                     <span className="text-sm font-black text-[#4a6850]">{selectedGroupData.name}</span>
                   </div>
                 )}
-                <label htmlFor="add-expense-amount" className="text-[#4a6850]/60 text-sm font-bold mb-4 block cursor-pointer">{t('sheets.add_expense.amount_prompt')}</label>
+                <label htmlFor="add-expense-amount" className="text-[#4a6850] text-sm font-bold mb-4 block cursor-pointer">{t('sheets.add_expense.amount_prompt')}</label>
                 <div className="text-4xl font-black text-gray-900 mb-8 tracking-tighter tabular-nums">
                   {formatAmount(parseFloat(amount) || 0)}
                 </div>
@@ -439,7 +439,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                   placeholder={t('sheets.add_expense.amount_label')}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-2 border-[#4a6850]/30 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:ring-0 focus:shadow-xl"
+                  className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-2 border-[#4a6850]/30 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850] focus:border-[#4a6850] focus:ring-0 focus:shadow-xl"
                   autoFocus
                 />
               </div>
@@ -449,7 +449,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
             {step === 3 && (
               <div className="space-y-3 animate-fade-in">
                 <div className="flex items-center gap-2 justify-center mb-4">
-                  <p className="text-sm text-[#4a6850]/80 font-bold text-center">{t('sheets.add_expense.who_paid_prompt')}</p>
+                  <p className="text-sm text-[#4a6850] font-bold text-center">{t('sheets.add_expense.who_paid_prompt')}</p>
                   <Tooltip
                     content={t('sheets.add_expense.who_paid_prompt')}
                     position="bottom"
@@ -519,7 +519,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
             {step === 4 && (
               <div className="space-y-3 animate-fade-in">
                 <div className="flex items-center gap-2 justify-center mb-4">
-                  <p className="text-sm text-[#4a6850]/80 font-bold text-center">
+                  <p className="text-sm text-[#4a6850] font-bold text-center">
                     {t('sheets.add_expense.split_prompt')}
                   </p>
                   <Tooltip
@@ -609,7 +609,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                 {/* Split Summary - Compact - Only show when 2+ participants */}
                 {participants.length > 1 && paidBy && (
                   <div className="bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl p-4 mt-4 border border-[#4a6850]/20 shadow-md">
-                    <div className="text-xs text-[#4a6850]/80 mb-2 font-black uppercase tracking-wide">{t('sheets.add_expense.split_summary')}</div>
+                    <div className="text-xs text-[#4a6850] mb-2 font-black uppercase tracking-wide">{t('sheets.add_expense.split_summary')}</div>
                     <div className="text-lg font-black text-gray-900 tracking-tight">
                       {formatAmount(splitDetails.perPerson)} {t('sheets.add_expense.per_person')}
                     </div>
@@ -634,7 +634,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                 {/* Category Selection for Personal/Self tracking */}
                 {selectedGroupData?.isPersonal && (
                   <div>
-                    <label className="text-sm font-black text-[#4a6850]/80 mb-4 block uppercase tracking-wide">
+                    <label className="text-sm font-black text-[#4a6850] mb-4 block uppercase tracking-wide">
                       {t('sheets.add_expense.select_category')}
                     </label>
                     <div className="grid grid-cols-4 gap-3">
@@ -658,7 +658,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                 )}
 
                 <div>
-                  <label htmlFor="add-expense-note" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
+                  <label htmlFor="add-expense-note" className="text-sm font-black text-[#4a6850] mb-3 block uppercase tracking-wide">
                     {selectedGroupData?.isPersonal ? t('sheets.add_expense.add_note') : t('sheets.add_expense.optional_note')}
                   </label>
                   <Input
@@ -666,7 +666,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                     placeholder={selectedGroupData?.isPersonal ? t('sheets.add_expense.note_placeholder') : t('sheets.add_expense.optional_note_placeholder')}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
+                    className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850] focus:border-[#4a6850] focus:shadow-xl"
                     maxLength={100}
                   />
                   <div className="flex justify-end mt-1 px-4">
@@ -678,7 +678,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
 
                 {!selectedGroupData?.isPersonal && (
                   <div>
-                    <label htmlFor="add-expense-place" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">
+                    <label htmlFor="add-expense-place" className="text-sm font-black text-[#4a6850] mb-3 block uppercase tracking-wide">
                       {t('sheets.add_expense.where')}
                     </label>
                     <Input
@@ -686,7 +686,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                       placeholder={t('sheets.add_expense.where_placeholder')}
                       value={place}
                       onChange={(e) => setPlace(e.target.value)}
-                      className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
+                      className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850] focus:border-[#4a6850] focus:shadow-xl"
                       maxLength={100}
                     />
                     <div className="flex justify-end mt-1 px-4">
@@ -785,25 +785,25 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
         <DialogContent className="rounded-3xl p-6 bg-white border border-[#4a6850]/20 shadow-[0_25px_70px_rgba(74,104,80,0.2)]">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-gray-900 tracking-tight">{t('sheets.add_expense.dialog_title')}</DialogTitle>
-            <DialogDescription className="text-sm text-[#4a6850]/80 font-bold">
+            <DialogDescription className="text-sm text-[#4a6850] font-bold">
               {t('sheets.add_expense.dialog_desc')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6 mt-4">
             <div className="space-y-2">
-              <Label htmlFor="tempName" className="text-sm font-black text-[#4a6850]/80 uppercase tracking-wide">Name</Label>
+              <Label htmlFor="tempName" className="text-sm font-black text-[#4a6850] uppercase tracking-wide">Name</Label>
               <Input
                 id="tempName"
                 placeholder="e.g. John Doe (Friend)"
                 value={tempMemberName}
                 onChange={(e) => setTempMemberName(e.target.value)}
-                className="h-12 rounded-2xl border-[#4a6850]/30 font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:ring-[#4a6850]/20"
+                className="h-12 rounded-2xl border-[#4a6850]/30 font-bold text-gray-900 placeholder:text-[#4a6850] focus:border-[#4a6850] focus:ring-[#4a6850]/20"
               />
             </div>
 
             <div className="space-y-3">
-              <Label className="text-sm font-black text-[#4a6850]/80 uppercase tracking-wide">{t('sheets.add_expense.auto_delete')}</Label>
+              <Label className="text-sm font-black text-[#4a6850] uppercase tracking-wide">{t('sheets.add_expense.auto_delete')}</Label>
               <RadioGroup
                 value={tempMemberCondition}
                 onValueChange={(v) => setTempMemberCondition(v as any)}

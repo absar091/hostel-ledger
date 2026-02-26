@@ -259,7 +259,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
             {currentStep === 2 && t('sheets.create_group.step_invite')}
             {currentStep === 3 && t('sheets.create_group.step_review')}
           </SheetTitle>
-          <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
+          <SheetDescription className="text-center text-sm text-[#4a6850] font-bold">
             {currentStep === 1 && t('sheets.create_group.subtitle_step1')}
             {currentStep === 2 && t('sheets.create_group.subtitle_step2')}
             {currentStep === 3 && t('sheets.create_group.subtitle_step3')}
@@ -290,7 +290,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                     ) : (
                       <div className="flex flex-col items-center">
                         <ImageIcon className="w-8 h-8 text-[#4a6850]/40 mb-1" />
-                        <span className="text-[10px] font-bold text-[#4a6850]/60 uppercase">{t('sheets.create_group.add_photo')}</span>
+                        <span className="text-[10px] font-bold text-[#4a6850] uppercase">{t('sheets.create_group.add_photo')}</span>
                       </div>
                     )}
                     <input
@@ -305,7 +305,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                   </div>
                 </div>
 
-                <label htmlFor="group-name" className="text-xs font-black text-[#4a6850]/80 mb-2 block uppercase mx-1">
+                <label htmlFor="group-name" className="text-xs font-black text-[#4a6850] mb-2 block uppercase mx-1">
                   {t('sheets.create_group.group_name_label')}
                 </label>
                 <Input
@@ -319,7 +319,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
               </div>
 
               <div>
-                <label className="text-xs font-black text-[#4a6850]/80 mb-2 block uppercase mx-1">
+                <label className="text-xs font-black text-[#4a6850] mb-2 block uppercase mx-1">
                   {t('sheets.create_group.group_icon_label')}
                 </label>
                 <div className="grid grid-cols-8 gap-2">
@@ -404,7 +404,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
 
               {/* LIST OF ADDED PEOPLE */}
               <div>
-                <p className="text-xs font-black text-[#4a6850]/80 mb-3 uppercase mx-1 flex justify-between items-center">
+                <p className="text-xs font-black text-[#4a6850] mb-3 uppercase mx-1 flex justify-between items-center">
                   <span>{t('sheets.create_group.whos_in', { count: groupMembers.length + invitedUsernames.length + invitedEmails.length + 1 })}</span>
                   <span className="text-[10px] bg-[#4a6850]/10 text-[#4a6850] px-2 py-0.5 rounded-full">Step 2 of 3</span>
                 </p>
