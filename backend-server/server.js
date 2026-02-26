@@ -828,6 +828,11 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
 
   let { name, emoji, members, invitedUsernames, invitedEmails, coverPhoto } = req.body;
 
+  // Deduplicate invitedEmails to prevent multiple invites
+  if (invitedEmails && Array.isArray(invitedEmails)) {
+    invitedEmails = [...new Set(invitedEmails)];
+  }
+
   // Sanitize Inputs
   name = sanitize(name);
   emoji = sanitize(emoji);
@@ -1011,13 +1016,9 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     }
 
     // 5. Handle Email Invites (Manual members with emails + invitedEmails array)
+    // Note: invitedEmails are already added to newGroup.members in Step 1, so we just filter them out here.
     const emailMembers = [
-      ...newGroup.members.filter(m => m.email && m.type === 'manual'),
-      ...(invitedEmails || []).map(email => ({
-        email,
-        name: email.split('@')[0], // Fallback name
-        type: 'manual'
-      }))
+      ...newGroup.members.filter(m => m.email && m.type === 'manual')
     ];
 
     if (emailMembers.length > 0) {
