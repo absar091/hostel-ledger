@@ -79,7 +79,7 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
               position="bottom"
             />
           </div>
-          <SheetDescription className="text-sm text-[#4a6850]/80 text-center font-bold">
+          <SheetDescription className="text-sm text-[#4a6850] text-center font-bold">
             {t('sheets.add_money.subtitle')}
           </SheetDescription>
         </SheetHeader>
@@ -95,14 +95,14 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
               placeholder={t('sheets.add_money.amount_placeholder')}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-[#4a6850]/20 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
+              className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-[#4a6850]/20 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850] focus:border-[#4a6850] focus:shadow-xl"
               autoFocus
             />
           </div>
 
           {/* Quick Amount Buttons - Compact Horizontal Scroll */}
           <div className="mb-4">
-            <label className="text-sm font-black text-[#4a6850]/80 mb-2 block uppercase tracking-wide">
+            <label className="text-sm font-black text-[#4a6850] mb-2 block uppercase tracking-wide">
               {t('sheets.add_money.quick_amounts_label')}
             </label>
             <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar px-1">
@@ -120,14 +120,14 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
 
           {/* Note - iPhone Style */}
           <div className="mb-4">
-            <label className="text-sm font-black text-[#4a6850]/80 mb-2 block uppercase tracking-wide">
+            <label className="text-sm font-black text-[#4a6850] mb-2 block uppercase tracking-wide">
               {t('sheets.add_money.note_label')}
             </label>
             <Input
               placeholder={t('sheets.add_money.note_placeholder')}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
+              className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850] focus:border-[#4a6850] focus:shadow-xl"
               maxLength={100}
             />
           </div>
@@ -138,7 +138,7 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
               <Wallet className="w-6 h-6 text-[#4a6850] mt-1 flex-shrink-0" />
               <div>
                 <h4 className="font-black text-gray-900 mb-2 tracking-tight">{t('sheets.add_money.info_title')}</h4>
-                <p className="text-sm text-[#4a6850]/80 font-bold leading-relaxed">
+                <p className="text-sm text-[#4a6850] font-bold leading-relaxed">
                   {t('sheets.add_money.info_text')}
                 </p>
               </div>
