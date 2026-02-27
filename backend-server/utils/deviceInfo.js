@@ -1,6 +1,7 @@
 /**
  * Detects device and location from IP and User Agent
  */
+const net = require('net');
 
 // Simple User Agent Parser
 const getDeviceFromUA = (userAgent) => {
@@ -30,6 +31,17 @@ const getDeviceFromUA = (userAgent) => {
 
 // Get Location from IP (using ip-api.com)
 const getLocationFromIP = async (ip) => {
+    // Validate IP format using net module (prevent path traversal/injection)
+    if (!ip || !net.isIP(ip)) {
+        console.warn(`⚠️ Invalid IP detected: ${ip}`);
+        return {
+            city: 'Unknown',
+            region: 'Unknown',
+            country: 'Unknown',
+            timezone: 'UTC'
+        };
+    }
+
     // Localhost check
     if (ip === '::1' || ip === '127.0.0.1') {
         return {
