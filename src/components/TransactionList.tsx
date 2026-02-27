@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { type Transaction, type Group } from "@/contexts/FirebaseDataContext";
 import { TransactionItem } from "./TransactionItem";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,14 @@ export const TransactionList = ({
   showSeparator = false,
   dateFormat = "time",
 }: TransactionListProps) => {
+  // Memoize group lookup map to O(1) access
+  const groupMap = useMemo(() => {
+    return groups.reduce((acc, group) => {
+      acc[group.id] = group.name;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [groups]);
+
   if (transactions.length === 0) return null;
 
   return (
@@ -44,7 +53,7 @@ export const TransactionList = ({
           <TransactionItem
             key={transaction.id}
             transaction={transaction}
-            groups={groups}
+            groupName={groupMap[transaction.groupId]}
             userId={userId}
             onClick={onSelectTransaction}
             formatAmount={formatAmount}

@@ -1,11 +1,11 @@
 import { memo } from "react";
 import { ArrowUpRight, ArrowDownLeft, CreditCard } from "@/lib/icons";
-import { type Transaction, type Group } from "@/contexts/FirebaseDataContext";
+import { type Transaction } from "@/contexts/FirebaseDataContext";
 import { cn } from "@/lib/utils";
 
 interface TransactionItemProps {
   transaction: Transaction;
-  groups: Group[];
+  groupName?: string;
   userId?: string;
   onClick: (transaction: Transaction) => void;
   formatAmount: (amount: number) => string;
@@ -15,13 +15,12 @@ interface TransactionItemProps {
 // Memoized to prevent re-renders when parent list updates but item data hasn't changed
 export const TransactionItem = memo(({
   transaction,
-  groups,
+  groupName,
   userId,
   onClick,
   formatAmount,
   dateFormat = "time",
 }: TransactionItemProps) => {
-  const transactionGroup = groups.find((g) => g.id === transaction.groupId);
   const isPayer = transaction.paidBy === userId;
   const userParticipant = transaction.participants?.find(
     (p) => p.id === userId
@@ -99,7 +98,7 @@ export const TransactionItem = memo(({
         </p>
         <p className="text-xs text-slate-500 truncate">
           {typeLabel}
-          {transactionGroup && ` • ${transactionGroup.name}`}
+          {groupName && ` • ${groupName}`}
           {" • "}
           {dateDisplay}
         </p>

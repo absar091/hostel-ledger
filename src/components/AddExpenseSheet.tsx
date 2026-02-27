@@ -232,8 +232,6 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
       // finalPayers remains undefined (or we could set it for consistency, but backend handles it)
     }
 
-    const totalAmount = parseFloat(amount);
-
     // Validate Multiple Payers
     if (payerMode === 'multiple') {
       if (Math.abs(remainingToPay) > 0.05) {
