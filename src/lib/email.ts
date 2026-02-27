@@ -6,7 +6,7 @@ const EMAIL_CONFIG = {
   apiUrl: import.meta.env.VITE_API_URL || 'https://hostel-ledger-backend.vercel.app',
   host: import.meta.env.VITE_SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(import.meta.env.VITE_SMTP_PORT || '587'),
-  user: import.meta.env.VITE_SMTP_USER || 'ahmadraoabsar@gmail.com',
+  user: import.meta.env.VITE_SMTP_USER || '',
 };
 
 import { callSecureApi } from './api';

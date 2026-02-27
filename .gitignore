@@ -43,3 +43,4 @@ hostel-ledger-firebase-adminsdk-*.json
 VERCEL_DEPLOYMENT_GUIDE.md
 .env.development
 .env.production
+VERCEL_ENV_VARIABLES.txt
