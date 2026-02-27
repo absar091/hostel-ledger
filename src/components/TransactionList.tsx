@@ -40,17 +40,22 @@ export const TransactionList = ({
         </div>
       )}
       <div className="space-y-1">
-        {transactions.map((transaction) => (
-          <TransactionItem
-            key={transaction.id}
-            transaction={transaction}
-            groups={groups}
-            userId={userId}
-            onClick={onSelectTransaction}
-            formatAmount={formatAmount}
-            dateFormat={dateFormat}
-          />
-        ))}
+        {transactions.map((transaction) => {
+          const groupName = groups.find(
+            (g) => g.id === transaction.groupId
+          )?.name;
+          return (
+            <TransactionItem
+              key={transaction.id}
+              transaction={transaction}
+              groupName={groupName}
+              userId={userId}
+              onClick={onSelectTransaction}
+              formatAmount={formatAmount}
+              dateFormat={dateFormat}
+            />
+          );
+        })}
       </div>
     </div>
   );
