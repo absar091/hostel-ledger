@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Check, ChevronRight, AlertCircle, WifiOff, UserPlus, Clock, Ban, Wallet } from "lucide-react";
@@ -45,6 +46,7 @@ interface AddExpenseSheetProps {
     groupId: string;
     amount: number;
     paidBy: string;
+    payers?: { id: string; amount: number }[];
     participants: string[];
     note: string;
     place: string;
@@ -86,6 +88,8 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
   const [place, setPlace] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('others');
+  const [payerMode, setPayerMode] = useState<'single' | 'multiple'>('single');
+  const [multiPayers, setMultiPayers] = useState<{ id: string; amount: string }[]>([]);
 
   // Hooks
   const { isOnline, updatePendingCount } = useSync();
@@ -140,6 +144,8 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
       setValidationErrors([]);
       setIsSubmitting(false);
       setSelectedCategory('others');
+      setPayerMode('single');
+      setMultiPayers([]);
     }
   }, [open, groups.length, initialGroupId]);
 
@@ -178,8 +184,67 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
     }
   }, [selectedGroup, isOnline, fetchGroupDetail]);
 
+
+  const handlePayerAmountChange = (memberId: string, value: string) => {
+    setMultiPayers(prev => {
+      const existing = prev.find(p => p.id === memberId);
+      if (!existing && !value) return prev; // Don't add empty entries
+
+      const newList = prev.filter(p => p.id !== memberId);
+      if (value) {
+        newList.push({ id: memberId, amount: value });
+      }
+      return newList;
+    });
+  };
+
+  const totalPaidAmount = useMemo(() => {
+    return multiPayers.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+  }, [multiPayers]);
+
+  const remainingToPay = useMemo(() => {
+    const total = parseFloat(amount) || 0;
+    return total - totalPaidAmount;
+  }, [amount, totalPaidAmount]);
+
   // Handle expense submission
   const handleSubmit = async () => {
+    const totalAmount = parseFloat(amount);
+
+    let finalPayers: { id: string; amount: number }[] | undefined;
+    let finalPaidBy = paidBy;
+
+    if (payerMode === 'multiple') {
+      if (Math.abs(remainingToPay) > 0.05) {
+        toast.error(`Total paid (${formatAmount(totalPaidAmount)}) must match expense amount (${formatAmount(totalAmount)})`);
+        return;
+      }
+      if (multiPayers.length === 0) {
+        toast.error("Please add at least one payer");
+        return;
+      }
+      finalPayers = multiPayers.map(p => ({ id: p.id, amount: parseFloat(p.amount) }));
+      // Set primary payer (largest amount) for legacy support
+      const primary = finalPayers.reduce((prev, current) => (prev.amount > current.amount) ? prev : current);
+      finalPaidBy = primary.id;
+    } else {
+      // Single mode
+      // finalPayers remains undefined (or we could set it for consistency, but backend handles it)
+    }
+
+    const totalAmount = parseFloat(amount);
+
+    // Validate Multiple Payers
+    if (payerMode === 'multiple') {
+      if (Math.abs(remainingToPay) > 0.05) {
+        toast.error(`Total paid (${formatAmount(totalPaidAmount)}) must match expense amount (${formatAmount(totalAmount)})`);
+        return;
+      }
+      if (multiPayers.length === 0) {
+        toast.error("Please add at least one payer");
+        return;
+      }
+    }
     const invalidParticipants = participants.filter(p => !members.some(m => String(m.id) === String(p)));
     if (invalidParticipants.length > 0) {
       console.error("Invalid participants detected:", { invalidParticipants, availableMembers: members.map(m => m.id) });
@@ -195,7 +260,8 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
         groupId: selectedGroup,
         groupName: selectedGroupData?.name || "Unknown Group",
         amount: parseFloat(amount),
-        paidBy,
+        paidBy: finalPaidBy,
+        payers: finalPayers,
         participants,
         note: selectedGroupData?.isPersonal
           ? `${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.emoji} ${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.label}${note ? ': ' + note : ''}`
@@ -224,7 +290,8 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
         await onSubmit({
           groupId: selectedGroup,
           amount: parseFloat(amount),
-          paidBy,
+          paidBy: finalPaidBy,
+        payers: finalPayers,
           participants,
           note: selectedGroupData?.isPersonal
             ? `${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.emoji} ${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.label}${note ? ': ' + note : ''}`
@@ -253,7 +320,13 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
       const amountValue = parseFloat(amount);
       return amountValue > 0 && !isNaN(amountValue);
     }
-    if (step === 3) return paidBy !== "";
+    if (step === 3) {
+      if (payerMode === 'single') return paidBy !== "";
+      // For multiple, check if amounts match
+      const total = parseFloat(amount) || 0;
+      const currentPaid = multiPayers.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+      return Math.abs(total - currentPaid) < 0.05 && multiPayers.length > 0;
+    }
     if (step === 4) return participants.length > 0;
     return true;
   };
@@ -455,6 +528,23 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                     position="bottom"
                   />
                 </div>
+
+                {/* Mode Toggle */}
+                <div className="bg-gray-100 p-1 rounded-xl flex mb-4">
+                  <button
+                    className={cn("flex-1 py-2 rounded-lg text-sm font-bold transition-all", payerMode === 'single' ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700")}
+                    onClick={() => setPayerMode('single')}
+                  >
+                    Single Payer
+                  </button>
+                  <button
+                    className={cn("flex-1 py-2 rounded-lg text-sm font-bold transition-all", payerMode === 'multiple' ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700")}
+                    onClick={() => setPayerMode('multiple')}
+                  >
+                    Multiple Payers
+                  </button>
+                </div>
+
                 {isLoadingMembers ? (
                   <div className="flex flex-col items-center justify-center py-8 space-y-3 animate-fade-in">
                     <div className="w-8 h-8 border-4 border-[#4a6850]/20 border-t-[#4a6850] rounded-full animate-spin"></div>
@@ -462,7 +552,8 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                   </div>
                 ) : (
                   <>
-                    {members.filter(m => !m.isTemporary).map((member) => (
+                    {/* SINGLE PAYER MODE */}
+                    {payerMode === 'single' && members.filter(m => !m.isTemporary).map((member) => (
                       <button
                         key={member.id}
                         onClick={() => setPaidBy(member.id)}
@@ -480,27 +571,6 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                             {(member.id === fullGroupData?.createdBy || (member as any).userId === fullGroupData?.createdBy) && (
                               <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.owner')}</span>
                             )}
-                            {member.isPending && !member.isCurrentUser && (
-                              <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.invited')}</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            {member.balance !== undefined && member.balance !== null && (
-                              <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-lg border border-emerald-100">
-                                {formatAmount(member.balance)}
-                              </span>
-                            )}
-                            {(member as any).walletBalance !== undefined && (member as any).walletBalance !== null && (
-                              <span className="text-[11px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-lg border border-blue-100 flex items-center gap-1">
-                                <Wallet className="w-3 h-3" /> {formatAmount((member as any).walletBalance)}
-                              </span>
-                            )}
-                            {member.isTemporary && (
-                              <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600">
-                                {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
-                                <span>{t('sheets.add_expense.temp')} • {member.deletionCondition === 'TIME_LIMIT' ? t('sheets.add_expense.seven_days') : t('sheets.add_expense.until_settled')}</span>
-                              </div>
-                            )}
                           </div>
                         </div>
                         {paidBy === member.id && (
@@ -510,10 +580,75 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                         )}
                       </button>
                     ))}
+
+                    {/* MULTIPLE PAYER MODE */}
+                    {payerMode === 'multiple' && (
+                      <div className="space-y-3">
+                        <div className="bg-orange-50 border border-orange-100 rounded-xl p-3 mb-2 flex justify-between items-center">
+                           <span className="text-xs font-bold text-orange-800">Total to allocate:</span>
+                           <span className="text-sm font-black text-orange-900">{formatAmount(parseFloat(amount) || 0)}</span>
+                        </div>
+
+                        {members.map((member) => {
+                           const payerEntry = multiPayers.find(p => p.id === member.id);
+                           const isPaying = !!payerEntry;
+
+                           return (
+                             <div key={member.id} className={cn(
+                               "flex items-center gap-3 p-3 rounded-2xl border-2 transition-all",
+                               isPaying ? "border-[#4a6850] bg-[#4a6850]/5" : "border-gray-100 bg-white"
+                             )}>
+                                <Avatar name={member.name} size="sm" />
+                                <div className="flex-1 min-w-0">
+                                   <div className="font-bold text-sm text-gray-900 truncate">{member.name}</div>
+                                </div>
+                                <div className="relative w-28">
+                                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">{selectedGroupData?.currency || ''}</span>
+                                   <Input
+                                      type="number"
+                                      placeholder="0"
+                                      className={cn(
+                                        "w-full h-10 pl-6 text-right font-bold rounded-xl border-gray-200 focus:border-[#4a6850]",
+                                        isPaying ? "text-[#4a6850]" : "text-gray-400"
+                                      )}
+                                      value={payerEntry?.amount || ''}
+                                      onChange={(e) => handlePayerAmountChange(member.id, e.target.value)}
+                                   />
+                                </div>
+                             </div>
+                           );
+                        })}
+
+                        {/* Remaining Indicator */}
+                        <div className={cn(
+                          "fixed bottom-24 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-xl border backdrop-blur-md transition-all z-50 flex items-center gap-2",
+                          Math.abs(remainingToPay) < 0.05
+                            ? "bg-emerald-500/90 border-emerald-400 text-white"
+                            : "bg-gray-900/90 border-gray-700 text-white"
+                        )}>
+                           {Math.abs(remainingToPay) < 0.05 ? (
+                             <>
+                               <Check className="w-4 h-4 font-bold" />
+                               <span className="font-black text-sm">Perfectly allocated!</span>
+                             </>
+                           ) : (
+                             <>
+                               <span className="text-xs font-bold opacity-80">{remainingToPay > 0 ? "Remaining:" : "Overpaid:"}</span>
+                               <span className={cn("font-black text-lg tabular-nums", remainingToPay < 0 ? "text-red-300" : "text-white")}>
+                                 {formatAmount(Math.abs(remainingToPay))}
+                               </span>
+                             </>
+                           )}
+                        </div>
+                        {/* Spacer for fixed indicator */}
+                        <div className="h-12"></div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
             )}
+
 
             {/* Step 4: Split Between - Compact Mobile Style */}
             {step === 4 && (

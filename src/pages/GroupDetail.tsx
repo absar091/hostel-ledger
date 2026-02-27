@@ -540,6 +540,15 @@ const GroupDetail = () => {
                       title={item.title}
                       amount={item.amount}
                       date={item.date}
+                      payers={item.type === "expense" && item.payers ? item.payers.map(p => ({
+                        ...p,
+                        name: (() => {
+                          if (p.id === user?.uid) return t('group.you_label');
+                          if (p.id === group.createdBy) return t('group.owner');
+                          const member = group.members.find(m => m.id === p.id);
+                          return member?.name || p.name;
+                        })()
+                      })) : undefined}
                       paidBy={item.type === "expense" ? (
                         (() => {
                           // Use consistent naming logic

@@ -32,6 +32,7 @@ export interface OfflineExpense {
   groupId: string;
   amount: number;
   paidBy: string;
+  payers?: { id: string; amount: number }[];
   participants: string[];
   note: string;
   place: string;

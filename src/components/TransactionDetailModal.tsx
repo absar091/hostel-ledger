@@ -34,6 +34,20 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
         : (payerMember?.name || transaction.paidByName || "Unknown");
 
     const isTemporaryPayer = payerMember?.isTemporary || transaction.paidByIsTemporary;
+    // 3. Resolve Multiple Payers
+    const payersList = transaction.payers || (transaction.paidBy ? [{ id: transaction.paidBy, amount: transaction.amount }] : []);
+    const resolvedPayers = payersList.map((p: any) => {
+        const member = transactionGroup?.members.find((m: any) => m.id === p.id);
+        const isCurrentUser = p.id === user?.uid || (member && member.userId === user?.uid);
+        const name = isCurrentUser ? "You" : (member?.name || p.name || "Unknown");
+        return {
+            ...p,
+            name,
+            amount: p.amount || transaction.amount // Fallback
+        };
+    });
+    const isMultiPayer = resolvedPayers.length > 1;
+
 
     // 2. Resolve Participant Names
     const participantsList = Array.isArray(transaction.participants)
@@ -283,7 +297,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             )}
 
                             {/* Paid By (for expenses) - iPhone Style */}
-                            {transaction.paidByName && (
+                            {transaction.paidByName && !isMultiPayer && (
                                 <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
                                     <div className="relative">
                                         <User className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
@@ -308,6 +322,33 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             )}
 
                             {/* Payment Details (for payments) - iPhone Style */}
+
+                            {/* Multiple Payers - iPhone Style */}
+                            {isMultiPayer && (
+                                <div className="p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                                    <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-3 lg:mb-4 font-semibold uppercase tracking-wide">Paid By ({resolvedPayers.length})</div>
+                                    <div className="space-y-2 lg:space-y-3 max-h-32 overflow-y-auto scrollbar-hide">
+                                        {resolvedPayers.map((payer: any, index: number) => {
+                                            const isOwner = transactionGroup?.createdBy === payer.id;
+                                            const isMe = payer.id === user?.uid;
+                                            return (
+                                                <div key={index} className="flex justify-between items-center gap-2">
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        <span className="font-semibold text-gray-900 truncate text-sm lg:text-base">
+                                                            {isOwner && !isMe ? "Group Owner" : payer.name}
+                                                        </span>
+                                                        {isOwner && (
+                                                            <span className="bg-yellow-100 text-yellow-700 text-[8px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-xs lg:text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">{formatAmount(payer.amount)}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
                             {transaction.fromName && transaction.toName && (
                                 <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
                                     <ArrowUpRight className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
@@ -537,7 +578,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                         )}
 
                         {/* Paid By */}
-                        {resolvedPaidByName && (
+                        {resolvedPaidByName && !isMultiPayer && (
                             <div style={{
                                 display: 'flex', alignItems: 'center', gap: '12px',
                                 padding: '14px 16px', background: '#F9FAFB', borderRadius: '16px',
@@ -554,6 +595,55 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                         )}
 
                         {/* Payment (from → to) */}
+
+                            {/* Multiple Payers - iPhone Style */}
+                            {isMultiPayer && (
+                                <div className="p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                                    <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-3 lg:mb-4 font-semibold uppercase tracking-wide">Paid By ({resolvedPayers.length})</div>
+                                    <div className="space-y-2 lg:space-y-3 max-h-32 overflow-y-auto scrollbar-hide">
+                                        {resolvedPayers.map((payer: any, index: number) => {
+                                            const isOwner = transactionGroup?.createdBy === payer.id;
+                                            const isMe = payer.id === user?.uid;
+                                            return (
+                                                <div key={index} className="flex justify-between items-center gap-2">
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        <span className="font-semibold text-gray-900 truncate text-sm lg:text-base">
+                                                            {isOwner && !isMe ? "Group Owner" : payer.name}
+                                                        </span>
+                                                        {isOwner && (
+                                                            <span className="bg-yellow-100 text-yellow-700 text-[8px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-xs lg:text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">{formatAmount(payer.amount)}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+
+                        {/* Multi Payers Receipt */}
+                        {isMultiPayer && (
+                            <div style={{
+                                padding: '14px 16px', background: '#F9FAFB', borderRadius: '16px',
+                                border: '1px solid #E5E7EB'
+                            }}>
+                                <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: '10px' }}>
+                                    Paid By ({resolvedPayers.length})
+                                </div>
+                                {resolvedPayers.map((p: any, i: number) => (
+                                    <div key={i} style={{
+                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                        padding: '6px 0',
+                                        borderBottom: i < resolvedPayers.length - 1 ? '1px solid #F3F4F6' : 'none'
+                                    }}>
+                                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>{p.name}</span>
+                                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#4a6850' }}>{formatAmount(p.amount)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                         {transaction.fromName && transaction.toName && (
                             <div style={{
                                 display: 'flex', alignItems: 'center', gap: '12px',

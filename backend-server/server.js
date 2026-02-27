@@ -185,6 +185,7 @@ app.use(express.json());
 
 const emailService = require('./services/emailService');
 const expenseLogic = require('./utils/expenseLogic');
+const { calculateMultiPayerSettlements } = require('./utils/expenseLogic');
 const { processTransactions, calculateDebtSummary } = require('./utils/debtLogic');
 const { verifyImageOwnership } = require('./utils/imageSecurity');
 const adminAuth = require('./middleware/adminAuth');
@@ -2244,7 +2245,7 @@ app.post('/api/get-individual-debts', generalLimiter, authenticate, async (req, 
 
 // Add Expense endpoint (Secure)
 app.post('/api/add-expense', generalLimiter, async (req, res) => {
-  let { groupId, amount, paidBy, participants, note, place } = req.body;
+  let { groupId, amount, paidBy, payers, participants, note, place } = req.body;
 
   // Validate Lengths
   const noteError = validateNote(note);
@@ -2258,15 +2259,38 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
   const currentUserId = req.user.uid;
 
-  if (!groupId || !amount || !paidBy || !participants || participants.length === 0) {
+  if (!groupId || !amount || !participants || participants.length === 0) {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
   }
 
+  // Normalize Payers
+  // If 'payers' array is provided, use it. Otherwise, fallback to 'paidBy' single payer.
+  let finalPayers = [];
+  if (payers && Array.isArray(payers) && payers.length > 0) {
+    finalPayers = payers;
+    // Validate total paid equals amount (allow small floating point diff)
+    const totalPaid = finalPayers.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    if (Math.abs(totalPaid - amount) > 0.05) {
+        return res.status(400).json({ success: false, error: `Total paid amount (${totalPaid}) does not match expense amount (${amount})` });
+    }
+  } else if (paidBy) {
+    if (!isValidFirebaseId(paidBy)) {
+        return res.status(400).json({ success: false, error: 'Invalid payer ID format' });
+    }
+    finalPayers = [{ id: paidBy, amount: amount }];
+  } else {
+    return res.status(400).json({ success: false, error: 'Missing payer information' });
+  }
+
+  // Set paidBy string for backward compatibility (Legacy UI uses this)
+  // If multiple payers, we can set it to the first one or a special string "multiple"
+  // But strictly, legacy apps rely on this being a valid member ID to show the avatar.
+  // We'll use the payer with the largest amount as the "primary" payer for display.
+  const primaryPayer = finalPayers.reduce((prev, current) => (prev.amount > current.amount) ? prev : current);
+  const primaryPayerId = primaryPayer.id;
+
   if (!isValidFirebaseId(groupId)) {
     return res.status(400).json({ success: false, error: 'Invalid group ID format' });
-  }
-  if (!isValidFirebaseId(paidBy)) {
-    return res.status(400).json({ success: false, error: 'Invalid payer ID format' });
   }
 
   if (!validateAmount(amount)) {
@@ -2311,7 +2335,6 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     const member = membersArray.find(m => m.userId === currentUserId || m.id === currentUserId);
 
     // CRITICAL FIX: Hydrate members with emails from 'users' node
-    // Optimization: Collect updates for lazy migration (store email in group member)
     const emailUpdates = {};
     const isMembersArray = Array.isArray(group.members);
 
@@ -2325,11 +2348,9 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
               const email = userData.email;
 
               if (email) {
-                // Determine path for lazy update
                 if (isMembersArray) {
                    emailUpdates[`groups/${groupId}/members/${index}/email`] = email;
                 } else {
-                   // Object based: Find key
                    const memberKey = Object.keys(group.members).find(k => {
                        const mem = group.members[k];
                        return (mem.id && mem.id === m.id) || k === m.id;
@@ -2353,10 +2374,12 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       return res.status(403).json({ success: false, error: 'You are not a member of this group' });
     }
 
-    // 3. Verify payer and participants exist in group
-    const payer = membersArray.find(m => m.id === paidBy);
-    if (!payer) {
-      return res.status(400).json({ success: false, error: 'Invalid payer' });
+    // 3. Verify payers and participants exist in group
+    // Validate all payers
+    for (const p of finalPayers) {
+        if (!membersArray.some(m => m.id === p.id)) {
+            return res.status(400).json({ success: false, error: `Invalid payer: ${p.id}` });
+        }
     }
 
     const participantMembers = membersArray.filter(m => participants.includes(m.id));
@@ -2364,19 +2387,26 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'No valid participants' });
     }
 
-    // 4. Calculate Split and Settlements
-    const splits = calculateExpenseSplit(amount, participantMembers.map(m => ({ id: m.id, name: m.name })), paidBy);
-    const debts = calculateExpenseSettlements(splits, paidBy);
+    // 4. Calculate Split and Settlements (Multi-Payer)
+    // Convert logic format: { participantId, amount }
+    const formattedPayers = finalPayers.map(p => ({ participantId: p.id, amount: Number(p.amount) }));
 
-    // Fetch existing settlements for all involved users to ensure accurate updates
-    // Map Member ID -> Storage Key (UID for real users, MemberID for temp)
+    // Splits (Consumption)
+    const splits = calculateExpenseSplit(amount, participantMembers.map(m => ({ id: m.id, name: m.name })), primaryPayerId);
+    // Convert splits to logic format
+    const formattedSplits = splits.map(s => ({ participantId: s.participantId, amount: s.amount }));
+
+    // Use new Multi-Payer Settlement Logic
+    const debts = calculateMultiPayerSettlements(formattedSplits, formattedPayers);
+
+    // Fetch existing settlements for all involved users
     const getStorageKey = (memberId) => {
       const m = membersArray.find(mem => mem.id === memberId);
       return (m && m.userId) ? m.userId : memberId;
     };
 
-    const involvedMemberIds = new Set([paidBy, ...participants]);
-    const settlementsMap = {}; // StorageKey -> { [PeerMemberId]: { toReceive, toPay } }
+    const involvedMemberIds = new Set([...finalPayers.map(p => p.id), ...participants]);
+    const settlementsMap = {};
 
     const fetchPromises = Array.from(involvedMemberIds).map(async (memberId) => {
       const storageKey = getStorageKey(memberId);
@@ -2392,28 +2422,34 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
     // 5. Build multi-path update object
     const updates = {};
-    // Merge lazy email migration updates
     Object.assign(updates, emailUpdates);
     const transactionId = db.ref('transactions').push().key;
     const timestamp = Date.now();
     const serverTime = admin.database.ServerValue.TIMESTAMP;
 
-    const isCurrentUserPayer = paidBy === currentUserId || (payer && payer.userId === currentUserId);
+    // A. Update Wallet Balance (Only for Current User if they paid)
+    // Find how much the current user paid
+    const currentUserPayerEntry = finalPayers.find(p => {
+        // Check if p.id matches current user's member ID
+        const payerMember = membersArray.find(m => m.id === p.id);
+        return payerMember && (payerMember.userId === currentUserId || payerMember.id === currentUserId);
+    });
 
-    // A. Update Wallet Balance if current user is payer
+    const amountPaidByCurrentUser = currentUserPayerEntry ? Number(currentUserPayerEntry.amount) : 0;
+
     let walletBalanceBefore = user.walletBalance || 0;
     let walletBalanceAfter = walletBalanceBefore;
     const walletBalancesSnapshot = {};
 
-    if (isCurrentUserPayer) {
-      if (walletBalanceBefore < amount) {
+    if (amountPaidByCurrentUser > 0) {
+      if (walletBalanceBefore < amountPaidByCurrentUser) {
         return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
       }
-      walletBalanceAfter -= amount;
-      // Use atomic increment to prevent race conditions
-      updates[`users/${currentUserId}/walletBalance`] = admin.database.ServerValue.increment(-amount);
+      walletBalanceAfter -= amountPaidByCurrentUser;
+      // Use atomic increment
+      updates[`users/${currentUserId}/walletBalance`] = admin.database.ServerValue.increment(-amountPaidByCurrentUser);
 
-      // Snapshot for Payer
+      // Snapshot for Payer (Current User)
       walletBalancesSnapshot[currentUserId] = {
         before: walletBalanceBefore,
         after: walletBalanceAfter
@@ -2421,6 +2457,8 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     }
 
     // B. Create Transaction Record
+    const primaryPayerMember = membersArray.find(m => m.id === primaryPayerId);
+
     const newTransaction = {
       id: transactionId,
       groupId,
@@ -2429,9 +2467,18 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       amount,
       date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
       timestamp,
-      paidBy,
-      paidByName: payer.name,
-      paidByIsTemporary: !!payer.isTemporary,
+      paidBy: primaryPayerId, // Legacy: Primary payer
+      paidByName: primaryPayerMember ? primaryPayerMember.name : "Unknown",
+      paidByIsTemporary: !!primaryPayerMember?.isTemporary,
+      payers: finalPayers.map(p => {
+          const m = membersArray.find(mem => mem.id === p.id);
+          return {
+              id: p.id,
+              name: m ? m.name : "Unknown",
+              amount: Number(p.amount),
+              userId: m?.userId || null
+          };
+      }),
       participants: splits.map(s => ({
         id: s.participantId,
         name: s.participantName,
@@ -2440,7 +2487,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       })),
       place: place || null,
       note: note || null,
-      walletBalanceBefore: isCurrentUserPayer ? walletBalanceBefore : null,
+      walletBalanceBefore: amountPaidByCurrentUser > 0 ? walletBalanceBefore : null,
       walletBalanceAfter,
       walletBalances: walletBalancesSnapshot,
       createdAt: new Date().toISOString(),
@@ -2449,7 +2496,6 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
     updates[`transactions/${transactionId}`] = newTransaction;
 
-    // Record processed transaction for idempotency
     if (clientTxnId) {
       updates[`processedTxns/${clientTxnId}`] = {
         transactionId,
@@ -2459,7 +2505,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       };
     }
 
-    // C. Add to userTransaction lists for all group members (Denormalized)
+    // C. Add to userTransaction lists
     const transactionSummaryBase = {
       type: "expense",
       title: newTransaction.title || "Expense",
@@ -2467,22 +2513,25 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       createdAt: newTransaction.createdAt,
       groupId,
       timestamp,
-      paidBy,
-      paidByName: payer.name,
-      paidByIsTemporary: !!payer.isTemporary,
+      paidBy: primaryPayerId,
+      paidByName: primaryPayerMember ? primaryPayerMember.name : "Unknown",
+      paidByIsTemporary: !!primaryPayerMember?.isTemporary,
       memberCount: membersArray.length,
       participantsCount: participants.length,
-      participants: newTransaction.participants // Added to avoid N+1 query
+      participants: newTransaction.participants,
+      payers: newTransaction.payers // Include payers in summary
     };
 
     membersArray.forEach(m => {
       if (m.userId) {
         const userSummary = { ...transactionSummaryBase };
         const split = splits.find(s => s.participantId === m.id);
+        const paidEntry = finalPayers.find(p => p.id === m.id);
 
-        userSummary.userIsPayer = (m.id === paidBy);
+        userSummary.userIsPayer = !!paidEntry;
         userSummary.userIsParticipant = !!split;
         userSummary.userShare = split ? split.amount : 0;
+        userSummary.userPaid = paidEntry ? Number(paidEntry.amount) : 0;
 
         updates[`userTransactions/${m.userId}/${transactionId}`] = userSummary;
       }
@@ -2495,70 +2544,63 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       const debtorStorageKey = getStorageKey(debtorId);
       const creditorStorageKey = getStorageKey(creditorId);
 
-      // 1. Update Debtor's Settlements (Debtor owes Creditor)
-      // Path: users/{DebtorStorageKey}/settlements/{GroupId}/{CreditorMemberId}
+      // Debtor owes Creditor
       const debtorSettlements = settlementsMap[debtorStorageKey] || {};
       const debtorToCreditor = debtorSettlements[creditorId] || { toReceive: 0, toPay: 0 };
 
       let debtorNewToPay = (debtorToCreditor.toPay || 0) + amount;
       let debtorNewToReceive = (debtorToCreditor.toReceive || 0);
 
-      // Netting removed as per user request (Bidirectional debts allowed)
-      // if (debtorNewToPay > 0 && debtorNewToReceive > 0) { ... }
-
       updates[`users/${debtorStorageKey}/settlements/${groupId}/${creditorId}`] = {
         toReceive: Math.max(0, debtorNewToReceive),
         toPay: Math.max(0, debtorNewToPay)
       };
 
-      // 2. Update Creditor's Settlements (Creditor receives from Debtor)
-      // Path: users/{CreditorStorageKey}/settlements/{GroupId}/{DebtorMemberId}
+      // Creditor receives from Debtor
       const creditorSettlements = settlementsMap[creditorStorageKey] || {};
       const creditorFromDebtor = creditorSettlements[debtorId] || { toReceive: 0, toPay: 0 };
 
       let creditorNewToReceive = (creditorFromDebtor.toReceive || 0) + amount;
       let creditorNewToPay = (creditorFromDebtor.toPay || 0);
 
-      // Netting removed as per user request
-      // if (creditorNewToReceive > 0 && creditorNewToPay > 0) { ... }
-
       updates[`users/${creditorStorageKey}/settlements/${groupId}/${debtorId}`] = {
         toReceive: Math.max(0, creditorNewToReceive),
         toPay: Math.max(0, creditorNewToPay)
       };
-
-      // Update local map to handle multiple debts between same pair?
-      // Since Debtor->Creditor pair is unique in this loop (one split per participant),
-      // we don't need to update settlementsMap mid-loop.
     }
 
     // 6. Execute Atomic Update
     await db.ref().update(updates);
 
     // --- SYNC WALLET BALANCE ---
-    if (isCurrentUserPayer) {
-      // Fire and forget
+    if (amountPaidByCurrentUser > 0) {
       syncWalletBalanceToGroups(db, currentUserId, walletBalanceAfter, user.showBalanceToOthers || false)
         .catch(err => console.error("Wallet sync failed:", err));
     }
 
-    // 7. Await Notifications (CRITICAL for Vercel/Serverless)
-    // Run them BEFORE res.json to ensure the process isn't killed before they finish
+    // 7. Notifications
     console.log('🚀 Triggering Notifications for Transaction:', transactionId);
 
     try {
-      // Run Push and Email in parallel
       const notificationPromises = [];
 
-      // A. Push Notifications (OneSignal)
+      // A. Push Notifications
       const membersWithUserId = membersArray.filter(m => m.userId);
       if (membersWithUserId.length > 0) {
         const userIds = membersWithUserId.map(m => m.userId);
+
+        let bodyText = "";
+        if (finalPayers.length > 1) {
+            bodyText = `${finalPayers.length} people paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`;
+        } else {
+            bodyText = `${primaryPayerMember ? primaryPayerMember.name : "Someone"} paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`;
+        }
+
         notificationPromises.push(
           sendOneSignalNotificationInternal({
             userIds,
             title: `New Expense in ${group.name}`,
-            body: `${payer.name} paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`,
+            body: bodyText,
             data: { type: 'expense', transactionId, groupId, amount }
           })
             .then(() => console.log('✅ Push Notifications Promise Resolved'))
@@ -2570,7 +2612,6 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       const participantsWithEmail = membersArray.filter(m => m.email && !m.isPending);
       if (participantsWithEmail.length > 0) {
         notificationPromises.push((async () => {
-          // Fetch all preferences in parallel
           const preferencePromises = participantsWithEmail.map(async (participant) => {
             if (!participant.userId) return { participant, emailEnabled: true };
             try {
@@ -2582,7 +2623,6 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
                 emailEnabled: prefSnap.exists ? prefSnap.data().emailEnabled !== false : true
               };
             } catch (err) {
-              console.warn(`⚠️ Preference check failed for ${participant.email}: ${err.message}. Defaulting to ENABLED.`);
               return { participant, emailEnabled: true };
             }
           });
@@ -2599,7 +2639,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
             const emailResults = await Promise.allSettled(recipientsWithPreference.map(recipient => {
               const split = splits.find(s => s.participantId === recipient.id);
               return emailService.sendExpenseNotification(recipient.email, {
-                payerName: payer.name,
+                payerName: finalPayers.length > 1 ? "Multiple people" : (primaryPayerMember ? primaryPayerMember.name : "Unknown"),
                 amount: amount.toLocaleString(),
                 title: note || 'Expense',
                 splitAmount: split ? split.amount.toLocaleString() : '0',
@@ -2609,13 +2649,10 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
                 note: note || ''
               });
             }));
-            const successCount = emailResults.filter(r => r.status === 'fulfilled' && r.value?.success).length;
-            console.log(`✅ Sent ${successCount}/${recipientsWithPreference.length} expense emails`);
           }
         })());
       }
 
-      // Wait for all notifications (or at least attempt them) with a global timeout for safety
       const globalTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Global notification timeout')), 8000));
       await Promise.race([Promise.allSettled(notificationPromises), globalTimeout]).catch(e => console.warn('⚠️ Notifications timed out or failed partially:', e.message));
 
@@ -2635,6 +2672,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
   }
 });
+
 
 // Record Payment endpoint (Secure)
 app.post('/api/record-payment', generalLimiter, async (req, res) => {
