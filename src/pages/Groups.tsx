@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Plus, Search, Filter, Eye, Star } from "lucide-react";
+import { Users, Plus, Search, Filter, Eye, Star, X } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
@@ -189,9 +189,18 @@ const Groups = () => {
                   aria-label="Search groups, members, or expenses"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white border-none rounded-xl py-2 lg:py-3 pl-10 lg:pl-12 pr-3 lg:pr-4 focus:ring-2 focus:ring-[#4a6850] shadow-sm text-sm placeholder:text-slate-400"
+                  className="w-full bg-white border-none rounded-xl py-2 lg:py-3 pl-10 lg:pl-12 pr-10 focus:ring-2 focus:ring-[#4a6850] shadow-sm text-sm placeholder:text-slate-400"
                   placeholder="Search groups, members, or expenses..."
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 lg:right-4 top-1/2 -translate-y-1/2 p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-3 lg:w-4 h-3 lg:h-4" />
+                  </button>
+                )}
               </div>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-2 lg:pb-0 hide-scrollbar">
