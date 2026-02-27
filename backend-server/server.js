@@ -1899,6 +1899,12 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
       });
     }
 
+    // Security: Prevent Path Traversal in User ID
+    if (!isValidFirebaseId(userId)) {
+      console.warn(`⚠️ Blocked malicious userId in push-notify: ${userId}`);
+      return res.status(400).json({ success: false, error: 'Invalid user ID format' });
+    }
+
     if (typeof title !== 'string') {
       return res.status(400).json({ success: false, error: 'Title must be a string' });
     }
@@ -2107,6 +2113,12 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
 
     if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
       return res.status(400).json({ success: false, error: 'userIds must be a non-empty array' });
+    }
+
+    // Security: Prevent Path Traversal in User IDs
+    if (!userIds.every(id => isValidFirebaseId(id))) {
+      console.warn(`⚠️ Blocked malicious userIds in push-notify-multiple: ${userIds.join(', ')}`);
+      return res.status(400).json({ success: false, error: 'Invalid user ID format' });
     }
 
     if (!title || !body) {
