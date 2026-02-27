@@ -1889,7 +1889,7 @@ app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
 // Send push notification to a specific user using OneSignal REST API
 app.post('/api/push-notify', generalLimiter, async (req, res) => {
   try {
-    const { userId, title, body, icon, badge, tag, data } = req.body;
+    let { userId, title, body, icon, badge, tag, data } = req.body;
 
     if (!userId || !title || !body) {
       return res.status(400).json({
@@ -1897,6 +1897,24 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
         error: 'Missing required fields: userId, title, body'
       });
     }
+
+    if (typeof title !== 'string') {
+      return res.status(400).json({ success: false, error: 'Title must be a string' });
+    }
+    if (typeof body !== 'string') {
+      return res.status(400).json({ success: false, error: 'Body must be a string' });
+    }
+
+    if (title.length > 100) {
+      return res.status(400).json({ success: false, error: 'Title must be 100 characters or less' });
+    }
+    if (body.length > 500) {
+      return res.status(400).json({ success: false, error: 'Body must be 500 characters or less' });
+    }
+
+    // Sanitize
+    title = sanitize(title);
+    body = sanitize(body);
 
     console.log('🔔 Sending push notification to user via OneSignal:', userId);
 
@@ -2084,7 +2102,7 @@ const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, b
 // Send push notification to multiple users using OneSignal REST API
 app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
   try {
-    const { userIds, title, body, icon, badge, data } = req.body;
+    let { userIds, title, body, icon, badge, data } = req.body;
 
     if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
       return res.status(400).json({ success: false, error: 'userIds must be a non-empty array' });
@@ -2093,6 +2111,24 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
     if (!title || !body) {
       return res.status(400).json({ success: false, error: 'Missing required fields: title, body' });
     }
+
+    if (typeof title !== 'string') {
+      return res.status(400).json({ success: false, error: 'Title must be a string' });
+    }
+    if (typeof body !== 'string') {
+      return res.status(400).json({ success: false, error: 'Body must be a string' });
+    }
+
+    if (title.length > 100) {
+      return res.status(400).json({ success: false, error: 'Title must be 100 characters or less' });
+    }
+    if (body.length > 500) {
+      return res.status(400).json({ success: false, error: 'Body must be 500 characters or less' });
+    }
+
+    // Sanitize
+    title = sanitize(title);
+    body = sanitize(body);
 
     console.log('🔔 Sending push notifications via internal helper');
     const result = await sendOneSignalNotificationInternal({ userIds, title, body, icon, badge, data });
