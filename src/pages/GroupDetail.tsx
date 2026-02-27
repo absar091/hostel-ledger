@@ -451,6 +451,7 @@ const GroupDetail = () => {
             <button
               onClick={() => navigate("/")}
               className="w-11 h-11 rounded-2xl bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
+              aria-label="Go back"
             >
               <ArrowLeft className="w-5 h-5 text-[#4a6850] font-bold" />
             </button>
@@ -481,6 +482,7 @@ const GroupDetail = () => {
             <button
               onClick={() => setShowGroupSettings(true)}
               className="w-11 h-11 rounded-2xl bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
+              aria-label="Group settings"
             >
               <Settings className="w-5 h-5 text-[#4a6850] font-bold" />
             </button>
