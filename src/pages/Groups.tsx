@@ -368,7 +368,7 @@ const Groups = () => {
                   </div>
 
                   {/* Actions - Always visible on mobile, hover on desktop */}
-                  <div className="flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100 transition-opacity duration-300">
                     <button
                       onClick={handleSettleClick}
                       className={`flex-1 text-white text-xs font-bold py-2 rounded-lg transition-colors ${isSettled || group.isPersonal
@@ -395,9 +395,9 @@ const Groups = () => {
             })}
 
             {/* Create New Group Card */}
-            <div
+            <button
               onClick={() => navigate('/create-group')}
-              className="border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-6 lg:p-8 group hover:border-[#4a6850] transition-colors cursor-pointer bg-white/50 min-h-[200px]"
+              className="w-full border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-6 lg:p-8 group hover:border-[#4a6850] transition-colors cursor-pointer bg-white/50 min-h-[200px]"
             >
               <div className="w-10 lg:w-12 h-10 lg:h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-[#4a6850]/10 group-hover:text-[#4a6850] transition-all mb-3">
                 <Plus className="w-5 lg:w-6 h-5 lg:h-6" />
@@ -405,7 +405,7 @@ const Groups = () => {
               <p className="text-xs lg:text-sm font-bold text-slate-500 group-hover:text-[#4a6850] transition-colors text-center">
                 Create New Group
               </p>
-            </div>
+            </button>
           </div>
 
           {/* Empty State */}

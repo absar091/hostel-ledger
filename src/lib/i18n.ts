@@ -376,7 +376,9 @@ const resources = {
                 "main_label": "Main",
                 "logout": "Logout",
                 "logout_success": "Logged out successfully",
-                "logout_failed": "Failed to logout"
+                "logout_failed": "Failed to logout",
+                "expand": "Expand Sidebar",
+                "collapse": "Collapse Sidebar"
             },
             "member_detail": {
                 "title": "Member Details",
@@ -1173,7 +1175,9 @@ const resources = {
                 "main_label": "مین",
                 "logout": "لاگ آؤٹ",
                 "logout_success": "لاگ آؤٹ کامیاب رہا",
-                "logout_failed": "لاگ آؤٹ میں ناکامی"
+                "logout_failed": "لاگ آؤٹ میں ناکامی",
+                "expand": "سائیڈ بار کھولیں",
+                "collapse": "سائیڈ بار بند کریں"
             },
             "member_detail": {
                 "title": "رکن کی تفصیلات",
