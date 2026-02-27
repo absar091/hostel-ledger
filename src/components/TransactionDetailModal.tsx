@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useRef, useState } from "react";
-import { ArrowUpRight, ArrowDownLeft, CreditCard, Users, User, X, Share2, Copy, Download, Image } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, CreditCard, Users, User, X, Share2, Copy, Download, Image, Check } from "lucide-react";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -16,6 +16,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
     const { formatAmount } = useCurrency();
     const receiptRef = useRef<HTMLDivElement>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
 
     if (!transaction) return null;
 
@@ -72,9 +73,15 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
 
     const handleCopyId = () => {
         if (transaction.id) {
+            const onSuccess = () => {
+                toast.success("Transaction ID copied! 📋");
+                setIsCopied(true);
+                setTimeout(() => setIsCopied(false), 2000);
+            };
+
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(transaction.id)
-                    .then(() => toast.success("Transaction ID copied! 📋"))
+                    .then(onSuccess)
                     .catch(() => toast.error("Failed to copy ID"));
             } else {
                 try {
@@ -84,7 +91,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                     textArea.select();
                     document.execCommand('copy');
                     document.body.removeChild(textArea);
-                    toast.success("Transaction ID copied! 📋");
+                    onSuccess();
                 } catch (err) {
                     toast.error("Clipboard access denied");
                 }
@@ -241,10 +248,18 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 </span>
                                 <button
                                     onClick={handleCopyId}
-                                    className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-[#4a6850] transition-all"
-                                    title="Copy ID"
+                                    className={`p-1.5 rounded-full transition-all ${
+                                        isCopied
+                                            ? "bg-emerald-50 text-emerald-500"
+                                            : "hover:bg-slate-100 text-slate-400 hover:text-[#4a6850]"
+                                    }`}
+                                    title={isCopied ? "Copied!" : "Copy ID"}
                                 >
-                                    <Copy className="w-3.5 h-3.5" />
+                                    {isCopied ? (
+                                        <Check className="w-3.5 h-3.5" />
+                                    ) : (
+                                        <Copy className="w-3.5 h-3.5" />
+                                    )}
                                 </button>
                             </div>
 
