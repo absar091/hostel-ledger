@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, Settings, ChevronRight, Plus, HandCoins, Users, Share2 } from "lucide-react";
+import { ArrowLeft, Settings, ChevronRight, Plus, HandCoins, Users, Share2, Star } from "lucide-react";
 import GroupPendingInvitations from "@/components/GroupPendingInvitations";
 import { Button } from "@/components/ui/button";
 import TimelineItem from "@/components/TimelineItem";
@@ -33,7 +33,7 @@ const GroupDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { formatAmount } = useCurrency();
   const { getGroupById, fetchGroupDetail, getTransactionsByGroup, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup, mergeMembers } = useFirebaseData();
-  const { getSettlements, user } = useFirebaseAuth();
+  const { getSettlements, user, toggleFavoriteGroup, getFavoriteGroups } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
 
   const [activeTab, setActiveTab] = useState<"ledger" | "members" | "summary">("ledger");
@@ -82,12 +82,15 @@ const GroupDetail = () => {
     members: (Array.isArray(rawGroup.members)
       ? rawGroup.members
       : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
-    ).filter(m => m && m.id) // Filter out any null/undefined members
+    ).filter((m: { id: any; }) => m && m.id) // Filter out any null/undefined members
   } : null;
 
   const transactions = id ? getTransactionsByGroup(id) : [];
   const settlements = id ? getSettlements(id) : {};
   const { invitations } = useInvitations();
+  const favoriteGroups = getFavoriteGroups();
+  const isFavorite = id && favoriteGroups.includes(id);
+
   // Calculate total amount to receive in this group
   const groupTotalToReceive = Object.values(settlements).reduce((total, settlement) => {
     return total + (settlement.toReceive || 0);
@@ -116,7 +119,7 @@ const GroupDetail = () => {
   const memberTransactions = useMemo(() => {
     if (!group || !selectedMember) return [];
 
-    const currentUser = group.members.find((m) => m.isCurrentUser);
+    const currentUser = group.members.find((m: { isCurrentUser: any; }) => m.isCurrentUser);
     if (!currentUser) return [];
 
     return transactions
@@ -195,6 +198,15 @@ const GroupDetail = () => {
         };
       });
   }, [group, selectedMember, transactions]);
+
+  // Handle favorite toggle
+  const handleToggleFavorite = async () => {
+    if (!group) return;
+    const result = await toggleFavoriteGroup(group.id);
+    if (!result.success) {
+      toast.error("Failed to update favorite status");
+    }
+  };
 
   // Check for pending invitation
   if (group && group.status === 'invited') {
@@ -284,7 +296,7 @@ const GroupDetail = () => {
     );
   }
 
-  const members = group.members.map((m) => ({
+  const members = group.members.map((m: any) => ({
     id: m.id,
     name: m.name,
     isTemporary: m.isTemporary,
@@ -294,10 +306,10 @@ const GroupDetail = () => {
     isPending: (m as any).isPending,
     userId: (m as any).userId,
   }));
-  const currentUser = group.members.find((m) => m.isCurrentUser);
+  const currentUser = group.members.find((m: any) => m.isCurrentUser);
 
   // Calculate total pending using settlements
-  const totalPending = group.members.reduce((sum, m) => {
+  const totalPending = group.members.reduce((sum: number, m: any) => {
     if (!m.isCurrentUser) {
       const settlement = settlements[m.id];
       // If settlement exists and you owe them (toPay > 0)
@@ -365,7 +377,7 @@ const GroupDetail = () => {
     });
 
     if (result.success) {
-      const memberName = group.members.find((m) => m.id === data.fromMember)?.name;
+      const memberName = group.members.find((m: { id: string; }) => m.id === data.fromMember)?.name;
       toast.success(`Recorded ${formatAmount(data.amount)} from ${memberName}`);
       if (result.transaction) {
         navigate("/receipt", { state: { transaction: result.transaction, type: "payment" } });
@@ -387,7 +399,7 @@ const GroupDetail = () => {
   // personalStats, totalSpent, and expenseCount are defined before early returns above
 
   // Find the member who has paid the most in expenses (actual top contributor)
-  const memberExpenseContributions = group.members.map(member => {
+  const memberExpenseContributions = group.members.map((member: { id: any; }) => {
     const totalPaid = transactions
       .filter(t => t.type === "expense" && t.paidBy === member.id)
       .reduce((sum, t) => sum + t.amount, 0);
@@ -398,7 +410,7 @@ const GroupDetail = () => {
   });
 
   const topSpender = memberExpenseContributions.length > 0
-    ? memberExpenseContributions.reduce((prev, curr) => {
+    ? memberExpenseContributions.reduce((prev: { totalPaid: number; }, curr: { totalPaid: number; }) => {
       return curr.totalPaid > prev.totalPaid ? curr : prev;
     })
     : null;
@@ -409,12 +421,26 @@ const GroupDetail = () => {
         title={group.name}
         showBackButton={true}
         rightContent={
-          <button
-            onClick={() => setShowGroupSettings(true)}
-            className="w-10 h-10 rounded-full bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
-          >
-            <Settings className="w-5 h-5 text-[#4a6850] font-bold" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleToggleFavorite}
+              className={cn(
+                "w-10 h-10 rounded-full shadow-sm border flex items-center justify-center transition-all",
+                isFavorite
+                  ? "bg-yellow-100 border-yellow-200 text-yellow-500"
+                  : "bg-[#4a6850]/10 border-[#4a6850]/20 text-[#4a6850] hover:bg-[#4a6850]/20"
+              )}
+              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            >
+              <Star className={cn("w-5 h-5", isFavorite && "fill-current")} />
+            </button>
+            <button
+              onClick={() => setShowGroupSettings(true)}
+              className="w-10 h-10 rounded-full bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
+            >
+              <Settings className="w-5 h-5 text-[#4a6850] font-bold" />
+            </button>
+          </div>
         }
       />
 
@@ -438,6 +464,19 @@ const GroupDetail = () => {
                 {group.memberCount || group.members.length} {t('group.member_count')} {totalPending > 0 && `• ${formatAmount(totalPending)} ${t('group.pending')}`}
               </p>
             </div>
+
+            <button
+              onClick={handleToggleFavorite}
+              className={cn(
+                "w-11 h-11 rounded-2xl shadow-sm border flex items-center justify-center transition-all",
+                isFavorite
+                  ? "bg-yellow-100 border-yellow-200 text-yellow-500"
+                  : "bg-[#4a6850]/10 border-[#4a6850]/20 text-[#4a6850] hover:bg-[#4a6850]/20"
+              )}
+              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            >
+              <Star className={cn("w-5 h-5", isFavorite && "fill-current")} />
+            </button>
 
             <button
               onClick={() => setShowGroupSettings(true)}
@@ -506,7 +545,7 @@ const GroupDetail = () => {
                           // Use consistent naming logic
                           if (item.paidBy === user?.uid) return t('group.you_label');
                           if (item.paidBy === group.createdBy) return t('group.owner');
-                          const member = group.members.find(m => m.id === item.paidBy);
+                          const member = group.members.find((m: { id: any; }) => m.id === item.paidBy);
                           return member?.name || item.paidByName;
                         })()
                       ) : undefined}
@@ -515,7 +554,7 @@ const GroupDetail = () => {
                         name: (() => {
                           if (p.id === user?.uid) return t('group.you_label'); // Your share
                           if (p.id === group.createdBy) return t('group.owner'); // Owner's share
-                          const member = group.members.find(m => m.id === p.id); // Valid member name
+                          const member = group.members.find((m: { id: any; }) => m.id === p.id); // Valid member name
                           return member?.name || p.name;
                         })()
                       })) : undefined}
@@ -554,8 +593,8 @@ const GroupDetail = () => {
             {/* Pending Invitations Section */}
             {id && <GroupPendingInvitations groupId={id} />}
 
-            {group.members.map((member, index) => {
-              const isYou = member.isCurrentUser;
+            {group.members.map((member: { id: any; name: any; isTemporary: any; isPending: any; userId: any; }, index: number) => {
+              const isYou = (member as any).isCurrentUser;
 
               // Get settlement data for this member
               const memberSettlement = settlements[member.id] || { toReceive: 0, toPay: 0 };
@@ -641,7 +680,7 @@ const GroupDetail = () => {
                         size="sm"
                         onClick={() => handleMemberClick({
                           ...member,
-                          balance: member.balance || 0,
+                          balance: (member as any).balance || 0,
                           isOwner: member.userId === group.createdBy || member.id === group.createdBy,
                         })}
                         className="p-3 hover:bg-[#4a6850]/10 rounded-2xl group-hover:scale-105 transition-all"
@@ -726,7 +765,7 @@ const GroupDetail = () => {
                 <h3 className="font-black text-gray-900 text-base tracking-tight">{t('group.members_title')}</h3>
               </div>
               <div className="flex -space-x-3 mb-3">
-                {group.members.slice(0, 5).map((member) => (
+                {group.members.slice(0, 5).map((member: { id: any; name: string; }) => (
                   <Avatar key={member.id} name={member.name || ""} size="md" />
                 ))}
                 {group.members.length > 5 && (
