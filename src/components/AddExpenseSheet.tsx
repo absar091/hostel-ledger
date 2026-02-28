@@ -376,18 +376,58 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
     const count = participants.length || 1;
     const perPerson = count > 0 ? Math.round((totalAmount / count) * 100) / 100 : 0;
 
-    // Logic: 
-    // If I paid (paidBy === me), I receive (Total - MyShare)
-    // If someone else paid, I owe MyShare
+    let toReceive = 0;
+    let toGive = 0;
+    const othersCount = Math.max(0, count - 1);
 
-    // Ideally we'd use calculateExpenseSplit here, but for display simplicity:
-    return {
-      perPerson,
-      toReceive: (totalAmount - perPerson), // Rough estimate for UI
-      toGive: perPerson,
-      othersCount: Math.max(0, count - 1)
-    };
-  }, [amount, participants]);
+    // Support multiple payers
+    if (payerMode === 'multiple' && multiPayers.length > 0) {
+      const userPayment = multiPayers.find(p => p.id === user?.uid)?.amount || '0';
+      const userTotalPaid = parseFloat(userPayment) || 0;
+      const userShare = participants.includes(user?.uid || '') ? perPerson : 0;
+
+      const net = userTotalPaid - userShare;
+      if (net > 0) {
+        toReceive = net;
+      } else if (net < 0) {
+        toGive = Math.abs(net);
+      }
+
+      return {
+        perPerson,
+        toReceive,
+        toGive,
+        othersCount,
+        isCurrentUserPayer: userTotalPaid > 0,
+        isCurrentUserParticipant: participants.includes(user?.uid || ''),
+        actualPaidBy: paidBy
+      };
+    } else {
+      // Single Payer Mode
+      const isCurrentUserPayer = paidBy === user?.uid;
+      const isCurrentUserParticipant = participants.includes(user?.uid || '');
+
+      if (isCurrentUserPayer) {
+        // I paid for the group
+        toReceive = isCurrentUserParticipant ? (totalAmount - perPerson) : totalAmount;
+      } else {
+        // Someone else paid
+        if (isCurrentUserParticipant) {
+          toGive = perPerson;
+        }
+      }
+
+      return {
+        perPerson,
+        toReceive,
+        toGive,
+        othersCount,
+        isCurrentUserPayer,
+        isCurrentUserParticipant,
+        actualPaidBy: paidBy
+      };
+    }
+  }, [amount, participants, paidBy, user, payerMode, multiPayers]);
 
   return (
     <>
@@ -735,15 +775,31 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                     <div className="text-lg font-black text-gray-900 tracking-tight">
                       {formatAmount(splitDetails.perPerson)} {t('sheets.add_expense.per_person')}
                     </div>
-                    {splitDetails.toReceive > 0 && (
-                      <div className="text-[#4a6850] font-black mt-2 text-sm">
-                        {t('sheets.add_expense.you_will_receive', { amount: formatAmount(splitDetails.toReceive), count: splitDetails.othersCount, people: splitDetails.othersCount === 1 ? t('sheets.add_expense.person') : t('sheets.add_expense.people') })}
-                      </div>
-                    )}
-                    {splitDetails.toGive > 0 && (
-                      <div className="text-red-600 font-black mt-2 text-sm">
-                        {t('sheets.add_expense.you_owe', { amount: formatAmount(splitDetails.toGive), name: paidByName })}
-                      </div>
+
+                    {splitDetails.isCurrentUserPayer ? (
+                      <>
+                        {splitDetails.toReceive > 0 && (
+                          <div className="text-[#4a6850] font-black mt-2 text-sm">
+                            {t('sheets.add_expense.you_will_receive', { amount: formatAmount(splitDetails.toReceive), count: splitDetails.othersCount, people: splitDetails.othersCount === 1 ? t('sheets.add_expense.person') : t('sheets.add_expense.people') })}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {/* Someone else paid */}
+                        <div className="text-[#4a6850] font-black mt-2 text-sm">
+                          {paidByName} will receive {formatAmount(splitDetails.toReceive > 0 ? splitDetails.toReceive : splitDetails.perPerson * splitDetails.othersCount)} from {splitDetails.othersCount} {splitDetails.othersCount === 1 ? t('sheets.add_expense.person') : t('sheets.add_expense.people')}
+                        </div>
+                        {splitDetails.isCurrentUserParticipant ? (
+                          <div className="text-red-600 font-black mt-2 text-sm">
+                            {t('sheets.add_expense.you_owe', { amount: formatAmount(splitDetails.toGive), name: paidByName })}
+                          </div>
+                        ) : (
+                          <div className="text-gray-500 font-bold mt-2 text-sm">
+                            You are not a participant
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -841,15 +897,30 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                       <div className="text-sm text-white/90 font-bold">
                         {formatAmount(splitDetails.perPerson)} {t('sheets.add_expense.per_person')}
                       </div>
-                      {splitDetails.toReceive > 0 && (
-                        <div className="text-emerald-200 font-black mt-3 text-lg">
-                          You will receive {formatAmount(splitDetails.toReceive)}
-                        </div>
-                      )}
-                      {splitDetails.toGive > 0 && (
-                        <div className="text-orange-200 font-black mt-3 text-lg">
-                          You owe {formatAmount(splitDetails.toGive)}
-                        </div>
+
+                      {splitDetails.isCurrentUserPayer ? (
+                        <>
+                          {splitDetails.toReceive > 0 && (
+                            <div className="text-emerald-200 font-black mt-3 text-lg">
+                              You will receive {formatAmount(splitDetails.toReceive)}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-emerald-200 font-black mt-3 text-lg">
+                            {paidByName} will receive {formatAmount(splitDetails.toReceive > 0 ? splitDetails.toReceive : splitDetails.perPerson * splitDetails.othersCount)}
+                          </div>
+                          {splitDetails.isCurrentUserParticipant ? (
+                            <div className="text-orange-200 font-black mt-1 text-lg">
+                              You owe {formatAmount(splitDetails.toGive)}
+                            </div>
+                          ) : (
+                            <div className="text-white/70 font-bold mt-1 text-sm">
+                              You are not a participant
+                            </div>
+                          )}
+                        </>
                       )}
                     </>
                   )}

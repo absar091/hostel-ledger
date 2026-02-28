@@ -12,41 +12,19 @@ const VerificationPage = () => {
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
 
   // Mock group data
-  const mockGroup = {
-    id: "group1",
-    name: "Test Group",
-    emoji: "🏠",
-    members: [
-      { id: "user1", name: "Alice", isCurrentUser: true, balance: 100 },
-      { id: "user2", name: "Bob", balance: -50 },
-      { id: "user3", name: "Charlie", balance: 0 },
-    ],
-    createdBy: "user1"
-  };
-
-  // Mock transaction data
-  const mockTransaction = {
-    id: "txn_1234567890",
-    type: "expense",
-    title: "Grocery Shopping",
-    amount: 1500,
-    date: "Oct 24, 2023",
-    paidBy: "user1",
-    paidByName: "Alice",
-    groupId: "group1",
-    participants: [
-        { id: "user1", name: "Alice", amount: 500 },
-        { id: "user2", name: "Bob", amount: 500 },
-        { id: "user3", name: "Charlie", amount: 500 }
-    ],
-    note: "Weekly groceries including fruits and vegetables",
-    place: "Supermarket"
-  };
-
-  const mockUser = {
-      uid: "user1",
-      name: "Alice"
-  };
+  const mockGroups = [
+      {
+          id: "group1",
+          name: "Hostel Ledger",
+          emoji: "🏢",
+          members: [
+              { id: "me", name: "You", isCurrentUser: true },
+              { id: "user2", name: "Absar Ahmad" },
+              { id: "user3", name: "Ali" }
+          ],
+          createdBy: "me"
+      }
+  ];
 
   return (
     <div className="p-10 space-y-10">
@@ -75,27 +53,10 @@ const VerificationPage = () => {
             open={showAddMoney}
             onClose={() => setShowAddMoney(false)}
             onSubmit={async () => {}}
+            onAddMember={async () => ({ success: true })}
+            initialGroupId="group1"
         />
-
-        <GroupSettingsSheet
-            open={showGroupSettings}
-            onClose={() => setShowGroupSettings(false)}
-            group={mockGroup}
-            onAddMember={() => {}}
-            onRemoveMember={() => {}}
-            onUpdateGroup={() => {}}
-            onDeleteGroup={() => {}}
-            isOwner={true}
-        />
-
-        {showTransactionDetail && (
-            <TransactionDetailModal
-                transaction={mockTransaction}
-                onClose={() => setShowTransactionDetail(false)}
-                groups={[mockGroup]}
-                user={mockUser}
-            />
-        )}
+        <Button onClick={() => setShowAddExpense(true)}>Open Add Expense</Button>
     </div>
   );
 };
