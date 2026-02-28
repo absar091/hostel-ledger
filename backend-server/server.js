@@ -1560,6 +1560,11 @@ app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, resetLink, name' });
     }
 
+    // Strict email check (No HTML characters allowed)
+    if (!/^[^\s@<>"'`]+@[^\s@<>"'`]+\.[^\s@<>"'`]+$/.test(email)) {
+      return res.status(400).json({ success: false, error: 'Invalid email format' });
+    }
+
     // Security: Validate resetLink domain to prevent phishing/open redirect
     try {
       const url = new URL(resetLink);
@@ -1600,6 +1605,11 @@ app.post('/api/send-welcome', emailLimiter, async (req, res) => {
     const { email, name } = req.body;
     if (!email || !name) {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, name' });
+    }
+
+    // Strict email check (No HTML characters allowed)
+    if (!/^[^\s@<>"'`]+@[^\s@<>"'`]+\.[^\s@<>"'`]+$/.test(email)) {
+      return res.status(400).json({ success: false, error: 'Invalid email format' });
     }
 
     await emailService.sendWelcome(email, name);
