@@ -227,6 +227,51 @@ async function runTests() {
     failures++;
   }
 
+  // TEST 5: /api/send-password-reset with XSS email (Expectation: 400)
+  console.log('\n🔹 TEST 5: Checking /api/send-password-reset with XSS email');
+  try {
+    const res = await request(app)
+      .post('/api/send-password-reset')
+      .set('Authorization', 'Bearer valid-token')
+      .send({
+        email: '<script>alert(1)</script>@example.com',
+        resetLink: 'http://localhost/reset',
+        name: 'Hacker'
+      });
+
+    if (res.status === 400 && res.body.error.includes('Invalid email format')) {
+      console.log('✅ PASS: XSS email rejected for password reset (400)');
+    } else {
+      console.log(`❌ FAIL: Expected 400, got ${res.status}. Body:`, res.body);
+      failures++;
+    }
+  } catch (err) {
+    console.error('❌ Error in Test 5:', err);
+    failures++;
+  }
+
+  // TEST 6: /api/send-welcome with XSS email (Expectation: 400)
+  console.log('\n🔹 TEST 6: Checking /api/send-welcome with XSS email');
+  try {
+    const res = await request(app)
+      .post('/api/send-welcome')
+      .set('Authorization', 'Bearer valid-token')
+      .send({
+        email: '<script>alert(1)</script>@example.com',
+        name: 'Hacker'
+      });
+
+    if (res.status === 400 && res.body.error.includes('Invalid email format')) {
+      console.log('✅ PASS: XSS email rejected for welcome email (400)');
+    } else {
+      console.log(`❌ FAIL: Expected 400, got ${res.status}. Body:`, res.body);
+      failures++;
+    }
+  } catch (err) {
+    console.error('❌ Error in Test 6:', err);
+    failures++;
+  }
+
   console.log(`\n🏁 Tests Complete. Failures: ${failures}`);
   if (failures > 0) process.exit(1);
 }
