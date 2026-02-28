@@ -232,17 +232,6 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
       // finalPayers remains undefined (or we could set it for consistency, but backend handles it)
     }
 
-    // Validate Multiple Payers
-    if (payerMode === 'multiple') {
-      if (Math.abs(remainingToPay) > 0.05) {
-        toast.error(`Total paid (${formatAmount(totalPaidAmount)}) must match expense amount (${formatAmount(totalAmount)})`);
-        return;
-      }
-      if (multiPayers.length === 0) {
-        toast.error("Please add at least one payer");
-        return;
-      }
-    }
     const invalidParticipants = participants.filter(p => !members.some(m => String(m.id) === String(p)));
     if (invalidParticipants.length > 0) {
       console.error("Invalid participants detected:", { invalidParticipants, availableMembers: members.map(m => m.id) });
