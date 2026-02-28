@@ -157,9 +157,54 @@ async function runTests() {
     failures++;
   }
 
-  // TEST 4: /api/create-group with invalid member emails (Expectation: 400)
+  // TEST 4: /api/send-password-reset with XSS email (Expectation: 400)
+  console.log('\n🔹 TEST 4: Checking /api/send-password-reset with XSS email');
+  try {
+    const res = await request(app)
+      .post('/api/send-password-reset')
+      .set('Authorization', 'Bearer valid-token')
+      .send({
+        email: '<script>alert(1)</script>@example.com',
+        resetLink: 'https://example.com/reset',
+        name: 'Hacker'
+      });
+
+    if (res.status === 400 && res.body.error.includes('Invalid email format')) {
+      console.log('✅ PASS: XSS email rejected (400)');
+    } else {
+      console.log(`❌ FAIL: Expected 400, got ${res.status}. Body:`, res.body);
+      failures++;
+    }
+  } catch (err) {
+    console.error('❌ Error in Test 4:', err);
+    failures++;
+  }
+
+  // TEST 5: /api/send-welcome with XSS email (Expectation: 400)
+  console.log('\n🔹 TEST 5: Checking /api/send-welcome with XSS email');
+  try {
+    const res = await request(app)
+      .post('/api/send-welcome')
+      .set('Authorization', 'Bearer valid-token')
+      .send({
+        email: '<script>alert(1)</script>@example.com',
+        name: 'Hacker'
+      });
+
+    if (res.status === 400 && res.body.error.includes('Invalid email format')) {
+      console.log('✅ PASS: XSS email rejected (400)');
+    } else {
+      console.log(`❌ FAIL: Expected 400, got ${res.status}. Body:`, res.body);
+      failures++;
+    }
+  } catch (err) {
+    console.error('❌ Error in Test 5:', err);
+    failures++;
+  }
+
+  // TEST 6: /api/create-group with invalid member emails (Expectation: 400)
   // Note: create-group requires auth. Our mock auth returns a user.
-  console.log('\n🔹 TEST 4: Checking /api/create-group with invalid member email');
+  console.log('\n🔹 TEST 6: Checking /api/create-group with invalid member email');
   try {
     const res = await request(app)
       .post('/api/create-group')
