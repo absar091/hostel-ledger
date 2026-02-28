@@ -215,6 +215,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             disabled={isGenerating}
                             className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
                             title="Share as Image"
+                            aria-label="Share receipt as image"
                         >
                             {isGenerating ? (
                                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -225,6 +226,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                         <button
                             onClick={onClose}
                             className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+                            aria-label="Close details"
                         >
                             <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
                         </button>
@@ -254,6 +256,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                             : "hover:bg-slate-100 text-slate-400 hover:text-[#4a6850]"
                                     }`}
                                     title={isCopied ? "Copied!" : "Copy ID"}
+                                    aria-label={isCopied ? "Copied transaction ID" : "Copy transaction ID"}
                                 >
                                     {isCopied ? (
                                         <Check className="w-3.5 h-3.5" />

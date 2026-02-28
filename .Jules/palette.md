@@ -17,3 +17,7 @@
 ## 2026-02-27 - Explicit Label Association in Custom Sheets
 **Learning:** Custom sheet components like `AddMoneySheet` often separate `label` elements from `Input` components for styling purposes, necessitating manual `id` and `htmlFor` bindings to ensure accessibility.
 **Action:** When creating or modifying form layouts in Sheets or Dialogs, verify that every visual label is programmatically associated with its input using `htmlFor` and `id`, or use `aria-label` for inputs with no visible label.
+
+## 2026-03-03 - Accessible Icon-Only Modal Actions
+**Learning:** Common modal utility buttons (like "Close" or "Share") are frequently implemented as icon-only `<button>`s without `aria-label` or visually hidden text, rendering them completely opaque to screen readers despite having visual cues or tooltips/titles.
+**Action:** Always provide explicit `aria-label`s for utility actions containing only SVG icons, and evaluate dynamic text for stateful actions (e.g., `isCopied ? "Copied" : "Copy"`).
