@@ -2,6 +2,7 @@ import { ArrowDownLeft, ArrowUpRight, Plus } from "lucide-react";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import FinancialInfoDialog from "./FinancialInfoDialog";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useTranslation } from "react-i18next";
 import {
   Tooltip,
   TooltipContent,
@@ -20,6 +21,7 @@ const WalletCard = ({
 }: {
   onAddMoney?: () => void;
 }) => {
+  const { t } = useTranslation();
   const { symbol, formatAmount } = useCurrency();
   const { getWalletBalance, getTotalToReceive, getTotalToPay, getSettlementDelta } = useFirebaseAuth();
 
@@ -59,6 +61,7 @@ const WalletCard = ({
               <button
                 onClick={onAddMoney}
                 className="touch-target w-12 h-12 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors backdrop-blur-sm"
+                aria-label={t('wallet.add_money', 'Add money to wallet')}
               >
                 <Plus className="w-6 h-6 text-white" />
               </button>

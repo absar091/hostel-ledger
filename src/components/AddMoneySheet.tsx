@@ -97,6 +97,7 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
               onChange={(e) => setAmount(e.target.value)}
               className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-[#4a6850]/20 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850] focus:border-[#4a6850] focus:shadow-xl"
               autoFocus
+              aria-label={t('sheets.add_money.amount_placeholder')}
             />
           </div>
 
@@ -120,10 +121,14 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
 
           {/* Note - iPhone Style */}
           <div className="mb-4">
-            <label className="text-sm font-black text-[#4a6850] mb-2 block uppercase tracking-wide">
+            <label
+              htmlFor="add-money-note"
+              className="text-sm font-black text-[#4a6850] mb-2 block uppercase tracking-wide"
+            >
               {t('sheets.add_money.note_label')}
             </label>
             <Input
+              id="add-money-note"
               placeholder={t('sheets.add_money.note_placeholder')}
               value={note}
               onChange={(e) => setNote(e.target.value)}

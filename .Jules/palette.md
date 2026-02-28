@@ -13,3 +13,7 @@
 ## 2026-02-26 - Low Contrast Color Opacity Pattern
 **Learning:** The design system frequently uses `text-[#4a6850]/60` and `text-[#4a6850]/80` for labels and secondary text. While the base color `#4a6850` passes WCAG AA against white (6.17:1), adding opacity (especially 60%) drops the contrast below 3:1, making it inaccessible.
 **Action:** Avoid using opacity modifiers on the primary brand color for text content. Use the base color `text-[#4a6850]` directly to maintain readability and compliance.
+
+## 2026-02-27 - Explicit Label Association in Custom Sheets
+**Learning:** Custom sheet components like `AddMoneySheet` often separate `label` elements from `Input` components for styling purposes, necessitating manual `id` and `htmlFor` bindings to ensure accessibility.
+**Action:** When creating or modifying form layouts in Sheets or Dialogs, verify that every visual label is programmatically associated with its input using `htmlFor` and `id`, or use `aria-label` for inputs with no visible label.
