@@ -1560,6 +1560,11 @@ app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, resetLink, name' });
     }
 
+    // Strict email check (No HTML characters allowed)
+    if (!/^[^\s@<>"'`]+@[^\s@<>"'`]+\.[^\s@<>"'`]+$/.test(email)) {
+      return res.status(400).json({ success: false, error: 'Invalid email format' });
+    }
+
     // Security: Validate resetLink domain to prevent phishing/open redirect
     try {
       const url = new URL(resetLink);
@@ -1600,6 +1605,11 @@ app.post('/api/send-welcome', emailLimiter, async (req, res) => {
     const { email, name } = req.body;
     if (!email || !name) {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, name' });
+    }
+
+    // Strict email check (No HTML characters allowed)
+    if (!/^[^\s@<>"'`]+@[^\s@<>"'`]+\.[^\s@<>"'`]+$/.test(email)) {
+      return res.status(400).json({ success: false, error: 'Invalid email format' });
     }
 
     await emailService.sendWelcome(email, name);
@@ -3567,37 +3577,6 @@ app.post('/api/send-external-invitation', strictEmailLimiter, async (req, res) =
   } catch (error) {
     console.error('❌ Send external invitation error:', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-// Delete Image Endpoint (Cloudinary)
-app.post('/api/delete-image', authenticate, async (req, res) => {
-  try {
-    const { publicId } = req.body;
-
-    if (!publicId) {
-      return res.status(400).json({ success: false, error: 'Public ID is required' });
-    }
-
-    if (!process.env.CLOUDINARY_API_KEY) {
-      console.warn('⚠️ Cloudinary not configured, skipping deletion');
-      return res.json({ success: true, message: 'Cloudinary not configured (Mock delete)' });
-    }
-
-    // Call Cloudinary API
-    const result = await cloudinary.uploader.destroy(publicId);
-
-    if (result.result !== 'ok' && result.result !== 'not found') {
-      console.warn('⚠️ Cloudinary delete result:', result);
-    } else {
-      console.log('✅ Image deleted from Cloudinary:', publicId);
-    }
-
-    res.json({ success: true, message: 'Image deleted' });
-
-  } catch (error) {
-    console.error('❌ Delete image error:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete image: ' + error.message });
   }
 });
 

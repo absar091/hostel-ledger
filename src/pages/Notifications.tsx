@@ -81,6 +81,7 @@ const Notifications = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/profile")}
+              aria-label="Go back to profile"
               className="w-9 h-9 rounded-full bg-[#4a6850]/10 flex items-center justify-center hover:bg-[#4a6850]/20 transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-[#4a6850]" />
