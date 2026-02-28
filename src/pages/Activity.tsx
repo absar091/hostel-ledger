@@ -305,13 +305,36 @@ const Activity = () => {
             <div className="space-y-4">
               {filteredTransactions.map((transaction, index) => {
                 const transactionGroup = groups.find(g => g.id === transaction.groupId);
-                const isPayer = transaction.paidBy === user?.uid;
+                let displayAmount = transaction.amount;
+                let amountColorClass = "text-blue-600";
+
                 const userParticipant = transaction.participants?.find((p: any) => p.id === user?.uid);
                 const isParticipant = !!userParticipant;
 
-                const displayAmount = transaction.type === 'expense'
-                  ? (isPayer ? transaction.amount : isParticipant ? userParticipant.amount : 0)
-                  : transaction.amount;
+                if (transaction.type === 'expense') {
+                  const payersList = transaction.payers || (transaction.paidBy ? [{ id: transaction.paidBy, amount: transaction.amount }] : []);
+                  const userPayer = payersList.find((p: any) => p.id === user?.uid);
+
+                  const shareAmount = userParticipant ? Number(userParticipant.amount) : 0;
+                  const paidAmount = userPayer ? Number(userPayer.amount) : 0;
+                  const netAmount = paidAmount - shareAmount;
+
+                  if (netAmount > 0.05) {
+                    displayAmount = netAmount;
+                    amountColorClass = "text-[#4a6850]"; // Lent
+                  } else if (netAmount < -0.05) {
+                    displayAmount = Math.abs(netAmount);
+                    amountColorClass = "text-red-600"; // Owe
+                  } else if (shareAmount > 0) {
+                    displayAmount = 0;
+                    amountColorClass = "text-slate-400"; // Settled
+                  } else {
+                    displayAmount = 0;
+                    amountColorClass = "text-slate-400"; // Not involved
+                  }
+                } else if (transaction.type === 'payment') {
+                  amountColorClass = "text-[#4a6850]";
+                }
 
                 return (
                   <button
@@ -342,10 +365,7 @@ const Activity = () => {
                       </div>
 
                       <div className="text-right flex-shrink-0">
-                        <div className={`font-black text-base lg:text-xl tabular-nums tracking-tight ${transaction.type === "expense"
-                          ? (isPayer || isParticipant ? "text-red-600" : "text-slate-400")
-                          : transaction.type === "payment" ? "text-[#4a6850]" : "text-blue-600"
-                          }`}>
+                        <div className={`font-black text-base lg:text-xl tabular-nums tracking-tight ${amountColorClass}`}>
                           {transaction.type === "expense" && !isPayer && !isParticipant ? "" : (transaction.type === "expense" ? "-" : "+")}
                           {transaction.type === "expense" && !isPayer && !isParticipant ? "-" : formatAmount(displayAmount)}
                         </div>

@@ -263,51 +263,48 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 </button>
                             </div>
 
-                            {/* Badge Logic Fixed: Check if user is payer properly, and use resolvedParticipants */}
-                            {transaction.type === 'expense' && !isCurrentUserPayer && (
+                            {/* Badge Logic Fixed for Multi-Payer */}
+                            {transaction.type === 'expense' && (
                                 <div className="mb-2">
                                     {(() => {
-                                        // Use resolvedParticipants to handle object/array and userId lookup
                                         const userPart = resolvedParticipants.find((p: any) =>
                                             p.id === user?.uid || (p.userId && p.userId === user?.uid)
                                         );
 
-                                        if (userPart) {
+                                        const userPayer = resolvedPayers.find((p: any) =>
+                                            p.id === user?.uid || (p.userId && p.userId === user?.uid)
+                                        );
+
+                                        const shareAmount = userPart ? Number(userPart.amount) : 0;
+                                        const paidAmount = userPayer ? Number(userPayer.amount) : 0;
+                                        const netAmount = paidAmount - shareAmount;
+
+                                        if (netAmount > 0.05) {
+                                            return (
+                                                <div className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm">
+                                                    <span className="text-xs font-black uppercase tracking-wider">You lent: {formatAmount(netAmount)}</span>
+                                                </div>
+                                            );
+                                        } else if (netAmount < -0.05) {
                                             return (
                                                 <div className="inline-flex items-center px-3 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100 shadow-sm">
-                                                    <span className="text-xs font-black uppercase tracking-wider">Your Share: {formatAmount(userPart.amount)}</span>
+                                                    <span className="text-xs font-black uppercase tracking-wider">You owe: {formatAmount(Math.abs(netAmount))}</span>
+                                                </div>
+                                            );
+                                        } else if (shareAmount > 0 && Math.abs(netAmount) <= 0.05) {
+                                            return (
+                                                <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shadow-sm">
+                                                    <span className="text-xs font-black uppercase tracking-wider">Settled</span>
                                                 </div>
                                             );
                                         } else {
                                             return (
-                                                <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-500 border border-slate-100 shadow-sm">
-                                                    <span className="text-xs font-black uppercase tracking-wider">Not a participant</span>
+                                                <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-500 border border-slate-200 shadow-sm">
+                                                    <span className="text-xs font-black uppercase tracking-wider">Not Involved</span>
                                                 </div>
                                             );
                                         }
                                     })()}
-                                </div>
-                            )}
-                            <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">
-                                {transaction.date || (transaction.timestamp ? new Date(transaction.timestamp).toLocaleDateString() : 'Unknown Date')}
-                                {transaction.timestamp && ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
-                            </div>
-                        </div>
-
-                        <div className="space-y-3 lg:space-y-4">
-                            {/* Group Information - iPhone Style */}
-                            {transactionGroup && (
-                                <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                                    <Users className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Group</div>
-                                        <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transactionGroup.name}</div>
-                                        <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">
-                                            {Array.isArray(transactionGroup.members)
-                                                ? transactionGroup.members.length
-                                                : Object.keys(transactionGroup.members || {}).length} members
-                                        </div>
-                                    </div>
                                 </div>
                             )}
 
