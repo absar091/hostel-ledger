@@ -1877,6 +1877,33 @@ app.post('/api/check-email-exists', strictEmailCheckLimiter, async (req, res) =>
 // Using Firebase Realtime Database for subscription storage
 // ============================================
 
+/**
+ * Helper: Verify if two users share at least one group
+ * This prevents users from sending arbitrary push notifications to strangers
+ */
+const verifyUsersShareGroup = async (db, uid1, uid2) => {
+  if (uid1 === uid2) return true; // Users can always notify themselves
+
+  try {
+    // Fetch group memberships for both users in parallel
+    const [snap1, snap2] = await Promise.all([
+      db.ref(`userGroups/${uid1}`).get(),
+      db.ref(`userGroups/${uid2}`).get()
+    ]);
+
+    if (!snap1.exists() || !snap2.exists()) return false;
+
+    const groups1 = Object.keys(snap1.val());
+    const groups2 = Object.keys(snap2.val());
+
+    // Find intersection
+    return groups1.some(g => groups2.includes(g));
+  } catch (err) {
+    console.error(`Error verifying group sharing between ${uid1} and ${uid2}:`, err);
+    return false;
+  }
+};
+
 // Subscribe to push notifications (OneSignal handles this automatically)
 // This endpoint is kept for backward compatibility but is no longer needed
 app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
@@ -1898,7 +1925,7 @@ app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
 });
 
 // Send push notification to a specific user using OneSignal REST API
-app.post('/api/push-notify', generalLimiter, async (req, res) => {
+app.post('/api/push-notify', generalLimiter, authenticate, async (req, res) => {
   try {
     let { userId, title, body, icon, badge, tag, data } = req.body;
 
@@ -1913,6 +1940,16 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
     if (!isValidFirebaseId(userId)) {
       console.warn(`⚠️ Blocked malicious userId in push-notify: ${userId}`);
       return res.status(400).json({ success: false, error: 'Invalid user ID format' });
+    }
+
+    // Security: Authorization - Verify sender and receiver share a group
+    const senderUid = req.user.uid;
+    if (senderUid !== userId) {
+      const sharesGroup = await verifyUsersShareGroup(admin.database(), senderUid, userId);
+      if (!sharesGroup) {
+        console.warn(`⚠️ Blocked unauthorized push-notify attempt from ${senderUid} to ${userId}`);
+        return res.status(403).json({ success: false, error: 'Unauthorized to send push notification to this user' });
+      }
     }
 
     if (typeof title !== 'string') {
@@ -2117,7 +2154,7 @@ const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, b
 };
 
 // Send push notification to multiple users using OneSignal REST API
-app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
+app.post('/api/push-notify-multiple', generalLimiter, authenticate, async (req, res) => {
   try {
     let { userIds, title, body, icon, badge, data } = req.body;
 
@@ -2129,6 +2166,23 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
     if (!userIds.every(id => isValidFirebaseId(id))) {
       console.warn(`⚠️ Blocked malicious userIds in push-notify-multiple: ${userIds.join(', ')}`);
       return res.status(400).json({ success: false, error: 'Invalid user ID format' });
+    }
+
+    // Security: Authorization - Verify sender and receivers share a group
+    const senderUid = req.user.uid;
+    const db = admin.database();
+
+    // Process authorization checks in parallel to avoid slowing down the request
+    const authChecks = await Promise.all(
+      userIds.map(targetId => {
+        if (senderUid === targetId) return true;
+        return verifyUsersShareGroup(db, senderUid, targetId);
+      })
+    );
+
+    if (authChecks.some(hasAccess => !hasAccess)) {
+      console.warn(`⚠️ Blocked unauthorized push-notify-multiple attempt from ${senderUid}`);
+      return res.status(403).json({ success: false, error: 'Unauthorized to send push notification to one or more of these users' });
     }
 
     if (!title || !body) {
