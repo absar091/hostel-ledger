@@ -153,9 +153,8 @@ const Sidebar = () => {
               onClick={() => navigate("/profile")}
               className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center mx-auto mb-3"
               title={user?.name || "Profile"}
-              aria-label={user?.name ? `Profile for ${user.name}` : "Profile"}
             >
-              <span className="text-lg font-black text-white" aria-hidden="true">
+              <span className="text-lg font-black text-white">
                 {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
               </span>
             </button>
@@ -163,7 +162,6 @@ const Sidebar = () => {
               onClick={handleLogout}
               className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200"
               title={t('sidebar.logout')}
-              aria-label={t('sidebar.logout')}
             >
               <LogOut className="w-5 h-5" />
             </button>

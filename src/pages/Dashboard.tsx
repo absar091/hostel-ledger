@@ -292,31 +292,20 @@ const Dashboard = () => {
     const yesterdayTransactions: Transaction[] = [];
     const olderTransactions: Transaction[] = [];
 
-    // ⚡ Bolt Optimization: allTransactions is sorted newest-first.
-    // The UI only renders max 3 Today, max 2 Yesterday, and max 3 Older transactions.
-    // We can stop processing as soon as we have enough older transactions (O(N) -> O(1)).
-    for (const transaction of allTransactions) {
+    allTransactions.forEach((transaction) => {
       const transactionDate = new Date(
         transaction.timestamp || transaction.date,
       );
       transactionDate.setHours(0, 0, 0, 0);
 
-      const time = transactionDate.getTime();
-
-      if (time === today.getTime()) {
-        if (todayTransactions.length < 3) todayTransactions.push(transaction);
-      } else if (time === yesterday.getTime()) {
-        if (yesterdayTransactions.length < 2) yesterdayTransactions.push(transaction);
+      if (transactionDate.getTime() === today.getTime()) {
+        todayTransactions.push(transaction);
+      } else if (transactionDate.getTime() === yesterday.getTime()) {
+        yesterdayTransactions.push(transaction);
       } else {
-        if (olderTransactions.length < 3) olderTransactions.push(transaction);
-        // Since the array is sorted descending, once we see an older transaction,
-        // we'll never see another Today or Yesterday transaction.
-        // We can safely exit early once we've collected the max 3 older transactions.
-        if (olderTransactions.length >= 3) {
-          break;
-        }
+        olderTransactions.push(transaction);
       }
-    }
+    });
 
     return { todayTransactions, yesterdayTransactions, olderTransactions };
   }, [allTransactions]);
@@ -1445,7 +1434,7 @@ const Dashboard = () => {
                 <div className="p-3 lg:p-4">
                   <TransactionList
                     title={t('common.today')}
-                    transactions={todayTransactions}
+                    transactions={todayTransactions.slice(0, 3)}
                     groups={groups}
                     userId={user?.uid}
                     onSelectTransaction={setSelectedTransaction}
@@ -1453,7 +1442,7 @@ const Dashboard = () => {
                   />
                   <TransactionList
                     title={t('common.yesterday')}
-                    transactions={yesterdayTransactions}
+                    transactions={yesterdayTransactions.slice(0, 2)}
                     groups={groups}
                     userId={user?.uid}
                     onSelectTransaction={setSelectedTransaction}

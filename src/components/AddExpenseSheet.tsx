@@ -911,11 +911,12 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                           <div className="text-emerald-200 font-black mt-3 text-lg">
                             {paidByName} will receive {formatAmount(splitDetails.toReceive > 0 ? splitDetails.toReceive : splitDetails.perPerson * splitDetails.othersCount)}
                           </div>
-                          {splitDetails.isCurrentUserParticipant ? (
+                          {splitDetails.toGive > 0 && (
                             <div className="text-orange-200 font-black mt-1 text-lg">
                               You owe {formatAmount(splitDetails.toGive)}
                             </div>
-                          ) : (
+                          )}
+                          {!splitDetails.isCurrentUserParticipant && (
                             <div className="text-white/70 font-bold mt-1 text-sm">
                               You are not a participant
                             </div>
