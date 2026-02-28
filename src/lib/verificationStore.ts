@@ -17,7 +17,7 @@ interface VerificationRecord {
 class VerificationStore {
   // Helper for API calls (handles public vs secure automatically)
   private async callApi(endpoint: string, body: any) {
-    let headers: any = {
+    const headers: any = {
       'Content-Type': 'application/json'
     };
 
