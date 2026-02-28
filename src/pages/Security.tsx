@@ -255,6 +255,7 @@ const Security = () => {
         <div className="bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
           <div className="flex items-center gap-3">
             <button
+              aria-label="Back to profile"
               onClick={() => navigate("/profile")}
               className="w-9 h-9 rounded-full bg-[#4a6850]/10 flex items-center justify-center hover:bg-[#4a6850]/20 transition-colors"
             >
@@ -522,6 +523,7 @@ const Security = () => {
                   className="h-12 pr-12"
                 />
                 <button
+                  aria-label={showCurrentPassword ? "Hide current password" : "Show current password"}
                   type="button"
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
@@ -542,6 +544,7 @@ const Security = () => {
                   className="h-12 pr-12"
                 />
                 <button
+                  aria-label={showNewPassword ? "Hide new password" : "Show new password"}
                   type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
@@ -562,6 +565,7 @@ const Security = () => {
                   className="h-12 pr-12"
                 />
                 <button
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
