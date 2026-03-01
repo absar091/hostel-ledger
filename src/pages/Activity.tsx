@@ -99,6 +99,10 @@ const Activity = () => {
     return filtered;
   }, [allTransactions, filterType, filterDate, searchQuery]);
 
+  const groupMap = useMemo(() => {
+    return Object.fromEntries(groups.map(g => [g.id, g]));
+  }, [groups]);
+
   // Calculate statistics
   const stats = useMemo(() => {
     const expenses = filteredTransactions.filter(t => t.type === "expense");
@@ -304,7 +308,7 @@ const Activity = () => {
           {filteredTransactions.length > 0 ? (
             <div className="space-y-4">
               {filteredTransactions.map((transaction, index) => {
-                const transactionGroup = groups.find(g => g.id === transaction.groupId);
+                const transactionGroup = groupMap[transaction.groupId];
                 const isPayer = transaction.paidBy === user?.uid;
                 const userParticipant = transaction.participants?.find((p: any) => p.id === user?.uid);
                 const isParticipant = !!userParticipant;
