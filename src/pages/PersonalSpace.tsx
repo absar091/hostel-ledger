@@ -42,7 +42,7 @@ export default function PersonalSpace() {
             {/* Header */}
             <div className="bg-white px-4 pt-12 pb-4 shadow-sm sticky top-0 z-10">
                 <div className="flex items-center gap-3 mb-2">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="-ml-2">
+                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="-ml-2" aria-label="Go back">
                         <ArrowLeft className="w-6 h-6 text-gray-700" />
                     </Button>
                     <h1 className="text-2xl font-bold text-gray-900">{t('money_transfer.title')}</h1>
