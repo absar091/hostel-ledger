@@ -1695,6 +1695,18 @@ app.post('/api/verification/verify', generalLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Email and code are required' });
     }
 
+    if (typeof email !== 'string' || typeof code !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid input types' });
+    }
+
+    if (!/^[^\s@<>"'`]+@[^\s@<>"'`]+\.[^\s@<>"'`]+$/.test(email)) {
+      return res.status(400).json({ success: false, error: 'Invalid email format' });
+    }
+
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({ success: false, error: 'Invalid verification code format (must be 6 digits)' });
+    }
+
     const docId = Buffer.from(email.toLowerCase()).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
     const docRef = admin.firestore().collection('verificationCodes').doc(docId);
     const docSnap = await docRef.get();
