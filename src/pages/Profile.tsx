@@ -206,6 +206,7 @@ const Profile = () => {
                 {/* Avatar */}
                 <button
                   onClick={handlePhotoClick}
+                  aria-label="Change profile photo"
                   disabled={isUploadingPhoto}
                   className="relative group cursor-pointer flex-shrink-0"
                 >
@@ -289,6 +290,7 @@ const Profile = () => {
                   setEditPhone(user?.phone || "");
                   setShowEditSheet(true);
                 }}
+                aria-label={t('profile.edit_profile')}
                 className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors group"
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -313,6 +315,7 @@ const Profile = () => {
                   setRaastId(user?.paymentDetails?.raastId || "");
                   setShowPaymentSheet(true);
                 }}
+                aria-label={t('profile.payment_details')}
                 className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors group"
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -346,6 +349,7 @@ const Profile = () => {
             <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
               <button
                 onClick={() => navigate("/settings")}
+                aria-label={t('profile.general_settings')}
                 className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -362,6 +366,7 @@ const Profile = () => {
 
               <button
                 onClick={() => navigate("/security")}
+                aria-label={t('profile.security')}
                 className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -385,6 +390,7 @@ const Profile = () => {
             <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
               <button
                 onClick={() => navigate("/about")}
+                aria-label={t('profile.about')}
                 className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -435,6 +441,7 @@ const Profile = () => {
                     }
                   }
                 }}
+                aria-label={t('profile.clear_cache')}
                 className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -462,6 +469,7 @@ const Profile = () => {
           {/* Logout */}
           <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-red-100 overflow-hidden">
             <button
+              aria-label={t('profile.logout')}
               onClick={handleLogoutClick}
               className="w-full flex items-center gap-4 p-5 active:bg-red-50 transition-colors"
             >

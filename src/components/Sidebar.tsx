@@ -94,6 +94,7 @@ const Sidebar = () => {
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
+              aria-label={item.label}
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative",
                 active
@@ -141,6 +142,7 @@ const Sidebar = () => {
             </div>
             <button
               onClick={handleLogout}
+              aria-label={t('sidebar.logout')}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200 font-medium"
             >
               <LogOut className="w-5 h-5" />
@@ -151,6 +153,7 @@ const Sidebar = () => {
           <>
             <button
               onClick={() => navigate("/profile")}
+              aria-label={user?.name || "Profile"}
               className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center mx-auto mb-3"
               title={user?.name || "Profile"}
             >
@@ -160,6 +163,7 @@ const Sidebar = () => {
             </button>
             <button
               onClick={handleLogout}
+              aria-label={t('sidebar.logout')}
               className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200"
               title={t('sidebar.logout')}
             >
