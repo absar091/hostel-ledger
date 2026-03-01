@@ -3886,6 +3886,12 @@ app.post('/api/merge-members', authenticate, async (req, res) => {
     }
 
     const groupData = groupSnap.val();
+
+    // Only the creator can merge members
+    if (groupData.createdBy !== userId) {
+      return res.status(403).json({ success: false, error: 'Only the group creator can merge members' });
+    }
+
     const members = normalizeMembers(groupData.members);
 
     const fromMember = members.find(m => m.id === fromMemberId);
