@@ -3,6 +3,7 @@ const helmet = require('helmet');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
@@ -901,7 +902,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
         })),
         // Manual Members from array
         ...members.map(m => ({
-          id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          id: `member_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
           name: m.name,
           userId: m.uid || null,
           username: m.username || null,
@@ -914,7 +915,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
         ...(invitedEmails || [])
           .filter(email => !members.some(m => m.email && m.email.toLowerCase() === email.toLowerCase()))
           .map(email => ({
-            id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            id: `member_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
             name: email.split('@')[0],
             email: email,
             type: 'manual',
@@ -1093,7 +1094,7 @@ const calculateExpenseSettlements = expenseLogic.calculateExpenseSettlements;
 // Apply stricter rate limiting for user search
 app.post('/api/get-valid-user-details', userSearchLimiter, authenticate, async (req, res) => {
   // Add random delay to mitigate timing attacks (500ms - 1500ms)
-  const randomDelay = Math.floor(Math.random() * 1000) + 500;
+  const randomDelay = crypto.randomInt(500, 1500);
   await new Promise(resolve => setTimeout(resolve, randomDelay));
 
   try {
@@ -1244,7 +1245,7 @@ app.post('/api/respond-invitation', authenticate, async (req, res) => {
       }
 
       const memberEntry = {
-        id: memberIndex !== -1 ? membersArray[memberIndex].id : `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        id: memberIndex !== -1 ? membersArray[memberIndex].id : `member_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
         name: userData.name || (memberIndex !== -1 ? membersArray[memberIndex].name : 'Member'),
         email: userData.email || null,
         isRegistered: true,
@@ -1657,7 +1658,7 @@ app.post('/api/verification/request', strictEmailLimiter, async (req, res) => {
     }
 
     // Generate 6-digit code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = crypto.randomInt(100000, 1000000).toString();
     const now = new Date();
     const expiresAt = new Date(now.getTime() + (10 * 60 * 1000)); // 10 minutes expiry
 
@@ -1802,7 +1803,7 @@ app.post('/api/verification/check', generalLimiter, async (req, res) => {
 // Applies strict rate limiting and random delays to prevent enumeration and timing attacks
 app.post('/api/check-email-exists', strictEmailCheckLimiter, async (req, res) => {
   // Add random delay to mitigate timing attacks (500ms - 1500ms)
-  const randomDelay = Math.floor(Math.random() * 1000) + 500;
+  const randomDelay = crypto.randomInt(500, 1500);
   await new Promise(resolve => setTimeout(resolve, randomDelay));
 
   try {
@@ -3409,7 +3410,7 @@ app.post('/api/send-invitation', generalLimiter, async (req, res) => {
       // ADD NEW: Add pending member to group list for visibility to owner
       // Use type: 'invited' so they are excluded from expense splitting until they accept
       const newMember = {
-        id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        id: `member_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
         name: inviteeUsername || normalizedUsername,
         userId: inviteeUid,
         username: normalizedUsername,
@@ -3530,7 +3531,7 @@ app.post('/api/send-external-invitation', strictEmailLimiter, async (req, res) =
 
     if (!existingMember) {
       const newMember = {
-        id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        id: `member_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
         name: email.split('@')[0],
         email: email,
         type: 'manual', // Correctly set as manual so they can be split with
