@@ -99,6 +99,16 @@ const Activity = () => {
     return filtered;
   }, [allTransactions, filterType, filterDate, searchQuery]);
 
+  // Pre-compute group lookup map to optimize rendering
+  // Reduces O(N*M) lookup inside the transaction mapping to O(N + M)
+  const groupMap = useMemo(() => {
+    const map: Record<string, typeof groups[0]> = {};
+    groups.forEach(g => {
+      map[g.id] = g;
+    });
+    return map;
+  }, [groups]);
+
   // Calculate statistics
   const stats = useMemo(() => {
     const expenses = filteredTransactions.filter(t => t.type === "expense");
@@ -304,7 +314,7 @@ const Activity = () => {
           {filteredTransactions.length > 0 ? (
             <div className="space-y-4">
               {filteredTransactions.map((transaction, index) => {
-                const transactionGroup = groups.find(g => g.id === transaction.groupId);
+                const transactionGroup = transaction.groupId ? groupMap[transaction.groupId] : undefined;
                 const isPayer = transaction.paidBy === user?.uid;
                 const userParticipant = transaction.participants?.find((p: any) => p.id === user?.uid);
                 const isParticipant = !!userParticipant;
