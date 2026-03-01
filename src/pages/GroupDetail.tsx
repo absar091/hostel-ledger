@@ -330,6 +330,7 @@ const GroupDetail = () => {
     groupId: string;
     amount: number;
     paidBy: string;
+    payers?: { id: string; amount: number }[];
     participants: string[];
     note: string;
     place: string;
@@ -340,6 +341,7 @@ const GroupDetail = () => {
         groupId: data.groupId,
         amount: data.amount,
         paidBy: data.paidBy,
+        payers: data.payers,
         participants: data.participants,
         note: data.note,
         place: data.place,
