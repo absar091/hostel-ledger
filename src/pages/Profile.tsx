@@ -207,7 +207,6 @@ const Profile = () => {
                 <button
                   onClick={handlePhotoClick}
                   disabled={isUploadingPhoto}
-                  aria-label="Change profile photo"
                   className="relative group cursor-pointer flex-shrink-0"
                 >
                   <div className="relative">

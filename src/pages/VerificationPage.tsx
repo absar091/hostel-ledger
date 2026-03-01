@@ -1,15 +1,9 @@
 import { useState } from "react";
-import AddMoneySheet from "@/components/AddMoneySheet";
-import GroupSettingsSheet from "@/components/GroupSettingsSheet";
-import TransactionDetailModal from "@/components/TransactionDetailModal";
-import OnboardingTour from "@/components/OnboardingTour";
+import AddExpenseSheet from "@/components/AddExpenseSheet";
 import { Button } from "@/components/ui/button";
 
 const VerificationPage = () => {
-  const [showAddMoney, setShowAddMoney] = useState(false);
-  const [showGroupSettings, setShowGroupSettings] = useState(false);
-  const [showTransactionDetail, setShowTransactionDetail] = useState(false);
-  const [showOnboardingTour, setShowOnboardingTour] = useState(false);
+  const [showAddExpense, setShowAddExpense] = useState(true);
 
   // Mock group data
   const mockGroups = [
@@ -27,31 +21,11 @@ const VerificationPage = () => {
   ];
 
   return (
-    <div className="p-10 space-y-10">
-        <h1 className="text-2xl font-bold">Verification Page</h1>
-        <div className="flex gap-4 flex-wrap">
-            <Button onClick={() => setShowAddMoney(true)}>Open Add Money</Button>
-            <Button onClick={() => setShowGroupSettings(true)}>Open Group Settings</Button>
-            <Button onClick={() => setShowTransactionDetail(true)}>Open Transaction Detail</Button>
-            <Button id="btn-onboarding-tour" onClick={() => setShowOnboardingTour(true)}>Open Onboarding Tour</Button>
-        </div>
-
-        <OnboardingTour
-          open={showOnboardingTour}
-          onClose={() => setShowOnboardingTour(false)}
-          steps={[
-            {
-              id: '1',
-              title: 'Welcome!',
-              description: 'This is a test tour.',
-              emoji: '👋'
-            }
-          ]}
-        />
-
-        <AddMoneySheet
-            open={showAddMoney}
-            onClose={() => setShowAddMoney(false)}
+    <div className="p-10 space-y-10 min-h-screen bg-gray-100 flex items-center justify-center">
+        <AddExpenseSheet
+            open={showAddExpense}
+            onClose={() => setShowAddExpense(false)}
+            groups={mockGroups}
             onSubmit={async () => {}}
             onAddMember={async () => ({ success: true })}
             initialGroupId="group1"
