@@ -24,6 +24,7 @@ const InstallGuide = () => {
           <button
             onClick={() => navigate(-1)}
             className="mb-4 flex items-center gap-2 text-white/90 hover:text-white transition-colors"
+            aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Back</span>

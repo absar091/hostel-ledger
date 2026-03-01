@@ -205,7 +205,7 @@ export default function CreateGroupPage() {
                 {/* Header Container */}
                 <div className="w-full max-w-2xl mx-auto bg-white sticky top-0 z-10 border-b border-gray-100">
                     <div className="px-4 py-4 flex items-center gap-3">
-                        <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full">
+                        <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full" aria-label="Go back">
                             <ArrowLeft className="w-6 h-6 text-gray-700" />
                         </button>
                         <h1 className="text-xl font-black text-gray-900">Create Group</h1>
