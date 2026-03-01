@@ -57,6 +57,8 @@ const LanguageSelectionSheet = ({ open, onClose, selectedLanguage, onSelect }: L
                         {filteredLanguages.map((language) => (
                             <button
                                 key={language.code}
+                                aria-label={`Select ${language.name}`}
+                                aria-pressed={selectedLanguage === language.code}
                                 onClick={() => {
                                     onSelect(language.code);
                                     onClose();

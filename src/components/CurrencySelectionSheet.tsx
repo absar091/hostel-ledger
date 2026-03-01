@@ -57,6 +57,8 @@ const CurrencySelectionSheet = ({ open, onClose, selectedCurrency, onSelect }: C
                         {filteredCurrencies.map((currency) => (
                             <button
                                 key={currency.code}
+                                aria-label={`Select ${currency.name}`}
+                                aria-pressed={selectedCurrency === currency.code}
                                 onClick={() => {
                                     onSelect(currency.code);
                                     onClose();
