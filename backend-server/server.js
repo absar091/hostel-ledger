@@ -3583,37 +3583,6 @@ app.post('/api/send-external-invitation', strictEmailLimiter, async (req, res) =
   }
 });
 
-// Delete Image Endpoint (Cloudinary)
-app.post('/api/delete-image', authenticate, async (req, res) => {
-  try {
-    const { publicId } = req.body;
-
-    if (!publicId) {
-      return res.status(400).json({ success: false, error: 'Public ID is required' });
-    }
-
-    if (!process.env.CLOUDINARY_API_KEY) {
-      console.warn('⚠️ Cloudinary not configured, skipping deletion');
-      return res.json({ success: true, message: 'Cloudinary not configured (Mock delete)' });
-    }
-
-    // Call Cloudinary API
-    const result = await cloudinary.uploader.destroy(publicId);
-
-    if (result.result !== 'ok' && result.result !== 'not found') {
-      console.warn('⚠️ Cloudinary delete result:', result);
-    } else {
-      console.log('✅ Image deleted from Cloudinary:', publicId);
-    }
-
-    res.json({ success: true, message: 'Image deleted' });
-
-  } catch (error) {
-    console.error('❌ Delete image error:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete image: ' + error.message });
-  }
-});
-
 // ============================================
 // DELETE GROUP
 // ============================================
