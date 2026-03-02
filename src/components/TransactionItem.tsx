@@ -71,9 +71,12 @@ export const TransactionItem = memo(({
           hour12: true,
         });
 
+  const ariaLabel = `${transaction.title}${groupName ? ` in ${groupName}` : ""}, ${typeLabel} ${formatAmount(displayAmount)} on ${dateDisplay}`;
+
   return (
     <button
       onClick={() => onClick(transaction)}
+      aria-label={ariaLabel}
       className="w-full flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-xl lg:rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:scale-[1.01] active:scale-[0.99] transition-all text-left group"
     >
       <div
