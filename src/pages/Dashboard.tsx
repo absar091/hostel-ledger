@@ -292,7 +292,13 @@ const Dashboard = () => {
     const yesterdayTransactions: Transaction[] = [];
     const olderTransactions: Transaction[] = [];
 
-    allTransactions.forEach((transaction) => {
+    // O(1) early-break optimization for recent activity
+    // allTransactions is pre-sorted newest-first
+    for (const transaction of allTransactions) {
+      if (todayTransactions.length + yesterdayTransactions.length + olderTransactions.length >= 3) {
+        break;
+      }
+
       const transactionDate = new Date(
         transaction.timestamp || transaction.date,
       );
@@ -305,7 +311,7 @@ const Dashboard = () => {
       } else {
         olderTransactions.push(transaction);
       }
-    });
+    }
 
     return { todayTransactions, yesterdayTransactions, olderTransactions };
   }, [allTransactions]);
