@@ -549,7 +549,7 @@ const GroupDetail = () => {
                         name: (() => {
                           if (p.id === user?.uid) return t('group.you_label');
                           if (p.id === group.createdBy) return t('group.owner');
-                          const member = group.members.find(m => m.id === p.id);
+                          const member = group.members.find((m: any) => m.id === p.id);
                           return member?.name || p.name;
                         })()
                       })) : undefined}
