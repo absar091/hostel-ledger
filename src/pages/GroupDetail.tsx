@@ -96,6 +96,11 @@ const GroupDetail = () => {
     return total + (settlement.toReceive || 0);
   }, 0);
 
+  const memberMap = useMemo(() => {
+    if (!group?.members) return {};
+    return Object.fromEntries(group.members.map((m: any) => [m.id, m]));
+  }, [group?.members]);
+
   // NOTE: These useMemo hooks MUST be before the early returns below to maintain
   // consistent hook count across renders (React Rules of Hooks)
   const personalStats = useMemo(() => {
@@ -377,7 +382,7 @@ const GroupDetail = () => {
     });
 
     if (result.success) {
-      const memberName = group.members.find((m: { id: string; }) => m.id === data.fromMember)?.name;
+      const memberName = memberMap[data.fromMember]?.name;
       toast.success(`Recorded ${formatAmount(data.amount)} from ${memberName}`);
       if (result.transaction) {
         navigate("/receipt", { state: { transaction: result.transaction, type: "payment" } });
@@ -547,7 +552,7 @@ const GroupDetail = () => {
                         name: (() => {
                           if (p.id === user?.uid) return t('group.you_label');
                           if (p.id === group.createdBy) return t('group.owner');
-                          const member = group.members.find(m => m.id === p.id);
+                          const member = memberMap[p.id];
                           return member?.name || p.name;
                         })()
                       })) : undefined}
@@ -556,7 +561,7 @@ const GroupDetail = () => {
                           // Use consistent naming logic
                           if (item.paidBy === user?.uid) return t('group.you_label');
                           if (item.paidBy === group.createdBy) return t('group.owner');
-                          const member = group.members.find((m: { id: any; }) => m.id === item.paidBy);
+                          const member = memberMap[item.paidBy];
                           return member?.name || item.paidByName;
                         })()
                       ) : undefined}
@@ -565,7 +570,7 @@ const GroupDetail = () => {
                         name: (() => {
                           if (p.id === user?.uid) return t('group.you_label'); // Your share
                           if (p.id === group.createdBy) return t('group.owner'); // Owner's share
-                          const member = group.members.find((m: { id: any; }) => m.id === p.id); // Valid member name
+                          const member = memberMap[p.id]; // Valid member name
                           return member?.name || p.name;
                         })()
                       })) : undefined}
@@ -941,7 +946,7 @@ const GroupDetail = () => {
           }
         }}
         onRemoveMember={async (memberId) => {
-          const memberName = group.members.find((m) => m.id === memberId)?.name;
+          const memberName = memberMap[memberId]?.name;
           const result = await removeMemberFromGroup(group.id, memberId);
           if (result.success) {
             toast.success(`Removed ${memberName} from the group`);
