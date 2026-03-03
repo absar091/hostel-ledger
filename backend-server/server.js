@@ -182,7 +182,10 @@ app.use(cors({
 // Handle preflight requests explicitly
 app.options('*', cors());
 
-app.use(express.json());
+// Limit payload size to 10kb to prevent Denial of Service (DoS) attacks
+app.use(express.json({ limit: '10kb' }));
+// Also limit URL-encoded payloads
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 const emailService = require('./services/emailService');
 const expenseLogic = require('./utils/expenseLogic');
