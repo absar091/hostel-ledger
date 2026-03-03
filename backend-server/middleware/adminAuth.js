@@ -1,58 +1,76 @@
-/**
- * Admin Authentication Middleware
- * Verifies that the request contains a valid x-admin-key header.
- */
-const crypto = require('crypto');
+const admin = require('firebase-admin');
 
-module.exports = (req, res, next) => {
-  const adminKeysEnv = process.env.ADMIN_API_KEY;
-  const requestKey = req.headers['x-admin-key'];
+// Middleware to verify the user has the 'admin' or 'superadmin' role
+const verifyAdmin = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized: No token provided' });
+    }
 
-  if (!adminKeysEnv) {
-    console.error('❌ ADMIN_API_KEY not configured in environment variables');
-    return res.status(500).json({
-      success: false,
-      error: 'Server configuration error'
-    });
+    const token = authHeader.split('Bearer ')[1];
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    const uid = decodedToken.uid;
+
+    const db = admin.database();
+    const userSnapshot = await db.ref(`users/${uid}`).once('value');
+
+    if (!userSnapshot.exists()) {
+      return res.status(403).json({ error: 'Forbidden: User not found in database' });
+    }
+
+    const userData = userSnapshot.val();
+    const role = userData.role;
+
+    if (role !== 'admin' && role !== 'superadmin') {
+      return res.status(403).json({ error: 'Forbidden: Requires admin privileges' });
+    }
+
+    req.user = decodedToken;
+    req.adminRole = role; // Attach the role so endpoints can differentiate between admin/superadmin
+    next();
+  } catch (error) {
+    console.error('Error verifying admin token:', error);
+    res.status(401).json({ error: 'Unauthorized: Invalid token' });
   }
+};
 
-  // Support multiple keys (comma separated) for rotation
-  const validKeys = adminKeysEnv.split(',').map(key => key.trim()).filter(key => key.length > 0);
+// Middleware specifically for 'superadmin' only
+const verifySuperAdmin = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized: No token provided' });
+    }
 
-  if (validKeys.length === 0) {
-    console.error('❌ No valid ADMIN_API_KEY found in environment variables');
-    return res.status(500).json({
-      success: false,
-      error: 'Server configuration error'
-    });
+    const token = authHeader.split('Bearer ')[1];
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    const uid = decodedToken.uid;
+
+    const db = admin.database();
+    const userSnapshot = await db.ref(`users/${uid}`).once('value');
+
+    if (!userSnapshot.exists()) {
+      return res.status(403).json({ error: 'Forbidden: User not found in database' });
+    }
+
+    const userData = userSnapshot.val();
+    const role = userData.role;
+
+    if (role !== 'superadmin') {
+      return res.status(403).json({ error: 'Forbidden: Requires superadmin privileges' });
+    }
+
+    req.user = decodedToken;
+    req.adminRole = role;
+    next();
+  } catch (error) {
+    console.error('Error verifying superadmin token:', error);
+    res.status(401).json({ error: 'Unauthorized: Invalid token' });
   }
+};
 
-  if (!requestKey) {
-    console.warn(`⚠️ Unauthorized admin access attempt from ${req.ip} (Missing Header)`);
-    return res.status(401).json({
-      success: false,
-      error: 'Unauthorized: Invalid or missing admin key'
-    });
-  }
-
-  // Constant-time comparison using SHA-256 hashing
-  // This prevents timing attacks and safely handles keys of different lengths
-  const hash = (str) => crypto.createHash('sha256').update(str).digest();
-
-  const requestKeyHash = hash(requestKey);
-  const isValid = validKeys.some(key => {
-    const validKeyHash = hash(key);
-    // crypto.timingSafeEqual throws if lengths differ, but SHA-256 hashes are always 32 bytes
-    return crypto.timingSafeEqual(requestKeyHash, validKeyHash);
-  });
-
-  if (!isValid) {
-    console.warn(`⚠️ Unauthorized admin access attempt from ${req.ip} (Invalid Key)`);
-    return res.status(401).json({
-      success: false,
-      error: 'Unauthorized: Invalid or missing admin key'
-    });
-  }
-
-  next();
+module.exports = {
+  verifyAdmin,
+  verifySuperAdmin
 };
