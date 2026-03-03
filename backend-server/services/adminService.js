@@ -20,27 +20,25 @@ class AdminService {
 
       const userSnapshot = await admin.database().ref(`users/${uid}`).once('value');
 
-      if (!userSnapshot.exists()) {
-        throw new Error('User found in Auth but missing database record.');
+      let userData = {};
+      if (userSnapshot.exists()) {
+        userData = userSnapshot.val();
       }
 
-      const userData = userSnapshot.val();
-
+      // Combine Auth and Database data, ensuring we get EVERYTHING from the database
       const aggregatedData = {
-        uid: uid,
-        email: userRecord.email,
-        name: userData.name || userData.username || 'Unknown',
-        emailVerified: userRecord.emailVerified,
-        phone: userData.phone || 'N/A',
-        accountStatus: userData.accountStatus || 'active',
-        role: userData.role || 'user',
-        createdAt: userRecord.metadata.creationTime,
-        lastLogin: userRecord.metadata.lastSignInTime,
-        groupsJoined: userData.groups ? Object.keys(userData.groups).length : 0,
-        walletBalance: userData.walletBalance || 0,
-        is2FAEnabled: userData.is2FAEnabled ? 'Yes' : 'No',
-        totalReportsAgainstUser: 0, // Placeholder
-        totalPosts: 0 // Placeholder
+        _auth: {
+          uid: uid,
+          email: userRecord.email,
+          emailVerified: userRecord.emailVerified,
+          displayName: userRecord.displayName,
+          phoneNumber: userRecord.phoneNumber,
+          disabled: userRecord.disabled,
+          creationTime: userRecord.metadata.creationTime,
+          lastSignInTime: userRecord.metadata.lastSignInTime,
+          providerData: userRecord.providerData.map(p => p.providerId)
+        },
+        _database: userData // Dump the entire database record here for the frontend to parse
       };
 
       return aggregatedData;
@@ -58,12 +56,52 @@ class AdminService {
     try {
       const disableAuth = newStatus === 'disabled' || newStatus === 'banned';
       await admin.auth().updateUser(uid, { disabled: disableAuth });
-      await admin.database().ref(`users/${uid}`).update({ accountStatus: newStatus });
-      console.log(`User ${uid} status updated to ${newStatus}`);
+
+      // Update database status
+      await admin.database().ref(`users/${uid}`).update({
+        accountStatus: newStatus,
+        statusUpdatedAt: admin.database.ServerValue.TIMESTAMP
+      });
 
       return { success: true, message: `User status updated to ${newStatus}` };
     } catch (error) {
       console.error(`Error updating user status ${uid}:`, error);
+      throw error;
+    }
+  }
+
+  async updateUserPassword(uid, newPassword) {
+    if (!newPassword || newPassword.length < 6) {
+      throw new Error('Password must be at least 6 characters long.');
+    }
+
+    try {
+      await admin.auth().updateUser(uid, { password: newPassword });
+
+      // Optionally invalidate sessions by updating tokens
+      await admin.auth().revokeRefreshTokens(uid);
+
+      return { success: true, message: 'User password successfully updated and sessions revoked.' };
+    } catch (error) {
+      console.error(`Error updating password for ${uid}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteUser(uid) {
+    try {
+      // 1. Delete from Firebase Auth
+      await admin.auth().deleteUser(uid);
+
+      // 2. Delete from Realtime Database
+      // Note: In a production app, you might also want to delete user data from Firestore/Storage
+      // or implement a "soft delete" instead of a hard delete to preserve financial history.
+      // But the requirement here is a hard delete.
+      await admin.database().ref(`users/${uid}`).remove();
+
+      return { success: true, message: 'User completely deleted from Auth and Database.' };
+    } catch (error) {
+      console.error(`Error deleting user ${uid}:`, error);
       throw error;
     }
   }
