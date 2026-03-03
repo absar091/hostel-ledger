@@ -4308,32 +4308,45 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
     }
 
     // ACCEPT -> Update Wallets
-    // 1. Get current balances
+    const amount = Number(tx.amount);
+
+    // 1. Use Firebase Transaction on Sender's Wallet to prevent negative balance race conditions
+    const senderWalletRef = db.ref(`users/${tx.from}/walletBalance`);
+
+    const transactionResult = await senderWalletRef.transaction((currentBalance) => {
+      // If balance is null, assume 0
+      const balance = currentBalance || 0;
+      if (balance >= amount) {
+        return balance - amount; // Proceed with deduction
+      }
+      return undefined; // Abort transaction if insufficient funds
+    });
+
+    if (!transactionResult.committed) {
+      return res.status(400).json({ success: false, error: 'Sender has insufficient funds to complete this transaction.' });
+    }
+
+    const senderBalanceAfter = transactionResult.snapshot.val();
+
+    // 2. Get receiver profile to get their balance for UI sync (and their settings)
     const [senderSnap, receiverSnap] = await Promise.all([
       db.ref(`users/${tx.from}`).get(),
       db.ref(`users/${tx.to}`).get()
     ]);
 
-    if (!senderSnap.exists() || !receiverSnap.exists()) {
-      return res.status(404).json({ success: false, error: 'User profiles not found' });
+    if (!receiverSnap.exists()) {
+      // Rollback sender's transaction if receiver profile is missing
+      await senderWalletRef.transaction((currentBalance) => (currentBalance || 0) + amount);
+      return res.status(404).json({ success: false, error: 'Receiver profile not found' });
     }
 
-    const sender = senderSnap.val();
-    const receiver = receiverSnap.val();
-    const amount = Number(tx.amount);
+    const sender = senderSnap.val() || {};
+    const receiver = receiverSnap.val() || {};
 
-    // CHECK: Insufficient Funds (Prevent negative balance)
-    const senderBalanceBefore = sender.walletBalance || 0;
-    if (senderBalanceBefore < amount) {
-      return res.status(400).json({ success: false, error: 'Sender has insufficient funds to complete this transaction.' });
-    }
+    const receiverBalanceBefore = receiver.walletBalance || 0;
+    const receiverBalanceAfter = receiverBalanceBefore + amount;
 
-    // 2. Calculate projected balances (for UI sync only)
-    // Note: The DB update uses atomic increment, so these local values are just estimates for the UI sync
-    const senderBalanceAfter = senderBalanceBefore - amount;
-    const receiverBalanceAfter = (receiver.walletBalance || 0) + amount;
-
-    // 3. Batched Updates
+    // 3. Batched Updates for everything else
     updates[`p2p_transactions/${transactionId}/status`] = 'completed';
     updates[`p2p_transactions/${transactionId}/completedAt`] = now;
 
@@ -4343,11 +4356,17 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
     updates[`user_p2p_transactions/${tx.to}/${transactionId}/status`] = 'completed';
     updates[`user_p2p_transactions/${tx.to}/${transactionId}/completedAt`] = now;
 
-    // Update Wallets ATOMICALLY (Fixes Race Condition / Lost Update)
-    updates[`users/${tx.from}/walletBalance`] = admin.database.ServerValue.increment(-amount);
+    // Update Receiver Wallet (Increment is safe here as receiving doesn't have a strict ceiling)
     updates[`users/${tx.to}/walletBalance`] = admin.database.ServerValue.increment(amount);
 
-    await db.ref().update(updates);
+    try {
+      await db.ref().update(updates);
+    } catch (updateError) {
+      console.error('Failed to commit batched updates after deducting sender funds, rolling back...', updateError);
+      // Rollback the initial transaction
+      await senderWalletRef.transaction((currentBalance) => (currentBalance || 0) + amount);
+      return res.status(500).json({ success: false, error: 'Failed to process transaction. Please try again.' });
+    }
 
     // --- SYNC WALLET BALANCE ---
     // We use the projected values. Even if slightly stale due to race,
