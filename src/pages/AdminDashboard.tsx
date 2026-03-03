@@ -11,7 +11,7 @@ export default function AdminDashboard() {
   const [actionLoading, setActionLoading] = useState(false);
 
   // In a real app, you would use an env variable for API base URL
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://hostel-ledger-backend.vercel.app';
 
   const fetchUser = async () => {
     if (!searchQuery.trim()) return;
