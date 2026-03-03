@@ -301,12 +301,36 @@ const ReceiptPage = () => {
                                     <div className="pt-4 border-t border-slate-100">
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">{t('receipt.breakdown')}</p>
                                         <div className="space-y-2">
-                                            {transaction.participants.map((p: any, i: number) => (
-                                                <div key={i} className="flex justify-between items-center text-xs">
-                                                    <span className="text-slate-500 font-bold">{p.name || `Member ${i + 1}`}</span>
-                                                    <span className="text-slate-900 font-black">{formatAmount(p.amount)}</span>
-                                                </div>
-                                            ))}
+                                            {transaction.participants.map((p: any, i: number) => {
+                                                let paidAmount = 0;
+                                                let displayStatus = "";
+
+                                                if (transaction.payers && transaction.payers.length > 1) {
+                                                    const payerData = transaction.payers.find((pyr: any) => pyr.name === p.name);
+                                                    if (payerData) paidAmount = payerData.amount;
+
+                                                    const shareAmount = p.amount;
+                                                    const netAmount = paidAmount - shareAmount;
+
+                                                    if (netAmount > 0) {
+                                                        displayStatus = `Gets back ${formatAmount(netAmount)}`;
+                                                    } else if (netAmount < 0) {
+                                                        displayStatus = `Owes ${formatAmount(Math.abs(netAmount))}`;
+                                                    } else {
+                                                        displayStatus = "Settled";
+                                                    }
+                                                } else {
+                                                    const isPayer = p.name === transaction.paidBy;
+                                                    displayStatus = isPayer ? "Paid" : `Owes ${formatAmount(p.amount)}`;
+                                                }
+
+                                                return (
+                                                    <div key={i} className="flex justify-between items-center text-xs">
+                                                        <span className="text-slate-500 font-bold">{p.name || `Member ${i + 1}`}</span>
+                                                        <span className={`font-black ${displayStatus.includes('Owes') ? 'text-orange-600' : 'text-slate-900'}`}>{displayStatus}</span>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 )}

@@ -190,11 +190,38 @@ const TimelineItemBase = ({
           {participants && participants.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
               {participants.map((p) => {
-                const isPayer = p.name === paidBy;
+                let paidAmount = 0;
+                let isPositive = false;
+                let displayStatus = "";
+
+                if (payers && payers.length > 1) {
+                    const payerData = payers.find(pyr => pyr.name === p.name);
+                    if (payerData) paidAmount = payerData.amount;
+
+                    const shareAmount = p.amount;
+                    const netAmount = paidAmount - shareAmount;
+
+                    if (netAmount > 0) {
+                       displayStatus = `gets back ${formatAmount(netAmount)}`;
+                       isPositive = true;
+                    } else if (netAmount < 0) {
+                       displayStatus = `owes ${formatAmount(Math.abs(netAmount))}`;
+                       isPositive = false;
+                    } else {
+                       // netAmount === 0, they paid exactly their share
+                       displayStatus = "settled";
+                       isPositive = true;
+                    }
+                } else {
+                    const isPayer = p.name === paidBy;
+                    isPositive = isPayer;
+                    displayStatus = isPayer ? "paid" : `owes ${formatAmount(p.amount)}`;
+                }
+
                 return (
                   <span
                     key={p.name}
-                    className={`inline-flex items-center gap-1 text-xs rounded-2xl px-3 py-1.5 font-black ${isPayer
+                    className={`inline-flex items-center gap-1 text-xs rounded-2xl px-3 py-1.5 font-black ${isPositive
                       ? "bg-gradient-to-r from-[#4a6850]/20 to-[#3d5643]/20 text-[#4a6850] border border-[#4a6850]/30"
                       : "bg-gradient-to-r from-orange-100 to-red-100 text-orange-700 border border-orange-200"
                       }`}
@@ -203,11 +230,9 @@ const TimelineItemBase = ({
                     {p.isTemporary && (
                       <span className="px-1 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[8px] font-black uppercase tracking-wider">Temp</span>
                     )}
-                    {isPayer ? (
-                      <span className="text-[#4a6850]/80 font-bold">paid</span>
-                    ) : (
-                      <span className="text-red-600 font-bold whitespace-nowrap">owes {formatAmount(p.amount)}</span>
-                    )}
+                    <span className={isPositive ? "text-[#4a6850]/80 font-bold whitespace-nowrap" : "text-red-600 font-bold whitespace-nowrap"}>
+                      {displayStatus}
+                    </span>
                   </span>
                 );
               })}

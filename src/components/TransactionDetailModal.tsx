@@ -409,6 +409,34 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                         {resolvedParticipants?.map((participant: any, index: number) => {
                                             const isOwner = transactionGroup?.createdBy === participant.id;
                                             const isMe = participant.id === user?.uid || (participant.userId && participant.userId === user?.uid);
+
+                                            let paidAmount = 0;
+                                            let displayStatus = "";
+                                            let isPositive = false;
+
+                                            if (transaction.payers && transaction.payers.length > 1) {
+                                                const payerData = transaction.payers.find((pyr: any) => pyr.name === participant.name);
+                                                if (payerData) paidAmount = payerData.amount;
+
+                                                const shareAmount = participant.amount;
+                                                const netAmount = paidAmount - shareAmount;
+
+                                                if (netAmount > 0) {
+                                                    displayStatus = `Gets back ${formatAmount(netAmount)}`;
+                                                    isPositive = true;
+                                                } else if (netAmount < 0) {
+                                                    displayStatus = `Owes ${formatAmount(Math.abs(netAmount))}`;
+                                                    isPositive = false;
+                                                } else {
+                                                    displayStatus = "Settled";
+                                                    isPositive = true;
+                                                }
+                                            } else {
+                                                const isPayer = participant.name === transaction.paidBy;
+                                                isPositive = isPayer;
+                                                displayStatus = isPayer ? "Paid" : `Owes ${formatAmount(participant.amount)}`;
+                                            }
+
                                             return (
                                                 <div key={index} className="flex justify-between items-center gap-2">
                                                     <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -422,7 +450,9 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                             <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
                                                         )}
                                                     </div>
-                                                    <span className="text-xs lg:text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">{formatAmount(participant.amount)}</span>
+                                                    <span className={`text-xs lg:text-sm flex-shrink-0 font-bold tabular-nums ${isPositive ? 'text-[#4a6850]' : 'text-red-500'}`}>
+                                                        {displayStatus}
+                                                    </span>
                                                 </div>
                                             );
                                         })}
@@ -687,16 +717,45 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: '10px' }}>
                                     Split Between ({resolvedParticipants?.length || 0})
                                 </div>
-                                {resolvedParticipants?.map((p: any, i: number) => (
-                                    <div key={i} style={{
-                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                        padding: '6px 0',
-                                        borderBottom: i < transaction.participants.length - 1 ? '1px solid #F3F4F6' : 'none'
-                                    }}>
-                                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>{p.name}</span>
-                                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#4a6850' }}>{formatAmount(p.amount)}</span>
-                                    </div>
-                                ))}
+                                {resolvedParticipants?.map((p: any, i: number) => {
+                                    let paidAmount = 0;
+                                    let displayStatus = "";
+                                    let isPositive = false;
+
+                                    if (transaction.payers && transaction.payers.length > 1) {
+                                        const payerData = transaction.payers.find((pyr: any) => pyr.name === p.name);
+                                        if (payerData) paidAmount = payerData.amount;
+
+                                        const shareAmount = p.amount;
+                                        const netAmount = paidAmount - shareAmount;
+
+                                        if (netAmount > 0) {
+                                            displayStatus = `Gets back ${formatAmount(netAmount)}`;
+                                            isPositive = true;
+                                        } else if (netAmount < 0) {
+                                            displayStatus = `Owes ${formatAmount(Math.abs(netAmount))}`;
+                                            isPositive = false;
+                                        } else {
+                                            displayStatus = "Settled";
+                                            isPositive = true;
+                                        }
+                                    } else {
+                                        const isPayer = p.name === transaction.paidBy;
+                                        isPositive = isPayer;
+                                        displayStatus = isPayer ? "Paid" : `Owes ${formatAmount(p.amount)}`;
+                                    }
+
+                                    return (
+                                        <div key={i} style={{
+                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                            padding: '6px 0',
+                                            borderBottom: i < transaction.participants.length - 1 ? '1px solid #F3F4F6' : 'none'
+                                        }}>
+                                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>{p.name}</span>
+                                            <span style={{ fontSize: '13px', fontWeight: 700, color: isPositive ? '#4a6850' : '#EF4444' }}>{displayStatus}</span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
 
