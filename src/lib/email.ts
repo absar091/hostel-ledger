@@ -11,7 +11,7 @@ const EMAIL_CONFIG = {
 
 import { callSecureApi } from './api';
 
-const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM || 'Hostel Ledger<noreply@hostelledger.com>';
+const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM || 'Hostel Ledger<hostelledger@aarx.online>';
 
 // Check if backend API is available
 export const verifyEmailConnection = async (): Promise<boolean> => {
