@@ -1,4 +1,4 @@
-## 2026-03-03 - Path Traversal in Push Notification Endpoints
-**Vulnerability:** The `/api/push-notify` and `/api/push-notify-multiple` endpoints accepted `userId` inputs directly from the request body without validation. An attacker could potentially use path traversal sequences (e.g., `../`) in the `userId` to manipulate internal logic or file paths if the ID were used in file operations or as a database key in a way that allows traversal (though Firebase keys are generally resilient, downstream systems might not be).
-**Learning:** Even when using abstracted database libraries, always validate IDs against a strict allowlist (alphanumeric + safe separators) to prevent unexpected behavior in current or future logic that might rely on these IDs for file system or critical path operations.
-**Prevention:** Explicitly validate all user-provided IDs using `isValidFirebaseId` (or a similar strict regex) at the API boundary before passing them to internal functions or third-party services. Added `isValidFirebaseId` checks to both endpoints.
+## 2024-10-24 - [Add Express Payload Limits]
+**Vulnerability:** Missing strict payload size limits on incoming JSON and URL-encoded requests (DoS risk).
+**Learning:** Default Express `body-parser` limits are generous (100kb+). Explicitly limiting these to tighter values (like 10kb) for specific APIs is a standard security practice to prevent DoS via large payloads.
+**Prevention:** Always define explicit limits when configuring `express.json()` and `express.urlencoded()`.
