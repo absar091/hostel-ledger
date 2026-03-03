@@ -1,8 +1,22 @@
 import { useState, useMemo, useEffect } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, Banknote, Smartphone, ChevronRight, Info, CreditCard, Wallet } from "lucide-react";
+import {
+  Check,
+  Banknote,
+  Smartphone,
+  ChevronRight,
+  Info,
+  CreditCard,
+  Wallet,
+} from "lucide-react";
 import Avatar from "./Avatar";
 import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
@@ -51,7 +65,12 @@ interface RecordPaymentSheetProps {
   }) => Promise<void>;
 }
 
-const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSheetProps) => {
+const RecordPaymentSheet = ({
+  open,
+  onClose,
+  groups,
+  onSubmit,
+}: RecordPaymentSheetProps) => {
   const { t } = useTranslation();
   const { formatAmount } = useCurrency();
   const { getSettlements } = useFirebaseAuth();
@@ -79,7 +98,9 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
     if (allMembers.length === 0) return [];
 
     // Filter out "You" and "Invited" user-types (who haven't joined yet)
-    const filteredMembers = allMembers.filter((m) => !m.isCurrentUser && (m as any).type !== 'invited');
+    const filteredMembers = allMembers.filter(
+      (m) => !m.isCurrentUser && (m as any).type !== "invited",
+    );
 
     // Sort by amount they owe (toReceive) descending
     const groupSettlements = getSettlements(selectedGroup);
@@ -97,18 +118,18 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
   const selectedMemberData = useMemo(() => {
     if (!fromMember || !selectedGroup) return null;
 
-    const member = otherMembers.find(m => m.id === fromMember);
+    const member = otherMembers.find((m) => m.id === fromMember);
     if (!member) return null;
 
     const settlement = settlements[fromMember] || { toReceive: 0, toPay: 0 };
-    const group = groups.find(g => g.id === selectedGroup);
-    const fullMember = group?.members.find(m => m.id === fromMember);
+    const group = groups.find((g) => g.id === selectedGroup);
+    const fullMember = group?.members.find((m) => m.id === fromMember);
 
     return {
       ...member,
       settlement,
       paymentDetails: fullMember?.paymentDetails,
-      phone: fullMember?.phone
+      phone: fullMember?.phone,
     };
   }, [fromMember, selectedGroup, otherMembers, settlements, groups]);
 
@@ -171,22 +192,29 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
 
     const settlement = settlements[fromMember] || { toReceive: 0, toPay: 0 };
     if (settlement.toReceive <= 0) {
-      toast.error(t('sheets.record_payment.not_owe_error', { name: selectedMemberName }));
+      toast.error(
+        t("sheets.record_payment.not_owe_error", { name: selectedMemberName }),
+      );
       return;
     }
 
     if (isNaN(amountValue) || amountValue <= 0) {
-      toast.error(t('sheets.record_payment.enter_valid_amount'));
+      toast.error(t("sheets.record_payment.enter_valid_amount"));
       return;
     }
 
     if (amountValue > settlement.toReceive) {
-      toast.error(t('sheets.record_payment.amount_exceeds', { name: selectedMemberName, amount: formatAmount(settlement.toReceive) }));
+      toast.error(
+        t("sheets.record_payment.amount_exceeds", {
+          name: selectedMemberName,
+          amount: formatAmount(settlement.toReceive),
+        }),
+      );
       return;
     }
 
     // Check if fromMember exists in otherMembers
-    const memberExists = otherMembers.some(m => m.id === fromMember);
+    const memberExists = otherMembers.some((m) => m.id === fromMember);
     if (!memberExists) {
       console.error("Invalid member ID");
       return;
@@ -219,23 +247,33 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
     if (step === 3) {
       const amountValue = parseFloat(amount);
       const settlement = settlements[fromMember] || { toReceive: 0, toPay: 0 };
-      return amountValue > 0 && !isNaN(amountValue) && amountValue <= settlement.toReceive;
+      return (
+        amountValue > 0 &&
+        !isNaN(amountValue) &&
+        amountValue <= settlement.toReceive
+      );
     }
     return true;
   };
 
   const selectedGroupData = groups.find((g) => g.id === selectedGroup);
-  const selectedMemberName = otherMembers.find((m) => m.id === fromMember)?.name;
+  const selectedMemberName = otherMembers.find(
+    (m) => m.id === fromMember,
+  )?.name;
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 shadow-[0_-20px_60px_rgba(74,104,80,0.1)] z-[100]">
-
+      <SheetContent
+        side="bottom"
+        className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 shadow-[0_-20px_60px_rgba(74,104,80,0.1)] z-[100]"
+      >
         {/* Loading Overlay */}
         {isSubmitting && (
           <div className="absolute inset-0 z-[150] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-200">
             <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
-            <h3 className="text-lg font-black text-slate-900">{t('sheets.add_expense.processing')}</h3>
+            <h3 className="text-lg font-black text-slate-900">
+              {t("sheets.add_expense.processing")}
+            </h3>
           </div>
         )}
 
@@ -244,12 +282,12 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
 
           <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">
-            {step === 1 && t('sheets.record_payment.step_select_group')}
-            {step === 2 && t('sheets.record_payment.step_who_paid_you')}
-            {step === 3 && t('sheets.record_payment.step_payment_details')}
+            {step === 1 && t("sheets.record_payment.step_select_group")}
+            {step === 2 && t("sheets.record_payment.step_who_paid_you")}
+            {step === 3 && t("sheets.record_payment.step_payment_details")}
           </SheetTitle>
           <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
-            {t('sheets.record_payment.subtitle')}
+            {t("sheets.record_payment.subtitle")}
           </SheetDescription>
         </SheetHeader>
 
@@ -258,7 +296,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
           {step === 1 && (
             <div className="space-y-3 animate-fade-in">
               <p className="text-sm text-[#4a6850]/80 mb-4 text-center font-bold">
-                {t('sheets.record_payment.group_prompt')}
+                {t("sheets.record_payment.group_prompt")}
               </p>
               {groups.map((group) => (
                 <button
@@ -268,17 +306,21 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
                     selectedGroup === group.id
                       ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
-                      : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5"
+                      : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5",
                   )}
                 >
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 flex items-center justify-center text-xl shadow-sm flex-shrink-0">
                     {group.emoji}
                   </div>
                   <div className="flex-1 text-left min-w-0">
-                    <span className="font-black text-gray-900 tracking-tight block truncate">{group.name}</span>
+                    <span className="font-black text-gray-900 tracking-tight block truncate">
+                      {group.name}
+                    </span>
                     {(group.memberCount || group.members.length) > 0 && (
                       <p className="text-xs text-[#4a6850]/80 font-bold">
-                        {t('sheets.add_expense.member_count', { count: group.memberCount || group.members.length })}
+                        {t("sheets.add_expense.member_count", {
+                          count: group.memberCount || group.members.length,
+                        })}
                       </p>
                     )}
                   </div>
@@ -299,29 +341,39 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 <div className="flex items-center justify-center mb-6">
                   <div className="inline-flex items-center gap-2 bg-[#4a6850]/10 rounded-2xl px-4 py-2 border border-[#4a6850]/20">
                     <span className="text-xl">{selectedGroupData.emoji}</span>
-                    <span className="text-sm font-black text-[#4a6850]">{selectedGroupData.name}</span>
+                    <span className="text-sm font-black text-[#4a6850]">
+                      {selectedGroupData.name}
+                    </span>
                   </div>
                 </div>
               )}
               <p className="text-sm text-[#4a6850]/80 mb-4 text-center font-bold">
-                {t('sheets.record_payment.who_sent_prompt')}
+                {t("sheets.record_payment.who_sent_prompt")}
               </p>
               <div className="space-y-3">
                 {isLoadingMembers ? (
                   <div className="flex flex-col items-center justify-center py-12 space-y-4 animate-fade-in">
                     <div className="w-12 h-12 border-4 border-[#4a6850]/20 border-t-[#4a6850] rounded-full animate-spin"></div>
-                    <p className="text-sm text-[#4a6850]/70 font-black">{t('sheets.record_payment.finding_members')}</p>
+                    <p className="text-sm text-[#4a6850]/70 font-black">
+                      {t("sheets.record_payment.finding_members")}
+                    </p>
                   </div>
                 ) : otherMembers.length === 0 ? (
                   <div className="text-center py-12 px-6 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
-                    <p className="text-gray-500 font-bold">{t('sheets.record_payment.no_members_found')}</p>
+                    <p className="text-gray-500 font-bold">
+                      {t("sheets.record_payment.no_members_found")}
+                    </p>
                   </div>
                 ) : (
                   otherMembers.map((member) => {
-                    const settlement = settlements[member.id] || { toReceive: 0, toPay: 0 };
+                    const settlement = settlements[member.id] || {
+                      toReceive: 0,
+                      toPay: 0,
+                    };
                     const owesYou = settlement.toReceive > 0;
                     const youOwe = settlement.toPay > 0;
-                    const isSettled = settlement.toReceive === 0 && settlement.toPay === 0;
+                    const isSettled =
+                      settlement.toReceive === 0 && settlement.toPay === 0;
 
                     return (
                       <button
@@ -333,41 +385,69 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                           fromMember === member.id
                             ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
                             : "bg-white border-2 border-gray-200 hover:border-[#4a6850]/30 hover:bg-[#4a6850]/5",
-                          !owesYou && "opacity-50 grayscale cursor-not-allowed border-dashed bg-gray-50"
+                          !owesYou &&
+                            "opacity-50 grayscale cursor-not-allowed border-dashed bg-gray-50",
                         )}
                       >
                         <Avatar name={member.name} size="sm" />
                         <div className="flex-1 text-left min-w-0">
                           <div className="flex items-center gap-2">
-                            <div className="font-black text-gray-900 tracking-tight truncate">{member.name}</div>
-                            {(member.id === selectedGroupData?.createdBy || (member as any).userId === selectedGroupData?.createdBy) && (
-                              <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.owner')}</span>
+                            <div className="font-black text-gray-900 tracking-tight truncate">
+                              {member.name}
+                            </div>
+                            {(member.id === selectedGroupData?.createdBy ||
+                              (member as any).userId ===
+                                selectedGroupData?.createdBy) && (
+                              <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">
+                                {t("sheets.add_expense.owner")}
+                              </span>
                             )}
                             {(member as any).isPending && (
-                              <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.invited')}</span>
+                              <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">
+                                {t("sheets.add_expense.invited")}
+                              </span>
                             )}
                             {member.isTemporary && (
-                              <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.temp')}</span>
+                              <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">
+                                {t("sheets.add_expense.temp")}
+                              </span>
                             )}
                             {!owesYou && (
-                              <span className="px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-wider">{t('common.no_debt')}</span>
+                              <span className="px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-wider">
+                                {t("common.no_debt")}
+                              </span>
                             )}
                           </div>
-                          {(member as any).walletBalance !== undefined && (member as any).walletBalance !== null && (
-                            <div className="flex items-center gap-1 text-[11px] font-black text-blue-600 bg-blue-50 w-fit px-1.5 py-0.5 rounded-lg border border-blue-100 mt-1">
-                              <Wallet className="w-3 h-3" />
-                              <span>{formatAmount((member as any).walletBalance)}</span>
-                            </div>
-                          )}
+                          {(member as any).walletBalance !== undefined &&
+                            (member as any).walletBalance !== null && (
+                              <div className="flex items-center gap-1 text-[11px] font-black text-blue-600 bg-blue-50 w-fit px-1.5 py-0.5 rounded-lg border border-blue-100 mt-1">
+                                <Wallet className="w-3 h-3" />
+                                <span>
+                                  {formatAmount((member as any).walletBalance)}
+                                </span>
+                              </div>
+                            )}
                           <div className="text-xs font-bold truncate">
                             {isSettled ? (
-                              <span className="text-emerald-600 font-black">✅ {t('common.all_settled')}</span>
+                              <span className="text-emerald-600 font-black">
+                                ✅ {t("common.all_settled")}
+                              </span>
                             ) : owesYou ? (
-                              <span className="text-[#4a6850] font-black">{t('sheets.record_payment.owe_amount', { amount: formatAmount(settlement.toReceive) })}</span>
+                              <span className="text-[#4a6850] font-black">
+                                {t("sheets.record_payment.owe_amount", {
+                                  amount: formatAmount(settlement.toReceive),
+                                })}
+                              </span>
                             ) : youOwe ? (
-                              <span className="text-red-500 font-black">{t('common.you_owe_simple', { amount: formatAmount(settlement.toPay) })}</span>
+                              <span className="text-red-500 font-black">
+                                {t("common.you_owe_simple", {
+                                  amount: formatAmount(settlement.toPay),
+                                })}
+                              </span>
                             ) : (
-                              <span className="text-gray-500">{t('common.no_pending')}</span>
+                              <span className="text-gray-500">
+                                {t("common.no_pending")}
+                              </span>
                             )}
                           </div>
                         </div>
@@ -394,78 +474,129 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                     <Avatar name={selectedMemberData.name} size="sm" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-black text-gray-900 text-base tracking-tight truncate">{selectedMemberData.name}</h3>
-                        {(selectedMemberData.id === selectedGroupData?.createdBy || (selectedMemberData as any).userId === selectedGroupData?.createdBy) && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.owner')}</span>
+                        <h3 className="font-black text-gray-900 text-base tracking-tight truncate">
+                          {selectedMemberData.name}
+                        </h3>
+                        {(selectedMemberData.id ===
+                          selectedGroupData?.createdBy ||
+                          (selectedMemberData as any).userId ===
+                            selectedGroupData?.createdBy) && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] font-black uppercase tracking-wider">
+                            {t("sheets.add_expense.owner")}
+                          </span>
                         )}
                         {(selectedMemberData as any).isPending && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">{t('sheets.add_expense.invited')}</span>
+                          <span className="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">
+                            {t("sheets.add_expense.invited")}
+                          </span>
                         )}
                       </div>
                       <div className="text-xs font-bold truncate">
                         {selectedMemberData.settlement.toReceive > 0 ? (
                           <span className="text-[#4a6850]">
-                            💰 {t('sheets.record_payment.owe_amount', { amount: formatAmount(selectedMemberData.settlement.toReceive) })}
+                            💰{" "}
+                            {t("sheets.record_payment.owe_amount", {
+                              amount: formatAmount(
+                                selectedMemberData.settlement.toReceive,
+                              ),
+                            })}
                           </span>
                         ) : selectedMemberData.settlement.toPay > 0 ? (
                           <span className="text-red-500">
-                            💸 {t('common.you_owe_simple', { amount: formatAmount(selectedMemberData.settlement.toPay) })}
+                            💸{" "}
+                            {t("common.you_owe_simple", {
+                              amount: formatAmount(
+                                selectedMemberData.settlement.toPay,
+                              ),
+                            })}
                           </span>
                         ) : (
-                          <span className="text-[#4a6850]">✅ {t('common.all_settled')}</span>
+                          <span className="text-[#4a6850]">
+                            ✅ {t("common.all_settled")}
+                          </span>
                         )}
                       </div>
                     </div>
                   </div>
 
                   {/* Payment Details - Compact */}
-                  {selectedMemberData.paymentDetails && Object.keys(selectedMemberData.paymentDetails).length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-[#4a6850]/20">
-                      <div className="flex items-center gap-2 mb-2">
-                        <CreditCard className="w-4 h-4 text-[#4a6850]" />
-                        <span className="text-xs font-black text-[#4a6850] uppercase tracking-wide">{t('common.payment_info')}</span>
+                  {selectedMemberData.paymentDetails &&
+                    Object.keys(selectedMemberData.paymentDetails).length >
+                      0 && (
+                      <div className="mt-3 pt-3 border-t border-[#4a6850]/20">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CreditCard className="w-4 h-4 text-[#4a6850]" />
+                          <span className="text-xs font-black text-[#4a6850] uppercase tracking-wide">
+                            {t("common.payment_info")}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          {selectedMemberData.paymentDetails.jazzCash && (
+                            <div className="bg-white rounded-xl p-2 border border-[#4a6850]/10">
+                              <span className="text-[#4a6850]/70 font-bold block">
+                                {t("common.jazzcash")}
+                              </span>
+                              <div className="font-black text-gray-900 font-mono text-xs truncate">
+                                {selectedMemberData.paymentDetails.jazzCash}
+                              </div>
+                            </div>
+                          )}
+                          {selectedMemberData.paymentDetails.easypaisa && (
+                            <div className="bg-white rounded-xl p-2 border border-[#4a6850]/10">
+                              <span className="text-[#4a6850]/70 font-bold block">
+                                {t("common.easypaisa")}
+                              </span>
+                              <div className="font-black text-gray-900 font-mono text-xs truncate">
+                                {selectedMemberData.paymentDetails.easypaisa}
+                              </div>
+                            </div>
+                          )}
+                          {selectedMemberData.paymentDetails.bankName && (
+                            <div className="bg-white rounded-xl p-2 border border-[#4a6850]/10">
+                              <span className="text-[#4a6850]/70 font-bold block">
+                                {t("common.bank")}
+                              </span>
+                              <div className="font-black text-gray-900 font-mono text-xs truncate">
+                                {selectedMemberData.paymentDetails.bankName}
+                              </div>
+                            </div>
+                          )}
+                          {selectedMemberData.paymentDetails.accountNumber && (
+                            <div className="bg-white rounded-xl p-2 border border-[#4a6850]/10">
+                              <span className="text-[#4a6850]/70 font-bold block">
+                                {t("common.account")}
+                              </span>
+                              <div className="font-black text-gray-900 font-mono text-xs truncate">
+                                {
+                                  selectedMemberData.paymentDetails
+                                    .accountNumber
+                                }
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        {selectedMemberData.paymentDetails.jazzCash && (
-                          <div className="bg-white rounded-xl p-2 border border-[#4a6850]/10">
-                            <span className="text-[#4a6850]/70 font-bold block">{t('common.jazzcash')}</span>
-                            <div className="font-black text-gray-900 font-mono text-xs truncate">{selectedMemberData.paymentDetails.jazzCash}</div>
-                          </div>
-                        )}
-                        {selectedMemberData.paymentDetails.easypaisa && (
-                          <div className="bg-white rounded-xl p-2 border border-[#4a6850]/10">
-                            <span className="text-[#4a6850]/70 font-bold block">{t('common.easypaisa')}</span>
-                            <div className="font-black text-gray-900 font-mono text-xs truncate">{selectedMemberData.paymentDetails.easypaisa}</div>
-                          </div>
-                        )}
-                        {selectedMemberData.paymentDetails.bankName && (
-                          <div className="bg-white rounded-xl p-2 border border-[#4a6850]/10">
-                            <span className="text-[#4a6850]/70 font-bold block">{t('common.bank')}</span>
-                            <div className="font-black text-gray-900 font-mono text-xs truncate">{selectedMemberData.paymentDetails.bankName}</div>
-                          </div>
-                        )}
-                        {selectedMemberData.paymentDetails.accountNumber && (
-                          <div className="bg-white rounded-xl p-2 border border-[#4a6850]/10">
-                            <span className="text-[#4a6850]/70 font-bold block">{t('common.account')}</span>
-                            <div className="font-black text-gray-900 font-mono text-xs truncate">{selectedMemberData.paymentDetails.accountNumber}</div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Quick Amount Suggestion - Compact */}
                   {selectedMemberData.settlement.toReceive > 0 && (
                     <div className="mt-3 pt-3 border-t border-[#4a6850]/20">
                       <div className="flex items-center gap-2 mb-2">
                         <Info className="w-4 h-4 text-[#4a6850]" />
-                        <span className="text-xs font-black text-[#4a6850] uppercase tracking-wide">{t('common.quick_fill')}</span>
+                        <span className="text-xs font-black text-[#4a6850] uppercase tracking-wide">
+                          {t("common.quick_fill")}
+                        </span>
                       </div>
                       <button
-                        onClick={() => setAmount(selectedMemberData.settlement.toReceive.toString())}
+                        onClick={() =>
+                          setAmount(
+                            selectedMemberData.settlement.toReceive.toString(),
+                          )
+                        }
                         className="w-full bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white px-4 py-2 rounded-xl transition-all font-black shadow-md hover:shadow-lg text-sm"
                       >
-                        {t('common.full_amount')}: {formatAmount(selectedMemberData.settlement.toReceive)}
+                        {t("common.full_amount")}:{" "}
+                        {formatAmount(selectedMemberData.settlement.toReceive)}
                       </button>
                     </div>
                   )}
@@ -474,8 +605,11 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
 
               {/* Amount - Compact */}
               <div>
-                <label htmlFor="record-payment-amount" className="text-xs font-black text-[#4a6850]/80 mb-2 block uppercase tracking-wide">
-                  {t('sheets.record_payment.amount_label')}
+                <label
+                  htmlFor="record-payment-amount"
+                  className="text-xs font-black text-[#4a6850]/80 mb-2 block uppercase tracking-wide"
+                >
+                  {t("sheets.record_payment.amount_label")}
                 </label>
                 <div className="text-center mb-4">
                   <div className="text-4xl font-black text-gray-900 mb-4 tracking-tighter tabular-nums">
@@ -484,7 +618,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   <Input
                     id="record-payment-amount"
                     type="number"
-                    placeholder={t('sheets.record_payment.amount_label')}
+                    placeholder={t("sheets.record_payment.amount_label")}
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-2 border-[#4a6850]/30 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:ring-0 focus:shadow-xl"
@@ -497,62 +631,83 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <label className="text-xs font-black text-[#4a6850]/80 uppercase tracking-wide">
-                    {t('sheets.record_payment.method_label')}
+                    {t("sheets.record_payment.method_label")}
                   </label>
                   <Tooltip
-                    content={t('sheets.record_payment.method_label')}
+                    content={t("sheets.record_payment.method_label")}
                     position="top"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <button
+                    aria-pressed={method === "cash"}
                     onClick={() => setMethod("cash")}
                     className={cn(
                       "flex items-center justify-center gap-2 p-3 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
                       method === "cash"
                         ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
-                        : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5"
+                        : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5",
                     )}
                   >
-                    <Banknote className={cn(
-                      "w-5 h-5 font-bold",
-                      method === "cash" ? "text-[#4a6850]" : "text-gray-500"
-                    )} />
-                    <span className={cn(
-                      "font-black tracking-tight text-sm",
-                      method === "cash" ? "text-[#4a6850]" : "text-gray-900"
-                    )}>{t('common.cash')}</span>
+                    <Banknote
+                      className={cn(
+                        "w-5 h-5 font-bold",
+                        method === "cash" ? "text-[#4a6850]" : "text-gray-500",
+                      )}
+                    />
+                    <span
+                      className={cn(
+                        "font-black tracking-tight text-sm",
+                        method === "cash" ? "text-[#4a6850]" : "text-gray-900",
+                      )}
+                    >
+                      {t("common.cash")}
+                    </span>
                   </button>
 
                   <button
+                    aria-pressed={method === "online"}
                     onClick={() => setMethod("online")}
                     className={cn(
                       "flex items-center justify-center gap-2 p-3 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
                       method === "online"
                         ? "bg-gradient-to-r from-[#4a6850]/10 to-[#3d5643]/10 border-2 border-[#4a6850]"
-                        : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5"
+                        : "bg-white border border-[#4a6850]/10 hover:bg-[#4a6850]/5",
                     )}
                   >
-                    <Smartphone className={cn(
-                      "w-5 h-5 font-bold",
-                      method === "online" ? "text-[#4a6850]" : "text-gray-500"
-                    )} />
-                    <span className={cn(
-                      "font-black tracking-tight text-sm",
-                      method === "online" ? "text-[#4a6850]" : "text-gray-900"
-                    )}>{t('common.online')}</span>
+                    <Smartphone
+                      className={cn(
+                        "w-5 h-5 font-bold",
+                        method === "online"
+                          ? "text-[#4a6850]"
+                          : "text-gray-500",
+                      )}
+                    />
+                    <span
+                      className={cn(
+                        "font-black tracking-tight text-sm",
+                        method === "online"
+                          ? "text-[#4a6850]"
+                          : "text-gray-900",
+                      )}
+                    >
+                      {t("common.online")}
+                    </span>
                   </button>
                 </div>
               </div>
 
               {/* Note - Compact */}
               <div>
-                <label htmlFor="record-payment-note" className="text-xs font-black text-[#4a6850]/80 mb-2 block uppercase tracking-wide">
-                  {t('sheets.record_payment.note_label')}
+                <label
+                  htmlFor="record-payment-note"
+                  className="text-xs font-black text-[#4a6850]/80 mb-2 block uppercase tracking-wide"
+                >
+                  {t("sheets.record_payment.note_label")}
                 </label>
                 <Input
                   id="record-payment-note"
-                  placeholder={t('sheets.record_payment.note_label')}
+                  placeholder={t("sheets.record_payment.note_label")}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] focus:shadow-xl"
@@ -570,7 +725,13 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                         +{formatAmount(parseFloat(amount) || 0)}
                       </div>
                       <div className="text-xs text-white/90 font-bold truncate">
-                        {t('sheets.record_payment.received_from', { name: selectedMemberName })} • {method === 'cash' ? t('sheets.record_payment.method_cash') : t('sheets.record_payment.method_online')}
+                        {t("sheets.record_payment.received_from", {
+                          name: selectedMemberName,
+                        })}{" "}
+                        •{" "}
+                        {method === "cash"
+                          ? t("sheets.record_payment.method_cash")
+                          : t("sheets.record_payment.method_online")}
                       </div>
                     </div>
                   </div>
@@ -588,7 +749,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 onClick={() => setStep((s) => s - 1)}
                 className="flex-1 h-14 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black border-0 shadow-lg hover:shadow-xl transition-all"
               >
-                {t('common.back')}
+                {t("common.back")}
               </Button>
             )}
             {step < 3 ? (
@@ -597,7 +758,8 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 disabled={!canProceed()}
                 className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
               >
-                {t('common.continue')} <ChevronRight className="w-5 h-5 ml-2 font-bold" />
+                {t("common.continue")}{" "}
+                <ChevronRight className="w-5 h-5 ml-2 font-bold" />
               </Button>
             ) : (
               <Button
@@ -605,7 +767,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 disabled={!canProceed()}
                 className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
               >
-                {t('sheets.record_payment.submit_btn')}
+                {t("sheets.record_payment.submit_btn")}
               </Button>
             )}
           </div>
