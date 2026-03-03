@@ -47,7 +47,6 @@ import JoinGroup from "./pages/JoinGroup";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import ReceiptPage from "./pages/ReceiptPage";
-import VerificationPage from "./pages/VerificationPage";
 
 
 const queryClient = new QueryClient({
@@ -200,7 +199,6 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 const AppRoutes = () => (
   <Routes>
     {/* Verification Routes */}
-    <Route path="/verify-sheets" element={<VerificationPage />} />
     <Route path="/verify-2fa" element={<TwoFactorVerification />} />
 
     <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
