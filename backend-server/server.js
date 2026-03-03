@@ -1603,6 +1603,11 @@ app.post('/api/send-welcome', emailLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, name' });
     }
 
+    // Strict email check (No HTML characters allowed)
+    if (!/^[^\s@<>"'`]+@[^\s@<>"'`]+\.[^\s@<>"'`]+$/.test(email)) {
+      return res.status(400).json({ success: false, error: 'Invalid email format' });
+    }
+
     await emailService.sendWelcome(email, name);
     console.log('✅ Welcome email sent');
     res.json({ success: true, message: 'Welcome email sent' });
