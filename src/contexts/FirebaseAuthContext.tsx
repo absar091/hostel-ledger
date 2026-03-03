@@ -55,6 +55,8 @@ export interface UserProfile {
   showBalanceToOthers: boolean; // Privacy setting for wallet balance visibility
   currency?: string; // Currency code (e.g., 'PKR', 'USD', 'EUR') — defaults to PKR
   language?: string; // Language code (e.g., 'en', 'ur', 'hi') — defaults to en
+  role?: 'user' | 'admin' | 'superadmin';
+  accountStatus?: 'active' | 'disabled' | 'banned';
 }
 
 interface FirebaseAuthContextType {
@@ -272,7 +274,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
               emailVerified: isVerified,
               is2FAEnabled: userData.is2FAEnabled || false,
               favoriteGroups: userData.favoriteGroups || [],
-              showBalanceToOthers: userData.showBalanceToOthers ?? false
+              showBalanceToOthers: userData.showBalanceToOthers ?? false,
+              role: userData.role || 'user',
+              accountStatus: userData.accountStatus || 'active'
             };
 
                         // 2FA Verification Logic (Integrated to prevent race conditions)

@@ -37,6 +37,8 @@ import InstallGuide from "./pages/InstallGuide";
 import About from "./pages/About";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import AdminRoute from "./components/AdminRoute";
+import AdminDashboard from "./pages/AdminDashboard";
 import GroupTerms from "./pages/GroupTerms";
 import GroupPrivacy from "./pages/GroupPrivacy";
 import ToReceive from "./pages/ToReceive";
@@ -212,6 +214,7 @@ const AppRoutes = () => (
     <Route path="/download-app" element={<ProtectedRoute><DownloadApp /></ProtectedRoute>} />
     <Route path="/install-app" element={<InstallApp />} />
     <Route path="/install-guide" element={<InstallGuide />} />
+    <Route element={<AdminRoute />}><Route path="/secure-admin-dashboard" element={<AdminDashboard />} /></Route>
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/create-group" element={<ProtectedRoute><CreateGroup /></ProtectedRoute>} />
     <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
