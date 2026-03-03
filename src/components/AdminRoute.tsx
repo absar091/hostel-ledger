@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useFirebaseAuth as useAuth } from '@/contexts/FirebaseAuthContext';
 import { Loader2 } from 'lucide-react';
 
 const AdminRoute = () => {
@@ -16,7 +16,7 @@ const AdminRoute = () => {
   // Check if user exists and has an admin role
   if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
     // Redirect non-admins to the dashboard
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;

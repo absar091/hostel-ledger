@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useFirebaseAuth as useAuth } from '@/contexts/FirebaseAuthContext';
 import { Search, Shield, UserX, UserCheck, ShieldAlert, Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
