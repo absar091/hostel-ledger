@@ -156,7 +156,7 @@ const ReceiptPage = () => {
                         `Title: ${transaction.title}\n` +
                         `Amount: ${formatAmount(transaction.amount)}\n` +
                         `Date: ${new Date(transaction.timestamp || transaction.date).toLocaleString()}\n` +
-                        `${type === "expense" ? `Paid by: ${transaction.paidByName}` : `From: ${transaction.fromName} To: ${transaction.toName}`}\n\n` +
+                        `${type === "expense" ? `Paid by: ${transaction.payers && transaction.payers.length > 1 ? transaction.payers.length + ' People' : transaction.paidByName}` : `From: ${transaction.fromName} To: ${transaction.toName}`}\n\n` +
                         `Shared via Hostel Ledger 🚀`;
 
                     await navigator.share({ title: t('receipt.share_receipt'), text: shareText });
@@ -261,7 +261,7 @@ const ReceiptPage = () => {
                                         <>
                                             <div className="space-y-1">
                                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? t('receipt.paid_by') : t('receipt.from')}</p>
-                                                <p className="font-black text-xs text-slate-900">{type === "expense" ? transaction.paidByName : transaction.fromName}</p>
+                                                <p className="font-black text-xs text-slate-900">{type === "expense" ? (transaction.payers && transaction.payers.length > 1 ? `${transaction.payers.length} People` : transaction.paidByName) : transaction.fromName}</p>
                                             </div>
                                             <div className="space-y-1 text-right">
                                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? t('receipt.split_with') : t('receipt.to')}</p>

@@ -305,11 +305,14 @@ const Activity = () => {
             <div className="space-y-4">
               {filteredTransactions.map((transaction, index) => {
                 const transactionGroup = groups.find(g => g.id === transaction.groupId);
-                let displayAmount = transaction.amount;
-                let amountColorClass = "text-blue-600";
-
                 const userParticipant = transaction.participants?.find((p: any) => p.id === user?.uid);
                 const isParticipant = !!userParticipant;
+                const isPayer = transaction.type === "expense" && transaction.payers
+                  ? transaction.payers.some((p: any) => p.id === user?.uid)
+                  : transaction.paidBy === user?.uid;
+
+                let displayAmount = transaction.amount;
+                let amountColorClass = "text-blue-600";
 
                 if (transaction.type === 'expense') {
                   const payersList = transaction.payers || (transaction.paidBy ? [{ id: transaction.paidBy, amount: transaction.amount }] : []);
