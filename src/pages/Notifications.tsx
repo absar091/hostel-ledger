@@ -79,7 +79,7 @@ const Notifications = () => {
         
         <div className="bg-white border-b border-[#4a6850]/10 pt-2 pb-3 px-4 sticky top-0 z-40 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
           <div className="flex items-center gap-3">
-            <button
+            <button aria-label="Go back to profile"
               onClick={() => navigate("/profile")}
               className="w-9 h-9 rounded-full bg-[#4a6850]/10 flex items-center justify-center hover:bg-[#4a6850]/20 transition-colors"
             >

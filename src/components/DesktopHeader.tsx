@@ -32,7 +32,7 @@ const DesktopHeader = () => {
         <NotificationIcon />
 
         {/* Settings */}
-        <button
+        <button aria-label="App settings"
           onClick={() => navigate("/settings")}
           className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"
           title="App Settings"
@@ -42,7 +42,7 @@ const DesktopHeader = () => {
         </button>
 
         {/* Profile */}
-        <button
+        <button aria-label="View profile"
           onClick={() => navigate("/profile")}
           className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-gray-50 transition-all"
           aria-label="View profile"
