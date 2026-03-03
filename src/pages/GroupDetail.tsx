@@ -85,6 +85,12 @@ const GroupDetail = () => {
     ).filter((m: { id: any; }) => m && m.id) // Filter out any null/undefined members
   } : null;
 
+  // Memoize group members map to O(1) access
+  const groupMembersMap = useMemo(() => {
+    if (!group?.members) return new Map();
+    return new Map(group.members.map((m: any) => [m.id, m]));
+  }, [group?.members]);
+
   const transactions = id ? getTransactionsByGroup(id) : [];
   const settlements = id ? getSettlements(id) : {};
   const { invitations } = useInvitations();
@@ -547,7 +553,7 @@ const GroupDetail = () => {
                         name: (() => {
                           if (p.id === user?.uid) return t('group.you_label');
                           if (p.id === group.createdBy) return t('group.owner');
-                          const member = group.members.find(m => m.id === p.id);
+                          const member = groupMembersMap.get(p.id);
                           return member?.name || p.name;
                         })()
                       })) : undefined}
@@ -556,7 +562,7 @@ const GroupDetail = () => {
                           // Use consistent naming logic
                           if (item.paidBy === user?.uid) return t('group.you_label');
                           if (item.paidBy === group.createdBy) return t('group.owner');
-                          const member = group.members.find((m: { id: any; }) => m.id === item.paidBy);
+                          const member = groupMembersMap.get(item.paidBy);
                           return member?.name || item.paidByName;
                         })()
                       ) : undefined}
@@ -565,7 +571,7 @@ const GroupDetail = () => {
                         name: (() => {
                           if (p.id === user?.uid) return t('group.you_label'); // Your share
                           if (p.id === group.createdBy) return t('group.owner'); // Owner's share
-                          const member = group.members.find((m: { id: any; }) => m.id === p.id); // Valid member name
+                          const member = groupMembersMap.get(p.id); // Valid member name
                           return member?.name || p.name;
                         })()
                       })) : undefined}
