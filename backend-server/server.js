@@ -132,6 +132,7 @@ if (process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY) {
 }
 
 const app = express();
+const adminRoutes = require("./routes/adminRoutes");
 
 // Security headers
 app.use(helmet());
@@ -183,13 +184,21 @@ app.use(cors({
 app.options('*', cors());
 
 app.use(express.json());
+app.use("/api/admin", adminRoutes);
 
 const emailService = require('./services/emailService');
 const expenseLogic = require('./utils/expenseLogic');
 const { calculateMultiPayerSettlements } = require('./utils/expenseLogic');
 const { processTransactions, calculateDebtSummary } = require('./utils/debtLogic');
 const { verifyImageOwnership } = require('./utils/imageSecurity');
-const adminAuth = require('./middleware/adminAuth');
+const adminAuthMiddleware = require('./middleware/adminAuth').verifyAdmin;
+const adminAuth = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader === `Bearer ${process.env.CRON_SECRET}`) {
+    return next();
+  }
+  return res.status(401).json({ error: 'Unauthorized' });
+};
 
 // Rate limiting for email endpoints - very generous limits for testing
 const emailLimiter = rateLimit({
