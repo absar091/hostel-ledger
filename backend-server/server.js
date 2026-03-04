@@ -183,7 +183,9 @@ app.use(cors({
 // Handle preflight requests explicitly
 app.options('*', cors());
 
-app.use(express.json());
+// Strict payload limits to prevent DoS attacks
+app.use(express.json({ limit: '100kb' }));
+
 app.use("/api/admin", adminRoutes);
 
 const emailService = require('./services/emailService');
@@ -1910,7 +1912,7 @@ app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
 });
 
 // Send push notification to a specific user using OneSignal REST API
-app.post('/api/push-notify', generalLimiter, async (req, res) => {
+app.post('/api/push-notify', generalLimiter, authenticate, async (req, res) => {
   try {
     let { userId, title, body, icon, badge, tag, data } = req.body;
 
@@ -2129,7 +2131,7 @@ const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, b
 };
 
 // Send push notification to multiple users using OneSignal REST API
-app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
+app.post('/api/push-notify-multiple', generalLimiter, authenticate, async (req, res) => {
   try {
     let { userIds, title, body, icon, badge, data } = req.body;
 
@@ -4342,21 +4344,42 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
     const senderBalanceAfter = senderBalanceBefore - amount;
     const receiverBalanceAfter = (receiver.walletBalance || 0) + amount;
 
-    // 3. Batched Updates
-    updates[`p2p_transactions/${transactionId}/status`] = 'completed';
-    updates[`p2p_transactions/${transactionId}/completedAt`] = now;
+    // 3. Prevent Race Conditions by Atomically Claiming the Transaction
+    // A classic read-modify-write race condition can occur if multiple concurrent
+    // requests try to accept the same pending transaction, leading to multiple deductions.
+    const statusRef = db.ref(`p2p_transactions/${transactionId}/status`);
+    const claimResult = await statusRef.transaction((currentStatus) => {
+      if (currentStatus === 'pending') {
+        return 'processing'; // Mark as processing to lock it atomically
+      }
+      return undefined; // Abort if already processed or processing
+    });
 
-    // Update Denormalized Copies
-    updates[`user_p2p_transactions/${tx.from}/${transactionId}/status`] = 'completed';
-    updates[`user_p2p_transactions/${tx.from}/${transactionId}/completedAt`] = now;
-    updates[`user_p2p_transactions/${tx.to}/${transactionId}/status`] = 'completed';
-    updates[`user_p2p_transactions/${tx.to}/${transactionId}/completedAt`] = now;
+    if (!claimResult.committed) {
+      return res.status(400).json({ success: false, error: 'Transaction already processed or in progress' });
+    }
 
-    // Update Wallets ATOMICALLY (Fixes Race Condition / Lost Update)
-    updates[`users/${tx.from}/walletBalance`] = admin.database.ServerValue.increment(-amount);
-    updates[`users/${tx.to}/walletBalance`] = admin.database.ServerValue.increment(amount);
+    try {
+      // 4. Batched Updates
+      updates[`p2p_transactions/${transactionId}/status`] = 'completed';
+      updates[`p2p_transactions/${transactionId}/completedAt`] = now;
 
-    await db.ref().update(updates);
+      // Update Denormalized Copies
+      updates[`user_p2p_transactions/${tx.from}/${transactionId}/status`] = 'completed';
+      updates[`user_p2p_transactions/${tx.from}/${transactionId}/completedAt`] = now;
+      updates[`user_p2p_transactions/${tx.to}/${transactionId}/status`] = 'completed';
+      updates[`user_p2p_transactions/${tx.to}/${transactionId}/completedAt`] = now;
+
+      // Update Wallets ATOMICALLY
+      updates[`users/${tx.from}/walletBalance`] = admin.database.ServerValue.increment(-amount);
+      updates[`users/${tx.to}/walletBalance`] = admin.database.ServerValue.increment(amount);
+
+      await db.ref().update(updates);
+    } catch (err) {
+      // Rollback the lock if the multi-path update fails
+      await statusRef.set('pending');
+      throw err;
+    }
 
     // --- SYNC WALLET BALANCE ---
     // We use the projected values. Even if slightly stale due to race,

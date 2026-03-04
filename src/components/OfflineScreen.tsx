@@ -15,6 +15,18 @@ export const OfflineScreen = ({ onRetry }: OfflineScreenProps) => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isFirstTime, setIsFirstTime] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const handleRetry = async () => {
+    if (!onRetry || isRetrying) return;
+    setIsRetrying(true);
+    try {
+      await onRetry();
+    } finally {
+      // Small delay so the loading state is visible
+      setTimeout(() => setIsRetrying(false), 500);
+    }
+  };
 
   useEffect(() => {
     const checkCache = async () => {
@@ -178,10 +190,22 @@ export const OfflineScreen = ({ onRetry }: OfflineScreenProps) => {
         {/* Retry Button */}
         {onRetry && (
           <button
-            onClick={onRetry}
-            className="w-full h-12 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95"
+            onClick={handleRetry}
+            disabled={isRetrying}
+            className={`w-full h-12 text-white font-bold rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ${
+              isRetrying
+                ? "bg-orange-400 cursor-not-allowed opacity-90"
+                : "bg-gradient-to-r from-orange-500 to-orange-600 hover:shadow-xl active:scale-95"
+            }`}
           >
-            Try Again
+            {isRetrying ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>Retrying...</span>
+              </>
+            ) : (
+              "Try Again"
+            )}
           </button>
         )}
         

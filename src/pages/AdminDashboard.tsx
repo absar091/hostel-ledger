@@ -15,7 +15,7 @@ import {
 import toast from 'react-hot-toast';
 
 export default function AdminDashboard() {
-  const { user, firebaseUser } = useFirebaseAuth();
+  const { user } = useFirebaseAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -37,7 +37,7 @@ export default function AdminDashboard() {
     setNewPassword(''); // Clear password field on new search
 
     try {
-      const token = await firebaseUser?.getIdToken();
+      const token = await user?.firebaseUser?.getIdToken();
 
       const response = await fetch(`${API_BASE_URL}/api/admin/users/${encodeURIComponent(searchQuery)}`, {
         headers: {
@@ -69,7 +69,7 @@ export default function AdminDashboard() {
 
     setActionLoading(true);
     try {
-      const token = await firebaseUser?.getIdToken();
+      const token = await user?.firebaseUser?.getIdToken();
 
       const response = await fetch(`${API_BASE_URL}/api/admin/users/${uid}/status`, {
         method: 'POST',
@@ -107,7 +107,7 @@ export default function AdminDashboard() {
 
     setActionLoading(true);
     try {
-      const token = await firebaseUser?.getIdToken();
+      const token = await user?.firebaseUser?.getIdToken();
 
       const response = await fetch(`${API_BASE_URL}/api/admin/users/${uid}/password`, {
         method: 'POST',
@@ -145,7 +145,7 @@ export default function AdminDashboard() {
 
     setActionLoading(true);
     try {
-      const token = await firebaseUser?.getIdToken();
+      const token = await user?.firebaseUser?.getIdToken();
 
       const response = await fetch(`${API_BASE_URL}/api/admin/users/${uid}`, {
         method: 'DELETE',
