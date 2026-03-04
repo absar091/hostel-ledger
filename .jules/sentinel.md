@@ -1,3 +1,8 @@
+## 2024-05-18 - Path Manipulation via Unvalidated Client IDs
+**Vulnerability:** The `clientTxnId` parameter used for idempotency checks in `/api/add-expense` and `/api/record-payment` endpoints was passed directly into a Firebase Realtime Database path query (`db.ref(\`processedTxns/${clientTxnId}\`)`) without validation. This could allow an attacker to inject malicious path sequences or objects, potentially leading to NoSQL injection or unauthorized path manipulation within the database.
+**Learning:** Client-provided IDs used for idempotency or direct database lookups must be strictly validated before being interpolated into database reference paths, even if they are just used for simple existence checks.
+**Prevention:** Always use `isValidFirebaseId` or an equivalent strict validation function to ensure client-provided IDs conform to expected formats (e.g., alphanumeric, specific lengths) before using them in `db.ref()` calls.
+
 ## 2026-03-03 - Path Traversal in Push Notification Endpoints
 **Vulnerability:** The `/api/push-notify` and `/api/push-notify-multiple` endpoints accepted `userId` inputs directly from the request body without validation. An attacker could potentially use path traversal sequences (e.g., `../`) in the `userId` to manipulate internal logic or file paths if the ID were used in file operations or as a database key in a way that allows traversal (though Firebase keys are generally resilient, downstream systems might not be).
 **Learning:** Even when using abstracted database libraries, always validate IDs against a strict allowlist (alphanumeric + safe separators) to prevent unexpected behavior in current or future logic that might rely on these IDs for file system or critical path operations.
