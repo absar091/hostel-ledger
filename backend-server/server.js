@@ -183,7 +183,9 @@ app.use(cors({
 // Handle preflight requests explicitly
 app.options('*', cors());
 
-app.use(express.json());
+// Strict payload limits to prevent DoS attacks
+app.use(express.json({ limit: '100kb' }));
+
 app.use("/api/admin", adminRoutes);
 
 const emailService = require('./services/emailService');
