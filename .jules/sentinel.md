@@ -12,3 +12,7 @@
 **Vulnerability:** The `/api/push-notify` and `/api/push-notify-multiple` endpoints relied solely on a global `app.use('/api', authenticate)` middleware order for authentication, rather than explicitly including `authenticate` in their route definitions.
 **Learning:** Relying on global middleware ordering for sensitive endpoints can lead to accidental auth bypasses if routes are reordered or if the global middleware is bypassed for specific paths.
 **Prevention:** Explicitly apply the `authenticate` middleware to the route definitions of all sensitive endpoints to enforce defense in depth.
+## 2026-03-04 - Unexplicit Payload Limits in Express Middleware
+**Vulnerability:** The `express.json()` middleware in `backend-server/server.js` was relying on default configurations, which although relatively safe (`100kb`), can be overlooked or unexpectedly changed across library versions.
+**Learning:** Always configure explicit payload size limits on body-parsing middleware as a defense in depth strategy to prevent large payload-based DoS attacks and guarantee stable limits regardless of defaults.
+**Prevention:** Explicitly set the `limit` option (e.g., `limit: '100kb'`) for `express.json()` to restrict the maximum request body size, preventing unexpected large payloads while supporting legitimate API traffic.
