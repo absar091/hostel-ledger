@@ -201,6 +201,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AppRoutes = () => (
   <Routes>
+    <Route path="/test-offline" element={<OfflineScreen onRetry={() => new Promise(resolve => setTimeout(resolve, 5000))} />} />
     {/* Verification Routes */}
     <Route path="/verify-sheets" element={<VerificationPage />} />
     <Route path="/verify-2fa" element={<TwoFactorVerification />} />
