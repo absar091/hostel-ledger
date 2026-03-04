@@ -133,6 +133,7 @@ if (process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY) {
 
 const app = express();
 const adminRoutes = require("./routes/adminRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 // Security headers
 app.use(helmet());
@@ -187,6 +188,7 @@ app.options('*', cors());
 app.use(express.json({ limit: '100kb' }));
 
 app.use("/api/admin", adminRoutes);
+app.use("/api/user", userRoutes);
 
 const emailService = require('./services/emailService');
 const expenseLogic = require('./utils/expenseLogic');

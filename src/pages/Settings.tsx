@@ -21,6 +21,9 @@ import {
     Check,
     LogOut,
     Share2
+,
+  MessageCircle,
+  ShieldAlert
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
@@ -34,7 +37,10 @@ import { getCurrency, DEFAULT_CURRENCY } from '@/lib/currency';
 import { getLanguage, DEFAULT_LANGUAGE } from '@/lib/languages';
 import CurrencySelectionSheet from '@/components/CurrencySelectionSheet';
 import LanguageSelectionSheet from '@/components/LanguageSelectionSheet';
-import { Globe, DollarSign, Download } from 'lucide-react';
+import { Globe, DollarSign, Download ,
+  MessageCircle,
+  ShieldAlert
+} from 'lucide-react';
 import MobileHeader from '@/components/MobileHeader';
 
 const Settings = () => {
@@ -57,6 +63,7 @@ const Settings = () => {
     });
     const [isCurrencySheetOpen, setIsCurrencySheetOpen] = useState(false);
     const [isLanguageSheetOpen, setIsLanguageSheetOpen] = useState(false);
+    const [isSupportSheetOpen, setIsSupportSheetOpen] = useState(false);
     const { currencyCode } = useCurrency();
     const currentCurrency = getCurrency(user?.currency || DEFAULT_CURRENCY);
     const currentLanguage = getLanguage(user?.language || DEFAULT_LANGUAGE);
@@ -367,3 +374,6 @@ const Settings = () => {
 };
 
 export default Settings;
+
+// Added Support Sheet Import
+import { SupportSheet } from '../components/SupportSheet';
