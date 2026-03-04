@@ -215,8 +215,9 @@ const Activity = () => {
           </div>
 
           <div className="relative mb-6">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" aria-hidden="true" />
             <Input
+              aria-label={t('activity.search_placeholder')}
               placeholder={t('activity.search_placeholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
