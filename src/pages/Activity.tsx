@@ -6,8 +6,7 @@ import {
   CreditCard,
   Search,
   Calendar,
-  Activity as ActivityIcon,
-  X
+  Activity as ActivityIcon
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
@@ -216,23 +215,13 @@ const Activity = () => {
           </div>
 
           <div className="relative mb-6">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" aria-hidden="true" />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#4a6850]/60" />
             <Input
-              aria-label={t('activity.search_placeholder')}
               placeholder={t('activity.search_placeholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-14 pr-12 h-14 bg-white rounded-3xl border-[#4a6850]/10 shadow-[0_8px_32px_rgba(74,104,80,0.06)] font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850]/30 focus:shadow-[0_12px_40px_rgba(74,104,80,0.1)]"
+              className="pl-14 h-14 bg-white rounded-3xl border-[#4a6850]/10 shadow-[0_8px_32px_rgba(74,104,80,0.06)] font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850]/30 focus:shadow-[0_12px_40px_rgba(74,104,80,0.1)]"
             />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 transition-all"
-                aria-label="Clear search"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
           </div>
 
           <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide mb-4">

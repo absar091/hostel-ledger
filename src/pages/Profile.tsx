@@ -204,7 +204,7 @@ const Profile = () => {
             <div className="p-6 lg:p-8">
               <div className="flex items-start gap-5 lg:gap-6">
                 {/* Avatar */}
-                <button aria-label="Change profile photo"
+                <button
                   onClick={handlePhotoClick}
                   disabled={isUploadingPhoto}
                   className="relative group cursor-pointer flex-shrink-0"
@@ -283,7 +283,7 @@ const Profile = () => {
 
             <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
               {/* Edit Profile */}
-              <button aria-label="Edit profile"
+              <button
                 onClick={() => {
                   setEditName(user?.name || "");
                   setEditPhone(user?.phone || "");
@@ -304,7 +304,7 @@ const Profile = () => {
               </button>
 
               {/* Payment Details */}
-              <button aria-label="Manage payment methods"
+              <button
                 onClick={() => {
                   setJazzCash(user?.paymentDetails?.jazzCash || "");
                   setEasypaisa(user?.paymentDetails?.easypaisa || "");
@@ -344,7 +344,7 @@ const Profile = () => {
             <h3 className="text-[12px] font-black text-[#4a6850]/70 uppercase tracking-[0.2em] px-5">{t('profile.preferences')}</h3>
 
             <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
-              <button aria-label="Go to general settings"
+              <button
                 onClick={() => navigate("/settings")}
                 className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
               >
@@ -360,7 +360,7 @@ const Profile = () => {
                 <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
               </button>
 
-              <button aria-label="Go to security settings"
+              <button
                 onClick={() => navigate("/security")}
                 className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
               >
@@ -383,7 +383,7 @@ const Profile = () => {
             <h3 className="text-[12px] font-black text-[#4a6850]/70 uppercase tracking-[0.2em] px-5">{t('profile.support')}</h3>
 
             <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
-              <button aria-label="Go to about page"
+              <button
                 onClick={() => navigate("/about")}
                 className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
               >
@@ -415,7 +415,7 @@ const Profile = () => {
                 <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
               </a>
 
-              <button aria-label="Clear app cache"
+              <button
                 onClick={async () => {
                   if (confirm('Clear app cache? This will refresh the app with the latest version.')) {
                     try {
@@ -461,7 +461,7 @@ const Profile = () => {
 
           {/* Logout */}
           <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-red-100 overflow-hidden">
-            <button aria-label="Logout"
+            <button
               onClick={handleLogoutClick}
               className="w-full flex items-center gap-4 p-5 active:bg-red-50 transition-colors"
             >

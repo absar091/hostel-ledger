@@ -105,7 +105,6 @@ class AdminService {
       throw error;
     }
   }
-}
 
 
   async getSystemStats() {
@@ -252,7 +251,6 @@ class AdminService {
        throw error;
     }
   }
-module.exports = new AdminService();
 
   // --- REPORTING SYSTEM (Admin Facing) ---
 
@@ -326,4 +324,5 @@ module.exports = new AdminService();
       throw error;
     }
   }
+}
 module.exports = new AdminService();

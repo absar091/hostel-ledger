@@ -262,7 +262,6 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
               </p>
               {groups.map((group) => (
                 <button
-                  aria-label={`Select group ${group.name}`}
                   key={group.id}
                   onClick={() => setSelectedGroup(group.id)}
                   className={cn(
@@ -326,7 +325,6 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
 
                     return (
                       <button
-                        aria-label={`Select member ${member.name} who owes you`}
                         key={member.id}
                         onClick={() => setFromMember(member.id)}
                         disabled={!owesYou}
@@ -464,7 +462,6 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                         <span className="text-xs font-black text-[#4a6850] uppercase tracking-wide">{t('common.quick_fill')}</span>
                       </div>
                       <button
-                        aria-label="Quick fill full amount"
                         onClick={() => setAmount(selectedMemberData.settlement.toReceive.toString())}
                         className="w-full bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white px-4 py-2 rounded-xl transition-all font-black shadow-md hover:shadow-lg text-sm"
                       >
@@ -509,7 +506,6 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    aria-label="Select cash payment method"
                     onClick={() => setMethod("cash")}
                     className={cn(
                       "flex items-center justify-center gap-2 p-3 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
@@ -529,7 +525,6 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                   </button>
 
                   <button
-                    aria-label="Select online payment method"
                     onClick={() => setMethod("online")}
                     className={cn(
                       "flex items-center justify-center gap-2 p-3 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
