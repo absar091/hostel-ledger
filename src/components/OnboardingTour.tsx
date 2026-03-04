@@ -66,6 +66,7 @@ const OnboardingTour = ({ open, onClose, steps }: OnboardingTourProps) => {
           </div>
           <button
             onClick={handleSkip}
+            aria-label="Close tour"
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="w-5 h-5" />

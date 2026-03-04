@@ -1,0 +1,42 @@
+--- src/components/RecordPaymentSheet.tsx
++++ src/components/RecordPaymentSheet.tsx
+@@ -262,6 +262,7 @@
+               </p>
+               {groups.map((group) => (
+                 <button
++                  aria-label={`Select group ${group.name}`}
+                   key={group.id}
+                   onClick={() => setSelectedGroup(group.id)}
+                   className={cn(
+@@ -325,6 +326,7 @@
+
+                     return (
+                       <button
++                        aria-label={`Select member ${member.name} who owes you`}
+                         key={member.id}
+                         onClick={() => setFromMember(member.id)}
+                         disabled={!owesYou}
+@@ -462,6 +464,7 @@
+                         <span className="text-xs font-black text-[#4a6850] uppercase tracking-wide">{t('common.quick_fill')}</span>
+                       </div>
+                       <button
++                        aria-label="Quick fill full amount"
+                         onClick={() => setAmount(selectedMemberData.settlement.toReceive.toString())}
+                         className="w-full bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white px-4 py-2 rounded-xl transition-all font-black shadow-md hover:shadow-lg text-sm"
+                       >
+@@ -506,6 +509,7 @@
+                 </div>
+                 <div className="grid grid-cols-2 gap-3">
+                   <button
++                    aria-label="Select cash payment method"
+                     onClick={() => setMethod("cash")}
+                     className={cn(
+                       "flex items-center justify-center gap-2 p-3 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
+@@ -525,6 +529,7 @@
+                   </button>
+
+                   <button
++                    aria-label="Select online payment method"
+                     onClick={() => setMethod("online")}
+                     className={cn(
+                       "flex items-center justify-center gap-2 p-3 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",

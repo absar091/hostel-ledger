@@ -354,7 +354,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
 
                 <div className="flex gap-2 mb-2">
                   <div className="relative flex-1">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-900/40 font-bold text-lg">@</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-900/40 font-bold text-lg" aria-hidden="true">@</span>
                     <Input
                       placeholder={t('sheets.create_group.username_placeholder')}
                       aria-label={t('sheets.create_group.username_placeholder')}

@@ -1,0 +1,3 @@
+## 2024-05-18 - Missing ARIA Labels on Navigation and Action Buttons
+**Learning:** Purely visual action buttons (like back arrows, icon-only navigation, or custom styled "grouped" list items) throughout the application's mobile and desktop views often lack `aria-label` attributes. This pattern occurs particularly in composite custom components like the BottomNav and Profile settings list, rendering them unannounced or poorly announced by screen readers.
+**Action:** When creating or reviewing navigational elements, especially icon-only buttons (`BottomNav`) or custom interactive list items (`Profile` page settings), ensure an explicit `aria-label` is provided describing the action (e.g., "Go to security settings" or "Go back to profile").
