@@ -98,13 +98,6 @@ const GroupDetail = () => {
 
   // NOTE: These useMemo hooks MUST be before the early returns below to maintain
   // consistent hook count across renders (React Rules of Hooks)
-
-  // Pre-compute members map for O(1) lookups during transaction rendering
-  const membersMap = useMemo(() => {
-    if (!group?.members) return {};
-    return Object.fromEntries(group.members.map((m: any) => [m.id, m]));
-  }, [group?.members]);
-
   const personalStats = useMemo(() => {
     if (!group?.isPersonal) return null;
     const totalSpentValue = transactions
@@ -554,7 +547,7 @@ const GroupDetail = () => {
                         name: (() => {
                           if (p.id === user?.uid) return t('group.you_label');
                           if (p.id === group.createdBy) return t('group.owner');
-                          const member = membersMap[p.id];
+                          const member = group.members.find(m => m.id === p.id);
                           return member?.name || p.name;
                         })()
                       })) : undefined}
@@ -563,7 +556,7 @@ const GroupDetail = () => {
                           // Use consistent naming logic
                           if (item.paidBy === user?.uid) return t('group.you_label');
                           if (item.paidBy === group.createdBy) return t('group.owner');
-                          const member = membersMap[item.paidBy];
+                          const member = group.members.find((m: { id: any; }) => m.id === item.paidBy);
                           return member?.name || item.paidByName;
                         })()
                       ) : undefined}
@@ -572,7 +565,7 @@ const GroupDetail = () => {
                         name: (() => {
                           if (p.id === user?.uid) return t('group.you_label'); // Your share
                           if (p.id === group.createdBy) return t('group.owner'); // Owner's share
-                          const member = membersMap[p.id]; // Valid member name
+                          const member = group.members.find((m: { id: any; }) => m.id === p.id); // Valid member name
                           return member?.name || p.name;
                         })()
                       })) : undefined}

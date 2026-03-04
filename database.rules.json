@@ -7,8 +7,7 @@
         ".read": "auth != null",
         ".write": "$uid === auth.uid && auth != null",
         "walletBalance": {
-          ".write": false,
-          ".validate": "newData.isNumber() && newData.val() >= 0"
+          ".write": false
         },
         "settlements": {
           ".write": false
