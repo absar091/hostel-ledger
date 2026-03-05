@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { FirebaseAuthProvider, useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
-import { FirebaseDataProvider } from "@/contexts/FirebaseDataContext";
+import { FirebaseDataProvider, useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
