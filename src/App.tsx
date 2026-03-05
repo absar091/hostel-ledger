@@ -15,6 +15,8 @@ import ScrollToTop from "@/components/ScrollToTop";
 import { OfflineScreen } from "@/components/OfflineScreen";
 import { UpdateNotification } from "@/components/UpdateNotification";
 import { useTranslation } from "react-i18next";
+import MaintenanceScreen from "@/components/MaintenanceScreen";
+import BroadcastBanner from "@/components/BroadcastBanner";
 
 // Direct imports for better reliability in production
 import Index from "./pages/Index";
