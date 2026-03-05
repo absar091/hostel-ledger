@@ -86,8 +86,10 @@ export function SupportSheet({ isOpen, onClose }: SupportSheetProps) {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium dark:text-gray-300">Subject</label>
-                <input className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg dark:bg-gray-800 dark:text-white outline-none focus:border-primary"
+                <label htmlFor="subject" className="text-sm font-medium dark:text-gray-300">Subject</label>
+                <input
+                  id="subject"
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg dark:bg-gray-800 dark:text-white outline-none focus:border-primary"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="What do you need help with?"
@@ -95,8 +97,9 @@ export function SupportSheet({ isOpen, onClose }: SupportSheetProps) {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium dark:text-gray-300">Message</label>
+                <label htmlFor="message" className="text-sm font-medium dark:text-gray-300">Message</label>
                 <textarea
+                  id="message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Describe your issue in detail..."
