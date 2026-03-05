@@ -4297,8 +4297,17 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
       return res.status(403).json({ success: false, error: 'Only the receiver can accept this transaction' });
     }
 
-    if (tx.status !== 'pending') {
-      return res.status(400).json({ success: false, error: `Transaction is already ${tx.status}` });
+    // ATOMIC LOCK: Transition status from 'pending' to 'processing' to prevent race conditions
+    // This locks the transaction so concurrent requests fail early
+    const lockResult = await db.ref(`p2p_transactions/${transactionId}/status`).transaction((currentStatus) => {
+      if (currentStatus === 'pending') {
+        return 'processing';
+      }
+      return undefined; // Abort transaction if not pending
+    });
+
+    if (!lockResult.committed) {
+      return res.status(400).json({ success: false, error: `Transaction is already ${tx.status || 'processed'}` });
     }
 
     const updates = {};
@@ -4326,6 +4335,8 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
     ]);
 
     if (!senderSnap.exists() || !receiverSnap.exists()) {
+      // REVERT LOCK
+      await db.ref(`p2p_transactions/${transactionId}/status`).set('pending');
       return res.status(404).json({ success: false, error: 'User profiles not found' });
     }
 
@@ -4336,6 +4347,8 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
     // CHECK: Insufficient Funds (Prevent negative balance)
     const senderBalanceBefore = sender.walletBalance || 0;
     if (senderBalanceBefore < amount) {
+      // REVERT LOCK
+      await db.ref(`p2p_transactions/${transactionId}/status`).set('pending');
       return res.status(400).json({ success: false, error: 'Sender has insufficient funds to complete this transaction.' });
     }
 
