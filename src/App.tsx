@@ -37,8 +37,6 @@ import InstallGuide from "./pages/InstallGuide";
 import About from "./pages/About";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
-import AdminRoute from "./components/AdminRoute";
-import AdminDashboard from "./pages/AdminDashboard";
 import GroupTerms from "./pages/GroupTerms";
 import GroupPrivacy from "./pages/GroupPrivacy";
 import ToReceive from "./pages/ToReceive";
@@ -199,7 +197,17 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const AppRoutes = () => (
+const AppRoutes = () => {
+  const { user } = useFirebaseAuth();
+  const { maintenanceMode } = useFirebaseData();
+
+  if (maintenanceMode && user?.role !== 'admin' && user?.role !== 'superadmin') {
+    return <MaintenanceScreen />;
+  }
+
+  return (
+    <>
+      <BroadcastBanner />
   <Routes>
     {/* Verification Routes */}
     <Route path="/verify-sheets" element={<VerificationPage />} />
@@ -214,7 +222,6 @@ const AppRoutes = () => (
     <Route path="/download-app" element={<ProtectedRoute><DownloadApp /></ProtectedRoute>} />
     <Route path="/install-app" element={<InstallApp />} />
     <Route path="/install-guide" element={<InstallGuide />} />
-    <Route element={<AdminRoute />}><Route path="/secure-admin-dashboard" element={<AdminDashboard />} /></Route>
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/create-group" element={<ProtectedRoute><CreateGroup /></ProtectedRoute>} />
     <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
@@ -239,7 +246,9 @@ const AppRoutes = () => (
 
         <Route path="*" element={<NotFound />} />
   </Routes>
-);
+    </>
+  );
+};
 
 const App = () => {
   useEffect(() => {
