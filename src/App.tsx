@@ -16,6 +16,8 @@ import { OfflineScreen } from "@/components/OfflineScreen";
 import { UpdateNotification } from "@/components/UpdateNotification";
 import { useTranslation } from "react-i18next";
 import MaintenanceScreen from "@/components/MaintenanceScreen";
+import AdminRoute from "@/components/AdminRoute";
+import AdminDashboard from "./pages/AdminDashboard";
 import BroadcastBanner from "@/components/BroadcastBanner";
 
 // Direct imports for better reliability in production
@@ -225,6 +227,7 @@ const AppRoutes = () => {
     <Route path="/install-app" element={<InstallApp />} />
     <Route path="/install-guide" element={<InstallGuide />} />
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+    <Route path="/secure-admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
     <Route path="/create-group" element={<ProtectedRoute><CreateGroup /></ProtectedRoute>} />
     <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
     <Route path="/group/:id" element={<ProtectedRoute><GroupDetail /></ProtectedRoute>} />
