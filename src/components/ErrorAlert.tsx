@@ -129,6 +129,7 @@ const ErrorAlert = ({
         </div>
         {onDismiss && (
           <button
+            type="button"
             onClick={onDismiss}
             aria-label="Dismiss alert"
             className="text-red-400 hover:text-red-600 transition-colors"
