@@ -475,9 +475,9 @@ app.post('/api/2fa/verify-setup', authenticate, async (req, res) => {
 
       // Send Alert
       if (email) {
-          emailService.send2FAEnabledAlert(email, name, {
-              device, browser, os, ip, location
-          }).catch(err => console.error('Failed to send 2FA alert:', err));
+        emailService.send2FAEnabledAlert(email, name, {
+          device, browser, os, ip, location
+        }).catch(err => console.error('Failed to send 2FA alert:', err));
       }
 
       console.log(`✅ 2FA enabled for user ${userId}`);
@@ -712,9 +712,9 @@ app.post('/api/2fa/complete-reset', generalLimiter, async (req, res) => {
 
     // Send Alert
     if (email) {
-        emailService.send2FADisabledAlert(email, name, {
-            device, browser, os, ip, location
-        }).catch(err => console.error('Failed to send 2FA alert:', err));
+      emailService.send2FADisabledAlert(email, name, {
+        device, browser, os, ip, location
+      }).catch(err => console.error('Failed to send 2FA alert:', err));
     }
 
     res.json({ success: true, message: '2FA disabled successfully' });
@@ -776,9 +776,9 @@ app.post('/api/2fa/disable', authenticate, async (req, res) => {
 
       // Send Alert
       if (email) {
-          emailService.send2FADisabledAlert(email, name, {
-              device, browser, os, ip, location
-          }).catch(err => console.error('Failed to send 2FA alert:', err));
+        emailService.send2FADisabledAlert(email, name, {
+          device, browser, os, ip, location
+        }).catch(err => console.error('Failed to send 2FA alert:', err));
       }
 
       console.log(`✅ 2FA disabled for user ${userId}`);
@@ -1260,7 +1260,7 @@ app.post('/api/respond-invitation', authenticate, async (req, res) => {
         name: userData.name || (memberIndex !== -1 ? membersArray[memberIndex].name : 'Member'),
         email: userData.email || null,
         isRegistered: true,
-      isPending: false,
+        isPending: false,
         type: 'registered',
         userId: userId,
         joinedAt: now,
@@ -2307,11 +2307,11 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     // Validate total paid equals amount (allow small floating point diff)
     const totalPaid = finalPayers.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
     if (Math.abs(totalPaid - amount) > 0.05) {
-        return res.status(400).json({ success: false, error: `Total paid amount (${totalPaid}) does not match expense amount (${amount})` });
+      return res.status(400).json({ success: false, error: `Total paid amount (${totalPaid}) does not match expense amount (${amount})` });
     }
   } else if (paidBy) {
     if (!isValidFirebaseId(paidBy)) {
-        return res.status(400).json({ success: false, error: 'Invalid payer ID format' });
+      return res.status(400).json({ success: false, error: 'Invalid payer ID format' });
     }
     finalPayers = [{ id: paidBy, amount: amount }];
   } else {
@@ -2388,15 +2388,15 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
               if (email) {
                 if (isMembersArray) {
-                   emailUpdates[`groups/${groupId}/members/${index}/email`] = email;
+                  emailUpdates[`groups/${groupId}/members/${index}/email`] = email;
                 } else {
-                   const memberKey = Object.keys(group.members).find(k => {
-                       const mem = group.members[k];
-                       return (mem.id && mem.id === m.id) || k === m.id;
-                   });
-                   if (memberKey) {
-                       emailUpdates[`groups/${groupId}/members/${memberKey}/email`] = email;
-                   }
+                  const memberKey = Object.keys(group.members).find(k => {
+                    const mem = group.members[k];
+                    return (mem.id && mem.id === m.id) || k === m.id;
+                  });
+                  if (memberKey) {
+                    emailUpdates[`groups/${groupId}/members/${memberKey}/email`] = email;
+                  }
                 }
                 return { ...m, email };
               }
@@ -2416,9 +2416,9 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     // 3. Verify payers and participants exist in group
     // Validate all payers
     for (const p of finalPayers) {
-        if (!membersArray.some(m => m.id === p.id)) {
-            return res.status(400).json({ success: false, error: `Invalid payer: ${p.id}` });
-        }
+      if (!membersArray.some(m => m.id === p.id)) {
+        return res.status(400).json({ success: false, error: `Invalid payer: ${p.id}` });
+      }
     }
 
     const participantMembers = membersArray.filter(m => participants.includes(m.id));
@@ -2469,9 +2469,9 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     // A. Update Wallet Balance (Only for Current User if they paid)
     // Find how much the current user paid
     const currentUserPayerEntry = finalPayers.find(p => {
-        // Check if p.id matches current user's member ID
-        const payerMember = membersArray.find(m => m.id === p.id);
-        return payerMember && (payerMember.userId === currentUserId || payerMember.id === currentUserId);
+      // Check if p.id matches current user's member ID
+      const payerMember = membersArray.find(m => m.id === p.id);
+      return payerMember && (payerMember.userId === currentUserId || payerMember.id === currentUserId);
     });
 
     const amountPaidByCurrentUser = currentUserPayerEntry ? Number(currentUserPayerEntry.amount) : 0;
@@ -2510,13 +2510,13 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       paidByName: primaryPayerMember ? primaryPayerMember.name : "Unknown",
       paidByIsTemporary: !!primaryPayerMember?.isTemporary,
       payers: finalPayers.map(p => {
-          const m = membersArray.find(mem => mem.id === p.id);
-          return {
-              id: p.id,
-              name: m ? m.name : "Unknown",
-              amount: Number(p.amount),
-              userId: m?.userId || null
-          };
+        const m = membersArray.find(mem => mem.id === p.id);
+        return {
+          id: p.id,
+          name: m ? m.name : "Unknown",
+          amount: Number(p.amount),
+          userId: m?.userId || null
+        };
       }),
       participants: splits.map(s => ({
         id: s.participantId,
@@ -2630,9 +2630,9 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
         let bodyText = "";
         if (finalPayers.length > 1) {
-            bodyText = `${finalPayers.length} people paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`;
+          bodyText = `${finalPayers.length} people paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`;
         } else {
-            bodyText = `${primaryPayerMember ? primaryPayerMember.name : "Someone"} paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`;
+          bodyText = `${primaryPayerMember ? primaryPayerMember.name : "Someone"} paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`;
         }
 
         notificationPromises.push(
@@ -2699,7 +2699,16 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       console.error('⚠️ Notification process failed:', notifErr.message);
     }
 
-    // 8. Success Response
+    // 8. Emit system chat message (fire-and-forget)
+    sendSystemMessage(db, groupId, 'expense_added', primaryPayerMember ? primaryPayerMember.name : 'Someone', {
+      amount,
+      title: note || 'Expense',
+      transactionId,
+      payerCount: finalPayers.length,
+      participantCount: participants.length
+    }).catch(() => { });
+
+    // 9. Success Response
     res.json({
       success: true,
       transactionId,
@@ -4412,6 +4421,201 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Respond money request error:', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// ============================================
+// GROUP CHAT ENDPOINTS
+// ============================================
+
+// Chat-specific rate limiter (30 messages per minute per IP)
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30,
+  message: {
+    success: false,
+    error: 'Too many messages sent. Please slow down.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Helper: Send a system message to a group chat
+ * Used internally when expenses/payments are created
+ */
+const sendSystemMessage = async (db, groupId, event, actorName, data = {}) => {
+  try {
+    const messageRef = db.ref(`groupMessages/${groupId}`).push();
+    const message = {
+      id: messageRef.key,
+      senderId: 'system',
+      senderName: 'System',
+      text: null,
+      type: 'system',
+      event,
+      actorName,
+      data,
+      timestamp: admin.database.ServerValue.TIMESTAMP
+    };
+    await messageRef.set(message);
+
+    // Update chat metadata
+    await db.ref(`groupChatMeta/${groupId}`).update({
+      lastMessage: `${actorName}: ${event}`,
+      lastMessageAt: admin.database.ServerValue.TIMESTAMP,
+      lastSenderId: 'system'
+    });
+  } catch (err) {
+    console.error('⚠️ Failed to send system message:', err.message);
+  }
+};
+
+// Send Message endpoint
+app.post('/api/send-message', chatLimiter, authenticate, async (req, res) => {
+  try {
+    let { groupId, text } = req.body;
+    const currentUserId = req.user.uid;
+
+    // Validate
+    if (!groupId || !text) {
+      return res.status(400).json({ success: false, error: 'Missing required fields: groupId, text' });
+    }
+
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
+    // Sanitize & limit
+    text = sanitize(text);
+    if (text.length > 2000) {
+      return res.status(400).json({ success: false, error: 'Message too long (max 2000 characters)' });
+    }
+    if (text.trim().length === 0) {
+      return res.status(400).json({ success: false, error: 'Message cannot be empty' });
+    }
+
+    const db = admin.database();
+
+    // Verify membership
+    const groupSnap = await db.ref(`groups/${groupId}`).get();
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const group = groupSnap.val();
+    const membersArray = normalizeMembers(group.members);
+    const member = membersArray.find(m => m.userId === currentUserId || m.id === currentUserId);
+    if (!member) {
+      return res.status(403).json({ success: false, error: 'You are not a member of this group' });
+    }
+
+    // Save message
+    const messageRef = db.ref(`groupMessages/${groupId}`).push();
+    const message = {
+      id: messageRef.key,
+      senderId: currentUserId,
+      senderName: member.name,
+      text,
+      type: 'text',
+      timestamp: admin.database.ServerValue.TIMESTAMP
+    };
+
+    await messageRef.set(message);
+
+    // Update chat metadata
+    await db.ref(`groupChatMeta/${groupId}`).update({
+      lastMessage: text.substring(0, 100),
+      lastMessageAt: admin.database.ServerValue.TIMESTAMP,
+      lastSenderId: currentUserId,
+      lastSenderName: member.name
+    });
+
+    // Push notification to other members (fire-and-forget)
+    const otherMembers = membersArray.filter(m => m.userId && m.userId !== currentUserId);
+    if (otherMembers.length > 0 && process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY) {
+      sendOneSignalNotificationInternal({
+        userIds: otherMembers.map(m => m.userId),
+        title: `💬 ${member.name} in ${group.name}`,
+        body: text.length > 100 ? text.substring(0, 97) + '...' : text,
+        data: { type: 'chat_message', groupId, messageId: messageRef.key }
+      }).catch(err => console.error('⚠️ Chat push notification failed:', err.message));
+    }
+
+    console.log(`💬 Message sent in group ${groupId} by ${member.name}`);
+
+    res.json({
+      success: true,
+      message: { ...message, timestamp: Date.now() } // Return approximate timestamp
+    });
+
+  } catch (error) {
+    console.error('❌ Send message error:', error);
+    res.status(500).json({ success: false, error: 'Failed to send message' });
+  }
+});
+
+// Get Messages endpoint (paginated)
+app.post('/api/get-messages', generalLimiter, authenticate, async (req, res) => {
+  try {
+    const { groupId, limit: msgLimit, beforeTimestamp } = req.body;
+    const currentUserId = req.user.uid;
+
+    if (!groupId) {
+      return res.status(400).json({ success: false, error: 'Missing required field: groupId' });
+    }
+
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
+    const db = admin.database();
+
+    // Verify membership
+    const groupSnap = await db.ref(`groups/${groupId}`).get();
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const group = groupSnap.val();
+    const membersArray = normalizeMembers(group.members);
+    const member = membersArray.find(m => m.userId === currentUserId || m.id === currentUserId);
+    if (!member) {
+      return res.status(403).json({ success: false, error: 'You are not a member of this group' });
+    }
+
+    // Fetch messages
+    const pageSize = Math.min(Number(msgLimit) || 50, 100); // Max 100 per page
+    let messagesQuery = db.ref(`groupMessages/${groupId}`)
+      .orderByChild('timestamp');
+
+    if (beforeTimestamp) {
+      messagesQuery = messagesQuery.endBefore(Number(beforeTimestamp)).limitToLast(pageSize);
+    } else {
+      messagesQuery = messagesQuery.limitToLast(pageSize);
+    }
+
+    const snapshot = await messagesQuery.get();
+
+    if (!snapshot.exists()) {
+      return res.json({ success: true, messages: [], hasMore: false });
+    }
+
+    const messages = [];
+    snapshot.forEach(child => {
+      messages.push({ ...child.val(), id: child.key });
+    });
+
+    // Sort by timestamp ascending
+    messages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+    const hasMore = messages.length === pageSize;
+
+    res.json({ success: true, messages, hasMore });
+
+  } catch (error) {
+    console.error('❌ Get messages error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch messages' });
   }
 });
 

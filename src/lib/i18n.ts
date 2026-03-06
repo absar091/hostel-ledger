@@ -83,6 +83,7 @@ const resources = {
             "group": {
                 "tabs": {
                     "ledger": "Ledger",
+                    "chat": "Chat",
                     "members": "Members",
                     "summary": "Summary"
                 },
@@ -803,6 +804,19 @@ const resources = {
                     "desc": "AARX Labs is not responsible for disputes between users or lost funds due to incorrect entries."
                 },
                 "acknowledgment": "By using Hostel Ledger, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service."
+            },
+            "chat": {
+                "loading": "Loading messages...",
+                "empty_title": "No Messages Yet",
+                "empty_desc": "Start a conversation with your group members",
+                "input_placeholder": "Type a message...",
+                "load_older": "Load older messages",
+                "send_failed": "Failed to send message",
+                "system": {
+                    "expense_added": "{{actor}} added {{amount}} expense \"{{title}}\"",
+                    "payment_recorded": "{{actor}} recorded a payment of {{amount}}",
+                    "member_joined": "{{actor}} joined the group"
+                }
             }
         }
     },
@@ -884,6 +898,7 @@ const resources = {
             "group": {
                 "tabs": {
                     "ledger": "لیجر",
+                    "chat": "چیٹ",
                     "members": "ارکان",
                     "summary": "خلاصہ"
                 },
@@ -1601,6 +1616,19 @@ const resources = {
                     "desc": "AARX Labs صارفین کے درمیان تنازعات یا غلط اندراجات کی وجہ سے فنڈز کے نقصان کا ذمہ دار نہیں ہے۔"
                 },
                 "acknowledgment": "ہاسٹل لیجر استعمال کرکے، آپ تسلیم کرتے ہیں کہ آپ نے ان شرائط کو پڑھ لیا ہے اور ان سے اتفاق کرتے ہیں۔"
+            },
+            "chat": {
+                "loading": "پیغامات لوڈ ہو رہے ہیں...",
+                "empty_title": "ابھی تک کوئی پیغام نہیں",
+                "empty_desc": "اپنے گروپ ممبرز کے ساتھ بات چیت شروع کریں",
+                "input_placeholder": "پیغام لکھیں...",
+                "load_older": "پرانے پیغامات لوڈ کریں",
+                "send_failed": "پیغام بھیجنے میں ناکامی",
+                "system": {
+                    "expense_added": "{{actor}} نے {{amount}} کا خرچہ \"{{title}}\" شامل کیا",
+                    "payment_recorded": "{{actor}} نے {{amount}} کی ادائیگی ریکارڈ کی",
+                    "member_joined": "{{actor}} گروپ میں شامل ہوئے"
+                }
             }
         }
     }

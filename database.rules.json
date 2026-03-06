@@ -102,6 +102,15 @@
         ".read": "$uid === auth.uid",
         ".write": "$uid === auth.uid && auth != null"
       }
+    },
+    "groupMessages": {
+      "$groupId": {
+        ".read": "auth != null && root.child('userGroups').child(auth.uid).child($groupId).exists()",
+        ".write": "false",
+        ".indexOn": [
+          "timestamp"
+        ]
+      }
     }
   }
 }
