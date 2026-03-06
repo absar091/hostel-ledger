@@ -1,15 +1,15 @@
 /**
  * Internal helper to handle API calls
  */
-const callApi = async (endpoint: string, body: any, token?: string) => {
+const callApi = async (endpoint: string, body: any, token?: string, method: string = 'POST') => {
     // Check for network connectivity first
     if (!navigator.onLine) {
         throw new Error('No internet connection. Please check your network.');
     }
 
-    // Add 15s timeout so requests don't hang forever
+    // Add 30s timeout so requests don't hang forever, especially with AI fallbacks
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
         console.log(`[API] Calling ${endpoint}...`);
@@ -23,9 +23,9 @@ const callApi = async (endpoint: string, body: any, token?: string) => {
         }
 
         const response = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
-            method: 'POST',
+            method,
             headers,
-            body: JSON.stringify(body),
+            body: method !== 'GET' ? JSON.stringify(body) : undefined,
             signal: controller.signal
         });
 
@@ -53,7 +53,7 @@ const callApi = async (endpoint: string, body: any, token?: string) => {
         }
         // If fetch fails due to network error (e.g. offline but navigator didn't catch it yet)
         if (error.message === 'Failed to fetch') {
-             throw new Error('Network error. Please check your connection.');
+            throw new Error('Network error. Please check your connection.');
         }
         throw error;
     }
@@ -62,7 +62,7 @@ const callApi = async (endpoint: string, body: any, token?: string) => {
 /**
  * Helper to call secure backend APIs with Firebase ID Token
  */
-export const callSecureApi = async (endpoint: string, body: any) => {
+export const callSecureApi = async (endpoint: string, body: any = {}, method: string = 'POST') => {
     const { auth } = await import('./firebase');
     const user = auth.currentUser;
 
@@ -72,14 +72,14 @@ export const callSecureApi = async (endpoint: string, body: any) => {
 
     // Use cached token (only refreshes if expired) — avoid forced refresh delay
     const idToken = await user.getIdToken();
-    return callApi(endpoint, body, idToken);
+    return callApi(endpoint, body, idToken, method);
 };
 
 /**
  * Helper to call public backend APIs without authentication
  */
-export const callPublicApi = async (endpoint: string, body: any) => {
-    return callApi(endpoint, body);
+export const callPublicApi = async (endpoint: string, body: any = {}, method: string = 'POST') => {
+    return callApi(endpoint, body, undefined, method);
 };
 
 // Invitation Wrapper Functions
@@ -109,4 +109,16 @@ export const sendMoney = async (recipientUsername: string, amount: number, note?
 
 export const respondToMoneyRequest = async (transactionId: string, accept: boolean) => {
     return await callSecureApi('/api/respond-money-request', { transactionId, accept });
+};
+
+export const parseExpenseWithAI = async (text: string, groupId: string) => {
+    return await callSecureApi('/api/ai/parse-expense', { text, groupId });
+};
+
+export const parseExpenseWithAudio = async (audioData: string, mimeType: string, groupId: string) => {
+    return await callSecureApi('/api/ai/parse-expense-audio', { audioData, mimeType, groupId });
+};
+
+export const getAIInsights = async () => {
+    return await callSecureApi('/api/ai/insights', {}, 'GET');
 };

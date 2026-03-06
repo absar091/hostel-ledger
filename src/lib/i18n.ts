@@ -78,7 +78,9 @@ const resources = {
                     "tip_wallet": "Tap the wallet card to add money",
                     "tip_quick": "Use quick actions to split bills instantly",
                     "tip_activity": "Check recent activity to track all transactions"
-                }
+                },
+                "quick_ai_entry": "Quick AI Entry",
+                "frequent_groups": "Frequent Groups"
             },
             "group": {
                 "tabs": {
@@ -893,7 +895,9 @@ const resources = {
                     "tip_wallet": "رقم شامل کرنے کے لیے والٹ کارڈ پر ٹیپ کریں",
                     "tip_quick": "بلوں کو فوری تقسیم کرنے کے لیے 'کوئیک ایکشنز' استعمال کریں",
                     "tip_activity": "تمام لین دین کو ٹریک کرنے کے لیے حالیہ سرگرمی چیک کریں"
-                }
+                },
+                "quick_ai_entry": "فوری AI اندراج",
+                "frequent_groups": "بار بار استعمال ہونے والے گروپس"
             },
             "group": {
                 "tabs": {

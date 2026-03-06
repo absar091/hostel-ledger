@@ -17,5 +17,31 @@
             "sizes": "512x512",
             "type": "image/png"
         }
+    ],
+    "shortcuts": [
+        {
+            "name": "Add Personal Expense",
+            "short_name": "Personal",
+            "description": "Quickly add a personal expense using AI",
+            "url": "/?action=ai-entry&personal=true",
+            "icons": [
+                {
+                    "src": "/only-logo.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Add Group Expense",
+            "short_name": "Group",
+            "description": "Quickly add a group expense to your last active group",
+            "url": "/?action=ai-entry",
+            "icons": [
+                {
+                    "src": "/only-logo.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
     ]
 }

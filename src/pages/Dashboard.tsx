@@ -35,6 +35,7 @@ import ShareButton from "@/components/ShareButton";
 import TransactionDetailModal from "@/components/TransactionDetailModal";
 import UsernameMigration from "@/components/UsernameMigration";
 import { TransactionList } from "@/components/TransactionList";
+import AIInsightsSheet from "@/components/AIInsightsSheet";
 import { toast } from "sonner";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import {
@@ -102,6 +103,7 @@ const Dashboard = () => {
   const [showAddMoney, setShowAddMoney] = useState(false);
   const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
   const [initialGroupIdForSheet, setInitialGroupIdForSheet] = useState("");
+  const [defaultAiMode, setDefaultAiMode] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [selectedMemberForPayment, setSelectedMemberForPayment] = useState<{
     id: string;
@@ -122,7 +124,6 @@ const Dashboard = () => {
   const [showBalanceTooltip, setShowBalanceTooltip] = useState(false);
   const [showSettlementsTooltip, setShowSettlementsTooltip] = useState(false);
   const [showDeltaTooltip, setShowDeltaTooltip] = useState(false);
-
   // Check if we should show onboarding or guides
   useEffect(() => {
     if (shouldShowOnboarding()) {
@@ -170,6 +171,41 @@ const Dashboard = () => {
     notificationPermission,
     showOnboarding,
   ]);
+
+  // Handle Deep Linking / App Shortcuts
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get('action');
+    const isPersonalAction = params.get('personal') === 'true';
+    const groupIdParam = params.get('groupId');
+
+    if (action === 'ai-entry' && user) {
+      setDefaultAiMode(true);
+      if (isPersonalAction) {
+        const personalGroup = groups.find(g => (g as any).isPersonal);
+        if (personalGroup) {
+          setInitialGroupIdForSheet(personalGroup.id);
+          setShowAddExpense(true);
+          // Set to AI mode after a small delay to ensure sheet is ready
+          setTimeout(() => {
+            // We'll need a way to communicate "Start in AI Mode" to the sheet
+            // I'll update AddExpenseSheet to accept a 'defaultAiMode' prop
+          }, 100);
+        }
+      } else if (groupIdParam) {
+        setInitialGroupIdForSheet(groupIdParam);
+        setShowAddExpense(true);
+      } else if (groups.length > 0) {
+        // Default to first non-personal group or first group
+        const targetGroup = groups.find(g => !(g as any).isPersonal) || groups[0];
+        setInitialGroupIdForSheet(targetGroup.id);
+        setShowAddExpense(true);
+      }
+
+      // Clean up URL
+      window.history.replaceState({}, '', '/');
+    }
+  }, [user, groups]);
 
   // Handle notification prompt actions
   const handleEnableNotifications = async () => {
@@ -680,551 +716,262 @@ const Dashboard = () => {
             <InvitationsList />
           </div>
 
-          {/* Greeting Section - Moved further down with more spacing */}
-          <section className="mt-16 lg:mt-20 mb-10 lg:mb-12">
-            <p className="text-gray-500 font-semibold text-sm">{t('dashboard.welcome_back')}</p>
-            <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-gray-900">
-              {user?.name || "User"}
-            </h2>
-            <div className="mt-4 flex flex-wrap gap-2.5">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1.5 shadow-sm">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-                  {t('dashboard.groups')}
-                </span>
-                <span className="text-xs font-black text-slate-800 tabular-nums">
-                  {groups.length}
-                </span>
+
+
+          {/* Greeting Section with AI Insights Button */}
+          <section className="mt-8 lg:mt-10 mb-8 lg:mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <p className="text-gray-500 font-semibold text-sm">{t('dashboard.welcome_back')}</p>
+              <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-gray-900">
+                {user?.name || "User"}
+              </h2>
+              <div className="mt-4 flex flex-wrap gap-2.5">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1.5 shadow-sm">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+                    {t('dashboard.groups')}
+                  </span>
+                  <span className="text-xs font-black text-slate-800 tabular-nums">
+                    {groups.length}
+                  </span>
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1.5 shadow-sm">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600">
+                    {t('dashboard.pending_payments')}
+                  </span>
+                  <span className="text-xs font-black text-emerald-700 tabular-nums">
+                    {pendingPaymentCounts.total}
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-600/80">
+                    ({t('dashboard.pay_receive', { pay: pendingPaymentCounts.toPayCount, receive: pendingPaymentCounts.toReceiveCount })})
+                  </span>
+                </div>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1.5 shadow-sm">
-                <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600">
-                  {t('dashboard.pending_payments')}
-                </span>
-                <span className="text-xs font-black text-emerald-700 tabular-nums">
-                  {pendingPaymentCounts.total}
-                </span>
-                <span className="text-[10px] font-bold text-emerald-600/80">
-                  ({t('dashboard.pay_receive', { pay: pendingPaymentCounts.toPayCount, receive: pendingPaymentCounts.toReceiveCount })})
-                </span>
-              </div>
+            </div>
+
+            {/* AI Insights Trigger Button */}
+            <div className="shrink-0">
+              <AIInsightsSheet />
             </div>
           </section>
 
           {/* Notification Prompt Card - First Time Install */}
-          {showNotificationPrompt && (
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-3xl p-5 shadow-lg animate-fade-in">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md">
-                  <span className="text-2xl">🔔</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-black text-blue-900 text-base mb-1.5 tracking-tight">
-                    {t('dashboard.notification_prompt_title')}
-                  </h3>
-                  <p className="text-sm text-blue-700 font-medium leading-relaxed mb-4">
-                    {t('dashboard.notification_prompt_desc')}
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleEnableNotifications}
-                      disabled={isEnablingNotifications}
-                      className="flex-1 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 text-sm"
-                    >
-                      {isEnablingNotifications
-                        ? t('common.loading')
-                        : t('common.enable_notifications')}
-                    </button>
-                    <button
-                      onClick={handleDismissNotificationPrompt}
-                      disabled={isEnablingNotifications}
-                      className="px-4 h-10 border-2 border-blue-300 text-blue-700 hover:bg-blue-100 font-black rounded-2xl transition-all disabled:opacity-50 text-sm"
-                    >
-                      {t('common.later')}
-                    </button>
+          {
+            showNotificationPrompt && (
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-3xl p-5 shadow-lg animate-fade-in">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                    <span className="text-2xl">🔔</span>
                   </div>
-                </div>
-                <button
-                  onClick={handleDismissNotificationPrompt}
-                  disabled={isEnablingNotifications}
-                  className="w-8 h-8 rounded-full hover:bg-blue-200 flex items-center justify-center transition-colors flex-shrink-0"
-                  aria-label="Dismiss notification prompt"
-                >
-                  <X className="w-4 h-4 text-blue-700" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* PRIMARY CARD: Enhanced with last transaction time - Moved further down */}
-          <section className="mesh-gradient rounded-3xl p-5 lg:p-6 text-white shadow-2xl shadow-[#4a6850]/30 relative">
-            <div className="relative z-10">
-              <div className="flex justify-between items-start">
-                <div>
-                  {/* Mobile: Click to toggle, Desktop: Hover */}
-                  <div className="lg:hidden">
-                    <button
-                      onClick={() => setShowBalanceTooltip(!showBalanceTooltip)}
-                      className="text-white/70 text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5 active:text-white transition-colors"
-                    >
-                      {t('dashboard.available_balance')}
-                      <span className="w-4 h-4 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[10px] active:bg-white/30 active:scale-95 transition-all">
-                        ?
-                      </span>
-                    </button>
-                    {showBalanceTooltip && (
-                      <div
-                        className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-                        onClick={() => setShowBalanceTooltip(false)}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-black text-blue-900 text-base mb-1.5 tracking-tight">
+                      {t('dashboard.notification_prompt_title')}
+                    </h3>
+                    <p className="text-sm text-blue-700 font-medium leading-relaxed mb-4">
+                      {t('dashboard.notification_prompt_desc')}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleEnableNotifications}
+                        disabled={isEnablingNotifications}
+                        className="flex-1 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 text-sm"
                       >
-                        <div
-                          className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center flex-shrink-0 shadow-lg">
-                              <span className="text-xl">💰</span>
-                            </div>
-                            <div>
-                              <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                                {t('dashboard.available_balance')}
-                              </h4>
-                              <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                                {t('dashboard.available_balance_desc', "Your current wallet balance that you can spend right now. This doesn't include pending settlements.")}
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => setShowBalanceTooltip(false)}
-                            className="mt-4 w-full py-2 bg-[#4a6850] text-white rounded-xl font-bold text-sm"
-                          >
-                            {t('common.got_it', 'Got it')}
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                        {isEnablingNotifications
+                          ? t('common.loading')
+                          : t('common.enable_notifications')}
+                      </button>
+                      <button
+                        onClick={handleDismissNotificationPrompt}
+                        disabled={isEnablingNotifications}
+                        className="px-4 h-10 border-2 border-blue-300 text-blue-700 hover:bg-blue-100 font-black rounded-2xl transition-all disabled:opacity-50 text-sm"
+                      >
+                        {t('common.later')}
+                      </button>
+                    </div>
                   </div>
-                  <div className="hidden lg:block">
+                  <button
+                    onClick={handleDismissNotificationPrompt}
+                    disabled={isEnablingNotifications}
+                    className="w-8 h-8 rounded-full hover:bg-blue-200 flex items-center justify-center transition-colors flex-shrink-0"
+                    aria-label="Dismiss notification prompt"
+                  >
+                    <X className="w-4 h-4 text-blue-700" />
+                  </button>
+                </div>
+              </div>
+            )
+          }
+
+
+
+
+
+          {/* UNIFIED FINANCIAL CARD: Premium All-in-One Overview */}
+          <section className="mesh-gradient rounded-[2.5rem] p-6 lg:p-8 text-white shadow-2xl shadow-[#4a6850]/40 relative overflow-hidden group">
+            {/* Background Decorative Element */}
+            <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-colors duration-700"></div>
+
+            <div className="relative z-10">
+              {/* TOP ROW: Available Balance */}
+              <div className="flex justify-between items-start mb-6 lg:mb-7">
+                <div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em]">
+                      {t('dashboard.available_balance')}
+                    </span>
                     <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
-                        <button className="text-white/70 text-xs font-black uppercase tracking-wider cursor-help inline-flex items-center gap-1.5 hover:text-white/90 transition-colors">
-                          {t('dashboard.available_balance')}
-                          <span className="w-4 h-4 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[10px] hover:bg-white/25 hover:scale-110 transition-all">
-                            ?
-                          </span>
-                        </button>
+                        <button className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center text-[8px] hover:bg-white/20 transition-all">?</button>
                       </TooltipTrigger>
-                      <TooltipContent
-                        side="bottom"
-                        className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center flex-shrink-0 shadow-lg">
-                            <span className="text-xl">💰</span>
-                          </div>
-                          <div>
-                            <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                              {t('dashboard.available_balance')}
-                            </h4>
-                            <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                              {t('dashboard.available_balance_desc')}
-                            </p>
-                          </div>
-                        </div>
+                      <TooltipContent className="bg-white text-gray-900 rounded-2xl p-4 shadow-2xl border-none backdrop-blur-xl">
+                        <p className="text-xs font-bold leading-relaxed">{t('dashboard.available_balance_desc')}</p>
                       </TooltipContent>
                     </Tooltip>
                   </div>
-                  <h3 className="text-3xl lg:text-4xl font-black mt-1 tracking-tighter text-white tabular-nums">
+                  <h3 className="text-4xl lg:text-5xl font-black tracking-tighter text-white tabular-nums leading-none">
                     {formatAmount(walletBalance)}
                   </h3>
-                  {/* Last transaction time - smaller on mobile */}
-                  <p className="text-white/40 text-[10px] lg:text-xs mt-1.5 lg:mt-2 font-semibold">
+                  <p className="text-white/40 text-[9px] mt-1.5 font-bold uppercase tracking-widest">
                     {lastTransactionTime}
                   </p>
                 </div>
                 <button
                   onClick={() => setShowAddMoney(true)}
-                  className="glass p-2.5 lg:p-3 rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
-                  aria-label="Add money to wallet"
+                  className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center hover:bg-white/20 hover:scale-110 active:scale-95 transition-all shadow-lg border border-white/10"
                 >
-                  <Plus className="w-4 lg:w-5 h-4 lg:h-5 text-white" />
+                  <Plus className="w-6 h-6 text-white" strokeWidth={3} />
                 </button>
               </div>
 
-              <div
-                className="mt-6 lg:mt-8 p-4 lg:p-5 flex justify-between items-center gap-4"
-                style={{
-                  background: "rgba(255, 255, 255, 0.1)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                  borderRadius: "2rem",
-                  boxShadow: "inset 0 0 0 2px rgba(255, 255, 255, 0.2)",
-                }}
-              >
-                <div className="flex-1 min-w-0">
-                  {/* Mobile: Click to toggle, Desktop: Hover */}
-                  <div className="lg:hidden">
-                    <button
-                      onClick={() =>
-                        setShowSettlementsTooltip(!showSettlementsTooltip)
-                      }
-                      className="text-white/60 text-[9px] uppercase font-black mb-1 inline-flex items-center gap-1 active:text-white transition-colors"
-                    >
-                      {t('dashboard.after_settlements')}
-                      <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] active:bg-white/30 active:scale-95 transition-all">
-                        ?
-                      </span>
-                    </button>
-                    {showSettlementsTooltip && (
-                      <div
-                        className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-                        onClick={() => setShowSettlementsTooltip(false)}
-                      >
-                        <div
-                          className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                              <span className="text-xl">📊</span>
-                            </div>
-                            <div>
-                              <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                                {t('dashboard.after_settlements')}
-                              </h4>
-                              <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                                {t('dashboard.after_settlements_desc')}
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => setShowSettlementsTooltip(false)}
-                            className="mt-4 w-full py-2 bg-[#4a6850] text-white rounded-xl font-bold text-sm"
-                          >
-                            {t('common.got_it')}
-                          </button>
-                        </div>
-                      </div>
-                    )}
+              {/* MIDDLE ROW: Interactive Action Pills */}
+              <div className="grid grid-cols-2 gap-3 mb-6 lg:mb-7">
+                <button
+                  onClick={() => navigate("/to-pay")}
+                  className="flex items-center gap-3 p-3.5 rounded-3xl bg-rose-500/20 backdrop-blur-md border border-rose-500/30 hover:bg-rose-500/30 active:scale-95 transition-all group/pill shadow-lg shadow-black/5"
+                >
+                  <div className="w-9 h-9 rounded-2xl bg-rose-500 flex items-center justify-center shadow-lg shadow-rose-900/20 group-active/pill:scale-90 transition-transform">
+                    <ArrowUpRight className="w-5 h-5 text-white" strokeWidth={3} />
                   </div>
-                  <div className="hidden lg:block">
-                    <Tooltip delayDuration={0}>
-                      <TooltipTrigger asChild>
-                        <button className="text-white/60 text-[10px] uppercase font-black mb-1 cursor-help inline-flex items-center gap-1 hover:text-white/80 transition-colors">
-                          {t('dashboard.after_settlements')}
-                          <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] hover:bg-white/25 hover:scale-110 transition-all">
-                            ?
-                          </span>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="bottom"
-                        className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                            <span className="text-xl">📊</span>
-                          </div>
-                          <div>
-                            <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                              {t('dashboard.after_settlements')}
-                            </h4>
-                            <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                              {t('dashboard.after_settlements_desc')}
-                            </p>
-                          </div>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
+                  <div className="text-left">
+                    <p className="text-[9px] font-black text-rose-200 uppercase tracking-wider">{t('dashboard.total_to_pay')}</p>
+                    <p className="text-sm font-black text-white">{formatAmount(totalToPay)}</p>
                   </div>
-                  <p className="text-base lg:text-lg font-black text-white tabular-nums truncate tracking-tight">
-                    Rs {afterSettlementsBalance.toLocaleString()}
-                  </p>
-                </div>
-                <div className="text-right flex-shrink-0 min-w-0">
-                  {/* Mobile: Click to toggle, Desktop: Hover */}
-                  <div className="lg:hidden">
-                    <button
-                      onClick={() => setShowDeltaTooltip(!showDeltaTooltip)}
-                      className="text-white/60 text-[9px] uppercase font-black mb-1 truncate inline-flex items-center gap-1 active:text-white transition-colors"
-                    >
-                      {t('dashboard.settlement_delta')}
-                      <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] active:bg-white/30 active:scale-95 transition-all">
-                        ?
-                      </span>
-                    </button>
-                    {showDeltaTooltip && (
-                      <div
-                        className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-                        onClick={() => setShowDeltaTooltip(false)}
-                      >
-                        <div
-                          className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                              <span className="text-xl">📈</span>
-                            </div>
-                            <div>
-                              <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                                {t('dashboard.settlement_delta')}
-                              </h4>
-                              <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                                {t('dashboard.settlement_delta_desc')}
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => setShowDeltaTooltip(false)}
-                            className="mt-4 w-full py-2 bg-[#4a6850] text-white rounded-xl font-bold text-sm"
-                          >
-                            {t('common.got_it')}
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                </button>
+
+                <button
+                  onClick={() => navigate("/to-receive")}
+                  className="flex items-center gap-3 p-3.5 rounded-3xl bg-emerald-500/20 backdrop-blur-md border border-emerald-500/30 hover:bg-emerald-500/30 active:scale-95 transition-all group/pill shadow-lg shadow-black/5"
+                >
+                  <div className="w-9 h-9 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-900/20 group-active/pill:scale-90 transition-transform">
+                    <ArrowDownLeft className="w-5 h-5 text-white" strokeWidth={3} />
                   </div>
-                  <div className="hidden lg:block">
-                    <Tooltip delayDuration={0}>
-                      <TooltipTrigger asChild>
-                        <button className="text-white/60 text-[10px] uppercase font-black mb-1 truncate cursor-help inline-flex items-center gap-1 hover:text-white/80 transition-colors">
-                          {t('dashboard.settlement_delta')}
-                          <span className="w-3.5 h-3.5 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-[8px] hover:bg-white/25 hover:scale-110 transition-all">
-                            ?
-                          </span>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="bottom"
-                        className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                            <span className="text-xl">📈</span>
-                          </div>
-                          <div>
-                            <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                              {t('dashboard.settlement_delta')}
-                            </h4>
-                            <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                              {t('dashboard.settlement_delta_desc')}
-                            </p>
-                          </div>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
+                  <div className="text-left">
+                    <p className="text-[9px] font-black text-emerald-200 uppercase tracking-wider">{t('dashboard.total_to_receive')}</p>
+                    <p className="text-sm font-black text-white">{formatAmount(totalToReceive)}</p>
                   </div>
-                  <div
-                    className={`flex items-center justify-end ${settlementDelta > 0 ? "text-emerald-300" : "text-rose-300"}`}
-                  >
-                    {dayToDay.direction !== "same" && (
-                      <span className="text-xs lg:text-sm mr-1 flex-shrink-0">
-                        {dayToDay.direction === "up" ? "▲" : "▼"}
-                      </span>
-                    )}
-                    <span className="font-black text-sm lg:text-base tabular-nums truncate tracking-tight">
-                      {settlementDelta > 0 ? "+" : ""}
-                      {settlementDelta < 0 ? "-" : ""}Rs{" "}
-                      {Math.abs(settlementDelta).toLocaleString()}
-                    </span>
+                </button>
+              </div>
+
+              {/* BOTTOM ROW: Glassmorphism Summary Sub-card */}
+              <div className="bg-black/20 backdrop-blur-2xl rounded-[1.5rem] p-5 border border-white/5 shadow-inner">
+                <div className="flex justify-between items-center gap-6">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-white/50 text-[9px] font-black uppercase tracking-wider">{t('dashboard.after_settlements')}</span>
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <button className="w-3.5 h-3.5 rounded-full bg-white/5 flex items-center justify-center text-[7px] hover:bg-white/10transition-all">?</button>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-white text-gray-900 rounded-2xl p-4 shadow-2xl border-none backdrop-blur-xl">
+                          <p className="text-xs font-bold leading-relaxed">{t('dashboard.after_settlements_desc')}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <p className="text-lg font-black text-white tabular-nums tracking-tight">
+                      {formatAmount(afterSettlementsBalance)}
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="flex items-center justify-end gap-1.5 mb-1">
+                      <span className="text-white/50 text-[9px] font-black uppercase tracking-wider">{t('dashboard.settlement_delta')}</span>
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <button className="w-3.5 h-3.5 rounded-full bg-white/5 flex items-center justify-center text-[7px] hover:bg-white/10 transition-all">?</button>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-white text-gray-900 rounded-2xl p-4 shadow-2xl border-none backdrop-blur-xl">
+                          <p className="text-xs font-bold leading-relaxed">{t('dashboard.settlement_delta_desc')}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <div className={cn(
+                      "flex items-center justify-end gap-1 text-base font-black tabular-nums tracking-tight",
+                      settlementDelta > 0 ? "text-emerald-400" : settlementDelta < 0 ? "text-rose-400" : "text-white/60"
+                    )}>
+                      {dayToDay.direction !== "same" && (
+                        <span>{dayToDay.direction === "up" ? "▲" : "▼"}</span>
+                      )}
+                      {formatAmount(Math.abs(settlementDelta))}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* SECONDARY CARDS: To Receive and You Owe - Android Style */}
-          {/* Mobile Version - Android Material Design Style */}
-          <section className="lg:hidden grid grid-cols-2 gap-4 mb-8">
-            {/* To Receive Card - Android Style with Your Theme */}
-            <button
-              onClick={() => navigate("/to-receive")}
-              className="bg-gradient-to-br from-[#e8f5e9] to-[#f1f8f4] p-5 rounded-3xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all text-left relative overflow-hidden group"
-            >
-              {/* Decorative circle */}
-              <div className="absolute -right-6 -top-6 w-24 h-24 bg-[#4a6850]/5 rounded-full"></div>
-
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#4a6850]/10 flex items-center justify-center">
-                    <ArrowDownLeft
-                      className="w-5 h-5 text-[#4a6850]"
-                      strokeWidth={2.5}
-                    />
-                  </div>
-                </div>
-
-                <p className="text-[11px] font-bold text-[#4a6850]/70 mb-1.5 tracking-wide">
-                  {t('dashboard.total_to_receive')}
-                </p>
-                <h4 className="text-2xl font-black text-[#4a6850] tabular-nums tracking-tight mb-2">
-                  Rs {totalToReceive.toLocaleString()}
-                </h4>
-
-                <div className="flex items-center gap-1 text-[#4a6850] font-bold text-xs">
-                  <span>{t('common.view_details')}</span>
-                  <span className="text-base group-hover:translate-x-0.5 transition-transform">
-                    →
-                  </span>
-                </div>
-              </div>
-            </button>
-
-            {/* You Owe Card - Android Style with Your Theme */}
-            <button
-              onClick={() => navigate("/to-pay")}
-              className="bg-gradient-to-br from-[#fef3f2] to-[#fef8f7] p-5 rounded-3xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all text-left relative overflow-hidden group"
-            >
-              {/* Decorative circle */}
-              <div className="absolute -right-6 -top-6 w-24 h-24 bg-rose-500/5 rounded-full"></div>
-
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-2xl bg-rose-500/10 flex items-center justify-center">
-                    <ArrowUpRight
-                      className="w-5 h-5 text-rose-500"
-                      strokeWidth={2.5}
-                    />
-                  </div>
-                </div>
-
-                <p className="text-[11px] font-bold text-rose-500/70 mb-1.5 tracking-wide">
-                  {t('dashboard.total_to_pay')}
-                </p>
-                <h4 className="text-2xl font-black text-rose-500 tabular-nums tracking-tight mb-2">
-                  Rs {totalToPay.toLocaleString()}
-                </h4>
-
-                <div className="flex items-center gap-1 text-rose-500 font-bold text-xs">
-                  <span>{t('sheets.record_payment.settle_now')}</span>
-                  <span className="text-base group-hover:translate-x-0.5 transition-transform">
-                    →
-                  </span>
-                </div>
-              </div>
-            </button>
-          </section>
-
-          {/* Desktop Version - Android Material Design Style */}
-          <section className="hidden lg:grid grid-cols-2 gap-6 mb-12">
-            {/* To Receive Card - Desktop Android Style */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => navigate("/to-receive")}
-                  className="bg-gradient-to-br from-[#e8f5e9] to-[#f1f8f4] p-8 rounded-3xl shadow-lg hover:shadow-xl active:scale-[0.98] transition-all text-left relative overflow-hidden group"
-                >
-                  {/* Decorative circles */}
-                  <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#4a6850]/5 rounded-full"></div>
-                  <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-[#4a6850]/5 rounded-full"></div>
-
-                  <div className="relative z-10">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="w-14 h-14 rounded-2xl bg-[#4a6850]/10 flex items-center justify-center">
-                        <ArrowDownLeft
-                          className="w-7 h-7 text-[#4a6850]"
-                          strokeWidth={2.5}
-                        />
-                      </div>
-                    </div>
-
-                    <p className="text-xs font-bold text-[#4a6850]/70 mb-2 tracking-wide">
-                      {t('dashboard.total_to_receive')}
-                    </p>
-                    <h4 className="text-4xl font-black text-[#4a6850] tabular-nums tracking-tight mb-4">
-                      Rs {totalToReceive.toLocaleString()}
-                    </h4>
-
-                    <div className="flex items-center gap-1.5 text-[#4a6850] font-bold text-sm">
-                      <span>
-                        {totalToReceive <= 0
-                          ? t('to_receive.all_settled_up')
-                          : t('common.view_details')}
-                      </span>
-                      {totalToReceive > 0 && (
-                        <span className="text-lg group-hover:translate-x-1 transition-transform">
-                          →
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl"
+          {/* QUICK AI ENTRY - Better Positioned ⚡ */}
+          <section className="mt-8 mb-10 px-1">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                {t('dashboard.quick_ai_entry')} ⚡
+              </h3>
+              <span className="text-[10px] font-bold text-slate-400/60 lowercase italic">
+                {t('dashboard.frequent_groups')}
+              </span>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar -mx-1 px-1">
+              {/* Personal */}
+              <button
+                onClick={() => {
+                  handlePersonalExpense();
+                  setDefaultAiMode(true);
+                }}
+                className="flex-shrink-0 flex flex-col items-center gap-2 w-24 group/ai"
               >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                    <span className="text-xl">💵</span>
-                  </div>
-                  <div>
-                    <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                      {t('to_receive.guide_title')}
-                    </h4>
-                    <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                      {t('to_receive.guide_desc')}
-                    </p>
-                  </div>
+                <div className="w-16 h-16 rounded-3xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center text-3xl shadow-sm hover:scale-105 active:scale-95 transition-all">
+                  👤
                 </div>
-              </TooltipContent>
-            </Tooltip>
+                <span className="text-[10px] font-black text-indigo-900 dark:text-indigo-200 uppercase tracking-tighter truncate w-full text-center">Personal</span>
+              </button>
 
-            {/* You Owe Card - Desktop Android Style */}
-            <Tooltip>
-              <TooltipTrigger asChild>
+              {/* Regular Groups */}
+              {groups.filter(g => !(g as any).isPersonal).slice(0, 4).map(group => (
                 <button
-                  onClick={() => navigate("/to-pay")}
-                  className="bg-gradient-to-br from-[#fef3f2] to-[#fef8f7] p-8 rounded-3xl shadow-lg hover:shadow-xl active:scale-[0.98] transition-all text-left relative overflow-hidden group"
+                  key={group.id}
+                  onClick={() => {
+                    setInitialGroupIdForSheet(group.id);
+                    setDefaultAiMode(true);
+                    setShowAddExpense(true);
+                  }}
+                  className="flex-shrink-0 flex flex-col items-center gap-2 w-24 group/ai"
                 >
-                  {/* Decorative circles */}
-                  <div className="absolute -right-8 -top-8 w-32 h-32 bg-rose-500/5 rounded-full"></div>
-                  <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-500/5 rounded-full"></div>
-
-                  <div className="relative z-10">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="w-14 h-14 rounded-2xl bg-rose-500/10 flex items-center justify-center">
-                        <ArrowUpRight
-                          className="w-7 h-7 text-rose-500"
-                          strokeWidth={2.5}
-                        />
-                      </div>
-                    </div>
-
-                    <p className="text-xs font-bold text-rose-500/70 mb-2 tracking-wide">
-                      {t('dashboard.total_to_pay')}
-                    </p>
-                    <h4 className="text-4xl font-black text-rose-500 tabular-nums tracking-tight mb-4">
-                      Rs {totalToPay.toLocaleString()}
-                    </h4>
-
-                    <div className="flex items-center gap-1.5 text-rose-500 font-bold text-sm">
-                      <span>{t('sheets.record_payment.settle_now')}</span>
-                      <span className="text-lg group-hover:translate-x-1 transition-transform">
-                        →
-                      </span>
-                    </div>
+                  <div className="w-16 h-16 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-3xl shadow-sm hover:scale-105 active:scale-95 transition-all">
+                    {group.emoji}
                   </div>
+                  <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-tighter truncate w-full text-center">{group.name}</span>
                 </button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                className="bg-gradient-to-br from-white to-gray-50 text-gray-900 border-2 border-white/50 shadow-[0_20px_60px_rgba(0,0,0,0.3)] max-w-xs rounded-3xl p-5 backdrop-blur-xl"
+              ))}
+
+              {/* More */}
+              <button
+                onClick={() => navigate('/groups')}
+                className="flex-shrink-0 flex flex-col items-center gap-2 w-24 group/ai"
               >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                    <span className="text-xl">💳</span>
-                  </div>
-                  <div>
-                    <h4 className="font-black text-sm mb-1.5 text-gray-900">
-                      {t('to_pay.guide_title')}
-                    </h4>
-                    <p className="text-xs leading-relaxed text-gray-600 font-medium">
-                      {t('to_pay.guide_desc')}
-                    </p>
-                  </div>
+                <div className="w-16 h-16 rounded-3xl bg-slate-50/50 dark:bg-slate-800/30 border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:bg-slate-50 active:scale-95 transition-all">
+                  <Plus className="w-8 h-8" />
                 </div>
-              </TooltipContent>
-            </Tooltip>
+                <span className="text-[10px] font-black text-slate-400 uppercase">Groups</span>
+              </button>
+            </div>
           </section>
 
           {/* Quick Actions */}
@@ -1256,7 +1003,7 @@ const Dashboard = () => {
 
               <button
                 onClick={handleAddExpense}
-                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-sm"
               >
                 <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
                   <CreditCard className="w-6 h-6 text-slate-600 dark:text-slate-400" />
@@ -1268,7 +1015,7 @@ const Dashboard = () => {
 
               <button
                 onClick={handleNewGroup}
-                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-sm"
               >
                 <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
                   <Users className="w-6 h-6 text-slate-600 dark:text-slate-400" />
@@ -1280,7 +1027,7 @@ const Dashboard = () => {
 
               <button
                 onClick={() => navigate("/personal-space")}
-                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-sm"
               >
                 <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
                   <Send className="w-6 h-6 text-slate-600 dark:text-slate-400" />
@@ -1305,7 +1052,7 @@ const Dashboard = () => {
 
               <button
                 onClick={() => setShowAddMoney(true)}
-                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
+                className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-sm"
               >
                 <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center">
                   <Wallet className="w-6 h-6 text-slate-600 dark:text-slate-400" />
@@ -1415,9 +1162,10 @@ const Dashboard = () => {
             </div>
           </section>
 
+
           {/* Recent Activity */}
-          <section className="mt-8 lg:mt-12">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+          <section className="mt-4 lg:mt-6">
+            <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
               <div className="px-6 py-4 lg:px-8 lg:py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <h3 className="font-black tracking-tighter text-sm lg:text-base">
                   {t('dashboard.recent_activity')}
@@ -1492,17 +1240,19 @@ const Dashboard = () => {
               )}
             </div>
           </section>
-        </main>
+        </main >
 
         {/* Transaction Detail Modal */}
-        {selectedTransaction && (
-          <TransactionDetailModal
-            transaction={selectedTransaction}
-            onClose={() => setSelectedTransaction(null)}
-            groups={groups}
-            user={user}
-          />
-        )}
+        {
+          selectedTransaction && (
+            <TransactionDetailModal
+              transaction={selectedTransaction}
+              onClose={() => setSelectedTransaction(null)}
+              groups={groups}
+              user={user}
+            />
+          )
+        }
 
         {/* Onboarding Tour */}
         <OnboardingTour
@@ -1529,36 +1279,42 @@ const Dashboard = () => {
         <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
 
         {/* Sheets */}
-        {groups.length > 0 && (
-          <AddExpenseSheet
-            open={showAddExpense}
-            onClose={() => {
-              setShowAddExpense(false);
-              setInitialGroupIdForSheet("");
-            }}
-            groups={groupsForSheets}
-            initialGroupId={initialGroupIdForSheet}
-            onSubmit={handleExpenseSubmit}
-            onAddMember={async (groupId, data) => {
-              const result = await addMemberToGroup(groupId, data);
-              if (result.success) {
-                toast.success(`Added temporary member: ${data.name}`);
-              } else {
-                toast.error(result.error || "Failed to add member");
-              }
-              return result;
-            }}
-          />
-        )}
+        {
+          groups.length > 0 && (
+            <AddExpenseSheet
+              open={showAddExpense}
+              onClose={() => {
+                setShowAddExpense(false);
+                setInitialGroupIdForSheet("");
+                setDefaultAiMode(false);
+              }}
+              groups={groupsForSheets}
+              initialGroupId={initialGroupIdForSheet}
+              defaultAiMode={defaultAiMode}
+              onSubmit={handleExpenseSubmit}
+              onAddMember={async (groupId, data) => {
+                const result = await addMemberToGroup(groupId, data);
+                if (result.success) {
+                  toast.success(`Added temporary member: ${data.name}`);
+                } else {
+                  toast.error(result.error || "Failed to add member");
+                }
+                return result;
+              }}
+            />
+          )
+        }
 
-        {groups.length > 0 && (
-          <RecordPaymentSheet
-            open={showRecordPayment}
-            onClose={() => setShowRecordPayment(false)}
-            groups={groupsForSheets}
-            onSubmit={handlePaymentSubmit}
-          />
-        )}
+        {
+          groups.length > 0 && (
+            <RecordPaymentSheet
+              open={showRecordPayment}
+              onClose={() => setShowRecordPayment(false)}
+              groups={groupsForSheets}
+              onSubmit={handlePaymentSubmit}
+            />
+          )
+        }
 
         <AddMoneySheet
           open={showAddMoney}

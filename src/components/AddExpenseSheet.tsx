@@ -1,15 +1,17 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, ChevronRight, AlertCircle, WifiOff, UserPlus, Clock, Ban, Wallet } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Check, ChevronRight, AlertCircle, WifiOff, UserPlus, Clock, Ban, Wallet, Sparkles, Loader2, Mic, MicOff } from "lucide-react";
 import Avatar from "./Avatar";
 import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
 import { saveOfflineExpense } from "@/lib/offlineDB";
 import { useSync } from "@/hooks/useSync";
 import { toast } from "sonner";
+import { parseExpenseWithAI, parseExpenseWithAudio } from "@/lib/api";
 import { calculateExpenseSplit } from "@/lib/expenseLogic";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
@@ -37,6 +39,7 @@ interface Group {
   createdBy?: string;
   memberCount?: number;
   isPersonal?: boolean;
+  currency?: string;
 }
 interface AddExpenseSheetProps {
   open: boolean;
@@ -53,6 +56,7 @@ interface AddExpenseSheetProps {
   }) => void;
   onAddMember?: (groupId: string, data: { name: string; isTemporary: boolean; deletionCondition: 'SETTLED' | 'TIME_LIMIT' }) => Promise<{ success: boolean; memberId?: string }>;
   initialGroupId?: string;
+  defaultAiMode?: boolean;
 }
 
 import {
@@ -76,7 +80,7 @@ const PERSONAL_CATEGORIES = [
   { id: 'others', label: 'Others', emoji: '✨' },
 ];
 
-const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initialGroupId }: AddExpenseSheetProps) => {
+const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initialGroupId, defaultAiMode }: AddExpenseSheetProps) => {
   const { t } = useTranslation();
   const { formatAmount } = useCurrency();
   const [step, setStep] = useState(1);
@@ -90,6 +94,17 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
   const [selectedCategory, setSelectedCategory] = useState<string>('others');
   const [payerMode, setPayerMode] = useState<'single' | 'multiple'>('single');
   const [multiPayers, setMultiPayers] = useState<{ id: string; amount: string }[]>([]);
+  const [aiInput, setAiInput] = useState("");
+  const [isAiParsing, setIsAiParsing] = useState(false);
+  const [showAiInput, setShowAiInput] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+
+  useEffect(() => {
+    if (open && defaultAiMode) {
+      setShowAiInput(true);
+    }
+  }, [open, defaultAiMode]);
 
   // Hooks
   const { isOnline, updatePendingCount } = useSync();
@@ -146,8 +161,152 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
       setSelectedCategory('others');
       setPayerMode('single');
       setMultiPayers([]);
+      setAiInput("");
+      setShowAiInput(false);
     }
   }, [open, groups.length, initialGroupId]);
+
+  const handleAiParse = async () => {
+    if (!aiInput.trim()) {
+      toast.error("Please enter some text first");
+      return;
+    }
+    if (!selectedGroup) {
+      toast.error("Please select a group first");
+      return;
+    }
+
+    setIsAiParsing(true);
+    try {
+      const response = await parseExpenseWithAI(aiInput, selectedGroup);
+      if (response.success && response.data) {
+        const { amount, description, payerId, participantIds, category } = response.data;
+
+        if (amount) setAmount(String(amount));
+        if (description) setNote(description);
+        if (category && PERSONAL_CATEGORIES.some(c => c.id === category)) {
+          setSelectedCategory(category);
+        } else {
+          setSelectedCategory('others');
+        }
+
+        // Match payerId if possible, or fallback to current user
+        if (payerId) {
+          setPaidBy(payerId);
+        } else if (user) {
+          setPaidBy(user.uid);
+        }
+
+        // Match participantIds
+        if (participantIds && participantIds.length > 0) {
+          // Verify they belong to group
+          const validIds = participantIds.filter((pid: string) => members.some(m => m.id === pid));
+          if (validIds.length > 0) {
+            setParticipants(validIds);
+          } else {
+            setParticipants(members.map(m => m.id));
+          }
+        } else {
+          // If no specific participants mentioned, default to everyone who shared (usually all members)
+          setParticipants(members.map(m => m.id));
+        }
+
+        toast.success("AI parsed your expense!");
+        setShowAiInput(false);
+        setStep(5); // Go to review step
+      } else {
+        toast.error("AI couldn't parse the expense correctly.");
+      }
+    } catch (error: any) {
+      console.error("AI Parse Error:", error);
+      toast.error(error.message || "Failed to parse with AI");
+    } finally {
+      setIsAiParsing(false);
+    }
+  };
+
+  const handleToggleListen = async () => {
+    if (isListening) {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      const chunks: Blob[] = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(chunks, { type: mediaRecorder.mimeType });
+
+        // Convert to Base64
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64Audio = (reader.result as string).split(',')[1];
+
+          setIsAiParsing(true);
+          const parsingToast = toast.loading("Gemini is listening to your voice...");
+
+          try {
+            const response = await parseExpenseWithAudio(base64Audio, mediaRecorder.mimeType, selectedGroup);
+            if (response.success && response.data) {
+              const { amount, description, payerId, participantIds, category } = response.data;
+
+              if (amount) setAmount(String(amount));
+              if (description) setNote(description);
+              if (category && PERSONAL_CATEGORIES.some(c => c.id === category)) {
+                setSelectedCategory(category);
+              } else {
+                setSelectedCategory('others');
+              }
+
+              if (payerId) setPaidBy(payerId);
+              else if (user) setPaidBy(user.uid);
+
+              if (participantIds && participantIds.length > 0) {
+                const validIds = participantIds.filter((pid: string) => members.some(m => m.id === pid));
+                setParticipants(validIds.length > 0 ? validIds : members.map(m => m.id));
+              } else {
+                setParticipants(members.map(m => m.id));
+              }
+
+              toast.success("AI parsed your voice correctly!", { id: parsingToast });
+              setShowAiInput(false);
+              setStep(5);
+            } else {
+              toast.error("AI couldn't understand the audio clearly.", { id: parsingToast });
+            }
+          } catch (err: any) {
+            console.error("Voice parsing error:", err);
+            toast.error(err.message || "Voice parsing failed", { id: parsingToast });
+          } finally {
+            setIsAiParsing(false);
+          }
+        };
+
+        // Stop all tracks to release microphone
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsListening(true);
+      toast.info("Recording... Tap stop when done.", { icon: "🎙️", duration: 3000 });
+
+    } catch (err) {
+      console.error("Mic access error:", err);
+      toast.error("Could not access microphone.");
+      setIsListening(false);
+    }
+  };
 
   // Get members from selected group
   const members = useMemo(() => {
@@ -278,7 +437,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
           groupId: selectedGroup,
           amount: parseFloat(amount),
           paidBy: finalPaidBy,
-        payers: finalPayers,
+          payers: finalPayers,
           participants,
           note: selectedGroupData?.isPersonal
             ? `${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.emoji} ${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.label}${note ? ': ' + note : ''}`
@@ -529,19 +688,99 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                     <span className="text-sm font-black text-[#4a6850]">{selectedGroupData.name}</span>
                   </div>
                 )}
-                <label htmlFor="add-expense-amount" className="text-[#4a6850] text-sm font-bold mb-4 block cursor-pointer">{t('sheets.add_expense.amount_prompt')}</label>
-                <div className="text-4xl font-black text-gray-900 mb-8 tracking-tighter tabular-nums">
-                  {formatAmount(parseFloat(amount) || 0)}
+
+                <div className="max-w-sm mx-auto px-4">
+                  <button
+                    onClick={() => setShowAiInput(!showAiInput)}
+                    className={cn(
+                      "w-full mb-8 flex items-center justify-center gap-2 py-4 rounded-3xl font-black text-sm transition-all shadow-md active:scale-95 border-2",
+                      showAiInput
+                        ? "bg-gray-900 border-gray-900 text-white"
+                        : "bg-white border-[#4a6850]/20 text-[#4a6850] hover:bg-[#4a6850]/5"
+                    )}
+                  >
+                    {showAiInput ? "Switch to Manual Entry" : <><Sparkles className="w-5 h-5 text-emerald-600" /> Use AI Smart Entry</>}
+                  </button>
+
+                  {showAiInput ? (
+                    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+                      <div className="text-left space-y-2">
+                        <Label className="text-[#4a6850] text-xs font-black uppercase tracking-widest ml-1">{t('sheets.add_expense.details_prompt')}</Label>
+                        <div className="relative">
+                          <Textarea
+                            placeholder="Example: 500 for pizza with Ali and Hamza"
+                            value={aiInput}
+                            onChange={(e) => setAiInput(e.target.value)}
+                            className="min-h-[140px] rounded-[32px] border-2 border-[#4a6850]/20 focus:border-[#4a6850] p-6 pr-14 text-base font-bold shadow-inner bg-gray-50/50"
+                            autoFocus
+                          />
+                          <button
+                            onClick={handleToggleListen}
+                            className={cn(
+                              "absolute right-4 bottom-4 w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md active:scale-90",
+                              isListening
+                                ? "bg-red-500 text-white animate-pulse"
+                                : "bg-white text-[#4a6850] hover:bg-gray-100 border border-gray-200"
+                            )}
+                          >
+                            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                          </button>
+                        </div>
+
+                        {isListening && (
+                          <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <p className="text-[10px] font-black text-[#4a6850]/50 uppercase tracking-widest mb-2 px-1 text-center">
+                              Speak names clearly to tag:
+                            </p>
+                            <div className="flex flex-wrap justify-center gap-1.5">
+                              {groups.find(g => g.id === selectedGroup)?.members.map((member) => (
+                                <span
+                                  key={member.id}
+                                  className="px-2.5 py-1 rounded-full bg-emerald-100/50 border border-emerald-200 text-[#4a6850] text-[10px] font-bold shadow-sm"
+                                >
+                                  {member.name}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        onClick={handleAiParse}
+                        disabled={isAiParsing || !aiInput.trim()}
+                        className="w-full h-16 rounded-[32px] bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black text-lg shadow-xl shadow-emerald-900/10 border-none group"
+                      >
+                        {isAiParsing ? (
+                          <><Loader2 className="w-5 h-5 animate-spin mr-3" /> Parsing with Gemini...</>
+                        ) : (
+                          <span className="flex items-center gap-2">
+                            Parse & Review <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                          </span>
+                        )}
+                      </Button>
+                      <p className="text-[11px] text-[#4a6850]/60 font-medium text-center italic">
+                        Powered by Google Gemini 2.5 Flash
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="animate-in fade-in zoom-in-95 duration-300">
+                      <label htmlFor="add-expense-amount" className="text-[#4a6850] text-sm font-bold mb-4 block cursor-pointer">{t('sheets.add_expense.amount_prompt')}</label>
+                      <div className="text-4xl font-black text-gray-900 mb-8 tracking-tighter tabular-nums">
+                        {formatAmount(parseFloat(amount) || 0)}
+                      </div>
+                      <Input
+                        id="add-expense-amount"
+                        type="number"
+                        placeholder={t('sheets.add_expense.amount_label')}
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="text-center text-xl h-16 w-full rounded-[32px] border-2 border-[#4a6850]/30 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/30 focus:border-[#4a6850] focus:ring-0 focus:shadow-xl bg-white"
+                        autoFocus
+                      />
+                    </div>
+                  )}
                 </div>
-                <Input
-                  id="add-expense-amount"
-                  type="number"
-                  placeholder={t('sheets.add_expense.amount_label')}
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-2 border-[#4a6850]/30 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850] focus:border-[#4a6850] focus:ring-0 focus:shadow-xl"
-                  autoFocus
-                />
+
               </div>
             )}
 
@@ -612,38 +851,38 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                     {payerMode === 'multiple' && (
                       <div className="space-y-3">
                         <div className="bg-orange-50 border border-orange-100 rounded-xl p-3 mb-2 flex justify-between items-center">
-                           <span className="text-xs font-bold text-orange-800">Total to allocate:</span>
-                           <span className="text-sm font-black text-orange-900">{formatAmount(parseFloat(amount) || 0)}</span>
+                          <span className="text-xs font-bold text-orange-800">Total to allocate:</span>
+                          <span className="text-sm font-black text-orange-900">{formatAmount(parseFloat(amount) || 0)}</span>
                         </div>
 
                         {members.map((member) => {
-                           const payerEntry = multiPayers.find(p => p.id === member.id);
-                           const isPaying = !!payerEntry;
+                          const payerEntry = multiPayers.find(p => p.id === member.id);
+                          const isPaying = !!payerEntry;
 
-                           return (
-                             <div key={member.id} className={cn(
-                               "flex items-center gap-3 p-3 rounded-2xl border-2 transition-all",
-                               isPaying ? "border-[#4a6850] bg-[#4a6850]/5" : "border-gray-100 bg-white"
-                             )}>
-                                <Avatar name={member.name} size="sm" />
-                                <div className="flex-1 min-w-0">
-                                   <div className="font-bold text-sm text-gray-900 truncate">{member.name}</div>
-                                </div>
-                                <div className="relative w-28">
-                                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">{selectedGroupData?.currency || ''}</span>
-                                   <Input
-                                      type="number"
-                                      placeholder="0"
-                                      className={cn(
-                                        "w-full h-10 pl-6 text-right font-bold rounded-xl border-gray-200 focus:border-[#4a6850]",
-                                        isPaying ? "text-[#4a6850]" : "text-gray-400"
-                                      )}
-                                      value={payerEntry?.amount || ''}
-                                      onChange={(e) => handlePayerAmountChange(member.id, e.target.value)}
-                                   />
-                                </div>
-                             </div>
-                           );
+                          return (
+                            <div key={member.id} className={cn(
+                              "flex items-center gap-3 p-3 rounded-2xl border-2 transition-all",
+                              isPaying ? "border-[#4a6850] bg-[#4a6850]/5" : "border-gray-100 bg-white"
+                            )}>
+                              <Avatar name={member.name} size="sm" />
+                              <div className="flex-1 min-w-0">
+                                <div className="font-bold text-sm text-gray-900 truncate">{member.name}</div>
+                              </div>
+                              <div className="relative w-28">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">{selectedGroupData?.currency || ''}</span>
+                                <Input
+                                  type="number"
+                                  placeholder="0"
+                                  className={cn(
+                                    "w-full h-10 pl-6 text-right font-bold rounded-xl border-gray-200 focus:border-[#4a6850]",
+                                    isPaying ? "text-[#4a6850]" : "text-gray-400"
+                                  )}
+                                  value={payerEntry?.amount || ''}
+                                  onChange={(e) => handlePayerAmountChange(member.id, e.target.value)}
+                                />
+                              </div>
+                            </div>
+                          );
                         })}
 
                         {/* Remaining Indicator */}
@@ -653,19 +892,19 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                             ? "bg-emerald-500/90 border-emerald-400 text-white"
                             : "bg-gray-900/90 border-gray-700 text-white"
                         )}>
-                           {Math.abs(remainingToPay) < 0.05 ? (
-                             <>
-                               <Check className="w-4 h-4 font-bold" />
-                               <span className="font-black text-sm">Perfectly allocated!</span>
-                             </>
-                           ) : (
-                             <>
-                               <span className="text-xs font-bold opacity-80">{remainingToPay > 0 ? "Remaining:" : "Overpaid:"}</span>
-                               <span className={cn("font-black text-lg tabular-nums", remainingToPay < 0 ? "text-red-300" : "text-white")}>
-                                 {formatAmount(Math.abs(remainingToPay))}
-                               </span>
-                             </>
-                           )}
+                          {Math.abs(remainingToPay) < 0.05 ? (
+                            <>
+                              <Check className="w-4 h-4 font-bold" />
+                              <span className="font-black text-sm">Perfectly allocated!</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-xs font-bold opacity-80">{remainingToPay > 0 ? "Remaining:" : "Overpaid:"}</span>
+                              <span className={cn("font-black text-lg tabular-nums", remainingToPay < 0 ? "text-red-300" : "text-white")}>
+                                {formatAmount(Math.abs(remainingToPay))}
+                              </span>
+                            </>
+                          )}
                         </div>
                         {/* Spacer for fixed indicator */}
                         <div className="h-12"></div>
@@ -730,11 +969,11 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                                   {formatAmount(member.balance)}
                                 </span>
                               )}
-                            {(member as any).walletBalance !== undefined && (member as any).walletBalance !== null && (
-                              <span className="text-[11px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-lg border border-blue-100 flex items-center gap-1">
-                                <Wallet className="w-3 h-3" /> {formatAmount((member as any).walletBalance)}
-                              </span>
-                            )}
+                              {(member as any).walletBalance !== undefined && (member as any).walletBalance !== null && (
+                                <span className="text-[11px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-lg border border-blue-100 flex items-center gap-1">
+                                  <Wallet className="w-3 h-3" /> {formatAmount((member as any).walletBalance)}
+                                </span>
+                              )}
                               {member.isTemporary && (
                                 <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600">
                                   {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}

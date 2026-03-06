@@ -28,6 +28,8 @@ const PrivacyPolicy = () => {
               <li><strong>Group Data:</strong> Group names, member lists, and invitation statuses.</li>
               <li><strong>Device Info:</strong> Information about your device for PWA functionality and push notifications.</li>
               <li><strong>Device Trust Data:</strong> Information used to verify trusted devices for Two-Factor Authentication (2FA) security.</li>
+              <li><strong>Audio Data:</strong> Temporary voice recordings used for "Voice Mode" expense entry, which are processed into text.</li>
+              <li><strong>AI Interaction Data:</strong> Transcripts and data points processed by AI to provide smart entry and financial insights.</li>
             </ul>
           </section>
 
@@ -38,6 +40,8 @@ const PrivacyPolicy = () => {
               <li>To calculate balances and generate settlement reports.</li>
               <li>To send invitations and notifications (e.g., new expenses).</li>
               <li>To sync data across your devices in real-time.</li>
+              <li>To provide AI-powered features such as natural language expense parsing and personalized financial insights.</li>
+              <li>To temporarily process audio recordings for voice-to-text conversion.</li>
             </ul>
           </section>
 
@@ -72,7 +76,7 @@ const PrivacyPolicy = () => {
             <ul className="list-disc pl-5 space-y-1 text-sm">
               <li><strong>Group Members:</strong> Other members of your groups can see expenses, settlements, and your user profile (name, photo, email/username).</li>
               <li><strong>Financial Visibility:</strong> Members of your groups can view your wallet balance and detailed transaction history within that group. This transparency is essential for the app's shared expense functionality.</li>
-              <li><strong>Service Providers:</strong> We use Firebase (Google) for secure data storage and authentication, and OneSignal for notifications.</li>
+              <li><strong>Service Providers:</strong> We use Firebase (Google) for secure data storage and authentication, OneSignal for notifications, and Google Gemini API (Google) for secure AI-powered expense parsing and insights generation. Data processed by Gemini is handled according to Google's enterprise privacy standards.</li>
             </ul>
           </section>
 
@@ -84,9 +88,12 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-gray-900 mb-2">6. PWA & Offline Data</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-2">6. PWA, Offline Data & AI Caching</h2>
+            <p className="text-sm leading-relaxed mb-2">
+              Our App functions as a Progressive Web App (PWA). Some data may be stored locally on your device to allow offline access.
+            </p>
             <p className="text-sm leading-relaxed">
-              Our App functions as a Progressive Web App (PWA). Some data may be stored locally on your device to allow offline access. This data syncs with our servers when you are back online.
+              <strong>AI Insights Caching:</strong> To improve performance and reduce costs, AI-generated financial insights are cached securely for up to 24 hours. This cache is automatically cleared whenever you add a new transaction or settlement to ensure your insights remain accurate.
             </p>
           </section>
 
