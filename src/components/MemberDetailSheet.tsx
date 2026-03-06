@@ -307,6 +307,18 @@ const MemberDetailSheet = ({
             </div>
           )}
 
+
+          {/* Report Member Option */}
+          {!member.isCurrentUser && (
+            <Button
+              variant="outline"
+              className="w-full text-red-600 border-red-200 bg-red-50 hover:bg-red-100 font-bold mb-6 rounded-2xl h-12"
+              onClick={() => setIsReportOpen(true)}
+            >
+              <ShieldAlert className="w-5 h-5 mr-2" />
+              Report Member
+            </Button>
+          )}
           {/* Balance History Ledger */}
           <div className="space-y-3">
             <h3 className="font-black text-gray-900 mb-4 text-lg tracking-tight">Balance Ledger with {member.name}</h3>
