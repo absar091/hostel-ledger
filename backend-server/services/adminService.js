@@ -198,6 +198,14 @@ class AdminService {
     try {
       const groupSnapshot = await admin.database().ref(`groups/${groupId}`).once('value');
       if (!groupSnapshot.exists()) {
+        // Fallback for personal spaces if they are only stored in userGroups
+        if (groupId.startsWith('personal_')) {
+           const uid = groupId.split('personal_')[1];
+           const userGroupSnapshot = await admin.database().ref(`userGroups/${uid}/${groupId}`).once('value');
+           if (userGroupSnapshot.exists()) {
+              return userGroupSnapshot.val();
+           }
+        }
         throw new Error('Group not found');
       }
       return groupSnapshot.val();

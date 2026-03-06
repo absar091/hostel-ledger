@@ -130,7 +130,7 @@ router.post('/users/:uid/wallet-reset', async (req, res) => {
 // Get Group Details
 router.get('/groups/:groupId', async (req, res) => {
   try {
-    const { groupId } = req.params;
+    const groupId = req.params.groupId.trim();
     const groupData = await adminService.getGroupDetails(groupId);
     res.json(groupData);
   } catch (error) {
@@ -141,7 +141,7 @@ router.get('/groups/:groupId', async (req, res) => {
 // Force Delete Group
 router.delete('/groups/:groupId', async (req, res) => {
   try {
-    const { groupId } = req.params;
+    const groupId = req.params.groupId.trim();
     const result = await adminService.deleteGroupForce(groupId);
     res.json(result);
   } catch (error) {
@@ -152,7 +152,8 @@ router.delete('/groups/:groupId', async (req, res) => {
 // Force Remove Member from Group
 router.delete('/groups/:groupId/members/:uid', async (req, res) => {
   try {
-    const { groupId, uid } = req.params;
+    const groupId = req.params.groupId.trim();
+    const uid = req.params.uid.trim();
     const result = await adminService.removeGroupMemberForce(groupId, uid);
     res.json(result);
   } catch (error) {
