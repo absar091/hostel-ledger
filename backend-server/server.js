@@ -2339,6 +2339,9 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     // Idempotency Check
     let clientTxnId = req.body.clientTxnId;
     if (clientTxnId) {
+      if (!isValidFirebaseId(clientTxnId)) {
+        return res.status(400).json({ success: false, error: 'Invalid transaction ID format' });
+      }
       const processedRef = db.ref(`processedTxns/${clientTxnId}`);
       const processedSnap = await processedRef.get();
       if (processedSnap.exists()) {
@@ -2760,6 +2763,9 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     // Idempotency Check (Client provided ID)
     let clientTxnId = req.body.clientTxnId;
     if (clientTxnId) {
+      if (!isValidFirebaseId(clientTxnId)) {
+        return res.status(400).json({ success: false, error: 'Invalid transaction ID format' });
+      }
       const processedRef = db.ref(`processedTxns/${clientTxnId}`);
       const processedSnap = await processedRef.get();
       if (processedSnap.exists()) {
