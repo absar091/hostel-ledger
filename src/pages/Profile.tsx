@@ -1,3 +1,4 @@
+import { SupportSheet } from '../components/SupportSheet';
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -399,8 +400,8 @@ const Profile = () => {
                 <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
               </button>
 
-              <a
-                href="mailto:support@aarx.online"
+              <button
+                onClick={() => setIsSupportSheetOpen(true)}
                 className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -413,7 +414,7 @@ const Profile = () => {
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-[#4a6850]/30 flex-shrink-0 ml-3" />
-              </a>
+              </button>
 
               <button
                 onClick={async () => {
