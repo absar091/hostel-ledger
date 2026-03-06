@@ -2339,11 +2339,14 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     // Idempotency Check
     let clientTxnId = req.body.clientTxnId;
     if (clientTxnId) {
-      const processedRef = db.ref(`processedTxns/${clientTxnId}`);
+      if (!isValidFirebaseId(clientTxnId)) {
+        return res.status(400).json({ success: false, error: 'Invalid transaction ID format' });
+      }
+      const processedRef = db.ref(`processedTxns/${currentUserId}/${clientTxnId}`);
       const processedSnap = await processedRef.get();
       if (processedSnap.exists()) {
         const data = processedSnap.val();
-        console.log(`♻️ Idempotency hit: Returning existing transaction for ${clientTxnId}`);
+        console.log(`♻️ Idempotency hit: Returning existing transaction for ${clientTxnId} (user: ${currentUserId})`);
         return res.json({
           success: true,
           transactionId: data.transactionId,
@@ -2533,7 +2536,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     updates[`transactions/${transactionId}`] = newTransaction;
 
     if (clientTxnId) {
-      updates[`processedTxns/${clientTxnId}`] = {
+      updates[`processedTxns/${currentUserId}/${clientTxnId}`] = {
         transactionId,
         uid: currentUserId,
         timestamp: serverTime,
@@ -2760,11 +2763,14 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     // Idempotency Check (Client provided ID)
     let clientTxnId = req.body.clientTxnId;
     if (clientTxnId) {
-      const processedRef = db.ref(`processedTxns/${clientTxnId}`);
+      if (!isValidFirebaseId(clientTxnId)) {
+        return res.status(400).json({ success: false, error: 'Invalid transaction ID format' });
+      }
+      const processedRef = db.ref(`processedTxns/${currentUserId}/${clientTxnId}`);
       const processedSnap = await processedRef.get();
       if (processedSnap.exists()) {
         const data = processedSnap.val();
-        console.log(`♻️ Idempotency hit: Returning existing transaction for ${clientTxnId}`);
+        console.log(`♻️ Idempotency hit: Returning existing transaction for ${clientTxnId} (user: ${currentUserId})`);
         return res.json({
           success: true,
           transactionId: data.transactionId,
@@ -2923,7 +2929,7 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
 
     // Record processed transaction for idempotency
     if (clientTxnId) {
-      updates[`processedTxns/${clientTxnId}`] = {
+      updates[`processedTxns/${currentUserId}/${clientTxnId}`] = {
         transactionId,
         uid: currentUserId,
         timestamp: serverTime,

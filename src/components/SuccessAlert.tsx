@@ -18,7 +18,9 @@ const SuccessAlert = ({ message, onDismiss }: SuccessAlertProps) => {
         </div>
         {onDismiss && (
           <button
+            type="button"
             onClick={onDismiss}
+            aria-label="Dismiss alert"
             className="text-green-400 hover:text-green-600 transition-colors"
           >
             <X className="w-4 h-4" />

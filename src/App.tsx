@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { FirebaseAuthProvider, useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
-import { FirebaseDataProvider } from "@/contexts/FirebaseDataContext";
+import { FirebaseDataProvider, useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -15,6 +15,10 @@ import ScrollToTop from "@/components/ScrollToTop";
 import { OfflineScreen } from "@/components/OfflineScreen";
 import { UpdateNotification } from "@/components/UpdateNotification";
 import { useTranslation } from "react-i18next";
+import MaintenanceScreen from "@/components/MaintenanceScreen";
+import AdminRoute from "@/components/AdminRoute";
+import AdminDashboard from "./pages/AdminDashboard";
+import BroadcastBanner from "@/components/BroadcastBanner";
 
 // Direct imports for better reliability in production
 import Index from "./pages/Index";
@@ -37,8 +41,6 @@ import InstallGuide from "./pages/InstallGuide";
 import About from "./pages/About";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
-import AdminRoute from "./components/AdminRoute";
-import AdminDashboard from "./pages/AdminDashboard";
 import GroupTerms from "./pages/GroupTerms";
 import GroupPrivacy from "./pages/GroupPrivacy";
 import ToReceive from "./pages/ToReceive";
@@ -199,7 +201,17 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const AppRoutes = () => (
+const AppRoutes = () => {
+  const { user } = useFirebaseAuth();
+  const { maintenanceMode } = useFirebaseData();
+
+  if (maintenanceMode && user?.role !== 'admin' && user?.role !== 'superadmin') {
+    return <MaintenanceScreen />;
+  }
+
+  return (
+    <>
+      <BroadcastBanner />
   <Routes>
     {/* Verification Routes */}
     <Route path="/verify-sheets" element={<VerificationPage />} />
@@ -214,8 +226,8 @@ const AppRoutes = () => (
     <Route path="/download-app" element={<ProtectedRoute><DownloadApp /></ProtectedRoute>} />
     <Route path="/install-app" element={<InstallApp />} />
     <Route path="/install-guide" element={<InstallGuide />} />
-    <Route element={<AdminRoute />}><Route path="/secure-admin-dashboard" element={<AdminDashboard />} /></Route>
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+    <Route path="/secure-admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
     <Route path="/create-group" element={<ProtectedRoute><CreateGroup /></ProtectedRoute>} />
     <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
     <Route path="/group/:id" element={<ProtectedRoute><GroupDetail /></ProtectedRoute>} />
@@ -239,7 +251,9 @@ const AppRoutes = () => (
 
         <Route path="*" element={<NotFound />} />
   </Routes>
-);
+    </>
+  );
+};
 
 const App = () => {
   useEffect(() => {
