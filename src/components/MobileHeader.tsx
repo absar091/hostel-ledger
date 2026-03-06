@@ -96,9 +96,9 @@ const MobileHeader = ({ title, showBackButton = false, rightContent }: MobileHea
           />
         )}
 
-        <div>
+        <div className="min-w-0 flex-1">
           {title ? (
-            <h1 className="text-lg font-black text-gray-900 tracking-tight truncate max-w-[200px]">
+            <h1 className="text-lg font-black text-gray-900 tracking-tight truncate">
               {title}
             </h1>
           ) : (

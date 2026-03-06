@@ -1083,7 +1083,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                     placeholder={selectedGroupData?.isPersonal ? t('sheets.add_expense.note_placeholder') : t('sheets.add_expense.optional_note_placeholder')}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850] focus:border-[#4a6850] focus:shadow-xl"
+                    className="h-16 rounded-[32px] border-2 border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/40 focus:border-[#4a6850] focus:shadow-xl focus:ring-0"
                     maxLength={100}
                   />
                   <div className="flex justify-end mt-1 px-4">
@@ -1103,7 +1103,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                       placeholder={t('sheets.add_expense.where_placeholder')}
                       value={place}
                       onChange={(e) => setPlace(e.target.value)}
-                      className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850] focus:border-[#4a6850] focus:shadow-xl"
+                      className="h-16 rounded-[32px] border-2 border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/40 focus:border-[#4a6850] focus:shadow-xl focus:ring-0"
                       maxLength={100}
                     />
                     <div className="flex justify-end mt-1 px-4">
@@ -1115,7 +1115,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                 )}
 
                 {/* Final Summary - iPhone Style */}
-                <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-6 mt-8 shadow-[0_25px_70px_rgba(74,104,80,0.3)] text-white">
+                <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-[32px] p-6 mt-8 shadow-[0_25px_70px_rgba(74,104,80,0.3)] text-white">
                   <div className="text-sm text-white/90 mb-3 font-black uppercase tracking-wide">
                     {selectedGroupData?.isPersonal ? t('sheets.add_expense.personal_expense') : t('sheets.add_expense.final_summary')}
                   </div>
@@ -1181,7 +1181,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                       setStep((s) => s - 1);
                     }
                   }}
-                  className="flex-1 h-14 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black border-0 shadow-lg hover:shadow-xl transition-all"
+                  className="flex-1 h-16 rounded-[32px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-black border-0 shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {t('common.back')}
                 </Button>
@@ -1196,14 +1196,14 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                     }
                   }}
                   disabled={!canProceed()}
-                  className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 h-16 rounded-[32px] bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {t('common.continue')} <ChevronRight className="w-5 h-5 ml-2 font-bold" />
                 </Button>
               ) : (
                 <Button
                   onClick={handleSubmit}
-                  className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all"
+                  className="flex-1 h-16 rounded-[32px] bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {t('sheets.add_expense.submit_btn')}
                 </Button>

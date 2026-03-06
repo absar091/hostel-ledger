@@ -65,29 +65,28 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
           </div>
         )}
 
-        <SheetHeader className="flex-shrink-0 mb-6 pt-2">
+        <SheetHeader className="flex-shrink-0 mb-6 pt-2 overflow-hidden">
           {/* Handle Bar */}
-          <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
+          <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6"></div>
 
-          <div className="flex items-center justify-center gap-3">
-            <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight flex items-center justify-center gap-3">
-              <PiggyBank className="w-7 h-7 text-[#4a6850]" />
+          <div className="flex flex-col items-center justify-center gap-1.5 px-4">
+            <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
               {t('sheets.add_money.title')}
+              <Tooltip
+                content={t('sheets.add_money.tooltip')}
+                position="bottom"
+              />
             </SheetTitle>
-            <Tooltip
-              content={t('sheets.add_money.tooltip')}
-              position="bottom"
-            />
+            <SheetDescription className="text-xs text-[#4a6850] text-center font-bold max-w-[280px]">
+              {t('sheets.add_money.subtitle')}
+            </SheetDescription>
           </div>
-          <SheetDescription className="text-sm text-[#4a6850] text-center font-bold">
-            {t('sheets.add_money.subtitle')}
-          </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto pb-4">
           {/* Amount Input - iPhone Style - Compact Padding */}
           <div className="text-center py-4">
-            <div className="text-4xl font-black text-gray-900 mb-6 tracking-tighter tabular-nums">
+            <div className="text-4xl font-black text-gray-900 mb-8 tracking-tighter tabular-nums">
               {formatAmount(parseFloat(amount) || 0)}
             </div>
             <Input
@@ -95,7 +94,7 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
               placeholder={t('sheets.add_money.amount_placeholder')}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="text-center text-xl h-14 max-w-sm mx-auto rounded-3xl border-[#4a6850]/20 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850] focus:border-[#4a6850] focus:shadow-xl"
+              className="text-center text-xl h-16 max-w-sm mx-auto rounded-[32px] border-2 border-[#4a6850]/20 shadow-lg font-black text-gray-900 placeholder:text-[#4a6850]/40 focus:border-[#4a6850] focus:shadow-xl focus:ring-0"
               autoFocus
               aria-label={t('sheets.add_money.amount_placeholder')}
             />
@@ -132,18 +131,18 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
               placeholder={t('sheets.add_money.note_placeholder')}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850] focus:border-[#4a6850] focus:shadow-xl"
+              className="h-16 rounded-[32px] border-2 border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/40 focus:border-[#4a6850] focus:shadow-xl focus:ring-0"
               maxLength={100}
             />
           </div>
 
           {/* Info Box - iPhone Style */}
-          <div className="rounded-3xl p-6 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 border border-[#4a6850]/20 shadow-lg mb-6">
-            <div className="flex items-start gap-4">
-              <Wallet className="w-6 h-6 text-[#4a6850] mt-1 flex-shrink-0" />
+          <div className="rounded-[32px] p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 border border-[#4a6850]/20 shadow-sm mb-6">
+            <div className="flex items-start gap-3">
+              <Wallet className="w-5 h-5 text-[#4a6850] mt-0.5 flex-shrink-0" />
               <div>
-                <h4 className="font-black text-gray-900 mb-2 tracking-tight">{t('sheets.add_money.info_title')}</h4>
-                <p className="text-sm text-[#4a6850] font-bold leading-relaxed">
+                <h4 className="font-black text-gray-900 mb-1 text-sm tracking-tight">{t('sheets.add_money.info_title')}</h4>
+                <p className="text-xs text-[#4a6850] font-bold leading-relaxed">
                   {t('sheets.add_money.info_text')}
                 </p>
               </div>
@@ -152,35 +151,35 @@ const AddMoneySheet = ({ open, onClose, onSubmit }: AddMoneySheetProps) => {
 
           {/* Summary - iPhone Style */}
           {parseFloat(amount) > 0 && (
-            <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-6 shadow-[0_25px_70px_rgba(74,104,80,0.3)] text-white animate-fade-in">
+            <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-[32px] p-5 shadow-[0_20px_50px_rgba(74,104,80,0.2)] text-white animate-fade-in">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-black text-white text-xl tracking-tight tabular-nums">
                     +{formatAmount(parseFloat(amount) || 0)}
                   </div>
-                  <div className="text-sm text-white/90 font-bold">
+                  <div className="text-xs text-white/90 font-bold">
                     {t('sheets.add_money.summary_title')}
                   </div>
                 </div>
-                <PiggyBank className="w-10 h-10 text-white/90" />
+                <PiggyBank className="w-8 h-8 text-white/90" />
               </div>
             </div>
           )}
         </div>
 
         <div className="flex-shrink-0 pt-6 border-t border-[#4a6850]/10 bg-white">
-          <div className="flex gap-4">
+          <div className="flex gap-4 px-1">
             <Button
               variant="secondary"
               onClick={handleClose}
-              className="flex-1 h-14 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black border-0 shadow-lg hover:shadow-xl transition-all"
+              className="flex-1 h-16 rounded-[32px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-black border-0 shadow-lg hover:shadow-xl transition-all"
             >
               {t('common.cancel')}
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={!canSubmit()}
-              className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
+              className="flex-1 h-16 rounded-[32px] bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
             >
               {t('sheets.add_money.submit_btn')}
             </Button>
