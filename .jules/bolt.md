@@ -1,0 +1,3 @@
+## 2024-05-24 - Array.prototype.find() inside render loops
+**Learning:** Found a performance bottleneck where `Array.prototype.find()` was used inside `.map()` render loops (e.g., in `GroupDetail.tsx` iterating over transactions and participants) for relational data lookups. This caused an O(N*M) bottleneck in rendering.
+**Action:** Always pre-compute an O(1) hash map using `useMemo` for relational data lookups before entering large render loops.
