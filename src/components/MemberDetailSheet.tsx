@@ -1,7 +1,9 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import Avatar from "./Avatar";
-import { ArrowDownLeft, ArrowUpRight, HandCoins, Calendar, MapPin, CreditCard, Banknote, ArrowRight, Wallet } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, HandCoins, Calendar, MapPin, CreditCard, Banknote, ArrowRight, Wallet, ShieldAlert } from "lucide-react";
+import { ReportSheet } from "./ReportSheet";
+import { useState } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -124,6 +126,7 @@ const MemberDetailSheet = ({
   onPayToMember,
   onMergeWithMe
 }: MemberDetailSheetProps) => {
+  const [isReportOpen, setIsReportOpen] = useState(false);
   if (!member) return null;
 
   // Use settlementInfo if provided, otherwise fallback to balance
@@ -133,6 +136,7 @@ const MemberDetailSheet = ({
   const balanceHistory = calculateBalanceHistory(transactions, theyOweYou, youOweThem);
 
   return (
+  <>
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white shadow-[0_25px_70px_rgba(74,104,80,0.3)] border-t-2 border-[#4a6850]/20 z-[100]">
         <SheetHeader className="flex-shrink-0 mb-6 bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 -mx-6 -mt-6 px-6 pt-4 pb-4 rounded-t-3xl border-b border-[#4a6850]/10">
@@ -429,6 +433,13 @@ const MemberDetailSheet = ({
         </div>
       </SheetContent>
     </Sheet>
+    <ReportSheet
+      isOpen={isReportOpen}
+      onClose={() => setIsReportOpen(false)}
+      targetId={member?.userId || member?.id}
+      targetType="user"
+    />
+    </>
   );
 };
 
