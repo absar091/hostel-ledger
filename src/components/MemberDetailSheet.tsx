@@ -448,7 +448,7 @@ const MemberDetailSheet = ({
     <ReportSheet
       isOpen={isReportOpen}
       onClose={() => setIsReportOpen(false)}
-      targetId={member?.userId || member?.id}
+      targetId={member?.userId || member?.id || "unknown"}
       targetType="user"
     />
     </>

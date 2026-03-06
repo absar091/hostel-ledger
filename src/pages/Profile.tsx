@@ -47,6 +47,7 @@ const Profile = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("profile");
   const [showEditSheet, setShowEditSheet] = useState(false);
+  const [isSupportSheetOpen, setIsSupportSheetOpen] = useState(false);
   const [showPaymentSheet, setShowPaymentSheet] = useState(false);
   const [showPhotoOptionsSheet, setShowPhotoOptionsSheet] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);

@@ -59,7 +59,7 @@ router.post('/report', async (req, res) => {
     const uid = req.user.uid;
 
     if (!['user', 'group'].includes(targetType) || !targetId || !reason) {
-      return res.status(400).json({ error: 'Invalid report data.' });
+      console.log('Report Validation Failed:', { targetId, targetType, reason, details }); return res.status(400).json({ error: 'Invalid report data.' });
     }
 
     const reportRef = admin.database().ref('reports').push();
