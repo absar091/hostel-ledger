@@ -28,7 +28,11 @@ export const verifyEmailConnection = async (): Promise<boolean> => {
 
 // Generate verification code
 export const generateVerificationCode = (): string => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  const randomValue = new Uint32Array(1);
+  globalThis.crypto.getRandomValues(randomValue);
+  // Get a value between 0 and 899999 by modulo operation, then add 100000
+  const randomSixDigit = 100000 + (randomValue[0] % 900000);
+  return randomSixDigit.toString();
 };
 
 // Send verification email using backend API

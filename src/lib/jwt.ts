@@ -59,9 +59,12 @@ export const verifyToken = (token: string): { valid: boolean; payload?: TokenPay
 // Generate secure random string for additional security
 export const generateSecureToken = (length: number = 32): string => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const randomValues = new Uint32Array(length);
+  globalThis.crypto.getRandomValues(randomValues);
+
   let result = '';
   for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += chars.charAt(randomValues[i] % chars.length);
   }
   return result;
 };
