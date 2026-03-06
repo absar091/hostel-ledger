@@ -359,7 +359,7 @@ const GroupSettingsSheet = ({
       <ReportSheet
         isOpen={isReportOpen}
         onClose={() => setIsReportOpen(false)}
-        targetId={group.id}
+        targetId={group.id || "unknown"}
         targetType="group"
       />
     </>
