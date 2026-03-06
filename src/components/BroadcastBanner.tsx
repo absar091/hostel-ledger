@@ -40,6 +40,7 @@ export default function BroadcastBanner() {
         </div>
       </div>
       <button
+        type="button"
         onClick={handleDismiss}
         className="p-1.5 hover:bg-blue-700 rounded-lg transition-colors flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-400"
         aria-label="Dismiss broadcast message"
