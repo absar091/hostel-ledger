@@ -223,8 +223,10 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             )}
                         </button>
                         <button
+                            type="button"
                             onClick={onClose}
                             className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+                            aria-label="Close details"
                         >
                             <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
                         </button>
