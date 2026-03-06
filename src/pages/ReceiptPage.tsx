@@ -260,15 +260,34 @@ const ReceiptPage = () => {
                                     {(type === "expense" || type === "payment") && (
                                         <>
                                             <div className="space-y-1">
-                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? t('receipt.paid_by') : t('receipt.from')}</p>
-                                                <p className="font-black text-xs text-slate-900">{type === "expense" ? transaction.paidByName : transaction.fromName}</p>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                    {type === "expense"
+                                                        ? (transaction.payers?.length > 1 ? t('receipt.paid_by') + ` (${transaction.payers.length})` : t('receipt.paid_by'))
+                                                        : t('receipt.from')}
+                                                </p>
+                                                {type === "expense" && transaction.payers?.length > 1 ? (
+                                                    <div className="space-y-1">
+                                                        {transaction.payers.map((p: any, i: number) => {
+                                                            const isYou = p.id === currentUser?.uid || p.userId === currentUser?.uid;
+                                                            return (
+                                                                <p key={i} className="font-black text-xs text-slate-900">
+                                                                    {isYou ? "You" : p.name}: {formatAmount(p.amount)}
+                                                                </p>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                ) : (
+                                                    <p className="font-black text-xs text-slate-900">{type === "expense"
+                                                        ? (transaction.paidBy === currentUser?.uid ? "You" : transaction.paidByName)
+                                                        : (transaction.from === currentUser?.uid ? "You" : transaction.fromName)}</p>
+                                                )}
                                             </div>
                                             <div className="space-y-1 text-right">
                                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{type === "expense" ? t('receipt.split_with') : t('receipt.to')}</p>
                                                 <p className="font-black text-xs text-slate-900">
                                                     {type === "expense"
                                                         ? `${transaction.participants?.length || 0} ${t('receipt.people')}`
-                                                        : transaction.toName || currentUser?.name}
+                                                        : (transaction.to === currentUser?.uid ? "You" : transaction.toName) || "Unknown"}
                                                 </p>
                                             </div>
                                         </>
@@ -312,9 +331,30 @@ const ReceiptPage = () => {
                                 )}
                             </div>
 
-                            {/* Barcode & Footer - Compacted */}
+                            {/* Settlement Status Footer */}
                             <div className="p-6 bg-slate-900 text-white text-center pb-8">
-                                <div className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">{t('receipt.footer_motto')}</div>
+                                {(() => {
+                                    if (type === "expense") {
+                                        // Calculate net settlement for current user
+                                        const userParticipant = transaction.participants?.find((p: any) =>
+                                            p.id === currentUser?.uid || p.userId === currentUser?.uid
+                                        );
+                                        const userShare = transaction.userShare || userParticipant?.amount || 0;
+                                        const userPaidEntry = transaction.payers?.find((p: any) =>
+                                            p.id === currentUser?.uid || p.userId === currentUser?.uid
+                                        );
+                                        const userPaid = transaction.userPaid || userPaidEntry?.amount || 0;
+                                        const netOwes = userShare - userPaid;
+
+                                        if (netOwes > 0) {
+                                            return <div className="text-red-400 text-[10px] font-bold uppercase tracking-widest">You owe {formatAmount(netOwes)}</div>;
+                                        } else if (netOwes < 0) {
+                                            return <div className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest">You are owed {formatAmount(Math.abs(netOwes))}</div>;
+                                        }
+                                        return <div className="text-emerald-500 text-[10px] font-bold uppercase tracking-widest">{t('receipt.footer_motto')}</div>;
+                                    }
+                                    return <div className="text-emerald-500 text-[10px] font-bold uppercase tracking-widest">{t('receipt.footer_motto')}</div>;
+                                })()}
                             </div>
                         </div>
                     </div>

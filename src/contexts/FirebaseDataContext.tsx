@@ -14,6 +14,14 @@ const sanitizeAmount = (amount: string | number): number => {
   return isNaN(num) ? 0 : Math.max(0, Math.min(num, 1000000));
 };
 
+// Normalize Firebase arrays which might be objects like {0: {}, 1: {}} if indices were altered
+const normalizeArray = (val: any): any[] => {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.filter(Boolean);
+  if (typeof val === 'object') return Object.values(val).filter(Boolean);
+  return [];
+};
+
 // Normalize members: Firebase may return object {memberId: {}, ...} instead of array
 const normalizeMembers = (members: any, currentUserId?: string): any[] => {
   if (!members) return [];
@@ -417,11 +425,26 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
               const userTransactions = snapshot.val();
               const transactionPromises = Object.entries(userTransactions).map(async ([id, data]: [string, any]) => {
                 // OPTIMIZATION: Check if we have enough data in the summary to avoid N+1 fetch
+                const normalizedParticipants = normalizeArray(data?.participants);
+                const normalizedPayers = normalizeArray(data?.payers);
 
-                if (data && data.type === 'expense' && Array.isArray(data.participants) && data.participants.length > 0) {
+                if (data?.type === 'expense') {
+                  console.log('--- Firebase Data Trace ---', {
+                    id,
+                    title: data.title,
+                    rawPayers: data?.payers,
+                    normalizedPayers,
+                    rawParticipants: data?.participants,
+                    normalizedParticipants
+                  });
+                }
+
+                if (data && data.type === 'expense' && normalizedParticipants.length > 0) {
                   return {
                     id,
                     ...data,
+                    participants: normalizedParticipants,
+                    payers: normalizedPayers,
                     date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : (data.date || "Unknown Date")
                   };
                 }
@@ -459,7 +482,12 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                   const txSnapshot = await get(txRef);
                   if (txSnapshot.exists()) {
                     const fullTx = txSnapshot.val();
-                    return { id, ...fullTx };
+                    return {
+                      id,
+                      ...fullTx,
+                      participants: normalizeArray(fullTx.participants),
+                      payers: normalizeArray(fullTx.payers)
+                    };
                   }
                 } catch (err) {
                   console.error(`Failed to fetch transaction ${id}:`, err);
@@ -856,13 +884,14 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         return { success: true, error: "Offline: saved to sync later" };
       }
 
+      console.log("🔥 DEBUG: addExpense payload:", JSON.stringify(data, null, 2));
       logger.info("Adding expense via secure API", { groupId: data.groupId, amount: data.amount, clientTxnId });
 
       const result = await callSecureApi('/api/add-expense', {
-        payers: data.payers,
         groupId: data.groupId,
         amount: data.amount,
         paidBy: data.paidBy,
+        payers: data.payers,
         participants: data.participants,
         note: data.note,
         place: data.place,

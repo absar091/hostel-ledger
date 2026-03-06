@@ -161,10 +161,10 @@ const TimelineItemBase = ({
         {payers && payers.length > 1 ? (
           <div className="relative">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white flex items-center justify-center font-bold text-sm shadow-lg border-2 border-white">
-               +{payers.length}
+              +{payers.length}
             </div>
             <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-sm border border-gray-100">
-               <Users className="w-3 h-3 text-[#4a6850]" />
+              <Users className="w-3 h-3 text-[#4a6850]" />
             </div>
           </div>
         ) : paidBy ? (
@@ -194,11 +194,27 @@ const TimelineItemBase = ({
           {participants && participants.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
               {participants.map((p) => {
-                const isPayer = p.name === paidBy;
+                // Multi-payer aware: check if this participant is ANY payer
+                const payerEntry = payers?.find((py: any) => (py.id && (p as any).id && py.id === (p as any).id) || py.name === p.name);
+                const isPayer = payerEntry || p.name === paidBy;
+                const amountPaid = payerEntry ? (payerEntry.amount || 0) : ((p.name === paidBy) ? amount : 0);
+                const netOwes = Number(p.amount || 0) - Number(amountPaid); // positive = owes, negative = lent
+
+                console.log('--- TimelineItem Math ---', {
+                  title,
+                  person: p.name,
+                  participantAmount: p.amount,
+                  isPayer,
+                  amountPaid,
+                  netOwes,
+                  payerEntryFound: !!payerEntry,
+                  payersMap: payers
+                });
+
                 return (
                   <span
                     key={p.name}
-                    className={`inline-flex items-center gap-1 text-xs rounded-2xl px-3 py-1.5 font-black ${isPayer
+                    className={`inline-flex items-center gap-1 text-xs rounded-2xl px-3 py-1.5 font-black ${isPayer && netOwes <= 0
                       ? "bg-gradient-to-r from-[#4a6850]/20 to-[#3d5643]/20 text-[#4a6850] border border-[#4a6850]/30"
                       : "bg-gradient-to-r from-orange-100 to-red-100 text-orange-700 border border-orange-200"
                       }`}
@@ -207,10 +223,14 @@ const TimelineItemBase = ({
                     {p.isTemporary && (
                       <span className="px-1 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[8px] font-black uppercase tracking-wider">Temp</span>
                     )}
-                    {isPayer ? (
-                      <span className="text-[#4a6850]/80 font-bold">paid</span>
+                    {netOwes < 0 ? (
+                      <span className="text-[#4a6850]/80 font-bold whitespace-nowrap">lent {formatAmount(Math.abs(netOwes))}</span>
+                    ) : netOwes === 0 && isPayer ? (
+                      <span className="text-[#4a6850]/80 font-bold">settled</span>
+                    ) : netOwes > 0 ? (
+                      <span className="text-red-600 font-bold whitespace-nowrap">owes {formatAmount(netOwes)}</span>
                     ) : (
-                      <span className="text-red-600 font-bold whitespace-nowrap">owes {formatAmount(p.amount)}</span>
+                      <span className="text-[#4a6850]/80 font-bold">paid</span>
                     )}
                   </span>
                 );

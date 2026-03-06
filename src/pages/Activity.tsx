@@ -110,13 +110,17 @@ const Activity = () => {
     const walletAdds = filteredTransactions.filter(t => t.type === "wallet_add");
 
     const totalSpent = expenses.reduce((sum, t) => {
-      // 1. If you paid, add full amount
-      if (t.paidBy === user?.uid) return sum + (t.amount || 0);
-
-      // 2. If you are a participant, add your share
+      // Use the denormalized userShare field which is always correct
       if (t.userShare !== undefined && t.userShare > 0) return sum + t.userShare;
 
-      // 3. Fallback: check participants array
+      // Fallback: check if user is payer (creator whose member ID = uid)
+      if (t.paidBy === user?.uid) {
+        // User paid — their share is their participant amount, not total
+        const userPart = t.participants?.find((p: any) => p.id === user?.uid);
+        return sum + (userPart ? userPart.amount : 0);
+      }
+
+      // Fallback: check participants array directly
       const userPart = t.participants?.find((p: any) => p.id === user?.uid);
       return sum + (userPart ? (userPart.amount || 0) : 0);
     }, 0);
@@ -309,12 +313,14 @@ const Activity = () => {
             <div className="space-y-4">
               {filteredTransactions.map((transaction, index) => {
                 const transactionGroup = groupMap[transaction.groupId];
-                const isPayer = transaction.paidBy === user?.uid;
-                const userParticipant = transaction.participants?.find((p: any) => p.id === user?.uid);
+                const isPayer = transaction.paidBy === user?.uid || transaction.userIsPayer;
+                const userParticipant = transaction.participants?.find((p: any) =>
+                  p.id === user?.uid || (p as any).userId === user?.uid
+                ) || (transaction.userIsParticipant ? { amount: transaction.userShare || 0 } : null);
                 const isParticipant = !!userParticipant;
 
                 const displayAmount = transaction.type === 'expense'
-                  ? (isPayer ? transaction.amount : isParticipant ? userParticipant.amount : 0)
+                  ? (isPayer && !isParticipant ? transaction.amount : isParticipant ? (userParticipant as any).amount : 0)
                   : transaction.amount;
 
                 return (

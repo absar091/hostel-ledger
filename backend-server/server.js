@@ -2949,16 +2949,21 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
       memberCount: membersArray.length
     };
 
-    if (fromPerson.userId) {
-      const userTxUpdate = { ...transactionSummaryBase };
-      userTxUpdate.userRole = 'payer';
-      updates[`userTransactions/${fromPerson.userId}/${transactionId}`] = userTxUpdate;
-    }
-    if (toPerson.userId) {
-      const userTxUpdate = { ...transactionSummaryBase };
-      userTxUpdate.userRole = 'receiver';
-      updates[`userTransactions/${toPerson.userId}/${transactionId}`] = userTxUpdate;
-    }
+    // Fan-out to ALL group members (matching expense behavior)
+    // This ensures payments appear in every member's Activity and Group Ledger
+    membersArray.forEach(m => {
+      if (m.userId) {
+        const userTxUpdate = { ...transactionSummaryBase };
+        if (m.userId === fromPerson.userId || m.id === fromMember) {
+          userTxUpdate.userRole = 'payer';
+        } else if (m.userId === toPerson.userId || m.id === toMember) {
+          userTxUpdate.userRole = 'receiver';
+        } else {
+          userTxUpdate.userRole = 'observer';
+        }
+        updates[`userTransactions/${m.userId}/${transactionId}`] = userTxUpdate;
+      }
+    });
 
     // D. Update Bidirectional Settlements
     const otherPersonId = isPaying ? toMember : fromMember;
@@ -2980,7 +2985,9 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     };
 
     // Update other user's view (Mirror)
-    updates[`users/${otherPersonId}/settlements/${groupId}/${currentUserId}`] = {
+    // Use userId (Firebase UID) for real users, fall back to memberId for temp members
+    const otherPersonStorageKey = otherPerson.userId || otherPersonId;
+    updates[`users/${otherPersonStorageKey}/settlements/${groupId}/${currentUserId}`] = {
       toReceive: newToPay,
       toPay: newToReceive
     };
@@ -3004,10 +3011,10 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
     try {
       const notificationPromises = [];
 
-      // A. Push Notifications (OneSignal)
-      const membersWithUserId = membersArray.filter(m => m.userId);
-      if (membersWithUserId.length > 0) {
-        const userIds = membersWithUserId.map(m => m.userId);
+      // A. Push Notifications (OneSignal) — only notify the two parties, not all members
+      const paymentParties = [fromPerson, toPerson].filter(m => m.userId);
+      if (paymentParties.length > 0) {
+        const userIds = paymentParties.map(m => m.userId);
         notificationPromises.push(
           sendOneSignalNotificationInternal({
             userIds,
