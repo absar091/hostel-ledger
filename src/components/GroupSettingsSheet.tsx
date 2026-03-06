@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Avatar from "./Avatar";
-import { UserPlus, Trash2, AlertTriangle, X } from "lucide-react";
+import { UserPlus, Trash2, AlertTriangle, X, ShieldAlert } from "lucide-react";
+import { ReportSheet } from "./ReportSheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +62,7 @@ const GroupSettingsSheet = ({
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState("");
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const [showDeleteGroup, setShowDeleteGroup] = useState(false);
   const [groupName, setGroupName] = useState(group.name);
   const [selectedEmoji, setSelectedEmoji] = useState(group.emoji);
@@ -258,7 +260,19 @@ const GroupSettingsSheet = ({
             </div>
 
             {/* Danger Zone - RESTRICT TO OWNER */}
-            {isOwner && (
+
+            {/* Report Group Button */}
+            <div className="pt-6 border-t border-[#4a6850]/10 mb-4">
+              <Button
+                  variant="outline"
+                  className="w-full h-14 rounded-3xl text-red-600 border-red-200 bg-red-50 hover:bg-red-100 font-bold transition-all"
+                  onClick={() => setIsReportOpen(true)}
+                >
+                  <ShieldAlert className="w-5 h-5 mr-2" />
+                  Report Group
+              </Button>
+            </div>
+{isOwner && (
               <div className="pt-6 border-t border-[#4a6850]/10">
                 <Label className="text-red-600 font-black text-sm uppercase tracking-wide">Danger Zone</Label>
                 <Button
@@ -342,6 +356,12 @@ const GroupSettingsSheet = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ReportSheet
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        targetId={group.id}
+        targetType="group"
+      />
     </>
   );
 };

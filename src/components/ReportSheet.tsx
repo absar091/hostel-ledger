@@ -54,7 +54,7 @@ export function ReportSheet({ isOpen, onClose, targetId, targetType }: ReportShe
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="bottom" className="h-[80vh] sm:h-[500px] flex flex-col bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 rounded-t-3xl shadow-xl">
+      <SheetContent side="bottom" className="h-[80vh] sm:h-[500px] flex flex-col z-[200] bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 rounded-t-3xl shadow-xl">
         <SheetHeader className="pb-4 border-b border-gray-100 dark:border-gray-800">
           <SheetTitle className="text-xl font-bold dark:text-white text-red-600">Report {targetType === 'user' ? 'User' : 'Group'}</SheetTitle>
           <SheetDescription className="text-gray-500 dark:text-gray-400">

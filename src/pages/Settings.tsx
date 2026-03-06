@@ -374,6 +374,3 @@ const Settings = () => {
 };
 
 export default Settings;
-
-// Added Support Sheet Import
-import { SupportSheet } from '../components/SupportSheet';
