@@ -884,7 +884,6 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         return { success: true, error: "Offline: saved to sync later" };
       }
 
-      console.log("🔥 DEBUG: addExpense payload:", JSON.stringify(data, null, 2));
       logger.info("Adding expense via secure API", { groupId: data.groupId, amount: data.amount, clientTxnId });
 
       const result = await callSecureApi('/api/add-expense', {
