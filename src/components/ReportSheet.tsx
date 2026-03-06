@@ -35,7 +35,7 @@ export function ReportSheet({ isOpen, onClose, targetId, targetType }: ReportShe
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ targetId, targetType, reason, details })
+        body: JSON.stringify({ targetId: targetId || "unknown", targetType, reason, details })
       });
 
       if (!response.ok) {
