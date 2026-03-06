@@ -196,7 +196,14 @@ const { verifyImageOwnership } = require('./utils/imageSecurity');
 const adminAuthMiddleware = require('./middleware/adminAuth').verifyAdmin;
 const adminAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (authHeader && authHeader === `Bearer ${process.env.CRON_SECRET}`) {
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (!cronSecret) {
+    console.error('CRON_SECRET is not configured.');
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+
+  if (authHeader && authHeader === `Bearer ${cronSecret}`) {
     return next();
   }
   return res.status(401).json({ error: 'Unauthorized' });
