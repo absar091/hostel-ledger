@@ -323,10 +323,26 @@ const Activity = () => {
                   ? (isPayer && !isParticipant ? transaction.amount : isParticipant ? (userParticipant as any).amount : 0)
                   : transaction.amount;
 
+                const typeLabel =
+                  transaction.type === "expense"
+                    ? isPayer
+                      ? "You paid"
+                      : isParticipant
+                      ? "You owe"
+                      : "Group expense"
+                    : transaction.type === "payment"
+                    ? transaction.paidBy === user?.uid || transaction.from === user?.uid
+                      ? "Payment sent"
+                      : "Payment received"
+                    : "Wallet";
+
+                const ariaLabel = `${transaction.title}${transactionGroup ? ` in ${transactionGroup.name}` : ""}, ${typeLabel} ${formatAmount(displayAmount)} on ${transaction.date}`;
+
                 return (
                   <button
                     key={transaction.id}
                     onClick={() => setSelectedTransaction(transaction)}
+                    aria-label={ariaLabel}
                     className="w-full bg-white rounded-3xl p-5 border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group text-left"
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
