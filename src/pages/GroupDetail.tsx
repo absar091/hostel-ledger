@@ -433,6 +433,7 @@ const GroupDetail = () => {
                   : "bg-[#4a6850]/10 border-[#4a6850]/20 text-[#4a6850] hover:bg-[#4a6850]/20"
               )}
               aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              aria-pressed={isFavorite}
             >
               <Star className={cn("w-5 h-5", isFavorite && "fill-current")} />
             </button>
@@ -477,6 +478,7 @@ const GroupDetail = () => {
                   : "bg-[#4a6850]/10 border-[#4a6850]/20 text-[#4a6850] hover:bg-[#4a6850]/20"
               )}
               aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              aria-pressed={isFavorite}
             >
               <Star className={cn("w-5 h-5", isFavorite && "fill-current")} />
             </button>

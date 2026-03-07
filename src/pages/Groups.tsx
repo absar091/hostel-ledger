@@ -300,6 +300,8 @@ const Groups = () => {
                           handleToggleFavorite(group.id);
                         }}
                         className="bg-white/20 backdrop-blur-md p-2 rounded-full hover:bg-white/30 transition-all active:scale-95"
+                        aria-label={favoriteGroups.includes(group.id) ? "Remove from favorites" : "Add to favorites"}
+                        aria-pressed={favoriteGroups.includes(group.id)}
                       >
                         <Star
                           className={`w-4 h-4 ${favoriteGroups.includes(group.id)
