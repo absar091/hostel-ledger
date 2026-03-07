@@ -61,7 +61,8 @@ export const generateSecureToken = (length: number = 32): string => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    const randomValue = globalThis.crypto.getRandomValues(new Uint32Array(1))[0];
+    result += chars.charAt(Math.floor((randomValue / 4294967296) * chars.length));
   }
   return result;
 };
