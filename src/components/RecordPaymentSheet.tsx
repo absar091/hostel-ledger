@@ -264,6 +264,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 <button
                   key={group.id}
                   onClick={() => setSelectedGroup(group.id)}
+                  aria-pressed={selectedGroup === group.id}
                   className={cn(
                     "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
                     selectedGroup === group.id
@@ -328,6 +329,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                         key={member.id}
                         onClick={() => setFromMember(member.id)}
                         disabled={!owesYou}
+                        aria-pressed={fromMember === member.id}
                         className={cn(
                           "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
                           fromMember === member.id
@@ -507,6 +509,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => setMethod("cash")}
+                    aria-pressed={method === "cash"}
                     className={cn(
                       "flex items-center justify-center gap-2 p-3 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
                       method === "cash"
@@ -526,6 +529,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
 
                   <button
                     onClick={() => setMethod("online")}
+                    aria-pressed={method === "online"}
                     className={cn(
                       "flex items-center justify-center gap-2 p-3 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
                       method === "online"
