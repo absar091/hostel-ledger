@@ -145,6 +145,8 @@ const TermsOfService = () => {
               <li><strong>Payment Recording:</strong> Record payments received from group members</li>
               <li><strong>Settlement Tracking:</strong> View who owes you and whom you owe</li>
               <li><strong>Transaction History:</strong> Access detailed history of all expenses and payments</li>
+              <li><strong>AI Smart Entry:</strong> Add expenses using natural language text or voice</li>
+              <li><strong>AI Insights:</strong> Receive automated financial analysis and trends</li>
               <li><strong>Email Notifications:</strong> Receive alerts for transactions and payments</li>
             </ul>
 
@@ -222,6 +224,7 @@ const TermsOfService = () => {
               <li>Create fake expenses or fraudulent transactions</li>
               <li>Harass, abuse, or harm other users</li>
               <li>Use the Service for commercial purposes without authorization</li>
+              <li>Abuse or attempt to "jailbreak" the AI features to generate prohibited content or bypass security filters</li>
             </ul>
           </section>
 
@@ -294,7 +297,18 @@ const TermsOfService = () => {
               We do not guarantee that the Service will be uninterrupted, error-free, or secure.
             </p>
 
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Financial Advice</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Financial Advice & AI Accuracy</h3>
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-2 mb-4">
+              <p className="text-gray-700 font-bold">CRITICAL: AI-Generated Content Disclaimer</p>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                Our "Smart Entry" and "AI Insights" features use Google Gemini AI to process data. AI can make mistakes.
+              </p>
+              <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                <li><strong>Verify Before Saving:</strong> You MUST review and verify all amounts, categories, and participants extracted by the AI before clicking "Add Expense".</li>
+                <li><strong>No Liability for AI Errors:</strong> AARX Labs is not responsible for financial discrepancies, incorrect splits, or data errors caused by AI misunderstandings.</li>
+                <li><strong>Insights are Informational:</strong> AI Insights are for informational purposes only and do not constitute financial advice.</li>
+              </ul>
+            </div>
             <p className="text-gray-700 leading-relaxed mb-4">
               Hostel Ledger is a tracking tool only. We do not provide financial, legal, or tax advice. Consult appropriate
               professionals for financial guidance.

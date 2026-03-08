@@ -41,6 +41,13 @@ const resources = {
                 "no_tx_yet": "No transactions yet",
                 "total_to_receive": "Total To Receive",
                 "total_to_pay": "Total To Pay",
+                "split_bill": "Split Bill",
+                "log_solo": "Log Solo",
+                "send_money": "Send Money",
+                "received": "Received",
+                "add_money": "Add Money",
+                "ai_insights": "AI Insights",
+                "view_all_dashboard": "View All Dashboard",
                 "transactions": "Transactions",
                 "notification_prompt_title": "Stay Updated!",
                 "notification_prompt_desc": "Get instant notifications when expenses are added or payments are received. Never miss an update!",
@@ -78,11 +85,14 @@ const resources = {
                     "tip_wallet": "Tap the wallet card to add money",
                     "tip_quick": "Use quick actions to split bills instantly",
                     "tip_activity": "Check recent activity to track all transactions"
-                }
+                },
+                "quick_ai_entry": "Quick AI Entry",
+                "frequent_groups": "Frequent Groups"
             },
             "group": {
                 "tabs": {
                     "ledger": "Ledger",
+                    "chat": "Chat",
                     "members": "Members",
                     "summary": "Summary"
                 },
@@ -803,6 +813,19 @@ const resources = {
                     "desc": "AARX Labs is not responsible for disputes between users or lost funds due to incorrect entries."
                 },
                 "acknowledgment": "By using Hostel Ledger, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service."
+            },
+            "chat": {
+                "loading": "Loading messages...",
+                "empty_title": "No Messages Yet",
+                "empty_desc": "Start a conversation with your group members",
+                "input_placeholder": "Type a message...",
+                "load_older": "Load older messages",
+                "send_failed": "Failed to send message",
+                "system": {
+                    "expense_added": "{{actor}} added {{amount}} expense \"{{title}}\"",
+                    "payment_recorded": "{{actor}} recorded a payment of {{amount}}",
+                    "member_joined": "{{actor}} joined the group"
+                }
             }
         }
     },
@@ -879,11 +902,14 @@ const resources = {
                     "tip_wallet": "رقم شامل کرنے کے لیے والٹ کارڈ پر ٹیپ کریں",
                     "tip_quick": "بلوں کو فوری تقسیم کرنے کے لیے 'کوئیک ایکشنز' استعمال کریں",
                     "tip_activity": "تمام لین دین کو ٹریک کرنے کے لیے حالیہ سرگرمی چیک کریں"
-                }
+                },
+                "quick_ai_entry": "فوری AI اندراج",
+                "frequent_groups": "بار بار استعمال ہونے والے گروپس"
             },
             "group": {
                 "tabs": {
                     "ledger": "لیجر",
+                    "chat": "چیٹ",
                     "members": "ارکان",
                     "summary": "خلاصہ"
                 },
@@ -1601,6 +1627,19 @@ const resources = {
                     "desc": "AARX Labs صارفین کے درمیان تنازعات یا غلط اندراجات کی وجہ سے فنڈز کے نقصان کا ذمہ دار نہیں ہے۔"
                 },
                 "acknowledgment": "ہاسٹل لیجر استعمال کرکے، آپ تسلیم کرتے ہیں کہ آپ نے ان شرائط کو پڑھ لیا ہے اور ان سے اتفاق کرتے ہیں۔"
+            },
+            "chat": {
+                "loading": "پیغامات لوڈ ہو رہے ہیں...",
+                "empty_title": "ابھی تک کوئی پیغام نہیں",
+                "empty_desc": "اپنے گروپ ممبرز کے ساتھ بات چیت شروع کریں",
+                "input_placeholder": "پیغام لکھیں...",
+                "load_older": "پرانے پیغامات لوڈ کریں",
+                "send_failed": "پیغام بھیجنے میں ناکامی",
+                "system": {
+                    "expense_added": "{{actor}} نے {{amount}} کا خرچہ \"{{title}}\" شامل کیا",
+                    "payment_recorded": "{{actor}} نے {{amount}} کی ادائیگی ریکارڈ کی",
+                    "member_joined": "{{actor}} گروپ میں شامل ہوئے"
+                }
             }
         }
     }

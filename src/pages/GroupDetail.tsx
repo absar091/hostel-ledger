@@ -26,6 +26,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import MobileHeader from "@/components/MobileHeader";
+import GroupChat from "@/components/GroupChat";
 
 const GroupDetail = () => {
   const { t } = useTranslation();
@@ -36,7 +37,7 @@ const GroupDetail = () => {
   const { getSettlements, user, toggleFavoriteGroup, getFavoriteGroups } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
 
-  const [activeTab, setActiveTab] = useState<"ledger" | "members" | "summary">("ledger");
+  const [activeTab, setActiveTab] = useState<"ledger" | "chat" | "members" | "summary">("ledger");
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
@@ -498,15 +499,16 @@ const GroupDetail = () => {
           <div className="flex gap-2 px-4 pb-4">
             {[
               { id: "ledger", label: t('group.tabs.ledger') },
+              { id: "chat", label: t('group.tabs.chat') },
               { id: "members", label: t('group.tabs.members') },
               { id: "summary", label: t('group.tabs.summary') },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                className={`flex-1 py-3 px-4 rounded-2xl text-sm font-black transition-all duration-200 ${activeTab === tab.id
-                  ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] scale-105"
-                  : "bg-white/80 text-[#4a6850]/80 hover:bg-white border border-[#4a6850]/10 hover:scale-102"
+                className={`flex-1 py-3 px-2 rounded-[32px] text-xs font-black transition-all duration-200 border-2 ${activeTab === tab.id
+                  ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white border-[#4a6850] shadow-[0_8px_24px_rgba(74,104,80,0.3)] scale-105"
+                  : "bg-white/80 text-[#4a6850]/80 hover:bg-white border-[#4a6850]/10 hover:border-[#4a6850]/20 active:scale-95"
                   }`}
               >
                 {tab.label}
@@ -517,7 +519,7 @@ const GroupDetail = () => {
           /* Personal Stats Summary for Personal groups */
           personalStats && (
             <div className="px-4 pb-4">
-              <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl p-6 text-white shadow-xl">
+              <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-[32px] p-6 text-white shadow-xl">
                 <div className="text-xs font-black uppercase tracking-wider text-white/70 mb-1">{t('group.lifetime_spent')}</div>
                 <div className="text-3xl font-black mb-1">{formatAmount(personalStats.totalSpent)}</div>
                 <div className="text-xs font-bold text-white/60">
@@ -538,7 +540,7 @@ const GroupDetail = () => {
                 {transactions.map((item, index) => (
                   <div
                     key={item.id}
-                    className="animate-slide-up bg-white rounded-3xl shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 overflow-hidden"
+                    className="animate-slide-up bg-white rounded-[32px] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 overflow-hidden hover:shadow-[0_25px_80px_rgba(74,104,80,0.12)] transition-all"
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
                     <TimelineItem
@@ -583,7 +585,7 @@ const GroupDetail = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 bg-white rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
+              <div className="text-center py-12 bg-white rounded-[32px] border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)]">
                 <div className="w-14 h-14 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-3xl flex items-center justify-center mx-auto mb-3 border border-[#4a6850]/20">
                   <Plus className="w-7 h-7 text-[#4a6850] font-bold" />
                 </div>
@@ -593,13 +595,19 @@ const GroupDetail = () => {
                 </p>
                 <Button
                   onClick={() => setShowAddExpense(true)}
-                  className="bg-[#4a6850]/10 hover:bg-[#4a6850]/20 text-[#4a6850] hover:text-[#3d5643] font-black rounded-xl shadow-none border border-[#4a6850]/10"
+                  className="bg-[#4a6850]/10 hover:bg-[#4a6850]/20 text-[#4a6850] hover:text-[#3d5643] font-black rounded-2xl h-12 px-6 shadow-none border border-[#4a6850]/10 transition-all active:scale-95"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   {t('activity.add_first_expense')}
                 </Button>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === "chat" && (
+          <div className="animate-fade-in">
+            <GroupChat groupId={id!} groupName={group.name} />
           </div>
         )}
 
@@ -630,7 +638,7 @@ const GroupDetail = () => {
               return (
                 <div
                   key={member.id}
-                  className={`w-full bg-white rounded-3xl p-5 animate-slide-up border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all group`}
+                  className={`w-full bg-white rounded-[32px] p-5 animate-slide-up border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all group hover:scale-[1.01] active:scale-[0.99]`}
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div className="flex items-center gap-4">
@@ -682,7 +690,7 @@ const GroupDetail = () => {
                         <Button
                           onClick={handleSettlementClick}
                           size="sm"
-                          className="bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white text-xs hover:from-[#3d5643] hover:to-[#2f4336] font-black shadow-lg hover:shadow-xl transition-all"
+                          className="bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white text-xs hover:from-[#3d5643] hover:to-[#2f4336] font-black shadow-lg hover:shadow-xl transition-all rounded-[32px] h-9 px-4 active:scale-95"
                         >
                           {t('group.settle_up')}
                         </Button>
@@ -713,7 +721,7 @@ const GroupDetail = () => {
         {activeTab === "summary" && (
           <div className="space-y-6 animate-fade-in">
             {/* Total Spent Card - iPhone Style */}
-            <div className="bg-gradient-to-br from-[#4a6850] via-[#3d5643] to-[#4a6850] rounded-3xl p-6 shadow-[0_25px_70px_rgba(74,104,80,0.4)] text-white border-t-2 border-[#5a7860]/40">
+            <div className="bg-gradient-to-br from-[#4a6850] via-[#3d5643] to-[#4a6850] rounded-[32px] p-6 shadow-[0_25px_70px_rgba(74,104,80,0.4)] text-white border-t-2 border-[#5a7860]/40">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-white/25 rounded-2xl flex items-center justify-center shadow-lg">
                   <span className="text-xl">💰</span>
@@ -740,7 +748,7 @@ const GroupDetail = () => {
             </div>
 
             {/* Top Contributor Card - iPhone Style */}
-            <div className="bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
+            <div className="bg-white rounded-[32px] p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-2xl flex items-center justify-center">
                   <span className="text-base">🏆</span>
@@ -772,7 +780,7 @@ const GroupDetail = () => {
             </div>
 
             {/* Members Overview Card - iPhone Style */}
-            <div className="bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
+            <div className="bg-white rounded-[32px] p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-9 h-9 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-2xl flex items-center justify-center">
                   <Users className="w-4 h-4 text-[#4a6850] font-bold" />
@@ -798,49 +806,51 @@ const GroupDetail = () => {
       </main>
 
       {/* Floating Action Buttons - Enhanced iPhone Style */}
-      <div className="fixed bottom-4 left-4 right-4 flex gap-4 z-40 pb-safe">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              onClick={() => setShowRecordPayment(true)}
-              disabled={groupTotalToReceive <= 0}
-              variant="outline"
-              className={cn(
-                "flex-1 h-12 rounded-2xl text-sm font-black transition-all shadow-[0_8px_32px_rgba(74,104,80,0.15)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.25)]",
-                groupTotalToReceive <= 0
-                  ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70"
-                  : "bg-white border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 hover:border-[#4a6850]/50"
-              )}
-            >
-              <HandCoins className="w-4 h-4 mr-2 font-bold" />
-              {t('group.record_payment')}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800">
-            <p>
-              {groupTotalToReceive <= 0
-                ? 'No pending payments in this group. Nobody owes you money here.'
-                : 'Record money received from a member to settle their debt'
-              }
-            </p>
-          </TooltipContent>
-        </Tooltip>
+      {activeTab !== "chat" && (
+        <div className="fixed bottom-4 left-4 right-4 flex gap-4 z-40 pb-safe">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={() => setShowRecordPayment(true)}
+                disabled={groupTotalToReceive <= 0}
+                variant="outline"
+                className={cn(
+                  "flex-1 h-12 rounded-2xl text-sm font-black transition-all shadow-[0_8px_32px_rgba(74,104,80,0.15)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.25)]",
+                  groupTotalToReceive <= 0
+                    ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-70"
+                    : "bg-white border-[#4a6850]/30 text-[#4a6850] hover:bg-[#4a6850]/10 hover:border-[#4a6850]/50"
+                )}
+              >
+                <HandCoins className="w-4 h-4 mr-2 font-bold" />
+                {t('group.record_payment')}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800">
+              <p>
+                {groupTotalToReceive <= 0
+                  ? 'No pending payments in this group. Nobody owes you money here.'
+                  : 'Record money received from a member to settle their debt'
+                }
+              </p>
+            </TooltipContent>
+          </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              onClick={() => setShowAddExpense(true)}
-              className="flex-1 h-12 rounded-2xl text-sm font-black bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all border-t-2 border-[#5a7860]/40"
-            >
-              <Plus className="w-4 h-4 mr-2 font-bold" />
-              {t('group.add_expense')}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800">
-            <p>Add a shared expense and split it among members</p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={() => setShowAddExpense(true)}
+                className="flex-1 h-12 rounded-2xl text-sm font-black bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all border-t-2 border-[#5a7860]/40"
+              >
+                <Plus className="w-4 h-4 mr-2 font-bold" />
+                {t('group.add_expense')}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800">
+              <p>Add a shared expense and split it among members</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
 
       {/* Add Expense Sheet */}
       <AddExpenseSheet

@@ -101,14 +101,16 @@ const GroupSettingsSheet = ({
       <Sheet open={open} onOpenChange={onClose}>
         <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white shadow-[0_25px_70px_rgba(74,104,80,0.3)] border-t-2 border-[#4a6850]/20 z-[100]">
           {/* Updated Header to match AddExpenseSheet style */}
-          <SheetHeader className="flex-shrink-0 mb-6 pt-2">
+          <SheetHeader className="flex-shrink-0 mb-6 pt-2 overflow-hidden">
             {/* Handle Bar */}
-            <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
+            <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6"></div>
 
-            <SheetTitle className="text-center font-black text-xl tracking-tight text-gray-900">Group Settings</SheetTitle>
-            <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
-              Manage group details, members, and preferences
-            </SheetDescription>
+            <div className="flex flex-col items-center justify-center gap-1.5 px-4">
+              <SheetTitle className="text-center font-black text-2xl tracking-tight text-gray-900">Group Settings</SheetTitle>
+              <SheetDescription className="text-center text-xs text-[#4a6850]/80 font-bold max-w-[280px]">
+                Manage group details, members, and preferences
+              </SheetDescription>
+            </div>
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto space-y-6 pb-4">
@@ -122,7 +124,7 @@ const GroupSettingsSheet = ({
                   onChange={(e) => setGroupName(e.target.value)}
                   onBlur={handleUpdateGroup}
                   disabled={!isOwner}
-                  className="h-14 rounded-3xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 focus:border-[#4a6850] focus:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="h-16 rounded-[32px] border-2 border-[#4a6850]/20 shadow-lg font-bold text-gray-900 focus:border-[#4a6850] focus:shadow-xl focus:ring-0 disabled:opacity-70 disabled:cursor-not-allowed"
                 />
               </div>
 
@@ -140,7 +142,7 @@ const GroupSettingsSheet = ({
                       }}
                       disabled={!isOwner}
                       // Reduced size from w-14 h-14 to w-12 h-12
-                      className={`w-12 h-12 rounded-3xl text-2xl flex items-center justify-center transition-all shadow-lg hover:shadow-xl ${selectedEmoji === emoji
+                      className={`w-12 h-12 rounded-2xl text-2xl flex items-center justify-center transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 ${selectedEmoji === emoji
                         ? "bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white scale-110 border-2 border-[#4a6850]"
                         : "bg-white hover:bg-[#4a6850]/5 border border-[#4a6850]/10 hover:border-[#4a6850]/20"
                         } ${!isOwner ? "cursor-not-allowed opacity-70" : ""}`}
@@ -161,28 +163,28 @@ const GroupSettingsSheet = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowAddMember(true)}
-                  className="text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-2xl shadow-lg hover:shadow-xl transition-all"
+                  className="text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-[32px] px-5 py-2 h-10 shadow-sm transition-all hover:scale-105 active:scale-95 border border-[#4a6850]/10"
                 >
-                  <UserPlus className="w-4 h-4 mr-1" />
+                  <UserPlus className="w-4 h-4 mr-1.5" />
                   Add
                 </Button>
               </div>
 
               {/* Add Member Input */}
               {showAddMember && (
-                <div className="flex gap-3 mb-6 animate-fade-in bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl p-5 border border-[#4a6850]/20 shadow-lg">
+                <div className="flex gap-3 mb-6 animate-fade-in bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-[32px] p-5 border border-[#4a6850]/20 shadow-sm">
                   <Input
                     placeholder="Member name"
                     value={newMemberName}
                     onChange={(e) => setNewMemberName(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleAddMember()}
-                    className="h-12 rounded-2xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850] bg-white"
+                    className="h-14 rounded-2xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/40 focus:border-[#4a6850] bg-white focus:ring-0"
                     autoFocus
                   />
                   <Button
                     onClick={handleAddMember}
                     disabled={!newMemberName.trim()}
-                    className="h-12 px-6 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
+                    className="h-14 px-6 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
                   >
                     Add
                   </Button>
@@ -193,7 +195,7 @@ const GroupSettingsSheet = ({
                       setShowAddMember(false);
                       setNewMemberName("");
                     }}
-                    className="h-12 w-12 rounded-2xl hover:bg-gray-100 shadow-lg hover:shadow-xl transition-all"
+                    className="h-14 w-14 rounded-2xl hover:bg-gray-100 shadow-lg hover:shadow-xl transition-all"
                   >
                     <X className="w-4 h-4" />
                   </Button>
@@ -206,7 +208,7 @@ const GroupSettingsSheet = ({
                   <div
                     key={member.id}
                     // Reduced padding from p-5 to p-3
-                    className="flex items-center gap-4 p-3 rounded-3xl bg-white border border-[#4a6850]/10 shadow-lg hover:shadow-xl hover:border-[#4a6850]/20 transition-all"
+                    className="flex items-center gap-4 p-3 rounded-[32px] bg-white border border-[#4a6850]/10 shadow-lg hover:shadow-xl hover:border-[#4a6850]/20 transition-all hover:scale-[1.01]"
                   >
                     <Avatar name={member.name} size="sm" />
                     <div className="flex-1 min-w-0">
@@ -264,20 +266,20 @@ const GroupSettingsSheet = ({
             {/* Report Group Button */}
             <div className="pt-6 border-t border-[#4a6850]/10 mb-4">
               <Button
-                  variant="outline"
-                  className="w-full h-14 rounded-3xl text-red-600 border-red-200 bg-red-50 hover:bg-red-100 font-bold transition-all"
-                  onClick={() => setIsReportOpen(true)}
-                >
-                  <ShieldAlert className="w-5 h-5 mr-2" />
-                  Report Group
+                variant="outline"
+                className="w-full h-14 rounded-3xl text-red-600 border-red-200 bg-red-50 hover:bg-red-100 font-bold transition-all"
+                onClick={() => setIsReportOpen(true)}
+              >
+                <ShieldAlert className="w-5 h-5 mr-2" />
+                Report Group
               </Button>
             </div>
-{isOwner && (
+            {isOwner && (
               <div className="pt-6 border-t border-[#4a6850]/10">
                 <Label className="text-red-600 font-black text-sm uppercase tracking-wide">Danger Zone</Label>
                 <Button
                   variant="destructive"
-                  className="w-full mt-4 h-14 rounded-3xl bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black shadow-[0_8px_32px_rgba(239,68,68,0.3)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.4)] transition-all"
+                  className="w-full mt-4 h-16 rounded-[32px] bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black shadow-[0_8px_32px_rgba(239,68,68,0.3)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]"
                   onClick={() => setShowDeleteGroup(true)}
                 >
                   <Trash2 className="w-5 h-5 mr-2" />
@@ -291,7 +293,7 @@ const GroupSettingsSheet = ({
             <Button
               onClick={onClose}
               variant="secondary"
-              className="w-full h-14 rounded-3xl font-black shadow-lg hover:shadow-xl transition-all"
+              className="w-full h-16 rounded-[32px] font-black shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               Done
             </Button>

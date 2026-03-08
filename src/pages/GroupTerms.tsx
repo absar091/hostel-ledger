@@ -28,9 +28,9 @@ const GroupTerms = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
 
           <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-lg mb-4">
-             <p className="text-sm text-emerald-800 font-medium">
-                These terms are specific to creating and managing groups on Hostel Ledger. By creating a group, you agree to these responsibilities.
-             </p>
+            <p className="text-sm text-emerald-800 font-medium">
+              These terms are specific to creating and managing groups on Hostel Ledger. By creating a group, you agree to these responsibilities.
+            </p>
           </div>
 
           {/* Group Creation & Management (Extracted) */}
@@ -42,7 +42,7 @@ const GroupTerms = () => {
             <ul className="list-disc list-inside text-gray-700 space-y-2">
               <li><strong>Lawful Purpose:</strong> Groups must not be created for illegal activities, hate speech, or harassment.</li>
               <li><strong>Member Consent:</strong> Admins should ensure that added members (especially manual ones) have consented to be tracked in the group.</li>
-              <li><strong>Data Accuracy:</strong> Admins are responsible for the accuracy of the group's initial data (name, currency, etc.).</li>
+              <li><strong>Data Accuracy:</strong> Admins are responsible for the accuracy of the group's initial data (name, currency, etc.). This includes verifying any data entered or suggested by AI tools (Smart Entry/Voice Mode).</li>
               <li><strong>Dispute Resolution:</strong> The Admin serves as the primary moderator for disputes within their group. Hostel Ledger does not mediate interpersonal disagreements.</li>
             </ul>
           </section>
@@ -64,11 +64,11 @@ const GroupTerms = () => {
             </ul>
           </section>
 
-           <div className="mt-8 pt-8 border-t border-gray-100">
-             <p className="text-sm text-gray-500">
-               For the full Terms of Service covering the entire application, please <a href="/terms-of-service" className="text-emerald-600 underline font-semibold">click here</a>.
-             </p>
-           </div>
+          <div className="mt-8 pt-8 border-t border-gray-100">
+            <p className="text-sm text-gray-500">
+              For the full Terms of Service covering the entire application, please <a href="/terms-of-service" className="text-emerald-600 underline font-semibold">click here</a>.
+            </p>
+          </div>
 
         </div>
       </div>

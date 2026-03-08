@@ -96,14 +96,14 @@ const MobileHeader = ({ title, showBackButton = false, rightContent }: MobileHea
           />
         )}
 
-        <div>
+        <div className="min-w-0 flex-1">
           {title ? (
-            <h1 className="text-lg font-black text-gray-900 tracking-tight truncate max-w-[200px]">
+            <h1 className="text-lg font-black text-gray-900 tracking-tight truncate">
               {title}
             </h1>
           ) : (
-            <h1 className="text-xs font-bold uppercase tracking-widest text-gray-500">
-              Hostel Ledger
+            <h1 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+              HOSTEL LEDGER
             </h1>
           )}
         </div>

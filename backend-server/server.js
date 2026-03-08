@@ -10,6 +10,7 @@ const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { loadEmailTemplate } = require('./utils/email');
 const {
   validateCreateGroup,
@@ -24,6 +25,44 @@ const { getDeviceFromUA, getLocationFromIP } = require('./utils/deviceInfo');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
 const pkg = require('./package.json');
+
+// Gemini AI Configuration
+let genAI;
+let aiModels = [];
+if (process.env.GEMINI_API_KEY) {
+  genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const fallbackModelNames = ["gemini-3.1-flash-lite-preview", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"];
+  aiModels = fallbackModelNames.map(name => genAI.getGenerativeModel({ model: name }));
+  console.log(`✅ Gemini AI initialized with ${aiModels.length} fallback models`);
+} else {
+  console.warn('⚠️ GEMINI_API_KEY not found - AI parsing will be disabled');
+}
+
+/**
+ * Attempts to generate content using a prioritized list of fallback models
+ */
+async function generateContentWithFallback(prompt) {
+  if (!aiModels || aiModels.length === 0) {
+    throw new Error('AI service not configured on server');
+  }
+
+  let lastError = null;
+  for (let i = 0; i < aiModels.length; i++) {
+    try {
+      console.log(`🤖 Attempting AI generation with fallback model index ${i}...`);
+      const result = await aiModels[i].generateContent(prompt);
+      const response = await result.response;
+      return response.text().trim();
+    } catch (error) {
+      console.warn(`⚠️ Model at index ${i} failed:`, error.message);
+      lastError = error;
+      if (i === aiModels.length - 1) {
+        throw new Error(`All fallback AI models failed. Last error: ${error.message}`);
+      }
+    }
+  }
+}
+
 
 // Cloudinary Configuration
 if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
@@ -184,7 +223,7 @@ app.use(cors({
 // Handle preflight requests explicitly
 app.options('*', cors());
 
-app.use(express.json({ limit: '100kb' }));
+app.use(express.json({ limit: '10mb' })); // Increased for audio data
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
 
@@ -482,9 +521,9 @@ app.post('/api/2fa/verify-setup', authenticate, async (req, res) => {
 
       // Send Alert
       if (email) {
-          emailService.send2FAEnabledAlert(email, name, {
-              device, browser, os, ip, location
-          }).catch(err => console.error('Failed to send 2FA alert:', err));
+        emailService.send2FAEnabledAlert(email, name, {
+          device, browser, os, ip, location
+        }).catch(err => console.error('Failed to send 2FA alert:', err));
       }
 
       console.log(`✅ 2FA enabled for user ${userId}`);
@@ -719,9 +758,9 @@ app.post('/api/2fa/complete-reset', generalLimiter, async (req, res) => {
 
     // Send Alert
     if (email) {
-        emailService.send2FADisabledAlert(email, name, {
-            device, browser, os, ip, location
-        }).catch(err => console.error('Failed to send 2FA alert:', err));
+      emailService.send2FADisabledAlert(email, name, {
+        device, browser, os, ip, location
+      }).catch(err => console.error('Failed to send 2FA alert:', err));
     }
 
     res.json({ success: true, message: '2FA disabled successfully' });
@@ -783,9 +822,9 @@ app.post('/api/2fa/disable', authenticate, async (req, res) => {
 
       // Send Alert
       if (email) {
-          emailService.send2FADisabledAlert(email, name, {
-              device, browser, os, ip, location
-          }).catch(err => console.error('Failed to send 2FA alert:', err));
+        emailService.send2FADisabledAlert(email, name, {
+          device, browser, os, ip, location
+        }).catch(err => console.error('Failed to send 2FA alert:', err));
       }
 
       console.log(`✅ 2FA disabled for user ${userId}`);
@@ -1181,6 +1220,288 @@ app.post('/api/get-valid-user-details', userSearchLimiter, authenticate, async (
   }
 });
 
+/**
+ * AI Expense Parsing Endpoint
+ * Uses Gemini 2.5 Flash to extract expense data from natural language
+ */
+app.post('/api/ai/parse-expense', generalLimiter, authenticate, async (req, res) => {
+  if (!aiModels || aiModels.length === 0) {
+    return res.status(503).json({ success: false, error: 'AI service not configured on server' });
+  }
+
+  try {
+    const { text, groupId } = req.body;
+    if (!text) {
+      return res.status(400).json({ success: false, error: 'Text is required' });
+    }
+
+    // Get group members for context
+    const groupSnap = await admin.database().ref(`groups/${groupId}`).get();
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const groupData = groupSnap.val();
+    const members = normalizeMembers(groupData.members);
+    const memberContext = members.map(m => `${m.name} (ID: ${m.id})`).join(', ');
+
+    const prompt = `
+      You are an expense parsing assistant for "Hostel Ledger".
+      Extract expense details from the following text: "${text}"
+      
+      CONTEXT:
+      - Group Name: ${groupData.name}
+      - Group Members: ${memberContext}
+      - Requesting User ID: ${req.user.uid}
+      - Today's Date: ${new Date().toLocaleDateString()}
+      
+      EXTRACT THE FOLLOWING FIELDS:
+      1. amount: The numerical value of the expense.
+      2. description: A short, clean description of the expense (e.g., "Pizza", "Electric Bill").
+      3. payerId: The ID of the person who paid. If "I" or "me" is used, use the Requesting User ID. If a name matches a member, use their ID.
+      4. participantIds: An array of IDs for everyone who shared this expense. If "all" or "everyone" is used, list all member IDs. If names match members, include their IDs.
+      5. category: One of [food, transport, shopping, rent, bills, entertainment, others].
+      
+      RULES:
+      - Return ONLY a valid JSON object.
+      - Do not include any markdown formatting or extra text.
+      - If a field cannot be determined, return null for it.
+      
+      JSON SCHEMA:
+      {
+        "amount": number | null,
+        "description": string | null,
+        "payerId": string | null,
+        "participantIds": string[],
+        "category": string
+      }
+    `;
+
+    const aiText = await generateContentWithFallback(prompt);
+
+    // Attempt to extract JSON if the model included markers
+    let jsonMatch = aiText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('AI failed to return valid JSON context');
+    }
+
+    const parsedData = JSON.parse(jsonMatch[0]);
+
+    console.log(`🤖 AI Parsed expense for user ${req.user.uid}:`, parsedData);
+    res.json({ success: true, data: parsedData });
+
+  } catch (error) {
+    console.error('❌ AI Parsing Error:', error);
+    res.status(500).json({ success: false, error: 'Failed to parse expense: ' + error.message });
+  }
+});
+
+/**
+ * AI Audio Expense Parsing Endpoint
+ * Uses Gemini Multimodal Audio to extract expense data from voice recordings
+ */
+app.post('/api/ai/parse-expense-audio', generalLimiter, authenticate, async (req, res) => {
+  if (!aiModels || aiModels.length === 0) {
+    return res.status(503).json({ success: false, error: 'AI service not configured on server' });
+  }
+
+  try {
+    const { audioData, mimeType, groupId } = req.body;
+    if (!audioData || !mimeType) {
+      return res.status(400).json({ success: false, error: 'Audio data and mimeType are required' });
+    }
+
+    // Get group members for context
+    const groupSnap = await admin.database().ref(`groups/${groupId}`).get();
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const groupData = groupSnap.val();
+    const members = normalizeMembers(groupData.members);
+    const memberContext = members.map(m => `${m.name} (ID: ${m.id})`).join(', ');
+
+    const promptText = `
+      You are an expense parsing assistant for "Hostel Ledger".
+      Listen to the attached audio recording and extract the expense details.
+      
+      CONTEXT:
+      - Group Name: ${groupData.name}
+      - Group Members: ${memberContext}
+      - Requesting User ID: ${req.user.uid}
+      - Today's Date: ${new Date().toLocaleDateString()}
+      
+      EXTRACT THE FOLLOWING FIELDS:
+      1. amount: The numerical value of the expense.
+      2. description: A short, clean description of the expense (e.g., "Pizza", "Electric Bill").
+      3. payerId: The ID of the person who paid. If "I" or "me" is used, use the Requesting User ID. If a name matches a member, use their ID.
+      4. participantIds: An array of IDs for everyone who shared this expense. If "all" or "everyone" is used, list all member IDs. If names match members, include their IDs.
+      5. category: One of [food, transport, shopping, rent, bills, entertainment, others].
+      
+      RULES:
+      - Return ONLY a valid JSON object.
+      - Do not include any markdown formatting or extra text.
+      - If a field cannot be determined, return null for it.
+      
+      JSON SCHEMA:
+      {
+        "amount": number | null,
+        "description": string | null,
+        "payerId": string | null,
+        "participantIds": string[],
+        "category": string
+      }
+    `;
+
+    // Construct the parts array for Gemini Multimodal API
+    const parts = [
+      { text: promptText },
+      {
+        inlineData: {
+          mimeType: mimeType,
+          data: audioData
+        }
+      }
+    ];
+
+    const aiText = await generateContentWithFallback(parts);
+
+    let jsonMatch = aiText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('AI failed to return valid JSON context');
+    }
+
+    const parsedData = JSON.parse(jsonMatch[0]);
+
+    console.log(`🤖 AI Parsed audio expense for user ${req.user.uid}:`, parsedData);
+    res.json({ success: true, data: parsedData });
+
+  } catch (error) {
+    console.error('❌ AI Audio Parsing Error:', error);
+    res.status(500).json({ success: false, error: 'Failed to parse audio expense: ' + error.message });
+  }
+});
+
+/**
+ * AI Insights Endpoint
+ * Analyzes user's financial data to provide summaries and trends
+ */
+app.get('/api/ai/insights', generalLimiter, authenticate, async (req, res) => {
+  if (!aiModels || aiModels.length === 0) {
+    return res.status(503).json({ success: false, error: 'AI service not configured on server' });
+  }
+
+  try {
+    const userId = req.user.uid;
+
+    // Check Cache First (24-hour TTL)
+    const cacheRef = admin.database().ref(`users/${userId}/aiInsightsCache`);
+    const cacheSnap = await cacheRef.get();
+
+    if (cacheSnap.exists()) {
+      const cacheData = cacheSnap.val();
+      const now = Date.now();
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+
+      // If cache is less than 24 hours old, return it instantly
+      if (now - cacheData.timestamp < twentyFourHours) {
+        console.log(`⚡ Serving AI Insights from cache for user ${userId}`);
+        return res.json({ success: true, insights: cacheData.data });
+      } else {
+        console.log(`⌛ AI Insights cache expired for user ${userId}, regenerating...`);
+      }
+    }
+
+    // Fetch user details for balance and settlements
+    const userSnap = await admin.database().ref(`users/${userId}`).get();
+    const userData = userSnap.exists() ? userSnap.val() : {};
+
+    // Fetch user's transactions
+    const txSnap = await admin.database().ref(`userTransactions/${userId}`).limitToLast(50).get();
+    const transactions = [];
+    if (txSnap.exists()) {
+      txSnap.forEach(child => {
+        transactions.push(child.val());
+      });
+    }
+
+    // Fetch user's groups names
+    const userGroupsSnap = await admin.database().ref(`userGroups/${userId}`).get();
+    const groupNames = {};
+    if (userGroupsSnap.exists()) {
+      const groupIds = Object.keys(userGroupsSnap.val());
+      for (const gid of groupIds) {
+        const gSnap = await admin.database().ref(`groups/${gid}/name`).get();
+        if (gSnap.exists()) groupNames[gid] = gSnap.val();
+      }
+    }
+
+    const context = {
+      userName: userData.name,
+      walletBalance: userData.walletBalance || 0,
+      settlements: userData.settlements || {},
+      transactions: transactions.map(t => ({
+        amount: t.amount,
+        type: t.type,
+        category: t.category,
+        note: t.note,
+        date: new Date(t.timestamp || t.date).toLocaleDateString(),
+        group: groupNames[t.groupId] || 'Personal'
+      })),
+      today: new Date().toLocaleDateString()
+    };
+
+    const prompt = `
+      You are a financial advisor for "Hostel Ledger".
+      Analyze the following user data and provide insights:
+      
+      DATA:
+      ${JSON.stringify(context, null, 2)}
+      
+      TASKS:
+      1. summary: A 1-sentence friendly greeting and high-level status (e.g., "Hi Absar, you're currently in a good position but have some pending settlements").
+      2. highlights: Array of 3 short strings like "You spent 500 more on food this week" or "Ali owes you 1200".
+      3. advice: A short actionable tip.
+      4. chartData: Array of 7 objects representing spending over the last 7 days: {"day": "Mon", "amount": number}.
+      5. alerts: Array of urgent items (e.g., "Settle rent soon").
+      
+      RULES:
+      - Return ONLY a valid JSON object.
+      - Return data even if transactions are empty (provide hypothetical or general advice).
+      - Use the user's name if available.
+      
+      JSON SCHEMA:
+      {
+        "summary": string,
+        "highlights": string[],
+        "advice": string,
+        "chartData": Array<{"day": string, "amount": number}>,
+        "alerts": string[]
+      }
+    `;
+
+    const aiText = await generateContentWithFallback(prompt);
+
+    let jsonMatch = aiText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('AI failed to return valid JSON');
+
+    const insights = JSON.parse(jsonMatch[0]);
+
+    // Save fresh insights to cache
+    await cacheRef.set({
+      timestamp: Date.now(),
+      data: insights
+    });
+    console.log(`💾 Saved fresh AI Insights to cache for user ${userId}`);
+
+    res.json({ success: true, insights });
+
+  } catch (error) {
+    console.error('❌ AI Insights Error:', error);
+    res.status(500).json({ success: false, error: 'Failed to generate insights: ' + error.message });
+  }
+});
+
 
 // ============================================
 // RESPOND TO INVITATION (Accept/Decline)
@@ -1267,7 +1588,7 @@ app.post('/api/respond-invitation', authenticate, async (req, res) => {
         name: userData.name || (memberIndex !== -1 ? membersArray[memberIndex].name : 'Member'),
         email: userData.email || null,
         isRegistered: true,
-      isPending: false,
+        isPending: false,
         type: 'registered',
         userId: userId,
         joinedAt: now,
@@ -2314,11 +2635,11 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     // Validate total paid equals amount (allow small floating point diff)
     const totalPaid = finalPayers.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
     if (Math.abs(totalPaid - amount) > 0.05) {
-        return res.status(400).json({ success: false, error: `Total paid amount (${totalPaid}) does not match expense amount (${amount})` });
+      return res.status(400).json({ success: false, error: `Total paid amount (${totalPaid}) does not match expense amount (${amount})` });
     }
   } else if (paidBy) {
     if (!isValidFirebaseId(paidBy)) {
-        return res.status(400).json({ success: false, error: 'Invalid payer ID format' });
+      return res.status(400).json({ success: false, error: 'Invalid payer ID format' });
     }
     finalPayers = [{ id: paidBy, amount: amount }];
   } else {
@@ -2395,15 +2716,15 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
               if (email) {
                 if (isMembersArray) {
-                   emailUpdates[`groups/${groupId}/members/${index}/email`] = email;
+                  emailUpdates[`groups/${groupId}/members/${index}/email`] = email;
                 } else {
-                   const memberKey = Object.keys(group.members).find(k => {
-                       const mem = group.members[k];
-                       return (mem.id && mem.id === m.id) || k === m.id;
-                   });
-                   if (memberKey) {
-                       emailUpdates[`groups/${groupId}/members/${memberKey}/email`] = email;
-                   }
+                  const memberKey = Object.keys(group.members).find(k => {
+                    const mem = group.members[k];
+                    return (mem.id && mem.id === m.id) || k === m.id;
+                  });
+                  if (memberKey) {
+                    emailUpdates[`groups/${groupId}/members/${memberKey}/email`] = email;
+                  }
                 }
                 return { ...m, email };
               }
@@ -2423,9 +2744,9 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     // 3. Verify payers and participants exist in group
     // Validate all payers
     for (const p of finalPayers) {
-        if (!membersArray.some(m => m.id === p.id)) {
-            return res.status(400).json({ success: false, error: `Invalid payer: ${p.id}` });
-        }
+      if (!membersArray.some(m => m.id === p.id)) {
+        return res.status(400).json({ success: false, error: `Invalid payer: ${p.id}` });
+      }
     }
 
     const participantMembers = membersArray.filter(m => participants.includes(m.id));
@@ -2476,9 +2797,9 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
     // A. Update Wallet Balance (Only for Current User if they paid)
     // Find how much the current user paid
     const currentUserPayerEntry = finalPayers.find(p => {
-        // Check if p.id matches current user's member ID
-        const payerMember = membersArray.find(m => m.id === p.id);
-        return payerMember && (payerMember.userId === currentUserId || payerMember.id === currentUserId);
+      // Check if p.id matches current user's member ID
+      const payerMember = membersArray.find(m => m.id === p.id);
+      return payerMember && (payerMember.userId === currentUserId || payerMember.id === currentUserId);
     });
 
     const amountPaidByCurrentUser = currentUserPayerEntry ? Number(currentUserPayerEntry.amount) : 0;
@@ -2517,13 +2838,13 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       paidByName: primaryPayerMember ? primaryPayerMember.name : "Unknown",
       paidByIsTemporary: !!primaryPayerMember?.isTemporary,
       payers: finalPayers.map(p => {
-          const m = membersArray.find(mem => mem.id === p.id);
-          return {
-              id: p.id,
-              name: m ? m.name : "Unknown",
-              amount: Number(p.amount),
-              userId: m?.userId || null
-          };
+        const m = membersArray.find(mem => mem.id === p.id);
+        return {
+          id: p.id,
+          name: m ? m.name : "Unknown",
+          amount: Number(p.amount),
+          userId: m?.userId || null
+        };
       }),
       participants: splits.map(s => ({
         id: s.participantId,
@@ -2580,6 +2901,9 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
         userSummary.userPaid = paidEntry ? Number(paidEntry.amount) : 0;
 
         updates[`userTransactions/${m.userId}/${transactionId}`] = userSummary;
+
+        // Invalidate AI Insights cache for any involved user
+        updates[`users/${m.userId}/aiInsightsCache`] = null;
       }
     });
 
@@ -2637,9 +2961,9 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
         let bodyText = "";
         if (finalPayers.length > 1) {
-            bodyText = `${finalPayers.length} people paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`;
+          bodyText = `${finalPayers.length} people paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`;
         } else {
-            bodyText = `${primaryPayerMember ? primaryPayerMember.name : "Someone"} paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`;
+          bodyText = `${primaryPayerMember ? primaryPayerMember.name : "Someone"} paid Rs ${amount.toLocaleString()} for "${note || 'Expense'}"`;
         }
 
         notificationPromises.push(
@@ -2706,7 +3030,16 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       console.error('⚠️ Notification process failed:', notifErr.message);
     }
 
-    // 8. Success Response
+    // 8. Emit system chat message (fire-and-forget)
+    sendSystemMessage(db, groupId, 'expense_added', primaryPayerMember ? primaryPayerMember.name : 'Someone', {
+      amount,
+      title: note || 'Expense',
+      transactionId,
+      payerCount: finalPayers.length,
+      participantCount: participants.length
+    }).catch(() => { });
+
+    // 9. Success Response
     res.json({
       success: true,
       transactionId,
@@ -2975,6 +3308,9 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
           userTxUpdate.userRole = 'observer';
         }
         updates[`userTransactions/${m.userId}/${transactionId}`] = userTxUpdate;
+
+        // Invalidate AI Insights cache for any involved user
+        updates[`users/${m.userId}/aiInsightsCache`] = null;
       }
     });
 
@@ -4419,6 +4755,201 @@ app.post('/api/respond-money-request', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Respond money request error:', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// ============================================
+// GROUP CHAT ENDPOINTS
+// ============================================
+
+// Chat-specific rate limiter (30 messages per minute per IP)
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30,
+  message: {
+    success: false,
+    error: 'Too many messages sent. Please slow down.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Helper: Send a system message to a group chat
+ * Used internally when expenses/payments are created
+ */
+const sendSystemMessage = async (db, groupId, event, actorName, data = {}) => {
+  try {
+    const messageRef = db.ref(`groupMessages/${groupId}`).push();
+    const message = {
+      id: messageRef.key,
+      senderId: 'system',
+      senderName: 'System',
+      text: null,
+      type: 'system',
+      event,
+      actorName,
+      data,
+      timestamp: admin.database.ServerValue.TIMESTAMP
+    };
+    await messageRef.set(message);
+
+    // Update chat metadata
+    await db.ref(`groupChatMeta/${groupId}`).update({
+      lastMessage: `${actorName}: ${event}`,
+      lastMessageAt: admin.database.ServerValue.TIMESTAMP,
+      lastSenderId: 'system'
+    });
+  } catch (err) {
+    console.error('⚠️ Failed to send system message:', err.message);
+  }
+};
+
+// Send Message endpoint
+app.post('/api/send-message', chatLimiter, authenticate, async (req, res) => {
+  try {
+    let { groupId, text } = req.body;
+    const currentUserId = req.user.uid;
+
+    // Validate
+    if (!groupId || !text) {
+      return res.status(400).json({ success: false, error: 'Missing required fields: groupId, text' });
+    }
+
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
+    // Sanitize & limit
+    text = sanitize(text);
+    if (text.length > 2000) {
+      return res.status(400).json({ success: false, error: 'Message too long (max 2000 characters)' });
+    }
+    if (text.trim().length === 0) {
+      return res.status(400).json({ success: false, error: 'Message cannot be empty' });
+    }
+
+    const db = admin.database();
+
+    // Verify membership
+    const groupSnap = await db.ref(`groups/${groupId}`).get();
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const group = groupSnap.val();
+    const membersArray = normalizeMembers(group.members);
+    const member = membersArray.find(m => m.userId === currentUserId || m.id === currentUserId);
+    if (!member) {
+      return res.status(403).json({ success: false, error: 'You are not a member of this group' });
+    }
+
+    // Save message
+    const messageRef = db.ref(`groupMessages/${groupId}`).push();
+    const message = {
+      id: messageRef.key,
+      senderId: currentUserId,
+      senderName: member.name,
+      text,
+      type: 'text',
+      timestamp: admin.database.ServerValue.TIMESTAMP
+    };
+
+    await messageRef.set(message);
+
+    // Update chat metadata
+    await db.ref(`groupChatMeta/${groupId}`).update({
+      lastMessage: text.substring(0, 100),
+      lastMessageAt: admin.database.ServerValue.TIMESTAMP,
+      lastSenderId: currentUserId,
+      lastSenderName: member.name
+    });
+
+    // Push notification to other members (fire-and-forget)
+    const otherMembers = membersArray.filter(m => m.userId && m.userId !== currentUserId);
+    if (otherMembers.length > 0 && process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY) {
+      sendOneSignalNotificationInternal({
+        userIds: otherMembers.map(m => m.userId),
+        title: `💬 ${member.name} in ${group.name}`,
+        body: text.length > 100 ? text.substring(0, 97) + '...' : text,
+        data: { type: 'chat_message', groupId, messageId: messageRef.key }
+      }).catch(err => console.error('⚠️ Chat push notification failed:', err.message));
+    }
+
+    console.log(`💬 Message sent in group ${groupId} by ${member.name}`);
+
+    res.json({
+      success: true,
+      message: { ...message, timestamp: Date.now() } // Return approximate timestamp
+    });
+
+  } catch (error) {
+    console.error('❌ Send message error:', error);
+    res.status(500).json({ success: false, error: 'Failed to send message' });
+  }
+});
+
+// Get Messages endpoint (paginated)
+app.post('/api/get-messages', generalLimiter, authenticate, async (req, res) => {
+  try {
+    const { groupId, limit: msgLimit, beforeTimestamp } = req.body;
+    const currentUserId = req.user.uid;
+
+    if (!groupId) {
+      return res.status(400).json({ success: false, error: 'Missing required field: groupId' });
+    }
+
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
+    const db = admin.database();
+
+    // Verify membership
+    const groupSnap = await db.ref(`groups/${groupId}`).get();
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const group = groupSnap.val();
+    const membersArray = normalizeMembers(group.members);
+    const member = membersArray.find(m => m.userId === currentUserId || m.id === currentUserId);
+    if (!member) {
+      return res.status(403).json({ success: false, error: 'You are not a member of this group' });
+    }
+
+    // Fetch messages
+    const pageSize = Math.min(Number(msgLimit) || 50, 100); // Max 100 per page
+    let messagesQuery = db.ref(`groupMessages/${groupId}`)
+      .orderByChild('timestamp');
+
+    if (beforeTimestamp) {
+      messagesQuery = messagesQuery.endBefore(Number(beforeTimestamp)).limitToLast(pageSize);
+    } else {
+      messagesQuery = messagesQuery.limitToLast(pageSize);
+    }
+
+    const snapshot = await messagesQuery.get();
+
+    if (!snapshot.exists()) {
+      return res.json({ success: true, messages: [], hasMore: false });
+    }
+
+    const messages = [];
+    snapshot.forEach(child => {
+      messages.push({ ...child.val(), id: child.key });
+    });
+
+    // Sort by timestamp ascending
+    messages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+    const hasMore = messages.length === pageSize;
+
+    res.json({ success: true, messages, hasMore });
+
+  } catch (error) {
+    console.error('❌ Get messages error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch messages' });
   }
 });
 

@@ -28,9 +28,9 @@ const GroupPrivacy = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
 
           <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg mb-4">
-             <p className="text-sm text-blue-800 font-medium">
-                This privacy policy section specifically covers how data is shared and visible within groups. Transparency is key to our expense tracking service.
-             </p>
+            <p className="text-sm text-blue-800 font-medium">
+              This privacy policy section specifically covers how data is shared and visible within groups. Transparency is key to our expense tracking service.
+            </p>
           </div>
 
           {/* Group & Invitation Privacy (Extracted) */}
@@ -66,14 +66,15 @@ const GroupPrivacy = () => {
             <ul className="list-disc pl-5 space-y-1 text-sm">
               <li><strong>Group Members:</strong> Other members of your groups can see expenses, settlements, and your user profile (name, photo, email/username).</li>
               <li><strong>Financial Visibility:</strong> Members of your groups can view your wallet balance and detailed transaction history within that group. This transparency is essential for the app's shared expense functionality.</li>
+              <li><strong>AI-Assisted Entry:</strong> We use AI (Google Gemini) to help you parse expenses from text or audio. By using these features, you consent to the processing of your group-related descriptions and voice for the purpose of accurate data entry within the group.</li>
             </ul>
           </section>
 
-           <div className="mt-8 pt-8 border-t border-gray-100">
-             <p className="text-sm text-gray-500">
-               For the full Privacy Policy covering all data collection and usage, please <a href="/privacy-policy" className="text-blue-600 underline font-semibold">click here</a>.
-             </p>
-           </div>
+          <div className="mt-8 pt-8 border-t border-gray-100">
+            <p className="text-sm text-gray-500">
+              For the full Privacy Policy covering all data collection and usage, please <a href="/privacy-policy" className="text-blue-600 underline font-semibold">click here</a>.
+            </p>
+          </div>
 
         </div>
       </div>
