@@ -102,6 +102,7 @@ const Sidebar = () => {
                 !isOpen && "justify-center"
               )}
               title={!isOpen ? item.label : undefined}
+              aria-current={active ? "page" : undefined}
             >
               {/* Active indicator bar */}
               {active && (
