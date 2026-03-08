@@ -37,5 +37,6 @@ export {
   Eye,
   EyeOff,
   WifiOff,
-  RefreshCw
+  RefreshCw,
+  Sparkles
 } from "lucide-react";

@@ -27,10 +27,10 @@ const Sidebar = () => {
   };
 
   const navItems = [
-    { id: "dashboard", icon: Home, label: t('navigation.home'), path: "/", badge: pendingInvites },
-    { id: "groups", icon: Users, label: t('navigation.groups'), path: "/groups" },
-    { id: "activity", icon: Clock, label: t('navigation.activity'), path: "/activity" },
-    { id: "settings", icon: Settings, label: t('settings.title'), path: "/settings" },
+    { id: "dashboard", icon: Home, label: "Home", path: "/", badge: pendingInvites },
+    { id: "groups", icon: Users, label: "Groups", path: "/groups" },
+    { id: "activity", icon: Clock, label: "History", path: "/activity" },
+    { id: "settings", icon: Settings, label: "Me", path: "/settings" },
   ];
 
   const isActive = (path: string) => {

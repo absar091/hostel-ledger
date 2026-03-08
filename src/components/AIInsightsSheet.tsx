@@ -14,7 +14,11 @@ interface AIInsights {
     chartData: any[];
 }
 
-const AIInsightsSheet = () => {
+interface AIInsightsSheetProps {
+    trigger?: React.ReactNode;
+}
+
+const AIInsightsSheet = ({ trigger }: AIInsightsSheetProps) => {
     const { t } = useTranslation();
     const [insights, setInsights] = useState<AIInsights | null>(null);
     const [loading, setLoading] = useState(false);
@@ -46,10 +50,14 @@ const AIInsightsSheet = () => {
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-                <button className="flex items-center gap-2 bg-[#4a6850]/5 hover:bg-[#4a6850]/10 border border-[#4a6850]/20 rounded-full px-4 py-2 transition-colors duration-200 group">
-                    <Sparkles className="w-4 h-4 text-[#4a6850] group-hover:animate-pulse" />
-                    <span className="text-xs font-black text-[#4a6850] uppercase tracking-wider">AI Insights</span>
-                </button>
+                {trigger ? (
+                    trigger
+                ) : (
+                    <button className="flex items-center gap-2 bg-[#4a6850]/5 hover:bg-[#4a6850]/10 border border-[#4a6850]/20 rounded-full px-4 py-2 transition-colors duration-200 group">
+                        <Sparkles className="w-4 h-4 text-[#4a6850] group-hover:animate-pulse" />
+                        <span className="text-xs font-black text-[#4a6850] uppercase tracking-wider">AI Insights</span>
+                    </button>
+                )}
             </SheetTrigger>
 
             <SheetContent side="bottom" className="h-[85vh] sm:h-[90vh] rounded-t-[32px] p-0 flex flex-col bg-gray-50 border-t-0 shadow-2xl">

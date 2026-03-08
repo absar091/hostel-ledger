@@ -11,7 +11,7 @@
     background: radial-gradient(at 0% 0%, #2D5A47 0%, #1a3a2e 100%);
     position: relative;
   }
-  
+
   .glass {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(12px);
@@ -25,6 +25,7 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -34,7 +35,7 @@
 @layer base {
   :root {
     /* Light Theme - Clean white/gray design matching screenshot */
-    --background: 210 20% 98%;
+    --background: 210 40% 99%;
     --foreground: 220 27% 8%;
 
     --card: 0 0% 100%;
@@ -63,9 +64,10 @@
 
     --border: 220 15% 90%;
     --input: 220 15% 95%;
-    --ring: 142 35% 35%; /* #4a6850 converted to HSL */
+    --ring: 142 35% 35%;
+    /* #4a6850 converted to HSL */
 
-    --radius: 1rem;
+    --radius: 1.25rem;
 
     /* Custom semantic colors - Light theme */
     --positive: 162 88% 35%;
@@ -77,7 +79,7 @@
     --neutral: 220 70% 50%;
 
     /* Gradients - Light theme with teal accents */
-    --gradient-wallet: linear-gradient(135deg, hsl(162, 88%, 40%) 0%, hsl(172, 80%, 45%) 100%);
+    --gradient-wallet: linear-gradient(135deg, #4a6850 0%, #3d5643 100%);
     --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(210, 20%, 98%) 100%);
     --gradient-glass: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(20, 184, 166, 0.1) 100%);
 
@@ -85,7 +87,8 @@
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
-    --shadow-wallet: 0 20px 40px -15px hsl(162 88% 40% / 0.25);
+    --shadow-premium: 0 10px 25px rgba(0, 0, 0, 0.06);
+    --shadow-wallet: 0 20px 40px -15px rgba(74, 104, 80, 0.35);
     --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
 
     /* Sidebar */
@@ -96,7 +99,8 @@
     --sidebar-accent: 210 20% 96%;
     --sidebar-accent-foreground: 220 27% 20%;
     --sidebar-border: 220 15% 90%;
-    --sidebar-ring: 142 35% 35%; /* #4a6850 for sidebar */
+    --sidebar-ring: 142 35% 35%;
+    /* #4a6850 for sidebar */
   }
 
   /* Dark theme */
@@ -119,7 +123,8 @@
     --destructive-foreground: 0 0% 100%;
     --border: 220 27% 18%;
     --input: 220 27% 14%;
-    --ring: 142 35% 35%; /* #4a6850 for dark theme too */
+    --ring: 142 35% 35%;
+    /* #4a6850 for dark theme too */
     --positive: 162 88% 50%;
     --positive-soft: 162 40% 20%;
     --negative: 0 72% 55%;
@@ -145,21 +150,46 @@
   }
 
   /* Typography */
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-semibold text-foreground;
   }
 
-  h1 { @apply text-2xl sm:text-3xl lg:text-4xl; }
-  h2 { @apply text-xl sm:text-2xl lg:text-3xl; }
-  h3 { @apply text-lg sm:text-xl lg:text-2xl; }
-  h4 { @apply text-base sm:text-lg lg:text-xl; }
+  h1 {
+    @apply text-2xl sm:text-3xl lg:text-4xl;
+  }
 
-  .text-currency-large { @apply text-3xl sm:text-4xl font-bold; }
-  .text-currency-medium { @apply text-xl sm:text-2xl font-semibold; }
-  .text-currency-small { @apply text-lg sm:text-xl font-medium; }
+  h2 {
+    @apply text-xl sm:text-2xl lg:text-3xl;
+  }
+
+  h3 {
+    @apply text-lg sm:text-xl lg:text-2xl;
+  }
+
+  h4 {
+    @apply text-base sm:text-lg lg:text-xl;
+  }
+
+  .text-currency-large {
+    @apply text-3xl sm:text-4xl font-bold;
+  }
+
+  .text-currency-medium {
+    @apply text-xl sm:text-2xl font-semibold;
+  }
+
+  .text-currency-small {
+    @apply text-lg sm:text-xl font-medium;
+  }
 }
 
 @layer components {
+
   /* Mobile-first container */
   .container-mobile {
     @apply w-full max-w-sm mx-auto px-4 sm:max-w-md md:max-w-lg lg:max-w-xl;
@@ -195,18 +225,19 @@
   .card-negative:hover {
     box-shadow: 0 8px 24px rgba(251, 146, 60, 0.15);
   }
+
   .glass-card {
-    @apply backdrop-blur-xl border rounded-2xl;
-    background: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+    @apply border rounded-2xl;
+    background: #FFFFFF;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-premium);
   }
 
   .glass-card-strong {
-    @apply backdrop-blur-xl border rounded-2xl;
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(255, 255, 255, 1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    @apply border rounded-2xl;
+    background: #FFFFFF;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 12px 30px 0 rgba(0, 0, 0, 0.08);
   }
 
   .glass-button {
@@ -275,10 +306,21 @@
   }
 
   /* Safe area padding for mobile */
-  .safe-area-pt { padding-top: env(safe-area-inset-top); }
-  .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
-  .safe-area-pl { padding-left: env(safe-area-inset-left); }
-  .safe-area-pr { padding-right: env(safe-area-inset-right); }
+  .safe-area-pt {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-pl {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-pr {
+    padding-right: env(safe-area-inset-right);
+  }
 }
 
 @layer utilities {
@@ -394,7 +436,7 @@
     .app-container {
       @apply rounded-none border-0 border-t-0 shadow-none max-w-none;
     }
-    
+
     .app-container::before {
       display: none;
     }
@@ -421,8 +463,13 @@
 
 /* Animations matching HTML design */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
@@ -430,6 +477,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -437,41 +485,86 @@
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-5px);
+  }
+
+  75% {
+    transform: translateX(5px);
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 @keyframes ping {
-  75%, 100% {
+
+  75%,
+  100% {
     transform: scale(2);
     opacity: 0;
   }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
-  50% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.6); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.6);
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200px 0; }
-  100% { background-position: calc(200px + 100%) 0; }
+  0% {
+    background-position: -200px 0;
+  }
+
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
 }
 
 /* Animation utilities */
@@ -500,7 +593,7 @@
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
   background-size: 200px 100%;
   animation: shimmer 2s infinite;
 }
@@ -514,7 +607,10 @@
 
 /* Prevent zoom on input focus (iOS) */
 @media screen and (max-width: 768px) {
-  input, select, textarea {
+
+  input,
+  select,
+  textarea {
     font-size: 16px !important;
   }
 }
@@ -524,11 +620,11 @@
   .container {
     @apply px-4;
   }
-  
+
   .mobile-only {
     @apply block;
   }
-  
+
   .desktop-only {
     @apply hidden;
   }
@@ -538,7 +634,7 @@
   .mobile-only {
     @apply hidden;
   }
-  
+
   .desktop-only {
     @apply block;
   }
@@ -550,6 +646,7 @@
     transform: scale(0);
     opacity: 1;
   }
+
   100% {
     transform: scale(4);
     opacity: 0;
@@ -580,8 +677,13 @@
 }
 
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .animate-marquee {
@@ -598,6 +700,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

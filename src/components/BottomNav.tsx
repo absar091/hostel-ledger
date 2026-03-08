@@ -28,12 +28,12 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
   };
 
   const tabs = [
-    { id: "home" as const, icon: Home, label: t('navigation.home'), shortLabel: t('navigation.home_short'), badge: pendingInvites },
+    { id: "home" as const, icon: Home, label: "Home", shortLabel: "Home", badge: pendingInvites },
     {
       id: "groups" as const,
       icon: Users,
-      label: t('navigation.groups'),
-      shortLabel: t('navigation.groups_short'),
+      label: "Groups",
+      shortLabel: "Groups",
     },
     {
       id: "add" as const,
@@ -45,10 +45,10 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
     {
       id: "activity" as const,
       icon: Clock,
-      label: t('navigation.activity'),
-      shortLabel: t('navigation.activity_short'),
+      label: "History",
+      shortLabel: "History",
     },
-    { id: "profile" as const, icon: User, label: t('navigation.profile'), shortLabel: t('navigation.profile_short') },
+    { id: "profile" as const, icon: User, label: "Me", shortLabel: "Me" },
   ];
 
   return (
