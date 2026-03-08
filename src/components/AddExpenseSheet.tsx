@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, ChevronRight, AlertCircle, WifiOff, UserPlus, Clock, Ban, Wallet, Sparkles, Loader2, Mic, MicOff } from "lucide-react";
+import { Check, ChevronRight, AlertCircle, WifiOff, UserPlus, Clock, Ban, Wallet, Sparkles, Loader2, Mic, MicOff, Upload } from "lucide-react";
 import Avatar from "./Avatar";
 import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
@@ -99,6 +99,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
   const [showAiInput, setShowAiInput] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open && defaultAiMode) {
@@ -225,6 +226,64 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
     }
   };
 
+
+  const handleAudioFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsAiParsing(true);
+    const parsingToast = toast.loading("Gemini is analyzing your audio...");
+
+    try {
+      // Convert to Base64
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = async () => {
+        const base64Audio = (reader.result as string).split(',')[1];
+
+        try {
+          const response = await parseExpenseWithAudio(base64Audio, file.type, selectedGroup);
+          if (response.success && response.data) {
+            const { amount, description, payerId, participantIds, category } = response.data;
+
+            if (amount) setAmount(String(amount));
+            if (description) setNote(description);
+            if (category && PERSONAL_CATEGORIES.some(c => c.id === category)) {
+              setSelectedCategory(category);
+            } else {
+              setSelectedCategory('others');
+            }
+
+            if (payerId) setPaidBy(payerId);
+            else if (user) setPaidBy(user.uid);
+
+            if (participantIds && participantIds.length > 0) {
+              const validIds = participantIds.filter((pid: string) => members.some(m => m.id === pid));
+              setParticipants(validIds.length > 0 ? validIds : members.map(m => m.id));
+            } else {
+              setParticipants(members.map(m => m.id));
+            }
+
+            toast.success("AI parsed your audio correctly!", { id: parsingToast });
+            setShowAiInput(false);
+            setStep(5);
+          } else {
+            toast.error("AI couldn't understand the audio clearly.", { id: parsingToast });
+          }
+        } catch (err: any) {
+          console.error("Voice parsing error:", err);
+          toast.error(err.message || "Voice parsing failed", { id: parsingToast });
+        } finally {
+          setIsAiParsing(false);
+        }
+      };
+    } catch (err: any) {
+      console.error("File processing error:", err);
+      toast.error("Failed to process audio file", { id: parsingToast });
+      setIsAiParsing(false);
+    }
+  };
+
   const handleToggleListen = async () => {
     if (isListening) {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
@@ -236,7 +295,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        toast.error("Microphone access is not supported. Please ensure you are using HTTPS.");
+        fileInputRef.current?.click();
         return;
       }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -307,13 +366,15 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
 
     } catch (err: any) {
       console.error("Mic access error:", err);
+
+      // Fallback to native file input if microphone access fails
       if (err.name === 'NotAllowedError' || err.message?.includes('Permission denied')) {
-        toast.error("Microphone permission denied. If installed as an app, check Android Settings > Apps > Split App > Permissions.");
-      } else if (err.name === 'NotFoundError' || err.message?.includes('Requested device not found')) {
-        toast.error("No microphone found on this device.");
+        toast.error("Mic blocked. Check Chrome Site Settings > Permissions.");
       } else {
-        toast.error("Could not access microphone.");
+        toast.info("Opening native audio recorder instead...");
       }
+      fileInputRef.current?.click();
+
       setIsListening(false);
     }
   };
@@ -735,6 +796,16 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                           >
                             {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                           </button>
+
+                          {/* Hidden File Input for Native Audio Recording Fallback */}
+                          <input
+                            type="file"
+                            accept="audio/*"
+                            capture="user"
+                            ref={fileInputRef}
+                            onChange={handleAudioFile}
+                            className="hidden"
+                          />
                         </div>
 
                         {isListening && (
