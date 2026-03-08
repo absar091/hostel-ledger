@@ -235,6 +235,10 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
     }
 
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast.error("Microphone access is not supported. Please ensure you are using HTTPS.");
+        return;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
@@ -301,9 +305,15 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
       setIsListening(true);
       toast.info("Recording... Tap stop when done.", { icon: "🎙️", duration: 3000 });
 
-    } catch (err) {
+    } catch (err: any) {
       console.error("Mic access error:", err);
-      toast.error("Could not access microphone.");
+      if (err.name === 'NotAllowedError' || err.message?.includes('Permission denied')) {
+        toast.error("Microphone permission denied. Please allow access in your browser settings.");
+      } else if (err.name === 'NotFoundError' || err.message?.includes('Requested device not found')) {
+        toast.error("No microphone found on this device.");
+      } else {
+        toast.error("Could not access microphone.");
+      }
       setIsListening(false);
     }
   };
