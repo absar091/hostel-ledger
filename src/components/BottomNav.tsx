@@ -65,6 +65,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
                   <button
                     onClick={() => onTabChange(tab.id)}
                     className="touch-target w-16 h-16 -mt-8 rounded-3xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] shadow-[0_20px_60px_rgba(74,104,80,0.4)] flex items-center justify-center border-4 border-white hover:from-[#3d5643] hover:to-[#2f4336] hover:scale-105 active:scale-95 transition-all duration-200"
+                    aria-current={isActive ? "page" : undefined}
                   >
                     <Icon className="w-7 h-7 text-white font-bold" />
                     <span className="sr-only">{tab.label}</span>
@@ -91,6 +92,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
                       ? "text-[#4a6850] bg-[#4a6850]/10 scale-105"
                       : "text-gray-400 hover:text-[#4a6850]/70 hover:bg-[#4a6850]/5",
                   )}
+                  aria-current={isActive ? "page" : undefined}
                 >
                   <Icon className={cn("w-5 h-5", isActive && "font-bold")} />
                   <span
