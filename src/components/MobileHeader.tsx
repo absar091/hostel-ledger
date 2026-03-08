@@ -7,6 +7,7 @@ import { usePWAInstall } from "@/hooks/usePWAInstall";
 import NotificationIcon from "@/components/NotificationIcon";
 import PWAInstallButton from "@/components/PWAInstallButton";
 import Avatar from "@/components/Avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ReactNode } from "react";
 
 interface MobileHeaderProps {
@@ -18,7 +19,7 @@ interface MobileHeaderProps {
 const MobileHeader = ({ title, showBackButton = false, rightContent }: MobileHeaderProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user } = useFirebaseAuth();
+  const { user, isLoading } = useFirebaseAuth();
   const { isOnline, pendingCount, isSyncing } = useSync();
   const { isInstalled } = usePWAInstall();
   const offline = !isOnline;
@@ -66,12 +67,16 @@ const MobileHeader = ({ title, showBackButton = false, rightContent }: MobileHea
         aria-label="View profile"
       >
         <div className="rounded-full ring-2 ring-white shadow-lg overflow-hidden">
-          <Avatar
-            name={user?.name || "User"}
-            photoURL={user?.photoURL}
-            size="md"
-            className="w-10 h-10"
-          />
+          {isLoading ? (
+            <Skeleton className="w-10 h-10 rounded-full" />
+          ) : (
+            <Avatar
+              name={user?.name || "User"}
+              photoURL={user?.photoURL}
+              size="md"
+              className="w-10 h-10"
+            />
+          )}
         </div>
       </button>
     </>
