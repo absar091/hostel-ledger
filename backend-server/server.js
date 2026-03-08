@@ -4808,7 +4808,7 @@ const sendSystemMessage = async (db, groupId, event, actorName, data = {}) => {
 // Send Message endpoint
 app.post('/api/send-message', chatLimiter, authenticate, async (req, res) => {
   try {
-    let { groupId, text } = req.body;
+    let { groupId, text, expenseId } = req.body;
     const currentUserId = req.user.uid;
 
     // Validate
@@ -4844,8 +4844,23 @@ app.post('/api/send-message', chatLimiter, authenticate, async (req, res) => {
       return res.status(403).json({ success: false, error: 'You are not a member of this group' });
     }
 
+    // If expenseId provided, verify it exists in this group
+    let expenseData = null;
+    if (expenseId) {
+      // Expenses are in Firestore
+      const expenseSnap = await firestore.collection('transactions').doc(expenseId).get();
+      if (!expenseSnap.exists || expenseSnap.data().groupId !== groupId) {
+        return res.status(404).json({ success: false, error: 'Expense not found in this group' });
+      }
+      expenseData = expenseSnap.data();
+    }
+
     // Save message
-    const messageRef = db.ref(`groupMessages/${groupId}`).push();
+    const messagePath = expenseId
+      ? `expenseMessages/${groupId}/${expenseId}`
+      : `groupMessages/${groupId}`;
+
+    const messageRef = db.ref(messagePath).push();
     const message = {
       id: messageRef.key,
       senderId: currentUserId,
@@ -4855,28 +4870,51 @@ app.post('/api/send-message', chatLimiter, authenticate, async (req, res) => {
       timestamp: admin.database.ServerValue.TIMESTAMP
     };
 
+    if (expenseId) {
+      message.expenseId = expenseId;
+    }
+
     await messageRef.set(message);
 
-    // Update chat metadata
-    await db.ref(`groupChatMeta/${groupId}`).update({
-      lastMessage: text.substring(0, 100),
-      lastMessageAt: admin.database.ServerValue.TIMESTAMP,
-      lastSenderId: currentUserId,
-      lastSenderName: member.name
-    });
+    // Update appropriate metadata
+    if (expenseId) {
+      await db.ref(`expenseChatMeta/${groupId}/${expenseId}`).update({
+        lastMessage: text.substring(0, 100),
+        lastMessageAt: admin.database.ServerValue.TIMESTAMP,
+        lastSenderId: currentUserId,
+        lastSenderName: member.name
+      });
+    } else {
+      await db.ref(`groupChatMeta/${groupId}`).update({
+        lastMessage: text.substring(0, 100),
+        lastMessageAt: admin.database.ServerValue.TIMESTAMP,
+        lastSenderId: currentUserId,
+        lastSenderName: member.name
+      });
+    }
 
     // Push notification to other members (fire-and-forget)
     const otherMembers = membersArray.filter(m => m.userId && m.userId !== currentUserId);
     if (otherMembers.length > 0 && process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY) {
+      let title = `💬 ${member.name} in ${group.name}`;
+      if (expenseId && expenseData) {
+        title = `🧵 ${member.name} on "${expenseData.description || 'Expense'}"`;
+      }
+
       sendOneSignalNotificationInternal({
         userIds: otherMembers.map(m => m.userId),
-        title: `💬 ${member.name} in ${group.name}`,
+        title,
         body: text.length > 100 ? text.substring(0, 97) + '...' : text,
-        data: { type: 'chat_message', groupId, messageId: messageRef.key }
+        data: {
+          type: 'chat_message',
+          groupId,
+          expenseId: expenseId || undefined,
+          messageId: messageRef.key
+        }
       }).catch(err => console.error('⚠️ Chat push notification failed:', err.message));
     }
 
-    console.log(`💬 Message sent in group ${groupId} by ${member.name}`);
+    console.log(`💬 Message sent in ${expenseId ? 'thread' : 'group'} ${expenseId || groupId} by ${member.name}`);
 
     res.json({
       success: true,
@@ -4892,7 +4930,7 @@ app.post('/api/send-message', chatLimiter, authenticate, async (req, res) => {
 // Get Messages endpoint (paginated)
 app.post('/api/get-messages', generalLimiter, authenticate, async (req, res) => {
   try {
-    const { groupId, limit: msgLimit, beforeTimestamp } = req.body;
+    const { groupId, expenseId, limit: msgLimit, beforeTimestamp } = req.body;
     const currentUserId = req.user.uid;
 
     if (!groupId) {
@@ -4920,8 +4958,11 @@ app.post('/api/get-messages', generalLimiter, authenticate, async (req, res) => 
 
     // Fetch messages
     const pageSize = Math.min(Number(msgLimit) || 50, 100); // Max 100 per page
-    let messagesQuery = db.ref(`groupMessages/${groupId}`)
-      .orderByChild('timestamp');
+    const messagePath = expenseId
+      ? `expenseMessages/${groupId}/${expenseId}`
+      : `groupMessages/${groupId}`;
+
+    let messagesQuery = db.ref(messagePath).orderByChild('timestamp');
 
     if (beforeTimestamp) {
       messagesQuery = messagesQuery.endBefore(Number(beforeTimestamp)).limitToLast(pageSize);
