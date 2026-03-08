@@ -28,7 +28,7 @@ class Logger {
   }
 
   private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    return `session_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`;
   }
 
   setUserId(userId: string) {
