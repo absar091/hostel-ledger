@@ -745,6 +745,7 @@ const Dashboard = () => {
                 <button
                   onClick={() => setShowAddMoney(true)}
                   className="w-12 h-12 rounded-2xl bg-white/20 hover:bg-white/30 active:scale-95 transition-all flex items-center justify-center border border-white/20 backdrop-blur-md"
+                  aria-label="Add Money to Wallet"
                 >
                   <Plus className="w-6 h-6 text-white" strokeWidth={3} />
                 </button>
@@ -761,6 +762,7 @@ const Dashboard = () => {
                 <button
                   onClick={() => navigate("/to-receive")}
                   className="p-5 flex items-center justify-between bg-[#E7F6F1] hover:brightness-[0.98] active:scale-[0.99] transition-all group"
+                  aria-label="View Total To Receive"
                 >
                   <div className="flex flex-col items-start gap-0.5 text-left">
                     <p className="text-[10px] font-black text-[#1a3a2e]/60 uppercase tracking-widest leading-none">{t('dashboard.total_to_receive')}</p>
@@ -774,6 +776,7 @@ const Dashboard = () => {
                 <button
                   onClick={() => navigate("/to-pay")}
                   className="p-5 flex items-center justify-between bg-[#FEF1F2] hover:brightness-[0.98] active:scale-[0.99] transition-all group"
+                  aria-label="View Total To Pay"
                 >
                   <div className="flex flex-col items-start gap-0.5 text-left">
                     <p className="text-[10px] font-black text-[#991b1b]/60 uppercase tracking-widest leading-none">{t('dashboard.total_to_pay')}</p>
@@ -813,7 +816,7 @@ const Dashboard = () => {
             </h3>
             <div className="grid grid-cols-3 gap-3">
               {/* 1. Log (Split Bill) */}
-              <button onClick={handleAddExpense} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
+              <button onClick={handleAddExpense} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group" aria-label="Log Split Bill">
                 <div className="w-12 h-12 rounded-2xl bg-[#DCFCE7] text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
                   <CreditCard className="w-6 h-6" />
                 </div>
@@ -821,7 +824,7 @@ const Dashboard = () => {
               </button>
 
               {/* 2. Solo (Personal Expense) */}
-              <button onClick={handlePersonalExpense} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
+              <button onClick={handlePersonalExpense} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group" aria-label="Log Personal Expense">
                 <div className="w-12 h-12 rounded-2xl bg-[#DBEAFE] text-blue-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
                   <User className="w-6 h-6" />
                 </div>
@@ -829,7 +832,7 @@ const Dashboard = () => {
               </button>
 
               {/* 3. Received (Record Payment) */}
-              <button onClick={handleReceivedMoney} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
+              <button onClick={handleReceivedMoney} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group" aria-label="Record Received Payment">
                 <div className="w-12 h-12 rounded-2xl bg-[#D1FAE5] text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
                   <ArrowDownLeft className="w-6 h-6" />
                 </div>
@@ -837,7 +840,7 @@ const Dashboard = () => {
               </button>
 
               {/* 4. Send (Record Payment TO) */}
-              <button onClick={() => navigate("/send-money")} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
+              <button onClick={() => navigate("/send-money")} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group" aria-label="Send Money">
                 <div className="w-12 h-12 rounded-2xl bg-[#FEE2E2] text-rose-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
                   <ArrowUpRight className="w-6 h-6" />
                 </div>
@@ -845,7 +848,7 @@ const Dashboard = () => {
               </button>
 
               {/* 5. Add Money (Top up Wallet) */}
-              <button onClick={() => setShowAddMoney(true)} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
+              <button onClick={() => setShowAddMoney(true)} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group" aria-label="Add Money to Wallet">
                 <div className="w-12 h-12 rounded-2xl bg-[#FEF3C7] text-amber-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
                   <Plus className="w-6 h-6" />
                 </div>
@@ -855,7 +858,7 @@ const Dashboard = () => {
               {/* 6. AI Insights */}
               <AIInsightsSheet
                 trigger={
-                  <button className="w-full glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
+                  <button className="w-full glass-card hover-lift p-4 flex flex-col items-center gap-2 group" aria-label="View AI Insights">
                     <div className="w-12 h-12 rounded-2xl bg-[#E0F2FE] text-teal-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
                       <Sparkles className="w-6 h-6" />
                     </div>
@@ -872,7 +875,7 @@ const Dashboard = () => {
               <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 Active Groups
               </h3>
-              <button onClick={() => navigate("/groups")} className="text-[10px] font-black text-emerald-600 uppercase">
+              <button onClick={() => navigate("/groups")} className="text-[10px] font-black text-emerald-600 uppercase" aria-label="View All Active Groups">
                 {t('dashboard.view_all')}
               </button>
             </div>
@@ -882,6 +885,7 @@ const Dashboard = () => {
                   key={group.id}
                   onClick={() => navigate(`/group/${group.id}`)}
                   className="flex-shrink-0 w-32 glass-card p-4 flex flex-col items-center text-center gap-2 snap-center hover-lift"
+                  aria-label={"View " + group.name + " group"}
                 >
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center text-2xl shadow-sm border border-emerald-100">
                     {group.emoji || "🏠"}
@@ -895,6 +899,7 @@ const Dashboard = () => {
               <button
                 onClick={handleNewGroup}
                 className="flex-shrink-0 w-32 glass-card border-dashed border-2 border-emerald-200/50 bg-emerald-50/10 p-4 flex flex-col items-center justify-center text-center gap-2 snap-center hover:bg-emerald-50 transition-colors"
+                aria-label="Create New Group"
               >
                 <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-sm">
                   <Plus className="w-6 h-6 text-emerald-500" />
@@ -911,7 +916,7 @@ const Dashboard = () => {
                 {t('dashboard.recent_activity')}
               </h3>
               {allTransactions.length > 5 && (
-                <button onClick={() => navigate("/activity")} className="text-[10px] font-black text-emerald-600 uppercase">
+                <button onClick={() => navigate("/activity")} className="text-[10px] font-black text-emerald-600 uppercase" aria-label="View All Recent Activity">
                   {t('dashboard.view_all_dashboard')}
                 </button>
               )}
@@ -930,6 +935,7 @@ const Dashboard = () => {
                     <button
                       onClick={() => navigate("/activity")}
                       className="w-full py-3 text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:bg-emerald-50 transition-colors"
+                      aria-label="View All Transactions"
                     >
                       {t('dashboard.view_all_dashboard')}
                     </button>
@@ -942,7 +948,7 @@ const Dashboard = () => {
                   </div>
                   <h4 className="text-sm font-black text-foreground mb-1 tracking-tight">Financial journey starts here!</h4>
                   <p className="text-[11px] font-medium text-muted-foreground mb-6 max-w-[200px]">Add your first expense or payment to track your hostel life.</p>
-                  <button onClick={handleAddExpense} className="btn-primary-teal text-xs w-full max-w-[180px]">
+                  <button onClick={handleAddExpense} className="btn-primary-teal text-xs w-full max-w-[180px]" aria-label="Create First Transaction">
                     Create First Transaction
                   </button>
                 </div>
