@@ -119,7 +119,7 @@ describe('Dashboard Performance', () => {
 
   it('renders without crashing', () => {
     render(<Dashboard />);
-    expect(screen.getByText('Test User')).toBeDefined();
+    expect(screen.getByText('dashboard.available_balance')).toBeDefined();
     expect(screen.getByTestId('bottom-nav')).toBeDefined();
   });
 

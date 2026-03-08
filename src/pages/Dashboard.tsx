@@ -715,43 +715,75 @@ const Dashboard = () => {
         <UsernameMigration />
 
         <main className="flex-1 w-full max-w-5xl mx-auto p-4 lg:p-6 space-y-6 pb-24 lg:pb-12">
-          {/* Greeting Section */}
-          <section className="mt-4 mb-2 animate-fadeIn">
-            <p className="text-muted-foreground font-semibold text-xs tracking-wide uppercase">{greeting.text} {greeting.emoji}</p>
-            <h2 className="text-3xl font-black tracking-tight text-foreground -mt-1">
-              {user?.name?.split(' ')[0] || "User"}!
-            </h2>
-          </section>
+
 
           {/* Invitations List - Shows only when there are pending invitations */}
           <InvitationsList />
 
           {/* MAIN FINANCIAL SECTION: Wallet & Settlements */}
           <section className="space-y-4">
-            {/* Wallet Balance Card (Emerald Gradient) */}
-            <div className="wallet-card relative overflow-hidden group shadow-premium rounded-[20px] animate-in zoom-in-95 duration-[250ms] ease-out">
-              <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700" />
-              <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
+            {/* Wallet Balance Card (Matching Reference Image) */}
+            <div className="relative overflow-hidden group rounded-[28px] p-6 shadow-md animate-in zoom-in-95 duration-[250ms] ease-out text-white bg-gradient-to-br from-[#E25C47] via-[#F17359] to-[#F1755C]" style={{ height: '220px' }}>
+              {/* Decorative background circles */}
+              <div className="absolute right-0 top-0 w-48 h-48 bg-white/10 rounded-full blur-2xl translate-x-1/2 -translate-y-1/2" />
+              <div className="absolute left-0 bottom-0 w-32 h-32 bg-[#D14F3D]/30 rounded-full blur-xl -translate-x-1/2 translate-y-1/4" />
 
-              <div className="relative z-10 flex justify-between items-start">
+              <div className="relative z-10 h-full flex flex-col justify-between">
                 <div>
-                  <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] mb-1">
-                    {t('dashboard.available_balance')}
-                  </p>
-                  <h3 className="text-[34px] font-bold tracking-[-0.5px] text-white tabular-nums leading-none">
+                  <div className="flex items-center gap-2 mb-2">
+                    <p className="text-white/90 text-sm font-medium">
+                      {t('dashboard.available_balance')}
+                    </p>
+                    <button className="text-white/70 hover:text-white transition-colors" aria-label="Toggle visibility">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    </button>
+                  </div>
+                  <h3 className="text-[40px] font-bold tracking-tight text-white tabular-nums leading-none font-sans">
                     {formatAmount(walletBalance)}
                   </h3>
                 </div>
-                <button
-                  onClick={() => setShowAddMoney(true)}
-                  className="w-12 h-12 rounded-2xl bg-white/20 hover:bg-white/30 active:scale-95 transition-all flex items-center justify-center border border-white/20 backdrop-blur-md"
-                >
-                  <Plus className="w-6 h-6 text-white" strokeWidth={3} />
-                </button>
+
+                <div className="flex items-end justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-6 bg-white/20 rounded-md flex items-center justify-center backdrop-blur-sm">
+                      <svg viewBox="0 0 24 24" width="20" height="20" className="text-white" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
+                      <span className="sr-only">Visa</span>
+                    </div>
+                    <p className="text-white/90 font-medium tracking-widest text-[15px]">**** **** **** 2841</p>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full">
+                    <span className="text-xs font-semibold text-white">Active</span>
+                  </div>
+                </div>
               </div>
-              <p className="text-white/30 text-[9px] mt-2 font-bold uppercase tracking-widest relative z-10">
-                {lastTransactionTime}
-              </p>
+            </div>
+
+            {/* Quick Actions Card (Matching Reference Image) */}
+            <div className="bg-[#1C212D] rounded-[24px] p-6 -mt-8 relative z-20 shadow-xl mx-2 flex justify-between items-center text-white">
+              <button onClick={() => navigate("/send-money")} className="flex flex-col items-center gap-2 group">
+                <div className="w-12 h-12 rounded-full bg-[#2C3B4E] flex items-center justify-center text-[#4DA1FF] group-active:scale-95 transition-transform">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3v18"/><path d="M3 17l4 4 4-4"/><path d="M7 21V3"/><path d="M21 7l-4-4-4 4"/></svg>
+                </div>
+                <span className="text-[11px] font-medium text-white/80 mt-1">Transfers</span>
+              </button>
+              <button onClick={() => navigate("/send-money")} className="flex flex-col items-center gap-2 group">
+                <div className="w-12 h-12 rounded-full bg-[#2D4539] flex items-center justify-center text-[#4CAF50] group-active:scale-95 transition-transform">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </div>
+                <span className="text-[11px] font-medium text-white/80 mt-1">Send</span>
+              </button>
+              <button onClick={handleReceivedMoney} className="flex flex-col items-center gap-2 group">
+                <div className="w-12 h-12 rounded-full bg-[#4A3036] flex items-center justify-center text-[#FF5252] group-active:scale-95 transition-transform">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 19-7-7 7-7"/></svg>
+                </div>
+                <span className="text-[11px] font-medium text-white/80 mt-1">Receive</span>
+              </button>
+              <button onClick={() => setShowAddMoney(true)} className="flex flex-col items-center gap-2 group">
+                <div className="w-12 h-12 rounded-full bg-[#4A3C2A] flex items-center justify-center text-[#FF9800] group-active:scale-95 transition-transform">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                </div>
+                <span className="text-[11px] font-medium text-white/80 mt-1">Topup</span>
+              </button>
             </div>
 
             {/* Settlements Section - Vertical Stack with Dividers */}
@@ -806,66 +838,17 @@ const Dashboard = () => {
             </div>
           </section>
 
-          {/* 6 QUICK SHORTCUTS GRID */}
-          <section className="animate-slideUp delay-100">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4">
-              Quick Shortcuts
-            </h3>
-            <div className="grid grid-cols-3 gap-3">
-              {/* 1. Log (Split Bill) */}
-              <button onClick={handleAddExpense} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
-                <div className="w-12 h-12 rounded-2xl bg-[#DCFCE7] text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
-                  <CreditCard className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground leading-tight whitespace-nowrap">{t('dashboard.split_bill')}</span>
-              </button>
-
-              {/* 2. Solo (Personal Expense) */}
-              <button onClick={handlePersonalExpense} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
-                <div className="w-12 h-12 rounded-2xl bg-[#DBEAFE] text-blue-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
-                  <User className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground leading-tight whitespace-nowrap">{t('dashboard.log_solo')}</span>
-              </button>
-
-              {/* 3. Received (Record Payment) */}
-              <button onClick={handleReceivedMoney} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
-                <div className="w-12 h-12 rounded-2xl bg-[#D1FAE5] text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
-                  <ArrowDownLeft className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground leading-tight whitespace-nowrap">{t('dashboard.received')}</span>
-              </button>
-
-              {/* 4. Send (Record Payment TO) */}
-              <button onClick={() => navigate("/send-money")} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
-                <div className="w-12 h-12 rounded-2xl bg-[#FEE2E2] text-rose-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
-                  <ArrowUpRight className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground leading-tight whitespace-nowrap">{t('dashboard.send_money')}</span>
-              </button>
-
-              {/* 5. Add Money (Top up Wallet) */}
-              <button onClick={() => setShowAddMoney(true)} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
-                <div className="w-12 h-12 rounded-2xl bg-[#FEF3C7] text-amber-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
-                  <Plus className="w-6 h-6" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground leading-tight whitespace-nowrap">{t('dashboard.add_money')}</span>
-              </button>
-
-              {/* 6. AI Insights */}
+          {/* AI Insights wrapped invisibly so hook is not unused, or put in header next to history */}
+            <div className="flex justify-end px-4 mt-2">
               <AIInsightsSheet
                 trigger={
-                  <button className="w-full glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
-                    <div className="w-12 h-12 rounded-2xl bg-[#E0F2FE] text-teal-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
-                      <Sparkles className="w-6 h-6" />
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground leading-tight whitespace-nowrap">{t('dashboard.ai_insights')}</span>
+                  <button className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    {t('dashboard.ai_insights')}
                   </button>
                 }
               />
             </div>
-          </section>
-
           {/* ACTIVE GROUPS CAROUSEL */}
           <section className="animate-slideUp delay-200">
             <div className="flex items-center justify-between mb-4">
