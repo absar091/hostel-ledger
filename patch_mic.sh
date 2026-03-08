@@ -1,2 +1,0 @@
-#!/bin/bash
-sed -i 's/const stream = await navigator.mediaDevices.getUserMedia({ audio: true });/if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {\n        toast.error("Microphone access is not supported. Please ensure you are using HTTPS.");\n        return;\n      }\n      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });/g' src/components/AddExpenseSheet.tsx

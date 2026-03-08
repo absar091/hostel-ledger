@@ -308,7 +308,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
     } catch (err: any) {
       console.error("Mic access error:", err);
       if (err.name === 'NotAllowedError' || err.message?.includes('Permission denied')) {
-        toast.error("Microphone permission denied. Please allow access in your browser settings.");
+        toast.error("Microphone permission denied. If installed as an app, check Android Settings > Apps > Split App > Permissions.");
       } else if (err.name === 'NotFoundError' || err.message?.includes('Requested device not found')) {
         toast.error("No microphone found on this device.");
       } else {
