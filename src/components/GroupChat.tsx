@@ -23,6 +23,8 @@ interface ChatMessage {
 interface GroupChatProps {
     groupId: string;
     groupName: string;
+    expenseId?: string;
+    fullHeight?: boolean;
 }
 
 const SystemMessage = memo(({ message, formatAmount }: { message: ChatMessage; formatAmount: (n: number) => string }) => {
@@ -94,7 +96,7 @@ const ChatBubble = memo(({ message, isOwn }: { message: ChatMessage; isOwn: bool
     );
 });
 
-const GroupChat = ({ groupId, groupName }: GroupChatProps) => {
+const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupChatProps) => {
     const { t } = useTranslation();
     const { user } = useFirebaseAuth();
     const { formatAmount } = useCurrency();
@@ -127,8 +129,12 @@ const GroupChat = ({ groupId, groupName }: GroupChatProps) => {
             setInitialLoad(false);
         }, 5000);
 
+        const messagePath = expenseId
+            ? `expenseMessages/${groupId}/${expenseId}`
+            : `groupMessages/${groupId}`;
+
         const messagesRef = query(
-            ref(database, `groupMessages/${groupId}`),
+            ref(database, messagePath),
             limitToLast(50)
         );
 
@@ -159,10 +165,13 @@ const GroupChat = ({ groupId, groupName }: GroupChatProps) => {
         });
 
         return () => {
-            off(ref(database, `groupMessages/${groupId}`));
+            const messagePath = expenseId
+                ? `expenseMessages/${groupId}/${expenseId}`
+                : `groupMessages/${groupId}`;
+            off(ref(database, messagePath));
             clearTimeout(timer);
         };
-    }, [groupId, database, scrollToBottom]);
+    }, [groupId, expenseId, database, scrollToBottom]);
 
     // Scroll to bottom on initial load
     useEffect(() => {
@@ -180,6 +189,7 @@ const GroupChat = ({ groupId, groupName }: GroupChatProps) => {
             const oldestTimestamp = messages[0]?.timestamp;
             const result = await callSecureApi("/api/get-messages", {
                 groupId,
+                expenseId,
                 limit: 30,
                 beforeTimestamp: oldestTimestamp,
             });
@@ -212,7 +222,7 @@ const GroupChat = ({ groupId, groupName }: GroupChatProps) => {
         setInputText("");
 
         try {
-            await callSecureApi("/api/send-message", { groupId, text });
+            await callSecureApi("/api/send-message", { groupId, expenseId, text });
             // Realtime listener will pick up the new message
             setTimeout(() => inputRef.current?.focus(), 100);
         } catch (err: any) {
@@ -253,7 +263,7 @@ const GroupChat = ({ groupId, groupName }: GroupChatProps) => {
     }
 
     return (
-        <div className="flex flex-col h-[calc(100vh-320px)] lg:h-[600px] mb-6 bg-gradient-to-b from-[#f0f4f1] to-[#e8ece9] rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] overflow-hidden">
+        <div className={`flex flex-col ${fullHeight ? 'h-full mb-0' : 'h-[calc(100vh-320px)] lg:h-[600px] mb-6'} bg-gradient-to-b from-[#f0f4f1] to-[#e8ece9] rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] overflow-hidden`}>
             {/* Messages Area */}
             <div
                 ref={messagesContainerRef}
@@ -284,10 +294,10 @@ const GroupChat = ({ groupId, groupName }: GroupChatProps) => {
                             <MessageCircle className="w-8 h-8 text-[#4a6850]" />
                         </div>
                         <h3 className="text-base font-black text-gray-900 mb-1">
-                            {t("chat.empty_title")}
+                            {expenseId ? t("chat.thread_empty_title") : t("chat.empty_title")}
                         </h3>
                         <p className="text-xs font-bold text-gray-500 max-w-[200px]">
-                            {t("chat.empty_desc")}
+                            {expenseId ? t("chat.thread_empty_desc") : t("chat.empty_desc")}
                         </p>
                     </div>
                 )}

@@ -111,6 +111,25 @@
           "timestamp"
         ]
       }
+    },
+    "expenseMessages": {
+      "$groupId": {
+        "$expenseId": {
+          ".read": "auth != null && root.child('userGroups').child(auth.uid).child($groupId).exists()",
+          ".write": "false",
+          ".indexOn": [
+            "timestamp"
+          ]
+        }
+      }
+    },
+    "expenseChatMeta": {
+      "$groupId": {
+        "$expenseId": {
+          ".read": "auth != null && root.child('userGroups').child(auth.uid).child($groupId).exists()",
+          ".write": "false"
+        }
+      }
     }
   }
 }

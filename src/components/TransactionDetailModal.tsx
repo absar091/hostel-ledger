@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useRef, useState } from "react";
-import { ArrowUpRight, ArrowDownLeft, CreditCard, Users, User, X, Share2, Copy, Download, Image, Check } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, CreditCard, Users, User, X, Share2, Copy, Download, Image, Check, MessageSquareText } from "lucide-react";
+import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -17,6 +18,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
     const receiptRef = useRef<HTMLDivElement>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
+    const [showChat, setShowChat] = useState(false);
 
     if (!transaction) return null;
 
@@ -257,8 +259,8 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 <button
                                     onClick={handleCopyId}
                                     className={`p-1.5 rounded-full transition-all ${isCopied
-                                            ? "bg-emerald-50 text-emerald-500"
-                                            : "hover:bg-slate-100 text-slate-400 hover:text-[#4a6850]"
+                                        ? "bg-emerald-50 text-emerald-500"
+                                        : "hover:bg-slate-100 text-slate-400 hover:text-[#4a6850]"
                                         }`}
                                     title={isCopied ? "Copied!" : "Copy ID"}
                                 >
@@ -459,6 +461,28 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 </div>
                             )}
 
+                            {/* Phase 2: Discuss Button */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowChat(true);
+                                }}
+                                className="w-full flex items-center justify-between p-4 lg:p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl lg:rounded-3xl border border-blue-200 shadow-lg group hover:from-blue-100 hover:to-blue-200 transition-all active:scale-[0.98]"
+                            >
+                                <div className="flex items-center gap-3 lg:gap-4">
+                                    <div className="w-10 h-10 rounded-2xl bg-blue-500 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                                        <MessageSquareText className="w-5 h-5" />
+                                    </div>
+                                    <div className="text-left">
+                                        <div className="text-xs text-blue-600 font-bold uppercase tracking-wider">Discussion</div>
+                                        <div className="font-black text-blue-900 text-sm lg:text-base">Discuss this expense</div>
+                                    </div>
+                                </div>
+                                <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center">
+                                    <ArrowUpRight className="w-4 h-4 text-blue-600" />
+                                </div>
+                            </button>
+
                             {/* Wallet Balance Changes - Intelligent Display */}
                             {/* Priority 1: Use new per-user snapshots if available */}
                             {/* Priority 2: Fallback to legacy fields for Recorder (Payer/Sender) */}
@@ -526,6 +550,18 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                     </button>
                 </div>
             </div>
+
+            {/* Phase 2: Expense Thread Sheet */}
+            {transactionGroup && (
+                <ExpenseThreadSheet
+                    isOpen={showChat}
+                    onClose={() => setShowChat(false)}
+                    groupId={transaction.groupId}
+                    groupName={transactionGroup.name || "Group"}
+                    expenseId={transaction.id}
+                    expenseTitle={transaction.title || "Expense"}
+                />
+            )}
 
             {/* ========== HIDDEN RECEIPT FOR IMAGE GENERATION ========== */}
             <div

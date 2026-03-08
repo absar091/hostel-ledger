@@ -41,7 +41,7 @@ const GroupDetail = () => {
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<{ id: string; name: string; balance: number; paymentDetails?: any; phone?: string; isTemporary?: boolean; isOwner?: boolean } | null>(null);
+  const [selectedMember, setSelectedMember] = useState<{ id: string; name: string; balance: number; paymentDetails?: any; phone?: string; isTemporary?: boolean; isOwner?: boolean; walletBalance?: number } | null>(null);
   const [showMemberDetail, setShowMemberDetail] = useState(false);
   const [showMemberSettlement, setShowMemberSettlement] = useState(false);
   const [settlementMember, setSettlementMember] = useState<{ id: string; name: string; avatar?: string; isTemporary?: boolean } | null>(null);
@@ -321,7 +321,7 @@ const GroupDetail = () => {
     return sum;
   }, 0);
 
-  const handleMemberClick = (member: { id: string; name: string; balance: number; paymentDetails?: any; phone?: string; isTemporary?: boolean }) => {
+  const handleMemberClick = (member: { id: string; name: string; balance: number; paymentDetails?: any; phone?: string; isTemporary?: boolean; isOwner?: boolean; walletBalance?: number }) => {
     if (member.id === currentUser?.id) return;
     setSelectedMember(member);
     setShowMemberDetail(true);
@@ -548,6 +548,8 @@ const GroupDetail = () => {
                       title={item.title}
                       amount={item.amount}
                       date={item.date}
+                      id={item.id}
+                      groupId={group.id}
                       payers={item.type === "expense" && item.payers ? item.payers.map(p => ({
                         ...p,
                         name: (() => {

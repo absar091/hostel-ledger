@@ -1,7 +1,9 @@
-import { memo } from "react";
-import { ArrowUpRight, ArrowDownLeft, CreditCard } from "@/lib/icons";
+import { memo, useState } from "react";
+import { ArrowUpRight, ArrowDownLeft, CreditCard, MessageSquareText } from "@/lib/icons";
 import { type Transaction } from "@/contexts/FirebaseDataContext";
 import { cn } from "@/lib/utils";
+import ExpenseThreadSheet from "./ExpenseThreadSheet";
+import { useTranslation } from "react-i18next";
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -21,6 +23,8 @@ export const TransactionItem = memo(({
   formatAmount,
   dateFormat = "time",
 }: TransactionItemProps) => {
+  const { t } = useTranslation();
+  const [showChat, setShowChat] = useState(false);
   const isPayer = transaction.paidBy === userId;
   const userParticipant = transaction.participants?.find(
     (p) => p.id === userId
@@ -32,21 +36,21 @@ export const TransactionItem = memo(({
       ? isPayer
         ? "You paid"
         : isParticipant
-        ? "You owe"
-        : "Group expense"
+          ? "You owe"
+          : "Group expense"
       : transaction.type === "payment"
-      ? transaction.paidBy === userId || transaction.from === userId
-        ? "Payment sent"
-        : "Payment received"
-      : "Wallet";
+        ? transaction.paidBy === userId || transaction.from === userId
+          ? "Payment sent"
+          : "Payment received"
+        : "Wallet";
 
   const displayAmount =
     transaction.type === "expense"
       ? isPayer
         ? transaction.amount
         : isParticipant
-        ? (userParticipant?.amount ?? 0)
-        : 0
+          ? (userParticipant?.amount ?? 0)
+          : 0
       : transaction.amount;
 
   const extraDescription =
@@ -54,22 +58,22 @@ export const TransactionItem = memo(({
       ? isPayer
         ? "Paid by you"
         : isParticipant
-        ? "You owe"
-        : "Not involved"
+          ? "You owe"
+          : "Not involved"
       : transaction.paidBy === userId || transaction.from === userId
-      ? "Sent"
-      : "Received";
+        ? "Sent"
+        : "Received";
 
   const dateDisplay =
     dateFormat === "date"
       ? transaction.date
       : new Date(
-          transaction.timestamp || transaction.date
-        ).toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        });
+        transaction.timestamp || transaction.date
+      ).toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
 
   const ariaLabel = `${transaction.title}${groupName ? ` in ${groupName}` : ""}, ${typeLabel} ${formatAmount(displayAmount)} on ${dateDisplay}`;
 
@@ -106,25 +110,49 @@ export const TransactionItem = memo(({
           {dateDisplay}
         </p>
       </div>
-      <div className="text-right flex-shrink-0">
-        <p
-          className={cn(
-            "font-black text-sm lg:text-base tabular-nums",
-            transaction.type === "expense"
-              ? isPayer || isParticipant
-                ? "text-rose-500"
-                : "text-slate-400"
-              : "text-slate-900 dark:text-white"
-          )}
-        >
-          {transaction.type === "expense" && !isPayer && !isParticipant
-            ? "-"
-            : formatAmount(displayAmount)}
-        </p>
-        <p className="hidden lg:block text-xs text-slate-400">
-          {extraDescription}
-        </p>
+      <div className="text-right flex items-center gap-3">
+        <div className="flex-shrink-0">
+          <p
+            className={cn(
+              "font-black text-sm lg:text-base tabular-nums",
+              transaction.type === "expense"
+                ? isPayer || isParticipant
+                  ? "text-rose-500"
+                  : "text-slate-400"
+                : "text-slate-900 dark:text-white"
+            )}
+          >
+            {transaction.type === "expense" && !isPayer && !isParticipant
+              ? "-"
+              : formatAmount(displayAmount)}
+          </p>
+          <p className="hidden lg:block text-xs text-slate-400">
+            {extraDescription}
+          </p>
+        </div>
+
+        {transaction.type === "expense" && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowChat(true);
+            }}
+            className="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90"
+            title={t('chat.discuss')}
+          >
+            <MessageSquareText className="w-4 h-4 lg:w-4.5 lg:h-4.5" />
+          </button>
+        )}
       </div>
+
+      <ExpenseThreadSheet
+        isOpen={showChat}
+        onClose={() => setShowChat(false)}
+        groupId={transaction.groupId}
+        groupName={groupName || "Group"}
+        expenseId={transaction.id}
+        expenseTitle={transaction.title}
+      />
     </button>
   );
 });

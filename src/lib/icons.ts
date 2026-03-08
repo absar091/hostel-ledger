@@ -38,5 +38,8 @@ export {
   EyeOff,
   WifiOff,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  MessageSquareText,
+  MessageSquare,
+  MessageSquareQuote
 } from "lucide-react";

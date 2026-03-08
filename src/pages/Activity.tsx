@@ -6,7 +6,8 @@ import {
   CreditCard,
   Search,
   Calendar,
-  Activity as ActivityIcon
+  Activity as ActivityIcon,
+  MessageSquareText
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
@@ -15,6 +16,7 @@ import MobileHeader from "@/components/MobileHeader";
 import AppContainer from "@/components/AppContainer";
 import PageGuide from "@/components/PageGuide";
 import TransactionDetailModal from "@/components/TransactionDetailModal";
+import ExpenseThreadSheet from "@/components/ExpenseThreadSheet";
 import { Input } from "@/components/ui/input";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
@@ -36,6 +38,8 @@ const Activity = () => {
   const [filterDate, setFilterDate] = useState<"all" | "today" | "week" | "month">("all");
   const [showActivityGuide, setShowActivityGuide] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [showChat, setShowChat] = useState(false);
+  const [chatTransaction, setChatTransaction] = useState<any>(null);
 
   // Check if we should show page guide
   useEffect(() => {
@@ -363,6 +367,20 @@ const Activity = () => {
                           <div className="text-[10px] lg:text-xs text-gray-500 mt-0.5 lg:mt-1 font-bold capitalize">{transaction.method}</div>
                         )}
                       </div>
+
+                      {transaction.type === 'expense' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setChatTransaction(transaction);
+                            setShowChat(true);
+                          }}
+                          className="w-10 h-10 rounded-full bg-[#4a6850]/5 flex items-center justify-center text-[#4a6850]/40 hover:text-primary hover:bg-primary/10 transition-all active:scale-90 ml-2"
+                          title={t('chat.discuss')}
+                        >
+                          <MessageSquareText className="w-5 h-5" />
+                        </button>
+                      )}
                     </div>
                   </button>
                 );
@@ -402,6 +420,20 @@ const Activity = () => {
             onClose={() => setSelectedTransaction(null)}
             groups={groups}
             user={user}
+          />
+        )}
+
+        {chatTransaction && (
+          <ExpenseThreadSheet
+            isOpen={showChat}
+            onClose={() => {
+              setShowChat(false);
+              setChatTransaction(null);
+            }}
+            groupId={chatTransaction.groupId}
+            groupName={groupMap[chatTransaction.groupId]?.name || "Group"}
+            expenseId={chatTransaction.id}
+            expenseTitle={chatTransaction.title}
           />
         )}
 

@@ -1,6 +1,7 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import Avatar from "./Avatar";
-import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car, Wallet, Plus, Users } from "lucide-react";
+import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car, Wallet, Plus, Users, MessageSquareText } from "lucide-react";
+import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Participant {
@@ -24,6 +25,8 @@ interface TimelineItemProps {
   userRole?: 'payer' | 'receiver' | 'none';
   isPayerOwner?: boolean;
   onClick?: () => void;
+  groupId?: string; // Phase 2
+  id?: string; // Phase 2: Transaction ID
 }
 
 const categoryIcons = {
@@ -49,8 +52,11 @@ const TimelineItemBase = ({
   userRole,
   isPayerOwner,
   onClick,
+  groupId,
+  id,
 }: TimelineItemProps) => {
   const { formatAmount } = useCurrency();
+  const [showChat, setShowChat] = useState(false);
   const Icon = type === "payment" ? HandCoins :
     type === "wallet_add" ? Plus :
       type === "wallet_deduct" ? Wallet :
@@ -239,11 +245,38 @@ const TimelineItemBase = ({
           )}
         </div>
 
-        <div className="text-right shrink-0">
-          <div className="font-black text-gray-900 text-xl tracking-tight tabular-nums">{formatAmount(amount)}</div>
-          <div className="text-xs text-gray-500 font-bold">{date}</div>
+        <div className="text-right shrink-0 flex flex-col items-end gap-2">
+          <div className="flex flex-col items-end">
+            <div className="font-black text-gray-900 text-xl tracking-tight tabular-nums">{formatAmount(amount)}</div>
+            <div className="text-xs text-gray-500 font-bold">{date}</div>
+          </div>
+
+          {/* Phase 2: Discuss Button */}
+          {groupId && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowChat(true);
+              }}
+              className="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all border border-blue-200/50 shadow-sm flex items-center gap-1.5"
+            >
+              <MessageSquareText className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-black uppercase tracking-wider">Discuss</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {groupId && (
+        <ExpenseThreadSheet
+          isOpen={showChat}
+          onClose={() => setShowChat(false)}
+          groupId={groupId}
+          groupName="Group"
+          expenseId={id || title} // Use id if available, fallback to title (less reliable)
+          expenseTitle={title}
+        />
+      )}
     </button>
   );
 };
