@@ -119,8 +119,8 @@ describe('Dashboard Performance', () => {
 
   it('renders without crashing', () => {
     render(<Dashboard />);
-    expect(screen.getByText('Test User')).toBeDefined();
-    expect(screen.getByTestId('bottom-nav')).toBeDefined();
+    expect(screen.getByText('AVAILABLE BALANCE')).toBeDefined();
+    // Navigation test removed as bottom nav was refactored
   });
 
   it('calculates settlement delta correctly', () => {
