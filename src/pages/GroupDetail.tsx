@@ -441,6 +441,7 @@ const GroupDetail = () => {
             <button
               onClick={() => setShowGroupSettings(true)}
               className="w-10 h-10 rounded-full bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
+              aria-label="Group settings"
             >
               <Settings className="w-5 h-5 text-[#4a6850] font-bold" />
             </button>
