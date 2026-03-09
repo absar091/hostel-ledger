@@ -396,6 +396,7 @@ const Activity = () => {
                           }}
                           className="w-10 h-10 rounded-full bg-[#4a6850]/5 flex items-center justify-center text-[#4a6850]/40 hover:text-primary hover:bg-primary/10 transition-all active:scale-90 ml-2"
                           title={t('chat.discuss')}
+                          aria-label={t('chat.discuss')}
                         >
                           <MessageSquareText className="w-5 h-5" />
                         </button>
