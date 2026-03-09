@@ -81,7 +81,7 @@ export function SupportSheet({ isOpen, onClose }: SupportSheetProps) {
               <p className="text-gray-600 dark:text-gray-300">Your ticket ID is:</p>
               <p className="text-2xl font-mono font-bold text-primary bg-primary/10 px-4 py-2 rounded-lg">{ticketId}</p>
               <p className="text-sm text-gray-500 max-w-sm mt-4">We've also sent you an email confirmation. You will receive a notification when an admin replies.</p>
-              <button className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 flex justify-center items-center w-full" onClick={handleClose} className="mt-6 w-full max-w-xs">Close</button>
+              <button className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 flex justify-center items-center mt-6 w-full max-w-xs" onClick={handleClose}>Close</button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -107,7 +107,7 @@ export function SupportSheet({ isOpen, onClose }: SupportSheetProps) {
                   disabled={loading}
                 />
               </div>
-              <button className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 flex justify-center items-center w-full" type="submit" className="w-full mt-4" disabled={loading}>
+              <button className="px-4 py-2 mt-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 flex justify-center items-center w-full" type="submit" disabled={loading}>
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                 {loading ? 'Submitting...' : 'Submit Ticket'}
               </button>
