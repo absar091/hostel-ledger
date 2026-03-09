@@ -12,3 +12,8 @@
 **Vulnerability:** Found `Math.random()` being used in `src/lib/email.ts` to generate verification codes and in `src/lib/jwt.ts` to generate secure tokens. `Math.random()` is not cryptographically secure, which means generated values can be predictable.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, and passwords should never rely on insecure random number generators.
 **Prevention:** Always use `globalThis.crypto.getRandomValues()` for generating random values intended for security purposes.
+
+## 2024-05-24 - Unrestricted global JSON payload limit leading to DoS vulnerability
+**Vulnerability:** The global `express.json()` middleware in `backend-server/server.js` was configured with a `limit: '10mb'` payload size to accommodate a single audio-parsing endpoint, exposing all other routes to unnecessary Denial of Service (DoS) risks via excessively large JSON bodies.
+**Learning:** Applying a large payload limit globally to fix a requirement for a single route violates the principle of least privilege and unnecessarily increases the attack surface for the entire application.
+**Prevention:** Always maintain a strict global limit (e.g., `100kb`) for standard middlewares. If a specific route requires a larger limit, register route-specific middleware with the elevated limit *before* the global middleware in the Express application chain.
