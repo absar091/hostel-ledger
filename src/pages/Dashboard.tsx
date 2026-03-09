@@ -41,7 +41,7 @@ const Dashboard = () => {
     getSettlementDelta,
   } = useFirebaseAuth();
   const {
-    groups,
+    groups = [],
     createGroup,
     addExpense,
     recordPayment,
@@ -85,7 +85,7 @@ const Dashboard = () => {
   const lastTransactionTime = useMemo(() => {
     if (!allTransactions || allTransactions.length === 0) return "No transactions yet";
     const lastTx = allTransactions[0];
-    const txTime = new Date(lastTx.timestamp || lastTx.date);
+    const txTime = new Date((lastTx.timestamp || lastTx.date) || Date.now());
     const now = new Date();
     const diffMs = now.getTime() - txTime.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -315,7 +315,7 @@ const Dashboard = () => {
                           {tx.description}
                         </span>
                         <span className="text-[12px] text-[#888]">
-                          {new Date(tx.timestamp || tx.date).toLocaleDateString(undefined, {
+                          {new Date((tx.timestamp || tx.date) || Date.now()).toLocaleDateString(undefined, {
                             month: 'short', day: 'numeric'
                           })}
                         </span>
@@ -372,16 +372,28 @@ const Dashboard = () => {
       </div>
 
       <AddExpenseSheet
-        isOpen={showAddExpense}
+        open={showAddExpense}
         onClose={() => setShowAddExpense(false)}
-        onAdd={handleCreateExpense}
+        onSubmit={handleCreateExpense}
         groups={groups}
         currentUserId={user?.uid || ""}
         initialGroupId={initialGroupIdForSheet}
       />
 
       <RecordPaymentSheet
-        isOpen={showRecordPayment}
+        open={showRecordPayment}
+        groups={groups}
+        onSubmit={async (data) => {
+          if (!user) return;
+          try {
+            await recordPayment({ ...data, toMember: user.uid });
+            toast.success(t('payment.record_success'));
+            setShowRecordPayment(false);
+          } catch (error) {
+            console.error('Failed to record payment', error);
+            toast.error(t('payment.record_error'));
+          }
+        }}
         onClose={() => setShowRecordPayment(false)}
       />
 
