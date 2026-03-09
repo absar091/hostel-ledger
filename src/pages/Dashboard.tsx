@@ -45,7 +45,7 @@ const Dashboard = () => {
     createGroup,
     addExpense,
     recordPayment,
-    allTransactions,
+    allTransactions = [],
   } = useFirebaseData();
   const { isInstalled } = usePWAInstall();
   const { isOnline, pendingCount, isSyncing, syncData: syncNow } = useSync();
