@@ -729,7 +729,7 @@ const Dashboard = () => {
           {/* MAIN FINANCIAL SECTION: Wallet & Settlements */}
           <section className="space-y-4">
             {/* Wallet Balance Card (Emerald Gradient) */}
-            <div className="wallet-card relative overflow-hidden group shadow-premium rounded-[20px] animate-in zoom-in-95 duration-[250ms] ease-out">
+            <div className="wallet-card relative overflow-hidden group shadow-premium rounded-[20px] animate-in zoom-in-95 duration-300 ease-out">
               <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700" />
               <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
 

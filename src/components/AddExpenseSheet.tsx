@@ -823,7 +823,6 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                             onChange={handleAudioFile}
                             className="hidden"
                           />
-                          </button>
                         </div>
 
                         {isListening && (
