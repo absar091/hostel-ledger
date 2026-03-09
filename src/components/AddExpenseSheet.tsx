@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, ChevronRight, AlertCircle, WifiOff, UserPlus, Clock, Ban, Wallet, Sparkles, Loader2, Mic, MicOff, Upload } from "lucide-react";
+import { Check, ChevronRight, AlertCircle, WifiOff, UserPlus, Clock, Ban, Wallet, Sparkles, Loader2, Mic, MicOff } from "lucide-react";
 import Avatar from "./Avatar";
 import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
@@ -99,7 +99,6 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
   const [showAiInput, setShowAiInput] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open && defaultAiMode) {
@@ -227,6 +226,8 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
   };
 
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const handleAudioFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -295,9 +296,26 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast.info("Using native recorder as fallback...");
         fileInputRef.current?.click();
         return;
       }
+
+      // Explicitly check permissions first on mobile to help trigger prompts in some PWA wrappers
+      if (navigator.permissions && navigator.permissions.query) {
+        try {
+          const permStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+          if (permStatus.state === 'denied') {
+             toast.error("Mic blocked by Chrome. Please go to Chrome Settings > Site Settings > Microphone to allow it.", { duration: 5000 });
+             return;
+          }
+        } catch (e) {
+          // ignore permission query errors (not supported on all browsers)
+          console.warn("Permission query failed", e);
+        }
+      }
+
+      // We explicitly request audio. No fallback, direct user feedback if it fails.
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
@@ -367,19 +385,18 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
     } catch (err: any) {
       console.error("Mic access error:", err);
 
-      // Fallback to native file input if microphone access fails
       if (err.name === 'NotAllowedError' || err.message?.includes('Permission denied')) {
-        toast.error("Mic blocked. Check Chrome Site Settings > Permissions.");
+         toast.info("Mic blocked. Trying native recorder...", { duration: 3000 });
+         fileInputRef.current?.click();
+      } else if (err.name === 'NotFoundError' || err.message?.includes('Requested device not found')) {
+        toast.error("No microphone found on this device.");
       } else {
-        toast.info("Opening native audio recorder instead...");
+        toast.error("Could not access microphone: " + (err.message || err.name));
       }
-      fileInputRef.current?.click();
-
       setIsListening(false);
     }
   };
 
-  // Get members from selected group
   const members = useMemo(() => {
     let allMembers: Member[] = [];
     if (fullGroupData && fullGroupData.id === selectedGroup) {
