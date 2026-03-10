@@ -66,6 +66,7 @@ const TimelineItemBase = ({
   if (type === "wallet_add") {
     return (
       <button
+        type="button"
         onClick={onClick}
         aria-label={`View details for wallet addition: ${title}, ${formatAmount(amount)} added on ${date}`}
         className="w-full bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 border border-[#4a6850]/20 rounded-3xl p-5 text-left hover:bg-gradient-to-br hover:from-[#4a6850]/10 hover:to-[#3d5643]/10 hover:border-[#4a6850]/30 transition-all shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 active:scale-[0.98]"
@@ -92,6 +93,7 @@ const TimelineItemBase = ({
   if (type === "wallet_deduct") {
     return (
       <button
+        type="button"
         onClick={onClick}
         aria-label={`View details for wallet deduction: ${title}, ${formatAmount(amount)} deducted on ${date}`}
         className="w-full bg-gradient-to-br from-red-50 to-orange-50 border border-red-200/50 rounded-3xl p-5 text-left hover:bg-gradient-to-br hover:from-red-100/50 hover:to-orange-100/50 hover:border-red-300/50 transition-all shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 active:scale-[0.98]"
@@ -119,6 +121,7 @@ const TimelineItemBase = ({
     const isPayer = userRole === 'payer';
     return (
       <button
+        type="button"
         onClick={onClick}
         aria-label={`View details for payment ${isPayer ? 'sent to ' + to : 'received from ' + from}: ${formatAmount(amount)} on ${date}`}
         className={`w-full rounded-3xl p-5 text-left transition-all shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 active:scale-[0.98] ${isPayer
@@ -159,6 +162,7 @@ const TimelineItemBase = ({
 
   return (
     <button
+      type="button"
       onClick={onClick}
       aria-label={`View details for expense: ${title}, ${formatAmount(amount)} paid by ${payers && payers.length > 1 ? `${payers.length} people` : paidBy} on ${date}`}
       className="w-full bg-white border border-[#4a6850]/10 rounded-3xl p-5 shadow-lg text-left hover:shadow-xl hover:border-[#4a6850]/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 active:scale-[0.98]"
@@ -254,11 +258,13 @@ const TimelineItemBase = ({
           {/* Phase 2: Discuss Button */}
           {groupId && (
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowChat(true);
               }}
               className="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all border border-blue-200/50 shadow-sm flex items-center gap-1.5"
+              aria-label={`Discuss expense: ${title}`}
             >
               <MessageSquareText className="w-3.5 h-3.5" />
               <span className="text-[10px] font-black uppercase tracking-wider">Discuss</span>
