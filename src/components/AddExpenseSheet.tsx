@@ -364,8 +364,9 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
       setIsListening(true);
       toast.info("Recording... Tap stop when done.", { icon: "🎙️", duration: 3000 });
 
-    } catch (err: any) {
+    } catch (err) {
       console.error("Mic access error:", err);
+<<<<<<< HEAD
 <<<<<<< HEAD
       if (err.name === 'NotAllowedError' || err?.message?.includes('Permission denied') || err?.message?.toLowerCase().includes('permissions policy')) {
         toast.error("Microphone access is blocked. Please allow permissions or open in a regular browser (Chrome/Safari).", { duration: 5000 });
@@ -383,6 +384,9 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
       fileInputRef.current?.click();
 
 >>>>>>> 4b871a23aa83e69dad3fb1254f9c9df19282e150
+=======
+      toast.error("Could not access microphone.");
+>>>>>>> parent of 838b381 (feat: Introduce `AddExpenseSheet` component with AI text/audio parsing and enable microphone permission in Vercel config.)
       setIsListening(false);
     }
   };
