@@ -23,50 +23,55 @@ const normalizeArray = (val: any): any[] => {
 };
 
 // Normalize members: Firebase may return object {memberId: {}, ...} instead of array
+// PERFORMANCE OPTIMIZATION: Replaced chained .map() and console.log with a single-pass loop
+// to reduce memory allocations and prevent O(N) overhead per pass in this critical path.
 const normalizeMembers = (members: any, currentUserId?: string): any[] => {
   if (!members) return [];
 
-  const membersArray = (Array.isArray(members)
-    ? members
-    : Object.entries(members).map(([key, value]: [string, any]) => ({
-      ...value,
-      id: value.id || key, // Ensure the key is used as the member id
-    }))).map((m: any) => ({ ...m, isCurrentUser: false })); // Reset client-side property for ALL members
+  const result: any[] = [];
 
-  console.log('Validating members:', membersArray.map((m: any) => ({
-    id: m.id,
-    name: m.name,
-    userId: m.userId,
-    currentUserId
-  })));
-
-  // If currentUserId is provided, rename that user to "You" for display
-  if (currentUserId) {
-    return membersArray.map((m: any) => {
-      // Check both id and userId key for a match
-      if (m.id === currentUserId || m.userId === currentUserId) {
-        return { ...m, name: "You", isCurrentUser: true, isPending: false };
+  // Handle both array and object formats from Firebase
+  if (Array.isArray(members)) {
+    for (let i = 0; i < members.length; i++) {
+      const m = { ...members[i], isCurrentUser: false };
+      result.push(processMember(m, currentUserId));
+    }
+  } else {
+    for (const key in members) {
+      if (Object.prototype.hasOwnProperty.call(members, key)) {
+        const m = {
+          ...members[key],
+          id: members[key].id || key, // Ensure the key is used as the member id
+          isCurrentUser: false
+        };
+        result.push(processMember(m, currentUserId));
       }
-
-      // Fix for legacy groups where creator was stored as "You"
-      // If we see "You" but it's not the current user, rename it to avoid confusion
-      // Use case-insensitive check and trim
-      if (m.name && m.name.trim().toLowerCase() === "you") {
-        return { ...m, name: "Group Owner" };
-      }
-
-      return m;
-    });
+    }
   }
 
-  // Fallback: If no currentUserId, still rename "You" to "Group Owner" to prevent confusion
-  // as we don't know who "You" is.
-  return membersArray.map((m: any) => {
-    if (m.name && m.name.trim().toLowerCase() === "you") {
-      return { ...m, name: "Group Owner" };
+  return result;
+};
+
+// Helper function to process individual member logic inline during the single pass
+const processMember = (m: any, currentUserId?: string) => {
+  if (currentUserId) {
+    // Check both id and userId key for a match
+    if (m.id === currentUserId || m.userId === currentUserId) {
+      m.name = "You";
+      m.isCurrentUser = true;
+      m.isPending = false;
+      return m;
     }
-    return m;
-  });
+  }
+
+  // Fix for legacy groups where creator was stored as "You"
+  // If we see "You" but it's not the current user, rename it to avoid confusion
+  // Use case-insensitive check and trim
+  if (m.name && m.name.trim().toLowerCase() === "you") {
+    m.name = "Group Owner";
+  }
+
+  return m;
 };
 
 
