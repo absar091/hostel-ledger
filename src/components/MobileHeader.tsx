@@ -62,15 +62,14 @@ const MobileHeader = ({ title, showBackButton = false, rightContent }: MobileHea
 
       <button
         onClick={() => navigate("/profile")}
-        className="relative group"
+        className="relative group w-10 h-10 rounded-full border border-gray-200 p-0.5 object-contain"
         aria-label="View profile"
       >
-        <div className="rounded-full ring-2 ring-white shadow-lg overflow-hidden">
+        <div className="w-full h-full rounded-full overflow-hidden">
           <Avatar
             name={user?.name || "User"}
             photoURL={user?.photoURL}
-            size="md"
-            className="w-10 h-10"
+            size="sm"
           />
         </div>
       </button>
@@ -78,39 +77,41 @@ const MobileHeader = ({ title, showBackButton = false, rightContent }: MobileHea
   );
 
   return (
-    <header className="lg:hidden sticky top-0 z-50 bg-[#F8F9FA]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-gray-100">
-      <div className="flex items-center gap-3">
-        {showBackButton ? (
-          <button
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
-          </button>
-        ) : (
-          <img
-            src="/only-logo.png"
-            alt="Hostel Ledger"
-            className="w-10 h-10 rounded-xl shadow-lg"
-          />
-        )}
-
-        <div className="min-w-0 flex-1">
-          {title ? (
-            <h1 className="text-lg font-black text-gray-900 tracking-tight truncate">
-              {title}
-            </h1>
+    <header className="lg:hidden sticky top-4 z-50 mx-4 mb-4" aria-label="Mobile Application Header" role="banner">
+      <div className="bg-white rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.06)] px-5 py-3 flex items-center justify-between border border-gray-100/40 backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          {showBackButton ? (
+            <button
+              onClick={() => navigate(-1)}
+              className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center active:scale-95 transition-all text-gray-700 hover:bg-gray-100 border border-gray-100"
+              aria-label="Go back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
           ) : (
-            <h1 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
-              HOSTEL LEDGER
-            </h1>
+            <img
+              src="/logo.png"
+              alt="Hostel Ledger"
+              className="w-9 h-9 object-contain"
+            />
           )}
-        </div>
-      </div>
 
-      <div className="flex items-center gap-3">
-        {rightContent || defaultRightContent}
+          <div className="min-w-0 flex-1 ml-1">
+            {title ? (
+              <h1 className="text-base font-black text-gray-800 tracking-tight truncate">
+                {title}
+              </h1>
+            ) : (
+              <h1 className="text-[14px] font-black uppercase tracking-[0.12em] text-[#5C7E68]">
+                HOSTEL LEDGER
+              </h1>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {rightContent || defaultRightContent}
+        </div>
       </div>
     </header>
   );

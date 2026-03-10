@@ -714,11 +714,11 @@ const Dashboard = () => {
         {/* Username Migration Prompt */}
         <UsernameMigration />
 
-        <main className="flex-1 w-full max-w-5xl mx-auto p-4 lg:p-6 space-y-6 pb-24 lg:pb-12">
+        <main className="flex-1 w-full max-w-5xl mx-auto p-4 lg:p-6 space-y-6 pb-24 lg:pb-12" role="main" aria-label="Dashboard Content">
           {/* Greeting Section */}
-          <section className="mt-4 mb-2 animate-fadeIn">
-            <p className="text-muted-foreground font-semibold text-xs tracking-wide uppercase">{greeting.text} {greeting.emoji}</p>
-            <h2 className="text-3xl font-black tracking-tight text-foreground -mt-1">
+          <section className="mt-4 mb-6 animate-fadeIn px-2" aria-label="Greeting">
+            <p className="text-gray-500 font-medium text-sm tracking-wide mb-1">{greeting.text} {greeting.emoji}</p>
+            <h2 className="text-[32px] font-black tracking-tight text-gray-900 leading-none">
               {user?.name?.split(' ')[0] || "User"}!
             </h2>
           </section>
@@ -727,78 +727,71 @@ const Dashboard = () => {
           <InvitationsList />
 
           {/* MAIN FINANCIAL SECTION: Wallet & Settlements */}
-          <section className="space-y-4">
-            {/* Wallet Balance Card (Emerald Gradient) */}
-            <div className="wallet-card relative overflow-hidden group shadow-premium rounded-[20px] animate-in zoom-in-95 duration-[250ms] ease-out">
-              <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700" />
+          <section className="space-y-7 px-2" aria-label="Wallet and Settlements">
+            {/* Wallet Balance Card (Deep Forest Theme) */}
+            <div className="relative overflow-hidden group rounded-[32px] bg-gradient-to-br from-[#3E5F50] to-[#2B3F36] p-7 shadow-[0_15px_35px_rgba(43,63,54,0.35),inset_0_1px_0_rgba(255,255,255,0.15)] animate-in zoom-in-95 duration-[250ms] ease-out">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
               <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
 
-              <div className="relative z-10 flex justify-between items-start">
+              {/* Glass subtle highlight effect */}
+              <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-50 pointer-events-none" />
+
+              <div className="flex justify-between items-start relative z-10">
                 <div>
-                  <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] mb-1">
+                  <p className="text-[#C7D6CF] text-[10px] font-black uppercase tracking-[0.15em] mb-2 drop-shadow-sm">
                     {t('dashboard.available_balance')}
                   </p>
-                  <h3 className="text-[34px] font-bold tracking-[-0.5px] text-white tabular-nums leading-none">
+                  <h3 className="text-[40px] font-bold tracking-tight text-white tabular-nums leading-none mb-4 drop-shadow-md">
                     {formatAmount(walletBalance)}
                   </h3>
                 </div>
-                <button
-                  onClick={() => setShowAddMoney(true)}
-                  className="w-12 h-12 rounded-2xl bg-white/20 hover:bg-white/30 active:scale-95 transition-all flex items-center justify-center border border-white/20 backdrop-blur-md"
-                >
-                  <Plus className="w-6 h-6 text-white" strokeWidth={3} />
-                </button>
               </div>
-              <p className="text-white/30 text-[9px] mt-2 font-bold uppercase tracking-widest relative z-10">
+              <p className="text-[#C7D6CF]/80 text-[11px] font-medium tracking-wide relative z-10 mt-1">
                 {lastTransactionTime}
               </p>
             </div>
 
-            {/* Settlements Section - Vertical Stack with Dividers */}
-            <div className="glass-card shadow-premium p-0 overflow-hidden">
-              <div className="flex flex-col divide-y divide-border/50">
+            {/* Settlements Section */}
+            <div className="bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[24px] overflow-hidden">
+              <div className="flex flex-col">
                 {/* To Receive Row */}
                 <button
                   onClick={() => navigate("/to-receive")}
-                  className="p-5 flex items-center justify-between bg-[#E7F6F1] hover:brightness-[0.98] active:scale-[0.99] transition-all group"
+                  className="p-5 flex items-center justify-between bg-[#F4F9F6] border-b border-gray-100 hover:brightness-[0.98] active:scale-[0.99] transition-all group"
                 >
-                  <div className="flex flex-col items-start gap-0.5 text-left">
-                    <p className="text-[10px] font-black text-[#1a3a2e]/60 uppercase tracking-widest leading-none">{t('dashboard.total_to_receive')}</p>
-                    <p className="text-[20px] font-bold text-[#1a3a2e] tabular-nums leading-tight">+{formatAmount(totalToReceive)}</p>
-                    <p className="text-[9px] font-bold text-[#1a3a2e]/40 uppercase tracking-tighter mt-1">{t('to_receive.tap_to_view')}</p>
+                  <div className="flex flex-col items-start gap-1 text-left">
+                    <p className="text-[10px] font-black text-[#5C7E68] uppercase tracking-[0.15em] leading-none">{t('dashboard.total_to_receive')}</p>
+                    <p className="text-[20px] font-bold text-gray-900 tabular-nums leading-tight">+{formatAmount(totalToReceive)}</p>
                   </div>
-                  <ArrowDownLeft className="w-6 h-6 text-[#1a3a2e]/40 group-hover:text-[#1a3a2e] transition-colors" />
+                  <ArrowDownLeft className="w-5 h-5 text-[#5C7E68]" strokeWidth={2.5} />
                 </button>
 
                 {/* To Pay Row */}
                 <button
                   onClick={() => navigate("/to-pay")}
-                  className="p-5 flex items-center justify-between bg-[#FEF1F2] hover:brightness-[0.98] active:scale-[0.99] transition-all group"
+                  className="p-5 flex items-center justify-between bg-[#FFF5F5] border-b border-gray-100 hover:brightness-[0.98] active:scale-[0.99] transition-all group"
                 >
-                  <div className="flex flex-col items-start gap-0.5 text-left">
-                    <p className="text-[10px] font-black text-[#991b1b]/60 uppercase tracking-widest leading-none">{t('dashboard.total_to_pay')}</p>
+                  <div className="flex flex-col items-start gap-1 text-left">
+                    <p className="text-[10px] font-black text-[#D47070] uppercase tracking-[0.15em] leading-none">{t('dashboard.total_to_pay')}</p>
                     <p className="text-[20px] font-bold text-[#991b1b] tabular-nums leading-tight">-{formatAmount(totalToPay)}</p>
-                    <p className="text-[9px] font-bold text-[#991b1b]/40 uppercase tracking-tighter mt-1">{t('to_pay.tap_to_view')}</p>
                   </div>
-                  <ArrowUpRight className="w-6 h-6 text-[#991b1b]/40 group-hover:text-[#991b1b] transition-colors" />
+                  <ArrowUpRight className="w-5 h-5 text-[#D47070]" strokeWidth={2.5} />
                 </button>
 
                 {/* Settlement Delta Highlight */}
-                <div className="p-5 bg-slate-50/50 flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">{t('dashboard.after_settlements')}</p>
-                      <p className="text-[24px] font-bold text-gray-900 tabular-nums tracking-[-0.5px] leading-tight">{formatAmount(afterSettlementsBalance)}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-tighter opacity-70">Settlement Delta</p>
-                      <div className={cn(
-                        "flex items-center gap-1.5 text-[14px] font-black uppercase tracking-tight",
-                        settlementDelta > 0 ? "text-[#1a3a2e]" : settlementDelta < 0 ? "text-[#991b1b]" : "text-gray-500"
-                      )}>
-                        {settlementDelta > 0 ? <ArrowDownLeft className="w-4 h-4" strokeWidth={3} /> : settlementDelta < 0 ? <ArrowUpRight className="w-4 h-4" strokeWidth={3} /> : null}
-                        {formatAmount(Math.abs(settlementDelta))}
-                      </div>
+                <div className="p-5 bg-white flex items-end justify-between">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] leading-none">{t('dashboard.after_settlements')}</p>
+                    <p className="text-[22px] font-bold text-gray-900 tabular-nums leading-tight">{formatAmount(afterSettlementsBalance)}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.15em] text-right">Settlement Delta</p>
+                    <div className={cn(
+                      "flex items-center gap-1 text-[13px] font-black uppercase tracking-tight",
+                      settlementDelta > 0 ? "text-[#4B6B54]" : settlementDelta < 0 ? "text-[#991b1b]" : "text-gray-500"
+                    )}>
+                      {settlementDelta > 0 ? <ArrowDownLeft className="w-3.5 h-3.5" strokeWidth={3} /> : settlementDelta < 0 ? <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={3} /> : null}
+                      {formatAmount(Math.abs(settlementDelta))}
                     </div>
                   </div>
                 </div>
@@ -806,117 +799,86 @@ const Dashboard = () => {
             </div>
           </section>
 
-          {/* 6 QUICK SHORTCUTS GRID */}
-          <section className="animate-slideUp delay-100">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4">
-              Quick Shortcuts
-            </h3>
-            <div className="grid grid-cols-3 gap-3">
+          {/* QUICK SHORTCUTS GRID - Horizontally scrollable */}
+          <section className="animate-slideUp delay-100 px-2 relative" aria-label="Quick Shortcuts">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-500">
+                Quick Shortcuts
+              </h3>
+              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                Swipe for more <ArrowRight className="w-3 h-3" />
+              </span>
+            </div>
+
+            {/* Scrollable Container */}
+            <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar -mx-2 px-2 snap-x">
               {/* 1. Log (Split Bill) */}
-              <button onClick={handleAddExpense} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
-                <div className="w-12 h-12 rounded-2xl bg-[#DCFCE7] text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
-                  <CreditCard className="w-6 h-6" />
+              <button onClick={handleAddExpense} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+                <div className="w-12 h-12 rounded-[16px] bg-[#EAF5EF] text-[#4B6B54] flex items-center justify-center">
+                  <CreditCard className="w-6 h-6" strokeWidth={2} />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground leading-tight whitespace-nowrap">{t('dashboard.split_bill')}</span>
+                <span className="text-[11px] font-semibold text-gray-700 leading-tight whitespace-nowrap">{t('dashboard.split_bill')}</span>
               </button>
 
               {/* 2. Solo (Personal Expense) */}
-              <button onClick={handlePersonalExpense} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
-                <div className="w-12 h-12 rounded-2xl bg-[#DBEAFE] text-blue-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
-                  <User className="w-6 h-6" />
+              <button onClick={handlePersonalExpense} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+                <div className="w-12 h-12 rounded-[16px] bg-[#EBF3FE] text-[#4285F4] flex items-center justify-center">
+                  <User className="w-6 h-6" strokeWidth={2} />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground leading-tight whitespace-nowrap">{t('dashboard.log_solo')}</span>
+                <span className="text-[11px] font-semibold text-gray-700 leading-tight whitespace-nowrap">{t('dashboard.log_solo')}</span>
               </button>
 
               {/* 3. Received (Record Payment) */}
-              <button onClick={handleReceivedMoney} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
-                <div className="w-12 h-12 rounded-2xl bg-[#D1FAE5] text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
-                  <ArrowDownLeft className="w-6 h-6" />
+              <button onClick={handleReceivedMoney} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+                <div className="w-12 h-12 rounded-[16px] bg-[#EAF5EF] text-[#34A853] flex items-center justify-center">
+                  <ArrowDownLeft className="w-6 h-6" strokeWidth={2} />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground leading-tight whitespace-nowrap">{t('dashboard.received')}</span>
+                <span className="text-[11px] font-semibold text-gray-700 leading-tight whitespace-nowrap">{t('dashboard.received')}</span>
               </button>
 
               {/* 4. Send (Record Payment TO) */}
-              <button onClick={() => navigate("/send-money")} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
-                <div className="w-12 h-12 rounded-2xl bg-[#FEE2E2] text-rose-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
-                  <ArrowUpRight className="w-6 h-6" />
+              <button onClick={() => navigate("/send-money")} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+                <div className="w-12 h-12 rounded-[16px] bg-[#FEF0F0] text-[#EA4335] flex items-center justify-center">
+                  <ArrowUpRight className="w-6 h-6" strokeWidth={2} />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground leading-tight whitespace-nowrap">{t('dashboard.send_money')}</span>
+                <span className="text-[11px] font-semibold text-gray-700 leading-tight whitespace-nowrap">{t('dashboard.send_money')}</span>
               </button>
 
               {/* 5. Add Money (Top up Wallet) */}
-              <button onClick={() => setShowAddMoney(true)} className="glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
-                <div className="w-12 h-12 rounded-2xl bg-[#FEF3C7] text-amber-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
-                  <Plus className="w-6 h-6" />
+              <button onClick={() => setShowAddMoney(true)} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+                <div className="w-12 h-12 rounded-[16px] bg-[#FFF8E6] text-[#FBBC04] flex items-center justify-center">
+                  <Plus className="w-6 h-6" strokeWidth={2} />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground leading-tight whitespace-nowrap">{t('dashboard.add_money')}</span>
+                <span className="text-[11px] font-semibold text-gray-700 leading-tight whitespace-nowrap">{t('dashboard.add_money')}</span>
               </button>
 
               {/* 6. AI Insights */}
               <AIInsightsSheet
                 trigger={
-                  <button className="w-full glass-card hover-lift p-4 flex flex-col items-center gap-2 group">
-                    <div className="w-12 h-12 rounded-2xl bg-[#E0F2FE] text-teal-600 flex items-center justify-center group-hover:scale-110 transition-all shadow-sm">
-                      <Sparkles className="w-6 h-6" />
+                  <button className="flex-shrink-0 w-24 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+                    <div className="w-12 h-12 rounded-[16px] bg-[#E8F8F5] text-[#1ABC9C] flex items-center justify-center">
+                      <Sparkles className="w-6 h-6" strokeWidth={2} />
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground leading-tight whitespace-nowrap">{t('dashboard.ai_insights')}</span>
+                    <span className="text-[11px] font-semibold text-gray-700 leading-tight whitespace-nowrap">{t('dashboard.ai_insights')}</span>
                   </button>
                 }
               />
             </div>
-          </section>
-
-          {/* ACTIVE GROUPS CAROUSEL */}
-          <section className="animate-slideUp delay-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                Active Groups
-              </h3>
-              <button onClick={() => navigate("/groups")} className="text-[10px] font-black text-emerald-600 uppercase">
-                {t('dashboard.view_all')}
-              </button>
-            </div>
-            <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar -mx-4 px-4 snap-x">
-              {groups.map((group) => (
-                <button
-                  key={group.id}
-                  onClick={() => navigate(`/group/${group.id}`)}
-                  className="flex-shrink-0 w-32 glass-card p-4 flex flex-col items-center text-center gap-2 snap-center hover-lift"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center text-2xl shadow-sm border border-emerald-100">
-                    {group.emoji || "🏠"}
-                  </div>
-                  <div className="min-w-0 w-full">
-                    <p className="text-[11px] font-black text-foreground truncate uppercase tracking-tighter">{group.name}</p>
-                    <p className="text-[9px] font-bold text-muted-foreground mt-0.5">{group.members.length} members</p>
-                  </div>
-                </button>
-              ))}
-              <button
-                onClick={handleNewGroup}
-                className="flex-shrink-0 w-32 glass-card border-dashed border-2 border-emerald-200/50 bg-emerald-50/10 p-4 flex flex-col items-center justify-center text-center gap-2 snap-center hover:bg-emerald-50 transition-colors"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-sm">
-                  <Plus className="w-6 h-6 text-emerald-500" />
-                </div>
-                <span className="text-[10px] font-black uppercase text-emerald-600 tracking-tighter">{t('dashboard.quick_actions.new_group')}</span>
-              </button>
-            </div>
-          </section>
+          </section >
 
           {/* RECENT ACTIVITY FEED */}
-          <section className="animate-slideUp delay-300">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+          <section className="animate-slideUp delay-200 px-2 mt-4" aria-label="Recent Activity">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-500">
                 {t('dashboard.recent_activity')}
               </h3>
               {allTransactions.length > 5 && (
-                <button onClick={() => navigate("/activity")} className="text-[10px] font-black text-emerald-600 uppercase">
+                <button onClick={() => navigate("/activity")} className="text-[10px] font-black text-[#4B6B54] uppercase">
                   {t('dashboard.view_all_dashboard')}
                 </button>
               )}
             </div>
-            <div className="glass-card shadow-sm divide-y divide-border/30 overflow-hidden">
+            <div className="bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[24px] divide-y divide-gray-50 overflow-hidden">
               {allTransactions.length > 0 ? (
                 <div className="p-1">
                   <TransactionList
@@ -948,7 +910,7 @@ const Dashboard = () => {
                 </div>
               )}
             </div>
-          </section>
+          </section >
         </main >
 
         {/* Transaction Detail Modal */}
