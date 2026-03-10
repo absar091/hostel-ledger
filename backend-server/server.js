@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
+let firestore;
 const cloudinary = require('cloudinary').v2;
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
@@ -158,6 +159,7 @@ try {
   });
 
   console.log('✅ Firebase Admin SDK initialized successfully');
+  firestore = admin.firestore();
 } catch (error) {
   console.error('❌ Firebase Admin SDK initialization failed:', error.message);
   console.warn('⚠️ Email existence check will not work without Firebase Admin SDK');
@@ -4385,7 +4387,6 @@ app.post('/api/cleanup-unverified-users', adminAuth, async (req, res) => {
     const accounts = snapshot.val();
     let deletedCount = 0;
     const errors = [];
-    const firestore = admin.firestore();
 
     const cleanupPromises = Object.entries(accounts).map(async ([uid, accountData]) => {
       try {

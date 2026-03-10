@@ -197,357 +197,359 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
         (transaction.timestamp ? ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}` : '');
 
     return (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-md max-h-[90vh] overflow-hidden rounded-3xl shadow-[0_25px_70px_rgba(74,104,80,0.3)] border border-[#4a6850]/10 mx-auto">
-                {/* Header with close button - iPhone Style */}
-                <div className="flex items-center justify-between p-4 lg:p-6 border-b border-[#4a6850]/10 bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 flex-shrink-0">
-                    <div className="flex items-center gap-3 lg:gap-4 flex-1 min-w-0">
-                        <div className={`w-10 lg:w-12 h-10 lg:h-12 rounded-2xl lg:rounded-3xl flex items-center justify-center shadow-lg flex-shrink-0 ${transaction.type === 'expense' ? 'bg-gradient-to-br from-red-500 to-orange-500 text-white' :
-                            transaction.type === 'payment' ? 'bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white' : 'bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white'
-                            }`}>
-                            {transaction.type === 'expense' ? (
-                                <ArrowUpRight className="w-5 lg:w-6 h-5 lg:h-6 font-bold" />
-                            ) : transaction.type === 'payment' ? (
-                                <ArrowDownLeft className="w-5 lg:w-6 h-5 lg:h-6 font-bold" />
-                            ) : (
-                                <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 font-bold" />
-                            )}
+        <>
+            <div className={`fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 ${showChat ? 'hidden' : ''}`}>
+                <div className="bg-white w-full max-w-md max-h-[90vh] overflow-hidden rounded-3xl shadow-[0_25px_70px_rgba(74,104,80,0.3)] border border-[#4a6850]/10 mx-auto">
+                    {/* Header with close button - iPhone Style */}
+                    <div className="flex items-center justify-between p-4 lg:p-6 border-b border-[#4a6850]/10 bg-gradient-to-r from-[#4a6850]/5 to-[#3d5643]/5 flex-shrink-0">
+                        <div className="flex items-center gap-3 lg:gap-4 flex-1 min-w-0">
+                            <div className={`w-10 lg:w-12 h-10 lg:h-12 rounded-2xl lg:rounded-3xl flex items-center justify-center shadow-lg flex-shrink-0 ${transaction.type === 'expense' ? 'bg-gradient-to-br from-red-500 to-orange-500 text-white' :
+                                transaction.type === 'payment' ? 'bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white' : 'bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white'
+                                }`}>
+                                {transaction.type === 'expense' ? (
+                                    <ArrowUpRight className="w-5 lg:w-6 h-5 lg:h-6 font-bold" />
+                                ) : transaction.type === 'payment' ? (
+                                    <ArrowDownLeft className="w-5 lg:w-6 h-5 lg:h-6 font-bold" />
+                                ) : (
+                                    <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 font-bold" />
+                                )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <h2 className="font-bold text-gray-900 text-base lg:text-lg tracking-tight truncate">Transaction Details</h2>
+                                <p className="text-xs lg:text-sm text-[#4a6850]/80 capitalize font-medium truncate">{transaction.type}</p>
+                            </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                            <h2 className="font-bold text-gray-900 text-base lg:text-lg tracking-tight truncate">Transaction Details</h2>
-                            <p className="text-xs lg:text-sm text-[#4a6850]/80 capitalize font-medium truncate">{transaction.type}</p>
+                        <div className="flex items-center gap-2 lg:gap-3 ml-3 lg:ml-4">
+                            {/* Share as Image button */}
+                            <button
+                                onClick={handleShareAsImage}
+                                disabled={isGenerating}
+                                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+                                title="Share as Image"
+                            >
+                                {isGenerating ? (
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    <Image className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" />
+                                )}
+                            </button>
+                            <button
+                                onClick={onClose}
+                                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+                            >
+                                <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
+                            </button>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 lg:gap-3 ml-3 lg:ml-4">
-                        {/* Share as Image button */}
-                        <button
-                            onClick={handleShareAsImage}
-                            disabled={isGenerating}
-                            className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
-                            title="Share as Image"
-                        >
-                            {isGenerating ? (
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                                <Image className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" />
-                            )}
-                        </button>
-                        <button
-                            onClick={onClose}
-                            className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
-                        >
-                            <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
-                        </button>
-                    </div>
-                </div>
 
-                {/* Scrollable content - iPhone Style */}
-                <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 180px)' }}>
-                    <div className="p-4 lg:p-6">
-                        {/* Transaction header - iPhone Style */}
-                        <div className="text-center mb-6 lg:mb-8">
-                            <h3 className="text-lg lg:text-2xl font-bold text-gray-900 mb-2 lg:mb-3 tracking-tight truncate px-2">{transaction.title}</h3>
-                            <div className="text-3xl lg:text-5xl font-black text-gray-900 mb-1.5 lg:mb-2 tracking-tighter tabular-nums">
-                                {formatAmount(transaction.amount)}
-                            </div>
-
-                            {/* Transaction ID - New addition */}
-                            <div className="flex items-center justify-center gap-2 mb-4">
-                                <span className="text-[10px] font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded truncate max-w-[200px]">
-                                    {transaction.id}
-                                </span>
-                                <button
-                                    onClick={handleCopyId}
-                                    className={`p-1.5 rounded-full transition-all ${isCopied
-                                        ? "bg-emerald-50 text-emerald-500"
-                                        : "hover:bg-slate-100 text-slate-400 hover:text-[#4a6850]"
-                                        }`}
-                                    title={isCopied ? "Copied!" : "Copy ID"}
-                                >
-                                    {isCopied ? (
-                                        <Check className="w-3.5 h-3.5" />
-                                    ) : (
-                                        <Copy className="w-3.5 h-3.5" />
-                                    )}
-                                </button>
-                            </div>
-
-                            {/* Badge Logic Fixed: Check if user is payer properly, and use resolvedParticipants */}
-                            {transaction.type === 'expense' && !isCurrentUserPayer && (
-                                <div className="mb-2">
-                                    {(() => {
-                                        // Use resolvedParticipants to handle object/array and userId lookup
-                                        const userPart = resolvedParticipants.find((p: any) =>
-                                            p.id === user?.uid || (p.userId && p.userId === user?.uid)
-                                        );
-
-                                        if (userPart) {
-                                            return (
-                                                <div className="inline-flex items-center px-3 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100 shadow-sm">
-                                                    <span className="text-xs font-black uppercase tracking-wider">Your Share: {formatAmount(userPart.amount)}</span>
-                                                </div>
-                                            );
-                                        } else {
-                                            return (
-                                                <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-500 border border-slate-100 shadow-sm">
-                                                    <span className="text-xs font-black uppercase tracking-wider">Not a participant</span>
-                                                </div>
-                                            );
-                                        }
-                                    })()}
+                    {/* Scrollable content - iPhone Style */}
+                    <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 180px)' }}>
+                        <div className="p-4 lg:p-6">
+                            {/* Transaction header - iPhone Style */}
+                            <div className="text-center mb-6 lg:mb-8">
+                                <h3 className="text-lg lg:text-2xl font-bold text-gray-900 mb-2 lg:mb-3 tracking-tight truncate px-2">{transaction.title}</h3>
+                                <div className="text-3xl lg:text-5xl font-black text-gray-900 mb-1.5 lg:mb-2 tracking-tighter tabular-nums">
+                                    {formatAmount(transaction.amount)}
                                 </div>
-                            )}
-                            <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">
-                                {transaction.date || (transaction.timestamp ? new Date(transaction.timestamp).toLocaleDateString() : 'Unknown Date')}
-                                {transaction.timestamp && ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
-                            </div>
-                        </div>
 
-                        <div className="space-y-3 lg:space-y-4">
-                            {/* Group Information - iPhone Style */}
-                            {transactionGroup && (
-                                <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                                    <Users className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Group</div>
-                                        <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transactionGroup.name}</div>
-                                        <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">
-                                            {Array.isArray(transactionGroup.members)
-                                                ? transactionGroup.members.length
-                                                : Object.keys(transactionGroup.members || {}).length} members
+                                {/* Transaction ID - New addition */}
+                                <div className="flex items-center justify-center gap-2 mb-4">
+                                    <span className="text-[10px] font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded truncate max-w-[200px]">
+                                        {transaction.id}
+                                    </span>
+                                    <button
+                                        onClick={handleCopyId}
+                                        className={`p-1.5 rounded-full transition-all ${isCopied
+                                            ? "bg-emerald-50 text-emerald-500"
+                                            : "hover:bg-slate-100 text-slate-400 hover:text-[#4a6850]"
+                                            }`}
+                                        title={isCopied ? "Copied!" : "Copy ID"}
+                                    >
+                                        {isCopied ? (
+                                            <Check className="w-3.5 h-3.5" />
+                                        ) : (
+                                            <Copy className="w-3.5 h-3.5" />
+                                        )}
+                                    </button>
+                                </div>
+
+                                {/* Badge Logic Fixed: Check if user is payer properly, and use resolvedParticipants */}
+                                {transaction.type === 'expense' && !isCurrentUserPayer && (
+                                    <div className="mb-2">
+                                        {(() => {
+                                            // Use resolvedParticipants to handle object/array and userId lookup
+                                            const userPart = resolvedParticipants.find((p: any) =>
+                                                p.id === user?.uid || (p.userId && p.userId === user?.uid)
+                                            );
+
+                                            if (userPart) {
+                                                return (
+                                                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100 shadow-sm">
+                                                        <span className="text-xs font-black uppercase tracking-wider">Your Share: {formatAmount(userPart.amount)}</span>
+                                                    </div>
+                                                );
+                                            } else {
+                                                return (
+                                                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-500 border border-slate-100 shadow-sm">
+                                                        <span className="text-xs font-black uppercase tracking-wider">Not a participant</span>
+                                                    </div>
+                                                );
+                                            }
+                                        })()}
+                                    </div>
+                                )}
+                                <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">
+                                    {transaction.date || (transaction.timestamp ? new Date(transaction.timestamp).toLocaleDateString() : 'Unknown Date')}
+                                    {transaction.timestamp && ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
+                                </div>
+                            </div>
+
+                            <div className="space-y-3 lg:space-y-4">
+                                {/* Group Information - iPhone Style */}
+                                {transactionGroup && (
+                                    <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                                        <Users className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Group</div>
+                                            <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transactionGroup.name}</div>
+                                            <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">
+                                                {Array.isArray(transactionGroup.members)
+                                                    ? transactionGroup.members.length
+                                                    : Object.keys(transactionGroup.members || {}).length} members
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                            {/* Paid By (for expenses) - iPhone Style */}
-                            {transaction.paidByName && !isMultiPayer && (
-                                <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                                    <div className="relative">
-                                        <User className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
-                                        {transactionGroup?.createdBy === transaction.paidBy && (
-                                            <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-yellow-900 text-[8px] font-black px-1 py-0.5 rounded-full shadow-sm border border-yellow-200">
-                                                OWNER
+                                {/* Paid By (for expenses) - iPhone Style */}
+                                {transaction.paidByName && !isMultiPayer && (
+                                    <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                                        <div className="relative">
+                                            <User className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
+                                            {transactionGroup?.createdBy === transaction.paidBy && (
+                                                <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-yellow-900 text-[8px] font-black px-1 py-0.5 rounded-full shadow-sm border border-yellow-200">
+                                                    OWNER
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Paid by</div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">
+                                                    {transactionGroup?.createdBy === transaction.paidBy && !isCurrentUserPayer ? "Group Owner" : resolvedPaidByName}
+                                                </div>
+                                                {isTemporaryPayer && (
+                                                    <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                                                )}
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Paid by</div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">
-                                                {transactionGroup?.createdBy === transaction.paidBy && !isCurrentUserPayer ? "Group Owner" : resolvedPaidByName}
+                                )}
+
+                                {/* Payment Details (for payments) - iPhone Style */}
+
+                                {/* Multiple Payers - iPhone Style */}
+                                {isMultiPayer && (
+                                    <div className="p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                                        <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-3 lg:mb-4 font-semibold uppercase tracking-wide">Paid By ({resolvedPayers.length})</div>
+                                        <div className="space-y-2 lg:space-y-3 max-h-32 overflow-y-auto scrollbar-hide">
+                                            {resolvedPayers.map((payer: any, index: number) => {
+                                                const isOwner = transactionGroup?.createdBy === payer.id;
+                                                const isMe = payer.id === user?.uid;
+                                                return (
+                                                    <div key={index} className="flex justify-between items-center gap-2">
+                                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                            <span className="font-semibold text-gray-900 truncate text-sm lg:text-base">
+                                                                {isOwner && !isMe ? "Group Owner" : payer.name}
+                                                            </span>
+                                                            {isOwner && (
+                                                                <span className="bg-yellow-100 text-yellow-700 text-[8px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-xs lg:text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">{formatAmount(payer.amount)}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {transaction.fromName && transaction.toName && (
+                                    <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                                        <ArrowUpRight className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Payment From</div>
+                                            <div className="flex flex-col gap-1">
+                                                {/* FROM USER */}
+                                                <div className="flex items-center gap-2">
+                                                    <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">
+                                                        {transactionGroup?.createdBy === transaction.from && transaction.from !== user?.uid ? "Group Owner" : (transaction.from === user?.uid ? "You" : transaction.fromName)}
+                                                    </div>
+                                                    {transactionGroup?.createdBy === transaction.from && (
+                                                        <span className="bg-yellow-100 text-yellow-700 text-[8px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
+                                                    )}
+                                                </div>
+
+                                                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest pl-1">TO</div>
+
+                                                {/* TO USER */}
+                                                <div className="flex items-center gap-2">
+                                                    <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">
+                                                        {transactionGroup?.createdBy === transaction.to && transaction.to !== user?.uid ? "Group Owner" : (transaction.to === user?.uid ? "You" : transaction.toName)}
+                                                    </div>
+                                                    {transactionGroup?.createdBy === transaction.to && (
+                                                        <span className="bg-yellow-100 text-yellow-700 text-[8px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
+                                                    )}
+                                                </div>
                                             </div>
-                                            {isTemporaryPayer && (
-                                                <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+
+                                            {transaction.method && (
+                                                <div className="text-xs lg:text-sm text-[#4a6850]/80 capitalize font-medium mt-2">via {transaction.method}</div>
                                             )}
                                         </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                            {/* Payment Details (for payments) - iPhone Style */}
+                                {/* Participants (for expenses) - iPhone Style */}
+                                {transaction.participants && transaction.participants.length > 0 && (
+                                    <div className="p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                                        <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-3 lg:mb-4 font-semibold uppercase tracking-wide">Participants ({transaction.participants.length})</div>
+                                        <div className="space-y-2 lg:space-y-3 max-h-32 overflow-y-auto scrollbar-hide">
 
-                            {/* Multiple Payers - iPhone Style */}
-                            {isMultiPayer && (
-                                <div className="p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                                    <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-3 lg:mb-4 font-semibold uppercase tracking-wide">Paid By ({resolvedPayers.length})</div>
-                                    <div className="space-y-2 lg:space-y-3 max-h-32 overflow-y-auto scrollbar-hide">
-                                        {resolvedPayers.map((payer: any, index: number) => {
-                                            const isOwner = transactionGroup?.createdBy === payer.id;
-                                            const isMe = payer.id === user?.uid;
-                                            return (
-                                                <div key={index} className="flex justify-between items-center gap-2">
-                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                                                        <span className="font-semibold text-gray-900 truncate text-sm lg:text-base">
-                                                            {isOwner && !isMe ? "Group Owner" : payer.name}
-                                                        </span>
-                                                        {isOwner && (
-                                                            <span className="bg-yellow-100 text-yellow-700 text-[8px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
-                                                        )}
+                                            {resolvedParticipants?.map((participant: any, index: number) => {
+                                                const isOwner = transactionGroup?.createdBy === participant.id;
+                                                const isMe = participant.id === user?.uid || (participant.userId && participant.userId === user?.uid);
+                                                return (
+                                                    <div key={index} className="flex justify-between items-center gap-2">
+                                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                            <span className="font-semibold text-gray-900 truncate text-sm lg:text-base">
+                                                                {isOwner && !isMe ? "Group Owner" : participant.name}
+                                                            </span>
+                                                            {isOwner && (
+                                                                <span className="bg-yellow-100 text-yellow-700 text-[8px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
+                                                            )}
+                                                            {participant.isTemporary && (
+                                                                <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-xs lg:text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">{formatAmount(participant.amount)}</span>
                                                     </div>
-                                                    <span className="text-xs lg:text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">{formatAmount(payer.amount)}</span>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
+                                                );
+                                            })}
 
-                            {transaction.fromName && transaction.toName && (
-                                <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                                    <ArrowUpRight className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Payment From</div>
-                                        <div className="flex flex-col gap-1">
-                                            {/* FROM USER */}
-                                            <div className="flex items-center gap-2">
-                                                <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">
-                                                    {transactionGroup?.createdBy === transaction.from && transaction.from !== user?.uid ? "Group Owner" : (transaction.from === user?.uid ? "You" : transaction.fromName)}
-                                                </div>
-                                                {transactionGroup?.createdBy === transaction.from && (
-                                                    <span className="bg-yellow-100 text-yellow-700 text-[8px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
-                                                )}
-                                            </div>
-
-                                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest pl-1">TO</div>
-
-                                            {/* TO USER */}
-                                            <div className="flex items-center gap-2">
-                                                <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">
-                                                    {transactionGroup?.createdBy === transaction.to && transaction.to !== user?.uid ? "Group Owner" : (transaction.to === user?.uid ? "You" : transaction.toName)}
-                                                </div>
-                                                {transactionGroup?.createdBy === transaction.to && (
-                                                    <span className="bg-yellow-100 text-yellow-700 text-[8px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
-                                                )}
-                                            </div>
                                         </div>
-
-                                        {transaction.method && (
-                                            <div className="text-xs lg:text-sm text-[#4a6850]/80 capitalize font-medium mt-2">via {transaction.method}</div>
-                                        )}
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                            {/* Participants (for expenses) - iPhone Style */}
-                            {transaction.participants && transaction.participants.length > 0 && (
-                                <div className="p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                                    <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-3 lg:mb-4 font-semibold uppercase tracking-wide">Participants ({transaction.participants.length})</div>
-                                    <div className="space-y-2 lg:space-y-3 max-h-32 overflow-y-auto scrollbar-hide">
-
-                                        {resolvedParticipants?.map((participant: any, index: number) => {
-                                            const isOwner = transactionGroup?.createdBy === participant.id;
-                                            const isMe = participant.id === user?.uid || (participant.userId && participant.userId === user?.uid);
-                                            return (
-                                                <div key={index} className="flex justify-between items-center gap-2">
-                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                                                        <span className="font-semibold text-gray-900 truncate text-sm lg:text-base">
-                                                            {isOwner && !isMe ? "Group Owner" : participant.name}
-                                                        </span>
-                                                        {isOwner && (
-                                                            <span className="bg-yellow-100 text-yellow-700 text-[8px] px-1 rounded font-black border border-yellow-200 uppercase tracking-wide">Owner</span>
-                                                        )}
-                                                        {participant.isTemporary && (
-                                                            <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Temp</span>
-                                                        )}
-                                                    </div>
-                                                    <span className="text-xs lg:text-sm text-[#4a6850] flex-shrink-0 font-bold tabular-nums">{formatAmount(participant.amount)}</span>
-                                                </div>
-                                            );
-                                        })}
-
+                                {/* Place (for expenses) - iPhone Style */}
+                                {transaction.place && (
+                                    <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                                        <div className="w-5 lg:w-6 h-5 lg:h-6 rounded-full bg-[#4a6850]/20 flex-shrink-0 flex items-center justify-center">
+                                            <div className="w-1.5 lg:w-2 h-1.5 lg:h-2 rounded-full bg-[#4a6850]"></div>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Place</div>
+                                            <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transaction.place}</div>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                            {/* Place (for expenses) - iPhone Style */}
-                            {transaction.place && (
-                                <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                                    <div className="w-5 lg:w-6 h-5 lg:h-6 rounded-full bg-[#4a6850]/20 flex-shrink-0 flex items-center justify-center">
-                                        <div className="w-1.5 lg:w-2 h-1.5 lg:h-2 rounded-full bg-[#4a6850]"></div>
+                                {/* Note - iPhone Style */}
+                                {transaction.note && (
+                                    <div className="p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                                        <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-2 lg:mb-3 font-semibold uppercase tracking-wide">Note</div>
+                                        <div className="font-medium text-gray-900 break-words leading-relaxed text-sm lg:text-base">{transaction.note}</div>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Place</div>
-                                        <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transaction.place}</div>
+                                )}
+
+                                {/* Phase 2: Discuss Button */}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowChat(true);
+                                    }}
+                                    className="w-full flex items-center justify-between p-4 lg:p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl lg:rounded-3xl border border-blue-200 shadow-lg group hover:from-blue-100 hover:to-blue-200 transition-all active:scale-[0.98]"
+                                >
+                                    <div className="flex items-center gap-3 lg:gap-4">
+                                        <div className="w-10 h-10 rounded-2xl bg-blue-500 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                                            <MessageSquareText className="w-5 h-5" />
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-xs text-blue-600 font-bold uppercase tracking-wider">Discussion</div>
+                                            <div className="font-black text-blue-900 text-sm lg:text-base">Discuss this expense</div>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-
-                            {/* Note - iPhone Style */}
-                            {transaction.note && (
-                                <div className="p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                                    <div className="text-[10px] lg:text-xs text-[#4a6850]/70 mb-2 lg:mb-3 font-semibold uppercase tracking-wide">Note</div>
-                                    <div className="font-medium text-gray-900 break-words leading-relaxed text-sm lg:text-base">{transaction.note}</div>
-                                </div>
-                            )}
-
-                            {/* Phase 2: Discuss Button */}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowChat(true);
-                                }}
-                                className="w-full flex items-center justify-between p-4 lg:p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl lg:rounded-3xl border border-blue-200 shadow-lg group hover:from-blue-100 hover:to-blue-200 transition-all active:scale-[0.98]"
-                            >
-                                <div className="flex items-center gap-3 lg:gap-4">
-                                    <div className="w-10 h-10 rounded-2xl bg-blue-500 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
-                                        <MessageSquareText className="w-5 h-5" />
+                                    <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center">
+                                        <ArrowUpRight className="w-4 h-4 text-blue-600" />
                                     </div>
-                                    <div className="text-left">
-                                        <div className="text-xs text-blue-600 font-bold uppercase tracking-wider">Discussion</div>
-                                        <div className="font-black text-blue-900 text-sm lg:text-base">Discuss this expense</div>
-                                    </div>
-                                </div>
-                                <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center">
-                                    <ArrowUpRight className="w-4 h-4 text-blue-600" />
-                                </div>
-                            </button>
+                                </button>
 
-                            {/* Wallet Balance Changes - Intelligent Display */}
-                            {/* Priority 1: Use new per-user snapshots if available */}
-                            {/* Priority 2: Fallback to legacy fields for Recorder (Payer/Sender) */}
-                            {(() => {
-                                let balanceBefore: number | undefined;
-                                let balanceAfter: number | undefined;
-                                let showBalance = false;
+                                {/* Wallet Balance Changes - Intelligent Display */}
+                                {/* Priority 1: Use new per-user snapshots if available */}
+                                {/* Priority 2: Fallback to legacy fields for Recorder (Payer/Sender) */}
+                                {(() => {
+                                    let balanceBefore: number | undefined;
+                                    let balanceAfter: number | undefined;
+                                    let showBalance = false;
 
-                                // Check for new data structure (Supports both Payer & Receiver)
-                                const userSnapshot = transaction.walletBalances?.[user?.uid];
+                                    // Check for new data structure (Supports both Payer & Receiver)
+                                    const userSnapshot = transaction.walletBalances?.[user?.uid];
 
-                                if (userSnapshot) {
-                                    balanceBefore = userSnapshot.before;
-                                    balanceAfter = userSnapshot.after;
-                                    showBalance = true;
-                                }
-                                // Fallback logic for older transactions (Only accurate for Recorder)
-                                else if ((transaction.type === 'expense' && isCurrentUserPayer) ||
-                                    (transaction.type === 'payment' && transaction.from === user?.uid)) {
-                                    balanceBefore = transaction.walletBalanceBefore;
-                                    balanceAfter = transaction.walletBalanceAfter;
-                                    showBalance = true;
-                                }
+                                    if (userSnapshot) {
+                                        balanceBefore = userSnapshot.before;
+                                        balanceAfter = userSnapshot.after;
+                                        showBalance = true;
+                                    }
+                                    // Fallback logic for older transactions (Only accurate for Recorder)
+                                    else if ((transaction.type === 'expense' && isCurrentUserPayer) ||
+                                        (transaction.type === 'payment' && transaction.from === user?.uid)) {
+                                        balanceBefore = transaction.walletBalanceBefore;
+                                        balanceAfter = transaction.walletBalanceAfter;
+                                        showBalance = true;
+                                    }
 
-                                if (!showBalance || (balanceBefore === undefined && balanceAfter === undefined)) return null;
+                                    if (!showBalance || (balanceBefore === undefined && balanceAfter === undefined)) return null;
 
-                                return (
-                                    <div className="space-y-3 lg:space-y-4">
-                                        {balanceBefore !== undefined && (
-                                            <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl lg:rounded-3xl border border-gray-200 shadow-lg">
-                                                <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 text-gray-500 flex-shrink-0" />
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-[10px] lg:text-xs text-gray-500 font-semibold uppercase tracking-wide">Wallet Balance Before</div>
-                                                    <div className="font-bold text-gray-900 text-sm lg:text-base tracking-tight tabular-nums">{formatAmount(balanceBefore)}</div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {balanceAfter !== undefined && (
-                                            <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                                                <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Wallet Balance After</div>
-                                                    <div className={`font-bold text-sm lg:text-base tracking-tight tabular-nums ${(balanceAfter > (balanceBefore || 0)) ? 'text-green-600' : 'text-gray-900'
-                                                        }`}>
-                                                        {formatAmount(balanceAfter)}
+                                    return (
+                                        <div className="space-y-3 lg:space-y-4">
+                                            {balanceBefore !== undefined && (
+                                                <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl lg:rounded-3xl border border-gray-200 shadow-lg">
+                                                    <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 text-gray-500 flex-shrink-0" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-[10px] lg:text-xs text-gray-500 font-semibold uppercase tracking-wide">Wallet Balance Before</div>
+                                                        <div className="font-bold text-gray-900 text-sm lg:text-base tracking-tight tabular-nums">{formatAmount(balanceBefore)}</div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })()}
+                                            )}
+
+                                            {balanceAfter !== undefined && (
+                                                <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
+                                                    <CreditCard className="w-5 lg:w-6 h-5 lg:h-6 text-[#4a6850] flex-shrink-0" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Wallet Balance After</div>
+                                                        <div className={`font-bold text-sm lg:text-base tracking-tight tabular-nums ${(balanceAfter > (balanceBefore || 0)) ? 'text-green-600' : 'text-gray-900'
+                                                            }`}>
+                                                            {formatAmount(balanceAfter)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Fixed footer with close button - iPhone Style */}
-                <div className="p-6 border-t border-[#4a6850]/10 bg-white flex-shrink-0">
-                    <button
-                        onClick={onClose}
-                        className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all"
-                    >
-                        Close
-                    </button>
+                    {/* Fixed footer with close button - iPhone Style */}
+                    <div className="p-6 border-t border-[#4a6850]/10 bg-white flex-shrink-0">
+                        <button
+                            onClick={onClose}
+                            className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all"
+                        >
+                            Close
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -555,7 +557,10 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
             {transactionGroup && (
                 <ExpenseThreadSheet
                     isOpen={showChat}
-                    onClose={() => setShowChat(false)}
+                    onClose={() => {
+                        setShowChat(false);
+                        onClose(); // Automatically fully close the modal after chat
+                    }}
                     groupId={transaction.groupId}
                     groupName={transactionGroup.name || "Group"}
                     expenseId={transaction.id}
@@ -843,7 +848,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 

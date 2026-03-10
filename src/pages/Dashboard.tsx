@@ -16,6 +16,7 @@ import {
   ChevronRight,
   ArrowRight,
   Sparkles,
+  Info,
 } from "@/lib/icons";
 import { sendExternalInvitation } from "@/lib/api";
 import BottomNav from "@/components/BottomNav";
@@ -738,9 +739,21 @@ const Dashboard = () => {
 
               <div className="flex justify-between items-start relative z-10">
                 <div>
-                  <p className="text-[#C7D6CF] text-[10px] font-black uppercase tracking-[0.15em] mb-2 drop-shadow-sm">
-                    {t('dashboard.available_balance')}
-                  </p>
+                  <div className="flex items-center gap-1 mb-2">
+                    <p className="text-[#C7D6CF] text-[10px] font-black uppercase tracking-[0.15em] drop-shadow-sm">
+                      {t('dashboard.available_balance')}
+                    </p>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <Info className="w-3 h-3 text-white/50 hover:text-white cursor-help transition-colors" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Your total available balance in wallet</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <h3 className="text-[40px] font-bold tracking-tight text-white tabular-nums leading-none mb-4 drop-shadow-md">
                     {formatAmount(walletBalance)}
                   </h3>
@@ -760,7 +773,19 @@ const Dashboard = () => {
                   className="p-5 flex items-center justify-between bg-[#F4F9F6] border-b border-gray-100 hover:brightness-[0.98] active:scale-[0.99] transition-all group"
                 >
                   <div className="flex flex-col items-start gap-1 text-left">
-                    <p className="text-[10px] font-black text-[#5C7E68] uppercase tracking-[0.15em] leading-none">{t('dashboard.total_to_receive')}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-[10px] font-black text-[#5C7E68] uppercase tracking-[0.15em] leading-none">{t('dashboard.total_to_receive')}</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <Info className="w-3 h-3 text-[#5C7E68]/50 hover:text-[#5C7E68] cursor-help transition-colors mt-[1px]" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Total amount others owe you</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <p className="text-[20px] font-bold text-gray-900 tabular-nums leading-tight">+{formatAmount(totalToReceive)}</p>
                   </div>
                   <ArrowDownLeft className="w-5 h-5 text-[#5C7E68]" strokeWidth={2.5} />
@@ -772,7 +797,19 @@ const Dashboard = () => {
                   className="p-5 flex items-center justify-between bg-[#FFF5F5] border-b border-gray-100 hover:brightness-[0.98] active:scale-[0.99] transition-all group"
                 >
                   <div className="flex flex-col items-start gap-1 text-left">
-                    <p className="text-[10px] font-black text-[#D47070] uppercase tracking-[0.15em] leading-none">{t('dashboard.total_to_pay')}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-[10px] font-black text-[#D47070] uppercase tracking-[0.15em] leading-none">{t('dashboard.total_to_pay')}</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <Info className="w-3 h-3 text-[#D47070]/50 hover:text-[#D47070] cursor-help transition-colors mt-[1px]" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Total amount you owe others</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <p className="text-[20px] font-bold text-[#991b1b] tabular-nums leading-tight">-{formatAmount(totalToPay)}</p>
                   </div>
                   <ArrowUpRight className="w-5 h-5 text-[#D47070]" strokeWidth={2.5} />
@@ -781,11 +818,35 @@ const Dashboard = () => {
                 {/* Settlement Delta Highlight */}
                 <div className="p-5 bg-white flex items-end justify-between">
                   <div className="flex flex-col gap-1">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] leading-none">{t('dashboard.after_settlements')}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] leading-none">{t('dashboard.after_settlements')}</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <Info className="w-3 h-3 text-gray-400/60 hover:text-gray-500 cursor-help transition-colors mt-[1px]" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Your projected balance after all pending payments</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <p className="text-[22px] font-bold text-gray-900 tabular-nums leading-tight">{formatAmount(afterSettlementsBalance)}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.15em] text-right">Settlement Delta</p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.15em] text-right">Settlement Delta</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <Info className="w-2.5 h-2.5 text-gray-400/60 hover:text-gray-500 cursor-help transition-colors" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>The net difference between what you owe and what you are owed</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <div className={cn(
                       "flex items-center gap-1 text-[13px] font-black uppercase tracking-tight",
                       settlementDelta > 0 ? "text-[#4B6B54]" : settlementDelta < 0 ? "text-[#991b1b]" : "text-gray-500"
@@ -802,9 +863,21 @@ const Dashboard = () => {
           {/* QUICK SHORTCUTS GRID - Horizontally scrollable */}
           <section className="animate-slideUp delay-100 px-2 relative" aria-label="Quick Shortcuts">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-500">
-                Quick Shortcuts
-              </h3>
+              <div className="flex items-center gap-1">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-500">
+                  Quick Shortcuts
+                </h3>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Info className="w-3 h-3 text-gray-400/60 hover:text-gray-500 cursor-help transition-colors" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Commonly used actions for quick access</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 Swipe for more <ArrowRight className="w-3 h-3" />
               </span>
@@ -836,10 +909,18 @@ const Dashboard = () => {
                 <span className="text-[11px] font-semibold text-gray-700 leading-tight whitespace-nowrap">{t('dashboard.received')}</span>
               </button>
 
-              {/* 4. Send (Record Payment TO) */}
-              <button onClick={() => navigate("/send-money")} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
-                <div className="w-12 h-12 rounded-[16px] bg-[#FEF0F0] text-[#EA4335] flex items-center justify-center">
-                  <ArrowUpRight className="w-6 h-6" strokeWidth={2} />
+              {/* 4. New Group */}
+              <button onClick={() => navigate("/create-group")} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+                <div className="w-12 h-12 rounded-[16px] bg-[#F4F6F8] text-[#4A5568] flex items-center justify-center">
+                  <Users className="w-6 h-6" strokeWidth={2} />
+                </div>
+                <span className="text-[11px] font-semibold text-gray-700 leading-tight whitespace-nowrap">{t('dashboard.quick_actions.new_group')}</span>
+              </button>
+
+              {/* 5. Send Money (to personal-space) */}
+              <button onClick={() => navigate("/personal-space")} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+                <div className="w-12 h-12 rounded-[16px] bg-[#F4F0FE] text-[#8B5CF6] flex items-center justify-center">
+                  <Send className="w-6 h-6" strokeWidth={2} />
                 </div>
                 <span className="text-[11px] font-semibold text-gray-700 leading-tight whitespace-nowrap">{t('dashboard.send_money')}</span>
               </button>
@@ -869,9 +950,21 @@ const Dashboard = () => {
           {/* RECENT ACTIVITY FEED */}
           <section className="animate-slideUp delay-200 px-2 mt-4" aria-label="Recent Activity">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-500">
-                {t('dashboard.recent_activity')}
-              </h3>
+              <div className="flex items-center gap-1">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-500">
+                  {t('dashboard.recent_activity')}
+                </h3>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Info className="w-3 h-3 text-gray-400/60 hover:text-gray-500 cursor-help transition-colors" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Recent transactions and payments involving you</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               {allTransactions.length > 5 && (
                 <button onClick={() => navigate("/activity")} className="text-[10px] font-black text-[#4B6B54] uppercase">
                   {t('dashboard.view_all_dashboard')}

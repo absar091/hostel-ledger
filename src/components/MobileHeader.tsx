@@ -90,9 +90,9 @@ const MobileHeader = ({ title, showBackButton = false, rightContent }: MobileHea
             </button>
           ) : (
             <img
-              src="/logo.png"
+              src="/only-logo.png"
               alt="Hostel Ledger"
-              className="w-9 h-9 object-contain"
+              className="w-10 h-10 object-contain drop-shadow-sm"
             />
           )}
 
