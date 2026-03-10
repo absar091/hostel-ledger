@@ -301,9 +301,13 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
       setIsListening(true);
       toast.info("Recording... Tap stop when done.", { icon: "🎙️", duration: 3000 });
 
-    } catch (err) {
+    } catch (err: any) {
       console.error("Mic access error:", err);
-      toast.error("Could not access microphone.");
+      if (err.name === 'NotAllowedError' || err?.message?.includes('Permission denied') || err?.message?.toLowerCase().includes('permissions policy')) {
+        toast.error("Microphone access is blocked. Please allow permissions or open in a regular browser (Chrome/Safari).", { duration: 5000 });
+      } else {
+        toast.error("Could not access microphone. Please check your system settings.");
+      }
       setIsListening(false);
     }
   };
