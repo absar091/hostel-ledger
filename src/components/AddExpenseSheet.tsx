@@ -366,27 +366,13 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
 
     } catch (err) {
       console.error("Mic access error:", err);
-<<<<<<< HEAD
-<<<<<<< HEAD
-      if (err.name === 'NotAllowedError' || err?.message?.includes('Permission denied') || err?.message?.toLowerCase().includes('permissions policy')) {
-        toast.error("Microphone access is blocked. Please allow permissions or open in a regular browser (Chrome/Safari).", { duration: 5000 });
-      } else {
-        toast.error("Could not access microphone. Please check your system settings.");
-      }
-=======
-
       // Fallback to native file input if microphone access fails
-      if (err.name === 'NotAllowedError' || err.message?.includes('Permission denied')) {
-        toast.error("Mic blocked. Check Chrome Site Settings > Permissions.");
+      if (err.name === 'NotAllowedError' || err?.message?.includes('Permission denied') || err?.message?.toLowerCase().includes('permissions policy')) {
+        toast.error("Microphone access is blocked. Falling back to file upload...", { duration: 5000 });
       } else {
-        toast.info("Opening native audio recorder instead...");
+        toast.info("Could not access microphone. Opening native audio recorder instead...");
       }
       fileInputRef.current?.click();
-
->>>>>>> 4b871a23aa83e69dad3fb1254f9c9df19282e150
-=======
-      toast.error("Could not access microphone.");
->>>>>>> parent of 838b381 (feat: Introduce `AddExpenseSheet` component with AI text/audio parsing and enable microphone permission in Vercel config.)
       setIsListening(false);
     }
   };
