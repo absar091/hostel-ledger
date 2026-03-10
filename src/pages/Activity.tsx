@@ -352,6 +352,7 @@ const Activity = () => {
                     onClick={() => setSelectedTransaction(transaction)}
                     className="w-full bg-white rounded-3xl p-5 border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group text-left"
                     style={{ animationDelay: `${index * 0.05}s` }}
+                    aria-label={`View details for ${transaction.type}: ${transaction.title}, ${transaction.type === "expense" && !isPayer && !isParticipant ? "" : (transaction.type === "expense" ? "-" : "+")}${transaction.type === "expense" && !isPayer && !isParticipant ? "-" : formatAmount(displayAmount)} on ${transaction.date}`}
                   >
                     <div className="flex items-center gap-4">
                       <div className={`w-11 lg:w-12 h-11 lg:h-12 rounded-2xl flex items-center justify-center border shadow-lg group-hover:scale-105 transition-transform ${getTransactionColor(transaction.type)}`}>
@@ -396,6 +397,7 @@ const Activity = () => {
                           }}
                           className="w-10 h-10 rounded-full bg-[#4a6850]/5 flex items-center justify-center text-[#4a6850]/40 hover:text-primary hover:bg-primary/10 transition-all active:scale-90 ml-2"
                           title={t('chat.discuss')}
+                          aria-label={t('chat.discuss')}
                         >
                           <MessageSquareText className="w-5 h-5" />
                         </button>
