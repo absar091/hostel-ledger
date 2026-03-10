@@ -110,7 +110,7 @@ export const saveOfflineExpense = async (expense: Omit<OfflineExpense, "id" | "t
 
   const offlineExpense: OfflineExpense = {
     ...expense,
-    id: `offline_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+    id: `offline_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`,
     timestamp: Date.now(),
     createdOffline: true,
     syncAttempts: 0,
@@ -131,7 +131,7 @@ export const saveOfflinePayment = async (payment: Omit<OfflinePayment, "id" | "t
   const db = await initDB();
   const offlinePayment: OfflinePayment = {
     ...payment,
-    id: `pay_off_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    id: `pay_off_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`,
     timestamp: Date.now(),
     createdOffline: true,
     syncAttempts: 0

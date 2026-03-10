@@ -4,14 +4,9 @@
 // Email configuration
 const EMAIL_CONFIG = {
   apiUrl: import.meta.env.VITE_API_URL || 'https://hostel-ledger-backend.vercel.app',
-  host: import.meta.env.VITE_SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(import.meta.env.VITE_SMTP_PORT || '587'),
-  user: import.meta.env.VITE_SMTP_USER || 'ahmadraoabsar@gmail.com',
 };
 
 import { callSecureApi } from './api';
-
-const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM || 'Hostel Ledger<noreply@quizzicallabz.qzz.io>';
 
 // Check if backend API is available
 export const verifyEmailConnection = async (): Promise<boolean> => {

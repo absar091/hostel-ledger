@@ -639,7 +639,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
             userId: user.uid,
           },
           ...sanitizedMembers.map((m: any) => ({
-            id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+            id: `member_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`,
             name: m.name,
             paymentDetails: m.paymentDetails,
             phone: m.phone,
@@ -752,7 +752,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const newMember: GroupMember = {
-        id: member.id || `member_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        id: member.id || `member_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`,
         name: sanitizeString(member.name),
         paymentDetails: member.paymentDetails || {},
         phone: member.phone ? sanitizeString(member.phone) : null,
