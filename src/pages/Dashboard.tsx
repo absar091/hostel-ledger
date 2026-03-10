@@ -745,6 +745,7 @@ const Dashboard = () => {
                 <button
                   onClick={() => setShowAddMoney(true)}
                   className="w-12 h-12 rounded-2xl bg-white/20 hover:bg-white/30 active:scale-95 transition-all flex items-center justify-center border border-white/20 backdrop-blur-md"
+                  aria-label={t('dashboard.add_money')}
                 >
                   <Plus className="w-6 h-6 text-white" strokeWidth={3} />
                 </button>
@@ -872,7 +873,7 @@ const Dashboard = () => {
               <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 Active Groups
               </h3>
-              <button onClick={() => navigate("/groups")} className="text-[10px] font-black text-emerald-600 uppercase">
+              <button onClick={() => navigate("/groups")} className="text-[10px] font-black text-emerald-600 uppercase" aria-label={t('dashboard.view_all')}>
                 {t('dashboard.view_all')}
               </button>
             </div>
@@ -911,7 +912,7 @@ const Dashboard = () => {
                 {t('dashboard.recent_activity')}
               </h3>
               {allTransactions.length > 5 && (
-                <button onClick={() => navigate("/activity")} className="text-[10px] font-black text-emerald-600 uppercase">
+                <button onClick={() => navigate("/activity")} className="text-[10px] font-black text-emerald-600 uppercase" aria-label={t('dashboard.view_all_dashboard')}>
                   {t('dashboard.view_all_dashboard')}
                 </button>
               )}
