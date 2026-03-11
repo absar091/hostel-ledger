@@ -1,0 +1,3 @@
+## 2024-03-24 - React Context Data Normalization Overhead
+**Learning:** In `FirebaseDataContext.tsx`, the `normalizeMembers` function was a major performance bottleneck during React's hot render path. It originally chained multiple `.map()` calls and an intermediate `console.log()` featuring its own `.map()` traversal, introducing O(N) overhead per pass for array/object conversion and conditional fallback properties.
+**Action:** When mapping raw context data (especially for frequently accessed global state like members or transactions), always consolidate conversions, defaults, and overrides into a single `for` loop pass instead of chaining `.map()`, `.filter()`, and intermediate arrays.

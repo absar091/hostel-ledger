@@ -26,47 +26,37 @@ const normalizeArray = (val: any): any[] => {
 const normalizeMembers = (members: any, currentUserId?: string): any[] => {
   if (!members) return [];
 
-  const membersArray = (Array.isArray(members)
-    ? members
-    : Object.entries(members).map(([key, value]: [string, any]) => ({
-      ...value,
-      id: value.id || key, // Ensure the key is used as the member id
-    }))).map((m: any) => ({ ...m, isCurrentUser: false })); // Reset client-side property for ALL members
+  // ⚡ Bolt: Consolidated mapping, logging traversal, and legacy checks into a single pass
+  // to avoid O(N) overhead per map pass on React Context hot path.
+  const isArray = Array.isArray(members);
+  const entries = isArray ? members : Object.entries(members);
+  const result = new Array(entries.length);
 
-  console.log('Validating members:', membersArray.map((m: any) => ({
-    id: m.id,
-    name: m.name,
-    userId: m.userId,
-    currentUserId
-  })));
+  for (let i = 0; i < entries.length; i++) {
+    const item = isArray ? entries[i] : entries[i][1];
+    const key = isArray ? undefined : entries[i][0];
 
-  // If currentUserId is provided, rename that user to "You" for display
-  if (currentUserId) {
-    return membersArray.map((m: any) => {
-      // Check both id and userId key for a match
-      if (m.id === currentUserId || m.userId === currentUserId) {
-        return { ...m, name: "You", isCurrentUser: true, isPending: false };
-      }
+    if (!item) continue;
 
-      // Fix for legacy groups where creator was stored as "You"
-      // If we see "You" but it's not the current user, rename it to avoid confusion
-      // Use case-insensitive check and trim
-      if (m.name && m.name.trim().toLowerCase() === "you") {
-        return { ...m, name: "Group Owner" };
-      }
+    const m = {
+      ...item,
+      id: item.id || key,
+      isCurrentUser: false
+    };
 
-      return m;
-    });
+    if (currentUserId && (m.id === currentUserId || m.userId === currentUserId)) {
+      m.name = "You";
+      m.isCurrentUser = true;
+      m.isPending = false;
+    } else if (m.name && m.name.trim().toLowerCase() === "you") {
+      m.name = "Group Owner";
+    }
+
+    result[i] = m;
   }
 
-  // Fallback: If no currentUserId, still rename "You" to "Group Owner" to prevent confusion
-  // as we don't know who "You" is.
-  return membersArray.map((m: any) => {
-    if (m.name && m.name.trim().toLowerCase() === "you") {
-      return { ...m, name: "Group Owner" };
-    }
-    return m;
-  });
+  // Remove potential empty slots from undefined items in array branch
+  return result.filter(Boolean);
 };
 
 
