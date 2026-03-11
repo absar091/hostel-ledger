@@ -26,47 +26,37 @@ const normalizeArray = (val: any): any[] => {
 const normalizeMembers = (members: any, currentUserId?: string): any[] => {
   if (!members) return [];
 
-  const membersArray = (Array.isArray(members)
-    ? members
-    : Object.entries(members).map(([key, value]: [string, any]) => ({
-      ...value,
-      id: value.id || key, // Ensure the key is used as the member id
-    }))).map((m: any) => ({ ...m, isCurrentUser: false })); // Reset client-side property for ALL members
+  // ⚡ Bolt: Consolidated mapping to single-pass loop reducing O(N) iterations
+  const result: any[] = [];
 
-  console.log('Validating members:', membersArray.map((m: any) => ({
-    id: m.id,
-    name: m.name,
-    userId: m.userId,
-    currentUserId
-  })));
-
-  // If currentUserId is provided, rename that user to "You" for display
-  if (currentUserId) {
-    return membersArray.map((m: any) => {
-      // Check both id and userId key for a match
-      if (m.id === currentUserId || m.userId === currentUserId) {
-        return { ...m, name: "You", isCurrentUser: true, isPending: false };
+  if (Array.isArray(members)) {
+    for (let i = 0; i < members.length; i++) {
+      result.push(processMember(members[i], members[i].id, currentUserId));
+    }
+  } else {
+    for (const key in members) {
+      if (Object.prototype.hasOwnProperty.call(members, key)) {
+        result.push(processMember(members[key], members[key].id || key, currentUserId));
       }
-
-      // Fix for legacy groups where creator was stored as "You"
-      // If we see "You" but it's not the current user, rename it to avoid confusion
-      // Use case-insensitive check and trim
-      if (m.name && m.name.trim().toLowerCase() === "you") {
-        return { ...m, name: "Group Owner" };
-      }
-
-      return m;
-    });
+    }
   }
 
-  // Fallback: If no currentUserId, still rename "You" to "Group Owner" to prevent confusion
-  // as we don't know who "You" is.
-  return membersArray.map((m: any) => {
-    if (m.name && m.name.trim().toLowerCase() === "you") {
-      return { ...m, name: "Group Owner" };
-    }
-    return m;
-  });
+  return result;
+};
+
+// ⚡ Bolt: Extracted logic for single-pass processing
+const processMember = (m: any, id: string, currentUserId?: string): any => {
+  const processed = { ...m, id, isCurrentUser: false };
+
+  if (currentUserId && (id === currentUserId || processed.userId === currentUserId)) {
+    processed.name = "You";
+    processed.isCurrentUser = true;
+    processed.isPending = false;
+  } else if (processed.name && processed.name.trim().toLowerCase() === "you") {
+    processed.name = "Group Owner";
+  }
+
+  return processed;
 };
 
 
