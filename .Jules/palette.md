@@ -1,3 +1,7 @@
 ## 2024-03-01 - Add context-aware ARIA labels to TimelineItem buttons
 **Learning:** Found that complex list items representing transactional data (like `TimelineItem.tsx` buttons) often lack screen-reader-friendly unified summaries. Instead of leaving screen readers to read a chaotic stream of nested spans and divs, providing a single, coherent sentence as an `aria-label` (e.g., "View details for expense: Dinner, $50 paid by John on Oct 12") on the main button wrapper significantly improves context and navigability.
 **Action:** When implementing complex interactive items like cards or list items functioning as buttons, always synthesize their internal data points into a clear, single-string `aria-label` for screen reader accessibility, avoiding disjointed reading of nested text elements.
+
+## 2024-10-27 - Indicate active state with aria-current in Navigation
+**Learning:** Found that navigation link items representing the active/current page only indicated active status via visual highlighting. This caused screen reader users to lack awareness of which nav link corresponds to the current page. Adding `aria-current="page"` accurately reflects this to screen readers.
+**Action:** When creating or modifying navigational tabs or links, dynamically set the `aria-current="page"` attribute for the active route to ensure parity between visual context and screen reader feedback.
