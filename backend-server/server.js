@@ -1944,6 +1944,13 @@ app.post('/api/send-welcome', emailLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, name' });
     }
 
+    // Security: Only allow users to send welcome emails to themselves
+    // Must verify against the authenticated user's email to prevent open relay abuse
+    const userEmail = req.user?.email;
+    if (!userEmail || userEmail.toLowerCase() !== email.toLowerCase()) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You can only send welcome emails to your own email address.' });
+    }
+
     await emailService.sendWelcome(email, name);
     console.log('✅ Welcome email sent');
     res.json({ success: true, message: 'Welcome email sent' });
