@@ -94,6 +94,7 @@ const Sidebar = () => {
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
+              aria-current={active ? "page" : undefined}
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative",
                 active
