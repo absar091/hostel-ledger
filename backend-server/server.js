@@ -225,7 +225,11 @@ app.use(cors({
 // Handle preflight requests explicitly
 app.options('*', cors());
 
-app.use(express.json({ limit: '10mb' })); // Increased for audio data
+// Define specific limit for audio data endpoint BEFORE the global limit
+app.use('/api/ai/parse-expense-audio', express.json({ limit: '10mb' }));
+
+// Global payload limit to prevent DoS attacks
+app.use(express.json({ limit: '100kb' }));
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
 
