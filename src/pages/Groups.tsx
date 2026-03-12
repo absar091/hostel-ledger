@@ -206,6 +206,7 @@ const Groups = () => {
             <div className="flex gap-2 overflow-x-auto pb-2 lg:pb-0 hide-scrollbar">
               <button
                 onClick={() => setActiveFilter("all")}
+                aria-pressed={activeFilter === "all"}
                 className={`px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold border flex items-center gap-2 transition-all whitespace-nowrap flex-shrink-0 ${activeFilter === "all"
                   ? "bg-[#4a6850] text-white border-[#4a6850] shadow-lg"
                   : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
@@ -216,6 +217,7 @@ const Groups = () => {
               </button>
               <button
                 onClick={() => setActiveFilter("unsettled")}
+                aria-pressed={activeFilter === "unsettled"}
                 className={`px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold border transition-all whitespace-nowrap flex-shrink-0 ${activeFilter === "unsettled"
                   ? "bg-[#4a6850] text-white border-[#4a6850] shadow-lg"
                   : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
@@ -225,6 +227,7 @@ const Groups = () => {
               </button>
               <button
                 onClick={() => setActiveFilter("favorites")}
+                aria-pressed={activeFilter === "favorites"}
                 className={`px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold border transition-all whitespace-nowrap flex-shrink-0 ${activeFilter === "favorites"
                   ? "bg-[#4a6850] text-white border-[#4a6850] shadow-lg"
                   : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
