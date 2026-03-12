@@ -165,6 +165,16 @@ if (process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY) {
 }
 
 const app = express();
+
+// --- Enhanced Logging: Request Middleware ---
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`);
+  });
+  next();
+});
 const adminRoutes = require("./routes/adminRoutes");
 const userRoutes = require("./routes/userRoutes");
 
@@ -460,7 +470,7 @@ app.post('/api/2fa/setup', (req, res, next) => { console.log(`🔹 2FA Setup Req
     });
 
   } catch (error) {
-    console.error('2FA setup error:', error);
+    logger.error('❌ 2FA setup error: %O', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
@@ -520,17 +530,17 @@ app.post('/api/2fa/verify-setup', authenticate, async (req, res) => {
       if (email) {
         emailService.send2FAEnabledAlert(email, name, {
           device, browser, os, ip, location
-        }).catch(err => console.error('Failed to send 2FA alert:', err));
+        }).catch(err => logger.error('❌ Failed to send 2FA alert: %O', err));
       }
 
-      console.log(`✅ 2FA enabled for user ${userId}`);
+      logger.info('✅ 2FA enabled successfully for user %s', userId);
       res.json({ success: true, message: '2FA enabled successfully' });
     } else {
       res.status(400).json({ success: false, error: 'Invalid verification code' });
     }
 
   } catch (error) {
-    console.error('2FA verify setup error:', error);
+    logger.error('❌ 2FA verify setup error: %O', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
@@ -582,7 +592,7 @@ app.post('/api/2fa/verify', authenticate, async (req, res) => {
 
         // Store under users/{uid}/trustedDevices/{deviceToken}
         await admin.database().ref(`users/${userId}/trustedDevices/${deviceToken}`).set(deviceData);
-        console.log(`✅ Registered trusted device for user ${userId}`);
+        logger.info('✅ Registered trusted device for user %s', userId);
       }
 
       res.json({
@@ -595,7 +605,7 @@ app.post('/api/2fa/verify', authenticate, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('2FA verify error:', error);
+    logger.error('❌ 2FA verify error: %O', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
@@ -621,7 +631,7 @@ app.post('/api/2fa/check-trust', authenticate, async (req, res) => {
 
       // Enhanced Security: Check User Agent Mismatch
       if (deviceData.userAgent && deviceData.userAgent !== currentUA) {
-        console.warn(`⚠️ Trusted device UA mismatch for user ${userId}. Stored: ${deviceData.userAgent}, Current: ${currentUA}`);
+        logger.warn('⚠️ Trusted device UA mismatch for user %s. Stored: %s, Current: %s', userId, deviceData.userAgent, currentUA);
         return res.json({ success: true, trusted: false, reason: 'device_mismatch' });
       }
 
@@ -633,7 +643,7 @@ app.post('/api/2fa/check-trust', authenticate, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('2FA check trust error:', error);
+    logger.error('❌ 2FA check trust error: %O', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
@@ -699,7 +709,7 @@ app.post('/api/2fa/initiate-reset', strictEmailLimiter, async (req, res) => {
     res.json({ success: true, message: 'Reset link sent to your email' });
 
   } catch (error) {
-    console.error('2FA initiate reset error:', error);
+    logger.error('❌ 2FA initiate reset error: %O', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
@@ -757,13 +767,13 @@ app.post('/api/2fa/complete-reset', generalLimiter, async (req, res) => {
     if (email) {
       emailService.send2FADisabledAlert(email, name, {
         device, browser, os, ip, location
-      }).catch(err => console.error('Failed to send 2FA alert:', err));
+      }).catch(err => logger.error('❌ Failed to send 2FA alert: %O', err));
     }
 
     res.json({ success: true, message: '2FA disabled successfully' });
 
   } catch (error) {
-    console.error('2FA complete reset error:', error);
+    logger.error('❌ 2FA complete reset error: %O', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
@@ -821,17 +831,17 @@ app.post('/api/2fa/disable', authenticate, async (req, res) => {
       if (email) {
         emailService.send2FADisabledAlert(email, name, {
           device, browser, os, ip, location
-        }).catch(err => console.error('Failed to send 2FA alert:', err));
+        }).catch(err => logger.error('❌ Failed to send 2FA alert: %O', err));
       }
 
-      console.log(`✅ 2FA disabled for user ${userId}`);
+      logger.info('✅ 2FA disabled successfully for user %s', userId);
       res.json({ success: true, message: '2FA disabled successfully' });
     } else {
       res.status(400).json({ success: false, error: 'Invalid verification code' });
     }
 
   } catch (error) {
-    console.error('2FA disable error:', error);
+    logger.error('❌ 2FA disable error: %O', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
@@ -849,25 +859,25 @@ app.post('/api/delete-image', authenticate, async (req, res) => {
     const isOwner = await verifyImageOwnership(admin.database(), req.user.uid, publicId);
 
     if (!isOwner) {
-      console.warn(`⚠️ User ${req.user.uid} attempted to delete image ${publicId} but ownership verification failed.`);
+      logger.warn('⚠️ User %s attempted to delete image %s but ownership verification failed.', req.user.uid, publicId);
       return res.status(403).json({ success: false, error: 'Unauthorized: You do not have permission to delete this image.' });
     }
 
-    console.log(`🗑️ Deleting image from Cloudinary: ${publicId} by user ${req.user.uid}`);
+    logger.info('🗑️ Deleting image from Cloudinary: %s by user %s', publicId, req.user.uid);
 
     const result = await cloudinary.uploader.destroy(publicId);
 
     if (result.result === 'ok' || result.result === 'not found') {
       // 'not found' is also considered success (idempotent)
-      console.log(`✅ Image deleted successfully (result: ${result.result}): ${publicId}`);
+      logger.info('✅ Image deleted successfully (result: %s): %s', result.result, publicId);
       res.json({ success: true });
     } else {
-      console.error(`❌ Cloudinary delete failed: ${JSON.stringify(result)}`);
+      logger.error('❌ Cloudinary delete failed: %j', result);
       res.status(500).json({ success: false, error: 'Failed to delete image' });
     }
 
   } catch (error) {
-    console.error('❌ Delete image error:', error);
+    logger.error('❌ Delete image error: %O', error);
     res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
   }
 });
@@ -1035,7 +1045,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
           invitedAt: new Date().toISOString()
         };
 
-        console.log(`✅ Invitation prepared for user ${inviteeUid} (existing app user)`);
+        logger.info('📩 Invitation prepared for user %s (existing app user)', inviteeUid);
         emailNotifications.push({ inviteeUid, username });
       });
 
@@ -1060,7 +1070,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
             }
           }
         } catch (err) {
-          console.error(`❌ Failed to send invite to ${username}:`, err.message);
+          logger.error('❌ Failed to send invite to %s: %s', username, err.message);
         }
       });
       notificationPromises.push(...usernameInvitePromises);
@@ -1077,7 +1087,7 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     ];
 
     if (emailMembers.length > 0) {
-      console.log(`📧 Preparing ${emailMembers.length} manual email invites...`);
+      logger.info('📧 Preparing %d manual email invites...', emailMembers.length);
       const senderName = userName;
 
       const manualInvitePromises = emailMembers.map(member => {
@@ -1096,19 +1106,19 @@ app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
     // 6. Await all notifications (Critical for Vercel)
     if (notificationPromises.length > 0) {
       try {
-        console.log(`🚀 Awaiting ${notificationPromises.length} group creation notifications...`);
+        logger.info('🚀 Awaiting %d group creation notifications...', notificationPromises.length);
         const globalTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Invite timeout')), 8000));
         await Promise.race([Promise.allSettled(notificationPromises), globalTimeout])
-          .catch(e => console.warn("⚠️ Group invites partially timed out:", e.message));
+          .catch(e => logger.warn('⚠️ Group invites partially timed out: %s', e.message));
       } catch (notifErr) {
-        console.error("❌ Notification awaiting failed:", notifErr);
+        logger.error('❌ Notification awaiting failed: %O', notifErr);
       }
     }
 
     res.json({ success: true, groupId, message: 'Group created successfully' });
 
   } catch (error) {
-    console.error('Error creating group:', error);
+    logger.error('❌ Error creating group: %O', error);
     res.status(500).json({ success: false, error: 'Failed to create group' });
   }
 });
@@ -1253,11 +1263,15 @@ app.post('/api/ai/parse-expense', generalLimiter, authenticate, async (req, res)
       - Today's Date: ${new Date().toLocaleDateString()}
       
       EXTRACT THE FOLLOWING FIELDS:
-      1. amount: The numerical value of the expense.
-      2. description: A short, clean description of the expense (e.g., "Pizza", "Electric Bill").
-      3. payerId: The ID of the person who paid. If "I" or "me" is used, use the Requesting User ID. If a name matches a member, use their ID.
-      4. participantIds: An array of IDs for everyone who shared this expense. If "all" or "everyone" is used, list all member IDs. If names match members, include their IDs.
-      5. category: One of [food, transport, shopping, rent, bills, entertainment, others].
+      1. amount: The numerical value of the total expense.
+      2. description: A short, clean description (e.g., "Pizza").
+      3. payers: An array of objects for everyone who contributed money.
+         - If specific amounts are mentioned ("Ali paid 400, I paid 600"), use those.
+         - If multiple people are mentioned as payers but no amounts are specified, split the total amount equally among them.
+         - If "I" or "me" is used, use the Requesting User ID. If a name matches a member, use their ID.
+      4. payerId: The ID of the primary payer (who paid the most). FOR BACKWARD COMPATIBILITY.
+      5. participantIds: An array of IDs for everyone who shared this expense.
+      6. category: One of [food, transport, shopping, rent, bills, entertainment, others].
       
       RULES:
       - Return ONLY a valid JSON object.
@@ -1268,6 +1282,7 @@ app.post('/api/ai/parse-expense', generalLimiter, authenticate, async (req, res)
       {
         "amount": number | null,
         "description": string | null,
+        "payers": [{ "id": string, "amount": number }],
         "payerId": string | null,
         "participantIds": string[],
         "category": string
@@ -1329,11 +1344,15 @@ app.post('/api/ai/parse-expense-audio', generalLimiter, authenticate, async (req
       - Today's Date: ${new Date().toLocaleDateString()}
       
       EXTRACT THE FOLLOWING FIELDS:
-      1. amount: The numerical value of the expense.
-      2. description: A short, clean description of the expense (e.g., "Pizza", "Electric Bill").
-      3. payerId: The ID of the person who paid. If "I" or "me" is used, use the Requesting User ID. If a name matches a member, use their ID.
-      4. participantIds: An array of IDs for everyone who shared this expense. If "all" or "everyone" is used, list all member IDs. If names match members, include their IDs.
-      5. category: One of [food, transport, shopping, rent, bills, entertainment, others].
+      1. amount: The numerical value of the total expense.
+      2. description: A short, clean description (e.g., "Pizza").
+      3. payers: An array of objects for everyone who contributed money.
+         - If specific amounts are mentioned ("Ali paid 400, I paid 600"), use those.
+         - If multiple people are mentioned as payers but no amounts are specified, split the total amount equally among them.
+         - If "I" or "me" is used, use the Requesting User ID. If a name matches a member, use their ID.
+      4. payerId: The ID of the primary payer (who paid the most). FOR BACKWARD COMPATIBILITY.
+      5. participantIds: An array of IDs for everyone who shared this expense.
+      6. category: One of [food, transport, shopping, rent, bills, entertainment, others].
       
       RULES:
       - Return ONLY a valid JSON object.
@@ -1344,6 +1363,7 @@ app.post('/api/ai/parse-expense-audio', generalLimiter, authenticate, async (req
       {
         "amount": number | null,
         "description": string | null,
+        "payers": [{ "id": string, "amount": number }],
         "payerId": string | null,
         "participantIds": string[],
         "category": string
@@ -2678,7 +2698,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
       const processedSnap = await processedRef.get();
       if (processedSnap.exists()) {
         const data = processedSnap.val();
-        console.log(`♻️ Idempotency hit: Returning existing transaction for ${clientTxnId} (user: ${currentUserId})`);
+        logger.info('♻️ Idempotency hit: Returning existing transaction for %s (user: %s)', clientTxnId, currentUserId);
         return res.json({
           success: true,
           transactionId: data.transactionId,
@@ -2734,13 +2754,13 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
               }
             }
           } catch (err) {
-            console.error(`⚠️ Failed to hydrate email for user ${m.userId}:`, err.message);
+            logger.error('⚠️ Failed to hydrate email for user %s: %s', m.userId, err.message);
           }
         }
         return m;
       });
       membersArray = await Promise.all(memberHydrationPromises);
-    } catch (hydrateError) { console.error('Hydration failed', hydrateError); }
+    } catch (hydrateError) { logger.error('❌ Hydration failed: %O', hydrateError); }
     if (!member) {
       return res.status(403).json({ success: false, error: 'You are not a member of this group' });
     }
@@ -5017,3 +5037,13 @@ if (require.main === module) {
 }
 
 module.exports = app;
+
+// --- Global Error Handling Middleware ---
+app.use((err, req, res, next) => {
+  logger.error('Unhandled Error:', err);
+  res.status(500).json({
+    success: false,
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});

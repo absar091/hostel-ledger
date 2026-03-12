@@ -402,7 +402,7 @@ const Profile = () => {
               </button>
 
               <button
-                onClick={() => setIsSupportSheetOpen(true)}
+                onClick={() => navigate("/support")}
                 className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">

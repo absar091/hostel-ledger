@@ -1,5 +1,5 @@
-const fs = require('fs');
 const path = require('path');
+const logger = require('./logger');
 
 // Cache for email templates
 const templateCache = new Map();
@@ -33,7 +33,7 @@ const loadEmailTemplate = async (templateName, variables = {}) => {
 
     return template;
   } catch (error) {
-    console.error(`❌ Error loading template ${templateName}:`, error);
+    logger.error('❌ Error loading template %s: %O', templateName, error);
     return null;
   }
 };

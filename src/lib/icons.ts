@@ -1,4 +1,5 @@
 // Centralized icon exports to reduce bundle splitting
+// Version: 2.0 - Support System Icons Added
 export {
   ArrowUpRight,
   ArrowDownLeft,
@@ -41,5 +42,13 @@ export {
   Sparkles,
   MessageSquareText,
   MessageSquare,
-  MessageSquareQuote
+  MessageSquareQuote,
+  CircleAlert,
+  Clock,
+  CircleCheck,
+  Search,
+  Filter,
+  TrendingUp,
+  ExternalLink,
+  Settings
 } from "lucide-react";

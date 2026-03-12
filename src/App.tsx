@@ -52,6 +52,7 @@ import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import ReceiptPage from "./pages/ReceiptPage";
 import VerificationPage from "./pages/VerificationPage";
+import Support from "./pages/Support";
 
 
 const queryClient = new QueryClient({
@@ -247,7 +248,8 @@ const AppRoutes = () => {
     <Route path="/join/:id" element={<JoinGroup />} />
     <Route path="/personal-space" element={<ProtectedRoute><PersonalSpace /></ProtectedRoute>} />
     <Route path="/receipt" element={<ProtectedRoute><ReceiptPage /></ProtectedRoute>} />
-
+    <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+    <Route path="/support-admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
 
         <Route path="*" element={<NotFound />} />
   </Routes>
