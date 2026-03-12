@@ -222,6 +222,52 @@ async function runTests() {
     failures++;
   }
 
+  // TEST 6: /api/send-welcome (Expectation: 403 on mismatch)
+  console.log('\n🔹 TEST 6: Checking /api/send-welcome (Expectation: 403 on mismatch)');
+  try {
+    currentUser = MOCK_USER_WITH_EMAIL;
+    const res = await request(app)
+      .post('/api/send-welcome')
+      .set('Authorization', 'Bearer valid-token')
+      .send({
+        email: 'victim@example.com',
+        name: 'Temp User'
+      });
+
+    if (res.status === 403) {
+      console.log('✅ PASS: Mismatched email blocked (403)');
+    } else {
+      console.log(`❌ FAIL: Expected 403, got ${res.status}`);
+      failures++;
+    }
+  } catch (err) {
+    console.error('❌ Error in Test 6:', err);
+    failures++;
+  }
+
+  // TEST 7: /api/send-welcome (Expectation: 200 on match)
+  console.log('\n🔹 TEST 7: Checking /api/send-welcome (Expectation: 200 on match)');
+  try {
+      currentUser = MOCK_USER_WITH_EMAIL;
+      const res = await request(app)
+        .post('/api/send-welcome')
+        .set('Authorization', 'Bearer valid-token')
+        .send({
+          email: 'user@example.com',
+          name: 'Temp User'
+        });
+
+      if (res.status === 200) {
+        console.log('✅ PASS: Matching email allowed (200)');
+      } else {
+        console.log(`❌ FAIL: Expected 200, got ${res.status}`);
+        failures++;
+      }
+    } catch (err) {
+      console.error('❌ Error in Test 7:', err);
+      failures++;
+    }
+
   console.log(`\n🏁 Tests Complete. Failures: ${failures}`);
   if (failures > 0) process.exit(1);
 }

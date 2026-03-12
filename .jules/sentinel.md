@@ -12,3 +12,8 @@
 **Vulnerability:** Found `Math.random()` being used in `src/lib/email.ts` to generate verification codes and in `src/lib/jwt.ts` to generate secure tokens. `Math.random()` is not cryptographically secure, which means generated values can be predictable.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, and passwords should never rely on insecure random number generators.
 **Prevention:** Always use `globalThis.crypto.getRandomValues()` for generating random values intended for security purposes.
+
+## 2024-05-18 - Open Relay Vulnerability in Welcome Email Endpoint
+**Vulnerability:** The `/api/send-welcome` endpoint accepted an `email` parameter from the request body and used it directly to send emails without validating if it belonged to the authenticated user. This allowed any authenticated user to send welcome emails to arbitrary email addresses (acting as an open relay).
+**Learning:** Endpoints that trigger email sending, even if authenticated, must strictly validate that the recipient matches the authenticated user's email or a closely related entity (like an invited group member) to prevent abuse and spam. In this architecture, failing to cross-check `req.body.email` with `req.user?.email` leads to a privilege escalation / abuse vector.
+**Prevention:** Always verify `req.body.email === req.user?.email` for self-targeted notifications. For group-targeted notifications, verify that the authenticated user has sufficient permissions (e.g., is a member of the group) before sending to another member's email.

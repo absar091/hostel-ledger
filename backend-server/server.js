@@ -225,7 +225,10 @@ app.use(cors({
 // Handle preflight requests explicitly
 app.options('*', cors());
 
-app.use(express.json({ limit: '10mb' })); // Increased for audio data
+// Endpoint requiring larger payload for audio data
+app.use('/api/ai/parse-expense-audio', express.json({ limit: '10mb' }));
+// Global limit to prevent DoS attacks
+app.use(express.json({ limit: '100kb' }));
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
 
@@ -1942,6 +1945,13 @@ app.post('/api/send-welcome', emailLimiter, async (req, res) => {
     const { email, name } = req.body;
     if (!email || !name) {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, name' });
+    }
+
+    // Security: Only allow users to send welcome emails to themselves
+    // Must verify against the authenticated user's email to prevent open relay abuse
+    const userEmail = req.user?.email;
+    if (!userEmail || userEmail.toLowerCase() !== email.toLowerCase()) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You can only send welcome emails to your own email address.' });
     }
 
     await emailService.sendWelcome(email, name);
