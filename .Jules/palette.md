@@ -1,3 +1,7 @@
 ## 2024-03-01 - Add context-aware ARIA labels to TimelineItem buttons
 **Learning:** Found that complex list items representing transactional data (like `TimelineItem.tsx` buttons) often lack screen-reader-friendly unified summaries. Instead of leaving screen readers to read a chaotic stream of nested spans and divs, providing a single, coherent sentence as an `aria-label` (e.g., "View details for expense: Dinner, $50 paid by John on Oct 12") on the main button wrapper significantly improves context and navigability.
 **Action:** When implementing complex interactive items like cards or list items functioning as buttons, always synthesize their internal data points into a clear, single-string `aria-label` for screen reader accessibility, avoiding disjointed reading of nested text elements.
+
+## 2024-03-12 - Duplicate className attributes in React
+**Learning:** React components (like `SupportSheet.tsx`) occasionally have multiple `className` props defined on a single JSX element (e.g., `<button className="a" className="b">`). This is technically invalid JSX/React and usually only the last `className` prop gets applied, silently overriding the earlier one, leading to dropped styles. Current linting configurations might not strictly catch this without specific rules enabled.
+**Action:** When working on UI styling, proactively scan for and consolidate duplicate `className` props into a single string to prevent unexpected CSS behaviors and ensure all intended utility classes are actually applied.
