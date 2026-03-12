@@ -258,6 +258,8 @@ const TimelineItemBase = ({
                 e.stopPropagation();
                 setShowChat(true);
               }}
+              type="button"
+              aria-label={`Discuss expense: ${title}`}
               className="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all border border-blue-200/50 shadow-sm flex items-center gap-1.5"
             >
               <MessageSquareText className="w-3.5 h-3.5" />
