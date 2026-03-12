@@ -26,47 +26,44 @@ const normalizeArray = (val: any): any[] => {
 const normalizeMembers = (members: any, currentUserId?: string): any[] => {
   if (!members) return [];
 
-  const membersArray = (Array.isArray(members)
-    ? members
-    : Object.entries(members).map(([key, value]: [string, any]) => ({
-      ...value,
-      id: value.id || key, // Ensure the key is used as the member id
-    }))).map((m: any) => ({ ...m, isCurrentUser: false })); // Reset client-side property for ALL members
+  // Consolidate array conversions, normalization, and renaming into a single pass
+  // This avoids O(N) overhead from chained .map() calls and logging traversals
+  const processMember = (m: any, key?: string) => {
+    if (!m) return null;
 
-  console.log('Validating members:', membersArray.map((m: any) => ({
-    id: m.id,
-    name: m.name,
-    userId: m.userId,
-    currentUserId
-  })));
+    const normalized = {
+      ...m,
+      isCurrentUser: false
+    };
 
-  // If currentUserId is provided, rename that user to "You" for display
-  if (currentUserId) {
-    return membersArray.map((m: any) => {
-      // Check both id and userId key for a match
-      if (m.id === currentUserId || m.userId === currentUserId) {
-        return { ...m, name: "You", isCurrentUser: true, isPending: false };
-      }
+    if (key && !normalized.id) {
+      normalized.id = key;
+    }
 
-      // Fix for legacy groups where creator was stored as "You"
-      // If we see "You" but it's not the current user, rename it to avoid confusion
-      // Use case-insensitive check and trim
-      if (m.name && m.name.trim().toLowerCase() === "you") {
-        return { ...m, name: "Group Owner" };
-      }
+    if (currentUserId && (normalized.id === currentUserId || normalized.userId === currentUserId)) {
+      normalized.name = "You";
+      normalized.isCurrentUser = true;
+      normalized.isPending = false;
+    } else if (normalized.name && normalized.name.trim().toLowerCase() === "you") {
+      normalized.name = "Group Owner";
+    }
 
-      return m;
-    });
+    return normalized;
+  };
+
+  if (Array.isArray(members)) {
+    return members.reduce((acc: any[], m: any) => {
+      const processed = processMember(m);
+      if (processed) acc.push(processed);
+      return acc;
+    }, []);
   }
 
-  // Fallback: If no currentUserId, still rename "You" to "Group Owner" to prevent confusion
-  // as we don't know who "You" is.
-  return membersArray.map((m: any) => {
-    if (m.name && m.name.trim().toLowerCase() === "you") {
-      return { ...m, name: "Group Owner" };
-    }
-    return m;
-  });
+  return Object.entries(members).reduce((acc: any[], [key, m]: [string, any]) => {
+    const processed = processMember(m, key);
+    if (processed) acc.push(processed);
+    return acc;
+  }, []);
 };
 
 
