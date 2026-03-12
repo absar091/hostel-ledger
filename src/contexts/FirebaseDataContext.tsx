@@ -23,15 +23,30 @@ const normalizeArray = (val: any): any[] => {
 };
 
 // Normalize members: Firebase may return object {memberId: {}, ...} instead of array
+// ⚡ Bolt: Consolidated chained array maps/entries into a single-pass processing function mapped directly over the members array/object to improve React Context performance
 const normalizeMembers = (members: any, currentUserId?: string): any[] => {
   if (!members) return [];
 
-  const membersArray = (Array.isArray(members)
-    ? members
-    : Object.entries(members).map(([key, value]: [string, any]) => ({
-      ...value,
-      id: value.id || key, // Ensure the key is used as the member id
-    }))).map((m: any) => ({ ...m, isCurrentUser: false })); // Reset client-side property for ALL members
+  const processMember = (value: any, keyFallback?: string) => {
+    const m = { ...value, isCurrentUser: false };
+    if (keyFallback !== undefined && !m.id) {
+      m.id = keyFallback;
+    }
+
+    if (currentUserId && (m.id === currentUserId || m.userId === currentUserId)) {
+      m.name = "You";
+      m.isCurrentUser = true;
+      m.isPending = false;
+    } else if (m.name && typeof m.name === "string" && m.name.trim().toLowerCase() === "you") {
+      m.name = "Group Owner";
+    }
+
+    return m;
+  };
+
+  const membersArray = Array.isArray(members)
+    ? members.map((m: any) => processMember(m))
+    : Object.entries(members).map(([key, value]: [string, any]) => processMember(value, key));
 
   console.log('Validating members:', membersArray.map((m: any) => ({
     id: m.id,
@@ -40,33 +55,7 @@ const normalizeMembers = (members: any, currentUserId?: string): any[] => {
     currentUserId
   })));
 
-  // If currentUserId is provided, rename that user to "You" for display
-  if (currentUserId) {
-    return membersArray.map((m: any) => {
-      // Check both id and userId key for a match
-      if (m.id === currentUserId || m.userId === currentUserId) {
-        return { ...m, name: "You", isCurrentUser: true, isPending: false };
-      }
-
-      // Fix for legacy groups where creator was stored as "You"
-      // If we see "You" but it's not the current user, rename it to avoid confusion
-      // Use case-insensitive check and trim
-      if (m.name && m.name.trim().toLowerCase() === "you") {
-        return { ...m, name: "Group Owner" };
-      }
-
-      return m;
-    });
-  }
-
-  // Fallback: If no currentUserId, still rename "You" to "Group Owner" to prevent confusion
-  // as we don't know who "You" is.
-  return membersArray.map((m: any) => {
-    if (m.name && m.name.trim().toLowerCase() === "you") {
-      return { ...m, name: "Group Owner" };
-    }
-    return m;
-  });
+  return membersArray;
 };
 
 
