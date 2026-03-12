@@ -4848,12 +4848,12 @@ app.post('/api/send-message', chatLimiter, authenticate, async (req, res) => {
     // If expenseId provided, verify it exists in this group
     let expenseData = null;
     if (expenseId) {
-      // Expenses are in Firestore
-      const expenseSnap = await firestore.collection('transactions').doc(expenseId).get();
-      if (!expenseSnap.exists || expenseSnap.data().groupId !== groupId) {
+      // Expenses are in Realtime Database now
+      const expenseSnap = await db.ref(`transactions/${expenseId}`).get();
+      if (!expenseSnap.exists() || expenseSnap.val().groupId !== groupId) {
         return res.status(404).json({ success: false, error: 'Expense not found in this group' });
       }
-      expenseData = expenseSnap.data();
+      expenseData = expenseSnap.val();
     }
 
     // Save message
