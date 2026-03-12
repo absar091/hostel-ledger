@@ -13,6 +13,7 @@ const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { loadEmailTemplate } = require('./utils/email');
+const logger = require('./utils/logger');
 const {
   validateCreateGroup,
   validateAmount,
@@ -34,9 +35,9 @@ if (process.env.GEMINI_API_KEY) {
   genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const fallbackModelNames = ["gemini-3.1-flash-lite-preview", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"];
   aiModels = fallbackModelNames.map(name => genAI.getGenerativeModel({ model: name }));
-  console.log(`✅ Gemini AI initialized with ${aiModels.length} fallback models`);
+  logger.info(`✅ Gemini AI initialized with ${aiModels.length} fallback models`);
 } else {
-  console.warn('⚠️ GEMINI_API_KEY not found - AI parsing will be disabled');
+  logger.warn('⚠️ GEMINI_API_KEY not found - AI parsing will be disabled');
 }
 
 /**
@@ -50,7 +51,7 @@ async function generateContentWithFallback(prompt) {
   let lastError = null;
   for (let i = 0; i < aiModels.length; i++) {
     try {
-      console.log(`🤖 Attempting AI generation with fallback model index ${i}...`);
+      logger.info(`🤖 Attempting AI generation with fallback model index ${i}...`);
       const result = await aiModels[i].generateContent(prompt);
       const response = await result.response;
       return response.text().trim();
@@ -72,9 +73,9 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && proce
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
   });
-  console.log('✅ Cloudinary configured successfully');
+  logger.info('✅ Cloudinary configured successfully');
 } else {
-  console.warn('⚠️ Cloudinary not fully configured - image deletion will fail');
+  logger.warn('⚠️ Cloudinary not fully configured - image deletion will fail');
 }
 
 // Normalize group.members from Firebase: may be object or array.
@@ -128,48 +129,39 @@ const syncWalletBalanceToGroups = async (db, userId, balance, isEnabled) => {
     });
 
     if (Object.keys(updates).length > 0) {
+      logger.info(`🔄 Syncing wallet balance: Rs ${balance} to ${Object.keys(updates).length} group paths (Enabled: ${isEnabled})`);
       await db.ref().update(updates);
-      console.log(`✅ Synced wallet balance for user ${userId} to ${Object.keys(updates).length} group paths (Enabled: ${isEnabled})`);
     }
 
   } catch (error) {
-    console.error('❌ Failed to sync wallet balance to groups:', error);
+    logger.error('❌ Failed to sync wallet balance to groups:', error);
   }
 };
 
 // Initialize Firebase Admin SDK using environment variables
-try {
-  const serviceAccount = {
-    type: "service_account",
-    project_id: process.env.FIREBASE_PROJECT_ID || "hostel-ledger",
-    private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-    private_key: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
-    client_email: process.env.FIREBASE_CLIENT_EMAIL,
-    client_id: process.env.FIREBASE_CLIENT_ID,
-    auth_uri: "https://accounts.google.com/o/oauth2/auth",
-    token_uri: "https://oauth2.googleapis.com/token",
-    auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-    client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
-    universe_domain: "googleapis.com"
-  };
-
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: process.env.FIREBASE_DATABASE_URL || "https://hostel-ledger-default-rtdb.firebaseio.com"
-  });
-
-  console.log('✅ Firebase Admin SDK initialized successfully');
-  firestore = admin.firestore();
-} catch (error) {
-  console.error('❌ Firebase Admin SDK initialization failed:', error.message);
-  console.warn('⚠️ Email existence check will not work without Firebase Admin SDK');
+if (process.env.FIREBASE_PROJECT_ID) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      }),
+      databaseURL: process.env.FIREBASE_DATABASE_URL
+    });
+    firestore = admin.firestore();
+    logger.info('✅ Firebase Admin SDK initialized successfully');
+  } catch (error) {
+    logger.error('❌ Firebase Admin SDK initialization failed:', error.message);
+    logger.warn('⚠️ Email existence check will not work without Firebase Admin SDK');
+  }
 }
 
-// OneSignal Configuration Check
+// OneSignal Client Initialization
 if (process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY) {
-  console.log('✅ OneSignal configured for push notifications');
+  logger.info('✅ OneSignal configured for push notifications');
 } else {
-  console.warn('⚠️ OneSignal not configured - push notifications will not work');
+  logger.warn('⚠️ OneSignal not configured - push notifications will not work');
 }
 
 const app = express();
@@ -243,7 +235,7 @@ const adminAuth = async (req, res, next) => {
   const cronSecret = process.env.CRON_SECRET;
 
   if (!cronSecret) {
-    console.error('CRON_SECRET is not configured.');
+    logger.error('CRON_SECRET is not configured.');
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
@@ -316,15 +308,15 @@ const userSearchLimiter = rateLimit({
 // Verify email configuration on startup
 emailService.verifyConnection().then(connected => {
   if (connected) {
-    console.log('✅ Email Service Configured Successfully');
+    logger.info('✅ Email Service Configured Successfully');
   } else {
-    console.warn('⚠️ Email Service Failed to Connect - Emails may not send');
+    logger.warn('⚠️ Email Service Failed to Connect - Emails may not send');
   }
 });
 
 // Root endpoint
 app.get('/', (req, res) => {
-  console.log('📍 Root endpoint accessed from:', req.get('origin') || 'direct');
+  logger.log('info', '📍 Root endpoint accessed from:', req.get('origin') || 'direct');
   res.json({
     success: true,
     message: 'Hostel Ledger Email API',
@@ -348,7 +340,7 @@ app.get('/', (req, res) => {
 
 // Health check endpoint (no rate limiting)
 app.get('/health', (req, res) => {
-  console.log('🏥 Health check accessed from:', req.get('origin') || 'direct');
+  logger.log('info', '🏥 Health check accessed from:', req.get('origin') || 'direct');
   res.json({
     success: true,
     message: 'Hostel Ledger Email API is running',
@@ -404,7 +396,7 @@ const authenticate = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.warn('⚠️ Missing or malformed Authorization header');
+    logger.warn('⚠️ Missing or malformed Authorization header');
     return res.status(401).json({
       success: false,
       error: 'Unauthorized: Missing or malformed token'
@@ -416,10 +408,10 @@ const authenticate = async (req, res, next) => {
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     req.user = decodedToken;
-    console.log(`👤 Authenticated user: ${decodedToken.uid}`);
+    logger.log('authenticated', `✅ Authenticated user: ${decodedToken.uid}`);
     next();
   } catch (error) {
-    console.error('❌ Token verification failed:', error.message);
+    logger.error('❌ Token verification failed:', error.message);
     return res.status(401).json({
       success: false,
       error: 'Unauthorized: Invalid or expired token'
@@ -429,7 +421,7 @@ const authenticate = async (req, res, next) => {
 
 // ============================================
 // 2FA Endpoints
-console.log('✅ 2FA Endpoints (setup, verify-setup, verify, disable) are registered.');
+logger.info('✅ 2FA Endpoints (setup, verify-setup, verify, disable) are registered.');
 // ============================================
 
 // 2FA Status (Public) - Verify 2FA module is loaded

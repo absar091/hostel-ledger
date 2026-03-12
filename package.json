@@ -76,6 +76,7 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
     "vite-plugin-pwa": "^1.2.0",
+    "winston": "^3.19.0",
     "workbox-background-sync": "^7.4.0",
     "workbox-cacheable-response": "^7.4.0",
     "workbox-core": "^7.4.0",
