@@ -107,7 +107,7 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "express": "^4.22.1",
     "express-rate-limit": "^7.5.1",
-    "firebase": "^10.14.1",
+    "firebase": "^12.10.0",
     "firebase-admin": "^12.7.0",
     "globals": "^15.15.0",
     "helmet": "^7.2.0",
