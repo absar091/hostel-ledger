@@ -886,7 +886,7 @@ const Dashboard = () => {
             {/* Scrollable Container */}
             <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar -mx-2 px-2 snap-x">
               {/* 1. Log (Split Bill) */}
-              <button onClick={handleAddExpense} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+              <button type="button" onClick={handleAddExpense} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
                 <div className="w-12 h-12 rounded-[16px] bg-[#EAF5EF] text-[#4B6B54] flex items-center justify-center">
                   <CreditCard className="w-6 h-6" strokeWidth={2} />
                 </div>
@@ -894,7 +894,7 @@ const Dashboard = () => {
               </button>
 
               {/* 2. Solo (Personal Expense) */}
-              <button onClick={handlePersonalExpense} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+              <button type="button" onClick={handlePersonalExpense} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
                 <div className="w-12 h-12 rounded-[16px] bg-[#EBF3FE] text-[#4285F4] flex items-center justify-center">
                   <User className="w-6 h-6" strokeWidth={2} />
                 </div>
@@ -902,7 +902,7 @@ const Dashboard = () => {
               </button>
 
               {/* 3. Received (Record Payment) */}
-              <button onClick={handleReceivedMoney} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+              <button type="button" onClick={handleReceivedMoney} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
                 <div className="w-12 h-12 rounded-[16px] bg-[#EAF5EF] text-[#34A853] flex items-center justify-center">
                   <ArrowDownLeft className="w-6 h-6" strokeWidth={2} />
                 </div>
@@ -910,7 +910,7 @@ const Dashboard = () => {
               </button>
 
               {/* 4. New Group */}
-              <button onClick={() => navigate("/create-group")} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+              <button type="button" onClick={() => navigate("/create-group")} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
                 <div className="w-12 h-12 rounded-[16px] bg-[#F4F6F8] text-[#4A5568] flex items-center justify-center">
                   <Users className="w-6 h-6" strokeWidth={2} />
                 </div>
@@ -918,7 +918,7 @@ const Dashboard = () => {
               </button>
 
               {/* 5. Send Money (to personal-space) */}
-              <button onClick={() => navigate("/personal-space")} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+              <button type="button" onClick={() => navigate("/personal-space")} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
                 <div className="w-12 h-12 rounded-[16px] bg-[#F4F0FE] text-[#8B5CF6] flex items-center justify-center">
                   <Send className="w-6 h-6" strokeWidth={2} />
                 </div>
@@ -926,7 +926,7 @@ const Dashboard = () => {
               </button>
 
               {/* 5. Add Money (Top up Wallet) */}
-              <button onClick={() => setShowAddMoney(true)} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+              <button type="button" onClick={() => setShowAddMoney(true)} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
                 <div className="w-12 h-12 rounded-[16px] bg-[#FFF8E6] text-[#FBBC04] flex items-center justify-center">
                   <Plus className="w-6 h-6" strokeWidth={2} />
                 </div>
@@ -936,7 +936,7 @@ const Dashboard = () => {
               {/* 6. AI Insights */}
               <AIInsightsSheet
                 trigger={
-                  <button className="flex-shrink-0 w-24 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+                  <button type="button" className="flex-shrink-0 w-24 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
                     <div className="w-12 h-12 rounded-[16px] bg-[#E8F8F5] text-[#1ABC9C] flex items-center justify-center">
                       <Sparkles className="w-6 h-6" strokeWidth={2} />
                     </div>
@@ -966,7 +966,7 @@ const Dashboard = () => {
                 </Tooltip>
               </div>
               {allTransactions.length > 5 && (
-                <button onClick={() => navigate("/activity")} className="text-[10px] font-black text-[#4B6B54] uppercase">
+                <button type="button" onClick={() => navigate("/activity")} className="text-[10px] font-black text-[#4B6B54] uppercase">
                   {t('dashboard.view_all_dashboard')}
                 </button>
               )}
@@ -983,6 +983,7 @@ const Dashboard = () => {
                   />
                   {allTransactions.length > 5 && (
                     <button
+                      type="button"
                       onClick={() => navigate("/activity")}
                       className="w-full py-3 text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:bg-emerald-50 transition-colors"
                     >
@@ -997,7 +998,7 @@ const Dashboard = () => {
                   </div>
                   <h4 className="text-sm font-black text-foreground mb-1 tracking-tight">Financial journey starts here!</h4>
                   <p className="text-[11px] font-medium text-muted-foreground mb-6 max-w-[200px]">Add your first expense or payment to track your hostel life.</p>
-                  <button onClick={handleAddExpense} className="btn-primary-teal text-xs w-full max-w-[180px]">
+                  <button type="button" onClick={handleAddExpense} className="btn-primary-teal text-xs w-full max-w-[180px]">
                     Create First Transaction
                   </button>
                 </div>
