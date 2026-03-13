@@ -74,7 +74,7 @@ function getStatusPageHTML(data) {
         .logo {
             width: 44px;
             height: 44px;
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: #1B4332;
             border-radius: 12px;
             display: flex;
             align-items: center;
