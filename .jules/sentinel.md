@@ -17,3 +17,8 @@
 **Vulnerability:** The `/api/send-welcome` endpoint accepted an `email` parameter from the request body and used it directly to send emails without validating if it belonged to the authenticated user. This allowed any authenticated user to send welcome emails to arbitrary email addresses (acting as an open relay).
 **Learning:** Endpoints that trigger email sending, even if authenticated, must strictly validate that the recipient matches the authenticated user's email or a closely related entity (like an invited group member) to prevent abuse and spam. In this architecture, failing to cross-check `req.body.email` with `req.user?.email` leads to a privilege escalation / abuse vector.
 **Prevention:** Always verify `req.body.email === req.user?.email` for self-targeted notifications. For group-targeted notifications, verify that the authenticated user has sufficient permissions (e.g., is a member of the group) before sending to another member's email.
+
+## 2024-05-24 - Predictable JWT Token Signature Generation
+**Vulnerability:** A hardcoded string `'hostel-ledger-super-secret-key-2024-change-in-production'` was used as a fallback for `VITE_JWT_SECRET` in `src/lib/jwt.ts` when the environment variable was missing.
+**Learning:** Using insecure fallback values for cryptographic secrets guarantees that any deployment missing the configuration will silently use a known, publicly exposed key, allowing attackers to forge valid JWT tokens.
+**Prevention:** Never provide fallback values for cryptographic secrets in source code. Instead, explicitly check for the secret's presence and throw a hard error at runtime (or load time) if it is missing, enforcing secure configuration.
