@@ -3,6 +3,7 @@ import { ref, push, set, update, remove, onValue, off, get, query, limitToLast, 
 import { database } from "@/lib/firebase";
 import { useFirebaseAuth, PaymentDetails } from "./FirebaseAuthContext";
 import { TransactionManager, retryOperation } from "@/lib/transaction";
+import { callSecureApi, sendInvitation, sendExternalInvitation, joinGroup as apiJoinGroup } from "@/lib/api";
 
 // Utility functions - defined locally to avoid import issues
 const sanitizeString = (input: string): string => {
@@ -159,7 +160,6 @@ import {
 } from "@/lib/expenseLogic";
 import { logger } from "@/lib/logger";
 import { sendTransactionNotifications, triggerPushNotification, TransactionData, UserData } from "@/lib/transactionNotifications";
-import { callSecureApi, sendInvitation, sendExternalInvitation } from "@/lib/api";
 import { saveOfflineExpense } from "@/lib/offlineDB";
 
 export interface GroupMember {
@@ -192,6 +192,11 @@ export interface Group {
   createdAt: string;
   isPersonal?: boolean; // NEW: Flag for private tracking
   status?: 'invited' | 'joined' | 'archived' | string;
+  budget?: {
+    amount: number;
+    period: 'monthly' | 'weekly';
+    lastUpdated: string;
+  };
 }
 
 export interface Transaction {
@@ -250,6 +255,8 @@ interface FirebaseDataContextType {
   checkAccountDeletionEligibility: () => Promise<{ eligible: boolean; reason?: string }>;
   deleteAccountData: () => Promise<{ success: boolean; error?: string }>;
   claimEmailInvite: (groupId: string) => Promise<{ success: boolean; error?: string }>;
+  joinGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>;
+  updateGroupBudget: (groupId: string, budget: Group['budget']) => Promise<{ success: boolean; error?: string }>;
 }
 
 const FirebaseDataContext = createContext<FirebaseDataContextType | undefined>(undefined);
@@ -729,7 +736,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addMemberToGroup = async (groupId: string, member: { id?: string; name: string; paymentDetails?: PaymentDetails; phone?: string; isTemporary?: boolean; deletionCondition?: 'SETTLED' | 'TIME_LIMIT' | null }): Promise<{ success: boolean; error?: string; memberId?: string }> => {
+  const addMemberToGroup = async (groupId: string, member: { id?: string; name: string; paymentDetails?: PaymentDetails; phone?: string; isTemporary?: boolean; deletionCondition?: 'SETTLED' | 'TIME_LIMIT' | null; email?: string; userId?: string; username?: string }): Promise<{ success: boolean; error?: string; memberId?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
     try {
@@ -743,6 +750,18 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
 
       if (member.name.length > 50) {
         return { success: false, error: "Member name cannot exceed 50 characters" };
+      }
+
+      // Handle invitations for existing users or external emails via API
+      if (member.userId || (member.username && member.username !== member.name)) {
+        const inviteUsername = member.username || member.name;
+        const result = await sendInvitation(groupId, inviteUsername);
+        return { success: result.success, error: result.error };
+      }
+
+      if (member.email) {
+        const result = await sendExternalInvitation(groupId, member.email);
+        return { success: result.success, error: result.error };
       }
 
       // Check for duplicate names
@@ -1094,6 +1113,30 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, error: error.message || "Failed to update group" };
     }
   };
+  
+  const updateGroupBudget = async (groupId: string, budget: Group['budget']): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: "User not authenticated" };
+    
+    try {
+      // Optimistic local update
+      setGroups(prev => prev.map(g => g.id === groupId ? { ...g, budget } : g));
+      
+      const groupRef = ref(database, `groups/${groupId}`);
+      await update(groupRef, { budget });
+      
+      // Also update in userGroups index (limited fields)
+      const userGroupRef = ref(database, `userGroups/${user.uid}/${groupId}`);
+      await update(userGroupRef, { 
+        budgetAmount: budget?.amount || null,
+        budgetPeriod: budget?.period || null
+      });
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error("Update group budget error:", error);
+      return { success: false, error: error.message || "Failed to update budget" };
+    }
+  };
 
   const deleteGroup = async (groupId: string): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "User not authenticated" };
@@ -1176,6 +1219,14 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error("Claim profile error:", error);
       return { success: false, error: error.message || "Failed to claim profile" };
+    }
+  };
+
+  const joinGroup = async (groupId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      return await apiJoinGroup(groupId);
+    } catch (error: any) {
+      return { success: false, error: error.message };
     }
   };
 
@@ -1506,14 +1557,18 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     getAllTransactions,
     checkAccountDeletionEligibility,
     deleteAccountData,
-    claimEmailInvite
+    claimEmailInvite,
+    joinGroup,
+    updateGroupBudget
   }), [
     groups,
     transactions,
     isLoading,
     user?.uid,
     fetchGroupDetail,
-    claimEmailInvite
+    claimEmailInvite,
+    joinGroup,
+    updateGroupBudget
   ]);
 
   return (

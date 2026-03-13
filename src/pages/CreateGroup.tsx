@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Plus, X, Upload, CheckCircle2, AlertTriangle, Mail } from "lucide-react";
+import { ArrowLeft, Search, Plus, X, Upload, CheckCircle2, AlertTriangle, Mail, Copy, Link } from "lucide-react";
 import AppContainer from "@/components/AppContainer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -32,12 +32,7 @@ interface ManualMember {
     email?: string; // Optional: link manual member to an email invite
 }
 
-interface InviteMember {
-    type: 'invite';
-    email: string;
-}
-
-type GroupMember = RealMember | ManualMember | InviteMember;
+type GroupMember = RealMember | ManualMember;
 
 const EMOJI_OPTIONS = ["🏠", "🍽️", "✈️", "🎉", "🛒", "☕", "🎬", "🏋️", "🎮", "📚", "🚗", "🏖️", "🎂", "💼", "🎸", "⚽"];
 
@@ -46,8 +41,9 @@ export default function CreateGroupPage() {
     const { createGroup, user } = useFirebaseAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Steps: 1 = Details, 2 = Members, 3 = Review
+    // Steps: 1 = Details, 2 = Members, 3 = Review, 4 = Success/Share
     const [step, setStep] = useState(1);
+    const [createdGroupId, setCreatedGroupId] = useState<string | null>(null);
 
     // Form Data
     const [name, setName] = useState("");
@@ -149,6 +145,7 @@ export default function CreateGroupPage() {
         setManualName("");
     };
 
+
     const handleCreate = async () => {
         // Validation
         if (!name.trim()) {
@@ -182,12 +179,22 @@ export default function CreateGroupPage() {
 
         try {
             const result = await createGroup(groupPayload);
-            if (result.success) {
-                toast.success("Group created successfully! 🚀");
+            if (result.success && result.groupId) {
+                setCreatedGroupId(result.groupId);
+                setStep(4);
+                
+                // Copy group link to clipboard automatically as a convenience
+                const groupLink = `${window.location.origin}/join/${result.groupId}`;
+                try {
+                    await navigator.clipboard.writeText(groupLink);
+                    toast.success("Group created! Invite link copied. 🚀");
+                } catch (err) {
+                    toast.success("Group created successfully! 🚀");
+                }
+
                 if (emailsList.length > 0) {
                     toast.info(`Sent ${emailsList.length} email invitation${emailsList.length > 1 ? 's' : ''}`);
                 }
-                navigate('/');
             } else {
                 toast.error(result.error || "Failed to create group");
             }
@@ -395,18 +402,26 @@ export default function CreateGroupPage() {
                                             <AlertTriangle className="w-4 h-4" />
                                             User not found
                                         </div>
-                                        <p className="text-xs text-blue-700 mb-3">Invite them via email to join the app!</p>
-                                        <div className="flex gap-2">
-                                            <Input
-                                                className="h-10 bg-white border-blue-200"
-                                                placeholder="friend@email.com"
-                                                value={inviteEmail}
-                                                onChange={e => setInviteEmail(e.target.value)}
-                                                aria-label="Friend's email"
-                                            />
-                                            <Button onClick={addInviteMember} className="bg-blue-600 h-10 px-4 rounded-xl font-bold">
-                                                Invite
-                                            </Button>
+                                        <p className="text-xs text-blue-700 mb-3">
+                                            Invite them via email or share a join link! 
+                                            <span className="block mt-1 font-medium italic opacity-80">
+                                                If you don't know their email, you can invite them after the group is created by sharing the link.
+                                            </span>
+                                        </p>
+                                        <div className="flex flex-col gap-3">
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    className="h-10 bg-white border-blue-200"
+                                                    placeholder="friend@email.com"
+                                                    value={inviteEmail}
+                                                    onChange={e => setInviteEmail(e.target.value)}
+                                                    aria-label="Friend's email"
+                                                />
+                                                <Button onClick={addInviteMember} className="bg-blue-600 h-10 px-4 rounded-xl font-bold">
+                                                    Invite
+                                                </Button>
+                                            </div>
+                                            
                                         </div>
                                     </div>
                                 )}
@@ -519,6 +534,55 @@ export default function CreateGroupPage() {
                             >
                                 {isCreating ? "Creating..." : "Create Group 🚀"}
                             </Button>
+                        </div>
+                     )}
+
+                    {step === 4 && createdGroupId && (
+                        <div className="space-y-8 animate-fade-in py-8">
+                            <div className="text-center">
+                                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <CheckCircle2 className="w-10 h-10 text-green-600" />
+                                </div>
+                                <h2 className="text-3xl font-black text-gray-900 mb-2">Group Created!</h2>
+                                <p className="text-gray-600 font-medium">Your squad is ready to go.</p>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 space-y-6">
+                                <div className="text-center">
+                                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Share Join Link</p>
+                                    <div className="bg-gray-50 p-4 rounded-2xl border border-dashed border-gray-200 break-all text-xs font-mono text-gray-500 mb-4 select-all">
+                                        {`${window.location.origin}/join/${createdGroupId}`}
+                                    </div>
+                                    <Button 
+                                        onClick={() => {
+                                            const link = `${window.location.origin}/join/${createdGroupId}`;
+                                            navigator.clipboard.writeText(link);
+                                            toast.success("Link copied to clipboard!");
+                                        }}
+                                        className="w-full h-14 bg-[#4a6850] rounded-2xl font-bold flex items-center justify-center gap-2 text-lg"
+                                    >
+                                        <Copy className="w-5 h-5" />
+                                        Copy Link to Share
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <Button 
+                                    variant="outline"
+                                    onClick={() => navigate(`/group/${createdGroupId}`)}
+                                    className="w-full h-14 rounded-2xl border-2 border-gray-200 text-gray-700 font-black hover:bg-gray-100"
+                                >
+                                    Go to Group Dashboard
+                                </Button>
+                                <Button 
+                                    variant="ghost"
+                                    onClick={() => navigate('/')}
+                                    className="w-full h-12 text-gray-400 font-bold"
+                                >
+                                    Back to Home
+                                </Button>
+                            </div>
                         </div>
                     )}
                 </div>

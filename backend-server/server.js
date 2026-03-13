@@ -188,6 +188,7 @@ app.use((req, res, next) => {
 });
 const adminRoutes = require("./routes/adminRoutes");
 const userRoutes = require("./routes/userRoutes");
+const exportRoutes = require("./routes/exportRoutes");
 
 // Security headers
 app.use(helmet());
@@ -244,6 +245,7 @@ app.use('/api/ai/parse-expense-audio', express.json({ limit: '10mb' }));
 app.use(express.json({ limit: '100kb' }));
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/export", exportRoutes);
 
 const emailService = require('./services/emailService');
 const expenseLogic = require('./utils/expenseLogic');
@@ -4362,6 +4364,88 @@ app.post('/api/update-group', authenticate, async (req, res) => {
   }
 });
 
+// ============================================
+// JOIN GROUP (General Join by ID)
+// ============================================
+app.post('/api/join-group', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { groupId } = req.body;
+
+    if (!groupId) {
+      return res.status(400).json({ success: false, error: 'Group ID is required' });
+    }
+
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
+    const db = admin.database();
+    const groupRef = db.ref(`groups/${groupId}`);
+    const groupSnap = await groupRef.get();
+
+    if (!groupSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'Group not found' });
+    }
+
+    const groupData = groupSnap.val();
+    const members = normalizeMembers(groupData.members);
+
+    // Check if already a member
+    const existingMember = members.find(m => m.userId === userId);
+    if (existingMember) {
+      return res.json({ success: true, message: 'Already a member' });
+    }
+
+    // Get user details
+    const userSnap = await db.ref(`users/${userId}`).get();
+    if (!userSnap.exists()) {
+      return res.status(404).json({ success: false, error: 'User profile not found' });
+    }
+    const userData = userSnap.val();
+
+    // Create new member object
+    const newMemberId = `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const newMember = {
+      id: newMemberId,
+      userId: userId,
+      name: userData.name || userData.username || 'User',
+      username: userData.username || '',
+      email: userData.email || '',
+      isRegistered: true,
+      role: 'member',
+      joinedAt: new Date().toISOString()
+    };
+
+    const updates = {};
+    updates[`groups/${groupId}/members/${newMemberId}`] = newMember;
+    updates[`groups/${groupId}/memberCount`] = (groupData.memberCount || 0) + 1;
+
+    // Add to userGroups
+    const now = new Date().toISOString();
+    updates[`userGroups/${userId}/${groupId}`] = {
+      name: groupData.name,
+      emoji: groupData.emoji || '👥',
+      coverPhoto: groupData.coverPhoto || null,
+      memberCount: (groupData.memberCount || 0) + 1,
+      createdBy: groupData.createdBy || '',
+      createdAt: groupData.createdAt || now,
+      joinedAt: now
+    };
+
+    // Update for creator if needed? No, userGroups is personal.
+    
+    await db.ref().update(updates);
+
+    console.log(`✅ User ${userId} joined group ${groupId} via general link`);
+    res.json({ success: true, message: 'Joined group successfully' });
+
+  } catch (error) {
+    console.error('❌ Join group error:', error);
+    res.status(500).json({ success: false, error: 'Failed to join group: ' + error.message });
+  }
+});
+
 // Sync Wallet Balance to Groups Endpoint
 app.post('/api/sync-balance-to-groups', authenticate, async (req, res) => {
   try {
@@ -5372,9 +5456,12 @@ const setupSupportListeners = () => {
   logger.info('🎧 Support system listeners initialized');
 };
 
+const { startWeeklyReportCron } = require('./services/cronService');
+
 // Initialize listeners
 if (admin.apps.length > 0) {
   setupSupportListeners();
+  startWeeklyReportCron();
 }
 
 // --- GLOBAL ERROR HANDLING ---

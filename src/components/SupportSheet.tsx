@@ -63,33 +63,38 @@ export function SupportSheet({ isOpen, onClose }: SupportSheetProps) {
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <SheetContent side="bottom" className="h-[80vh] sm:h-[600px] flex flex-col bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 rounded-t-3xl shadow-xl">
-        <SheetHeader className="pb-4 border-b border-gray-100 dark:border-gray-800">
-          <SheetTitle className="text-xl font-bold dark:text-white">Contact Support</SheetTitle>
-          <SheetDescription className="text-gray-500 dark:text-gray-400">
+      <SheetContent side="bottom" className="h-[90vh] sm:h-[600px] flex flex-col bg-[#f0f4f1] border-t border-[#4a6850]/10 rounded-t-[32px] shadow-2xl p-0 overflow-hidden">
+        <SheetHeader className="px-6 py-5 bg-white border-b border-[#4a6850]/5 shadow-sm">
+          <SheetTitle className="text-xl font-black text-gray-900 tracking-tight">Contact Support</SheetTitle>
+          <SheetDescription className="text-[#4a6850]/70 font-bold text-xs mt-1">
             {ticketId ? 'We have received your message.' : 'Send us a message and our admin team will reply via email and in-app notifications.'}
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto py-6">
+        <div className="flex-1 overflow-y-auto px-6 py-6 pb-[calc(24px+env(safe-area-inset-bottom,0px))] md:pb-6">
           {ticketId ? (
             <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
               <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
               </div>
-              <h3 className="text-xl font-bold dark:text-white">Ticket Submitted!</h3>
-              <p className="text-gray-600 dark:text-gray-300">Your ticket ID is:</p>
-              <p className="text-2xl font-mono font-bold text-primary bg-primary/10 px-4 py-2 rounded-lg">{ticketId}</p>
-              <p className="text-sm text-gray-500 max-w-sm mt-4">We've also sent you an email confirmation. You will receive a notification when an admin replies.</p>
-              <button className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 flex justify-center items-center w-full" onClick={handleClose} className="mt-6 w-full max-w-xs">Close</button>
+              <h3 className="text-lg font-black text-gray-900">Ticket Submitted!</h3>
+              <p className="text-sm font-bold text-[#4a6850]/70">Your ticket ID is:</p>
+              <p className="text-2xl font-black font-mono text-[#4a6850] bg-[#4a6850]/10 px-6 py-3 rounded-2xl border border-[#4a6850]/10">{ticketId}</p>
+              <p className="text-xs font-bold text-gray-500 max-w-sm mt-4 leading-relaxed">We've also sent you an email confirmation. You will receive a notification when an admin replies.</p>
+              <button 
+                className="mt-8 w-full max-w-xs h-12 bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white rounded-2xl font-black shadow-lg hover:shadow-xl active:scale-95 transition-all"
+                onClick={handleClose}
+              >
+                Close
+              </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label htmlFor="support-subject" className="text-sm font-medium dark:text-gray-300">Subject</label>
+                <label htmlFor="support-subject" className="text-xs font-black uppercase tracking-wider text-[#4a6850]">Subject</label>
                 <input
                   id="support-subject"
-                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg dark:bg-gray-800 dark:text-white outline-none focus:border-primary"
+                  className="w-full h-12 px-4 bg-white border border-[#4a6850]/10 rounded-2xl font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4a6850]/30 transition-all shadow-sm"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="What do you need help with?"
@@ -97,17 +102,25 @@ export function SupportSheet({ isOpen, onClose }: SupportSheetProps) {
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="support-message" className="text-sm font-medium dark:text-gray-300">Message</label>
+                <label htmlFor="support-message" className="text-xs font-black uppercase tracking-wider text-[#4a6850]">Message</label>
                 <textarea
                   id="support-message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Describe your issue in detail..."
-                  className="w-full min-h-[150px] p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full min-h-[180px] p-4 bg-white border border-[#4a6850]/10 rounded-2xl font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4a6850]/30 transition-all shadow-sm resize-none"
                   disabled={loading}
                 />
               </div>
-              <button className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 flex justify-center items-center w-full" type="submit" className="w-full mt-4" disabled={loading}>
+              <button 
+                className="w-full h-14 bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white rounded-2xl font-black shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.98] transition-all mt-4" 
+                type="submit" 
+                disabled={loading}
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                {loading ? 'Submitting...' : 'Submit Ticket'}
+              </button>
+            </form>
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                 {loading ? 'Submitting...' : 'Submit Ticket'}
               </button>

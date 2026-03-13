@@ -31,6 +31,8 @@ interface MemberDetailSheetProps {
   open: boolean;
   onClose: () => void;
   member: {
+    id: string;
+    userId?: string;
     name: string;
     balance: number;
     walletBalance?: number;
@@ -42,9 +44,9 @@ interface MemberDetailSheetProps {
       raastId?: string;
     };
     phone?: string;
-    phone?: string;
     isTemporary?: boolean;
     isOwner?: boolean;
+    isCurrentUser?: boolean;
   } | null;
   transactions: Transaction[];
   settlementInfo?: SettlementInfo;

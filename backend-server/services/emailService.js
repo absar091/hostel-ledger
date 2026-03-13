@@ -97,6 +97,8 @@ const isConfigValid = (config) => {
     return config && config.host && config.auth.user && config.auth.pass;
 }
 
+const { getCurrencySymbol } = require('../utils/currency');
+
 /**
  * Smart Routing Email Sender
  * type: 'auth' | 'transactional'
@@ -694,6 +696,72 @@ const emailService = {
             to: userEmail,
             subject: `[Update] Ticket #${data.ticketNumber}: Status changed to ${safeStatus}`,
             html: getCommonTemplate(`Ticket #${data.ticketNumber} Update`, content, actionButton, true)
+        });
+    },
+
+    /**
+     * Send Weekly Transaction Summary
+     */
+    sendWeeklyReport: async (email, name, summary, currencyCode = 'PKR') => {
+        // summary = { totalYouOwe, totalTheyOwe, netAmount, groupSummaries: [...] }
+        const symbol = getCurrencySymbol(currencyCode);
+        const safeName = escapeHtml(name);
+        const netColor = summary.netAmount >= 0 ? '#198754' : '#d32f2f';
+        const netLabel = summary.netAmount >= 0 ? 'To Receive' : 'To Pay';
+        
+        let groupsHtml = '';
+        if (summary.groupSummaries && summary.groupSummaries.length > 0) {
+            groupsHtml = `
+            <div style="margin-top: 25px;">
+                <p style="font-weight: 600; color: #212529; margin-bottom: 12px;">Top Groups:</p>
+                ${summary.groupSummaries.slice(0, 3).map(g => `
+                    <div style="background-color: #f8f9fa; padding: 12px; border-radius: 10px; margin-bottom: 8px; border-left: 4px solid #4a6850;">
+                        <span style="font-weight: 600; color: #212529;">${escapeHtml(g.name)}</span>
+                        <div style="float: right; font-weight: 700; color: ${g.balance >= 0 ? '#198754' : '#d32f2f'}">
+                            ${symbol} ${Math.abs(g.balance).toLocaleString()}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+
+        const content = `
+        <p>Hi ${safeName},</p>
+        <p>Here is your weekly financial summary from Hostel Ledger.</p>
+
+        <div style="background-color: #ffffff; padding: 25px; border-radius: 16px; margin: 24px 0; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <span style="color: #64748b; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Weekly Net Position</span>
+                <div style="font-size: 32px; font-weight: 800; color: ${netColor}; margin-top: 4px;">
+                    ${symbol} ${Math.abs(summary.netAmount).toLocaleString()}
+                </div>
+                <div style="font-size: 14px; color: ${netColor}; font-weight: 600; margin-top: -2px;">${netLabel}</div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid #f1f5f9; padding-top: 16px; margin-top: 16px;">
+                <div style="flex: 1; text-align: center;">
+                    <span style="color: #64748b; font-size: 12px; text-transform: uppercase;">You Owe</span>
+                    <div style="font-weight: 700; color: #d32f2f; font-size: 18px;">${symbol} ${summary.totalYouOwe.toLocaleString()}</div>
+                </div>
+                <div style="width: 1px; background-color: #f1f5f9;"></div>
+                <div style="flex: 1; text-align: center;">
+                    <span style="color: #64748b; font-size: 12px; text-transform: uppercase;">They Owe</span>
+                    <div style="font-weight: 700; color: #198754; font-size: 18px;">${symbol} ${summary.totalTheyOwe.toLocaleString()}</div>
+                </div>
+            </div>
+
+            ${groupsHtml}
+        </div>
+
+        <p>Log in to the app to see detailed transaction history or settle up with your friends.</p>
+        `;
+
+        const actionButton = `<a href="https://app.hostelledger.aarx.online/dashboard" class="button">Go to Dashboard</a>`;
+
+        return sendEmailSafe({
+            to: email,
+            subject: `Weekly Report: You have ${symbol} ${Math.abs(summary.netAmount).toLocaleString()} ${netLabel}`,
+            html: getCommonTemplate(`Weekly Financial Insight`, content, actionButton, false)
         });
     },
 

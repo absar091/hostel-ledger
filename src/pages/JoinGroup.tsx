@@ -19,7 +19,7 @@ const JoinGroup = () => {
     const email = searchParams.get('email');
     const navigate = useNavigate();
     const { user, isLoading } = useFirebaseAuth();
-    const { claimEmailInvite } = useFirebaseData();
+    const { claimEmailInvite, joinGroup } = useFirebaseData();
     const [status, setStatus] = useState<'loading' | 'redirect' | 'error'>('loading');
 
     useEffect(() => {
@@ -40,7 +40,11 @@ const JoinGroup = () => {
             const handleJoin = async () => {
                 if (groupId) {
                     try {
-                        await claimEmailInvite(groupId);
+                        if (email || claimMemberId) {
+                            await claimEmailInvite(groupId);
+                        } else {
+                            await joinGroup(groupId);
+                        }
                         toast.success("Joined group successfully!");
                     } catch (e) {
                         console.error("Failed to join group automatically", e);
@@ -58,7 +62,7 @@ const JoinGroup = () => {
                 navigate(`/signup?invite=${groupId}&email=${encodeURIComponent(email || '')}${claimParam}`, { replace: true });
             }, 1500);
         }
-    }, [user, isLoading, groupId, email, claimMemberId, navigate, claimEmailInvite]);
+    }, [user, isLoading, groupId, email, claimMemberId, navigate, claimEmailInvite, joinGroup]);
 
     return (
         <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">

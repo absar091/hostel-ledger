@@ -24,7 +24,7 @@ const ExpenseThreadSheet = ({
 
     return (
         <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <SheetContent side="bottom" className="h-[85vh] p-0 border-0 rounded-t-[32px] overflow-hidden sm:max-w-none">
+            <SheetContent side="bottom" className="h-[92vh] sm:h-[85vh] p-0 border-0 rounded-t-[32px] overflow-hidden sm:max-w-none flex flex-col">
                 <SheetHeader className="p-4 border-b bg-white border-[#4a6850]/10">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center shadow-lg">
@@ -40,11 +40,12 @@ const ExpenseThreadSheet = ({
                         </div>
                     </div>
                 </SheetHeader>
-                <div className="h-full pt-2">
+                <div className="flex-1 min-h-0 bg-white">
                     <GroupChat
                         groupId={groupId}
                         groupName={groupName}
                         expenseId={expenseId}
+                        fullHeight={true}
                     />
                 </div>
             </SheetContent>

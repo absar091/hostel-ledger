@@ -11,6 +11,7 @@ import RecordPaymentSheet from "@/components/RecordPaymentSheet";
 import MemberDetailSheet from "@/components/MemberDetailSheet";
 import MemberSettlementSheet from "@/components/MemberSettlementSheet";
 import GroupSettingsSheet from "@/components/GroupSettingsSheet";
+import GroupBudgetSheet from "@/components/enterprise/GroupBudgetSheet";
 import { toast } from "sonner";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
@@ -27,13 +28,15 @@ import {
 } from "@/components/ui/tooltip";
 import MobileHeader from "@/components/MobileHeader";
 import GroupChat from "@/components/GroupChat";
+import { FileText, FileSpreadsheet, Download, Target, AlertTriangle } from "lucide-react";
+import { callSecureApi } from "@/lib/api";
 
 const GroupDetail = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { formatAmount } = useCurrency();
-  const { getGroupById, fetchGroupDetail, getTransactionsByGroup, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup, mergeMembers } = useFirebaseData();
+  const { formatAmount, currencyCode } = useCurrency();
+  const { getGroupById, fetchGroupDetail, getTransactionsByGroup, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup, mergeMembers, updateGroupBudget } = useFirebaseData();
   const { getSettlements, user, toggleFavoriteGroup, getFavoriteGroups } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
 
@@ -48,6 +51,8 @@ const GroupDetail = () => {
   const [showGroupGuide, setShowGroupGuide] = useState(false);
   const [fullGroup, setFullGroup] = useState<any>(null);
   const [isGroupLoading, setIsGroupLoading] = useState(true);
+  const [showBudgetSheet, setShowBudgetSheet] = useState(false);
+  const [isExporting, setIsExporting] = useState<string | null>(null);
 
   // Check if we should show page guide
   useEffect(() => {
@@ -390,6 +395,61 @@ const GroupDetail = () => {
     }
   };
 
+  const handleExportReport = async (format: 'pdf' | 'excel' | 'csv') => {
+    if (!id) return;
+    
+    setIsExporting(format);
+    try {
+      const response = await callSecureApi(`/api/export/group-report/${id}?format=${format}&currency=${currencyCode}`, {}, 'GET');
+      
+      // Handle raw Response object (Binary/Blob)
+      if (response instanceof Response) {
+        const blob = await response.blob();
+        const contentType = response.headers.get('Content-Type') || 'application/octet-stream';
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        
+        // Determine extension
+        let ext = format;
+        if (format === 'excel') ext = 'xlsx';
+        
+        a.download = `Group-Report-${id}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        toast.success(`Report exported as ${format.toUpperCase()}`);
+        return;
+      }
+
+      if (response && response.downloadUrl) {
+        // Direct download if URL is provided (legacy/JSON wrapper)
+        window.open(response.downloadUrl, '_blank');
+        toast.success(`Report exported as ${format.toUpperCase()}`);
+      } else if (response && response.fileContent) {
+        // Handle direct file content if provided as a string (legacy)
+        const blob = new Blob([response.fileContent], { type: response.contentType });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Group-Report-${id}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        toast.success(`Report exported as ${format.toUpperCase()}`);
+      } else {
+        toast.error("Failed to generate report link");
+      }
+    } catch (error) {
+      console.error(`Export ${format} error:`, error);
+      toast.error(`Failed to export ${format.toUpperCase()} report`);
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
   // Single group for this page
   const groupForSheet = [{
     id: group.id,
@@ -449,7 +509,7 @@ const GroupDetail = () => {
       />
 
       {/* Header - iPhone Style Enhanced */}
-      <header className="sticky lg:top-0 top-[4.5rem] bg-white/95 backdrop-blur-xl z-40 border-b border-[#4a6850]/10 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
+      <header className="sticky lg:top-0 top-[6.5rem] bg-white/95 backdrop-blur-xl z-40 border-b border-[#4a6850]/10 shadow-[0_4px_20px_rgba(74,104,80,0.08)]">
         <div className="px-4 py-5 hidden lg:block">
           <div className="flex items-center gap-4">
             <button
@@ -608,8 +668,8 @@ const GroupDetail = () => {
         )}
 
         {activeTab === "chat" && (
-          <div className="animate-fade-in">
-            <GroupChat groupId={id!} groupName={group.name} />
+          <div className="animate-fade-in h-full">
+            <GroupChat groupId={id!} groupName={group.name} fullHeight={true} />
           </div>
         )}
 
@@ -803,6 +863,162 @@ const GroupDetail = () => {
                 {t('group.how_many_members', { count: group.members.length })}
               </div>
             </div>
+
+            {/* Group Budget Card - New Premium Card */}
+            <div className="bg-white rounded-[32px] p-6 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 relative overflow-hidden group/budget">
+              {/* Decorative Background Icon */}
+              <div className="absolute -right-6 -bottom-6 opacity-[0.03] group-hover/budget:scale-110 group-hover/budget:rotate-12 transition-all duration-700">
+                <Target className="w-32 h-32 text-[#4a6850]" />
+              </div>
+
+              <div className="flex items-center justify-between mb-6 relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#4a6850]/10 to-[#3d5643]/10 rounded-2xl flex items-center justify-center border border-[#4a6850]/10">
+                    <Target className="w-5 h-5 text-[#4a6850]" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-gray-900 text-base tracking-tight">Group Budget</h3>
+                    <p className="text-[10px] text-[#4a6850]/60 font-bold uppercase tracking-wider">
+                      {group.budget?.period || 'Monthly'} Planning
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowBudgetSheet(true)}
+                  className="rounded-xl h-8 px-3 text-[#4a6850] hover:bg-[#4a6850]/10 font-black text-xs"
+                >
+                  Edit
+                </Button>
+              </div>
+
+              {!group.budget || group.budget.amount === 0 ? (
+                <div className="text-center py-4 relative z-10">
+                  <p className="text-xs text-gray-500 font-medium mb-3">No budget set for this group yet.</p>
+                  <Button 
+                    onClick={() => setShowBudgetSheet(true)}
+                    className="bg-[#4a6850] hover:bg-[#3d5643] text-white rounded-xl h-10 px-6 font-black text-sm transition-all active:scale-95"
+                  >
+                    Set Budget
+                  </Button>
+                </div>
+              ) : (() => {
+                const spent = totalSpent; // We can refine this to only current period spent later
+                const limit = group.budget.amount;
+                const percentage = Math.min(Math.round((spent / limit) * 100), 100);
+                const isOver = spent > limit;
+                const isWarning = percentage >= 80 && !isOver;
+
+                return (
+                  <div className="space-y-4 relative z-10">
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <div className="text-2xl font-black text-gray-900 tracking-tighter tabular-nums">
+                          {formatAmount(spent)}
+                          <span className="text-sm text-gray-400 font-bold ml-1">/ {formatAmount(limit)}</span>
+                        </div>
+                        <div className="text-xs text-[#4a6850]/70 font-bold mt-0.5">
+                          {isOver ? 'Budget exceeded' : `${formatAmount(limit - spent)} remaining`}
+                        </div>
+                      </div>
+                      <div className={cn(
+                        "text-sm font-black tabular-nums",
+                        isOver ? "text-red-500" : isWarning ? "text-orange-500" : "text-[#4a6850]"
+                      )}>
+                        {percentage}%
+                      </div>
+                    </div>
+
+                    <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden border border-gray-50">
+                      <div 
+                        className={cn(
+                          "h-full transition-all duration-1000 ease-out rounded-full",
+                          isOver ? "bg-red-500" : isWarning ? "bg-orange-500" : "bg-gradient-to-r from-[#4a6850] to-[#3d5643]"
+                        )}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+
+                    {isWarning && (
+                      <div className="flex items-center gap-2 p-3 bg-orange-50 rounded-2xl border border-orange-100 animate-pulse">
+                        <AlertTriangle className="w-4 h-4 text-orange-500" />
+                        <p className="text-[10px] text-orange-700 font-black uppercase tracking-tight">
+                          Budget Alert: 80% limit reached
+                        </p>
+                      </div>
+                    )}
+                    {isOver && (
+                      <div className="flex items-center gap-2 p-3 bg-red-50 rounded-2xl border border-red-100">
+                        <AlertTriangle className="w-4 h-4 text-red-500" />
+                        <p className="text-[10px] text-red-700 font-black uppercase tracking-tight">
+                          Budget exceeded for this period
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Export Reports Card */}
+            <div className="bg-white rounded-[32px] p-6 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-2xl flex items-center justify-center border border-blue-500/10">
+                  <Download className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-black text-gray-900 text-base tracking-tight">Export Reports</h3>
+                  <p className="text-[10px] text-blue-600/60 font-bold uppercase tracking-wider">
+                    Performance & History
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <Button
+                  variant="outline"
+                  disabled={isExporting !== null}
+                  onClick={() => handleExportReport('pdf')}
+                  className="flex-col h-20 rounded-2xl border-[#4a6850]/10 hover:bg-[#4a6850]/5 hover:border-[#4a6850]/30 transition-all gap-2"
+                >
+                  {isExporting === 'pdf' ? (
+                    <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <FileText className="w-5 h-5 text-red-500" />
+                  )}
+                  <span className="text-[10px] font-black uppercase tracking-tight">PDF</span>
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  disabled={isExporting !== null}
+                  onClick={() => handleExportReport('excel')}
+                  className="flex-col h-20 rounded-2xl border-[#4a6850]/10 hover:bg-[#4a6850]/5 hover:border-[#4a6850]/30 transition-all gap-2"
+                >
+                  {isExporting === 'excel' ? (
+                    <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <FileSpreadsheet className="w-5 h-5 text-green-600" />
+                  )}
+                  <span className="text-[10px] font-black uppercase tracking-tight">Excel</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  disabled={isExporting !== null}
+                  onClick={() => handleExportReport('csv')}
+                  className="flex-col h-20 rounded-2xl border-[#4a6850]/10 hover:bg-[#4a6850]/5 hover:border-[#4a6850]/30 transition-all gap-2"
+                >
+                  {isExporting === 'csv' ? (
+                    <div className="w-5 h-5 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <div className="w-5 h-5 bg-gray-100 rounded-lg flex items-center justify-center font-black text-[8px] text-gray-600">CSV</div>
+                  )}
+                  <span className="text-[10px] font-black uppercase tracking-tight">CSV</span>
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </main>
@@ -947,10 +1163,10 @@ const GroupDetail = () => {
           })),
         }}
         isOwner={user?.uid === group.createdBy}
-        onAddMember={async (name) => {
-          const result = await addMemberToGroup(group.id, { name });
+        onAddMember={async (memberData) => {
+          const result = await addMemberToGroup(group.id, memberData);
           if (result.success) {
-            toast.success(`Added ${name} to the group`);
+            toast.success(`Invitation sent to ${memberData.name}`);
             fetchGroupDetail(group.id);
           } else {
             toast.error(result.error || "Failed to add member");
@@ -985,6 +1201,17 @@ const GroupDetail = () => {
             toast.error(result.error || "Failed to delete group");
           }
         }}
+        onLeaveGroup={async () => {
+          if (!user) return;
+          const result = await removeMemberFromGroup(group.id, currentUser?.id || user.uid);
+          if (result.success) {
+            toast.success("You have left the group");
+            setShowGroupSettings(false);
+            navigate("/");
+          } else {
+            toast.error(result.error || "Failed to leave group");
+          }
+        }}
       />
 
       {/* Member Settlement Sheet */}
@@ -1012,6 +1239,20 @@ const GroupDetail = () => {
         emoji="🏢"
         show={showGroupGuide}
         onClose={handleGroupGuideClose}
+      />
+
+      {/* Group Budget Sheet */}
+      <GroupBudgetSheet
+        open={showBudgetSheet}
+        onClose={() => setShowBudgetSheet(false)}
+        group={group}
+        onUpdateBudget={async (budget) => {
+          const result = await updateGroupBudget(group!.id, budget);
+          if (result.success) {
+            fetchGroupDetail(group!.id);
+          }
+          return result;
+        }}
       />
 
     </div>

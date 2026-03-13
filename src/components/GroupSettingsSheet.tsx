@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Avatar from "./Avatar";
-import { UserPlus, Trash2, AlertTriangle, X, ShieldAlert } from "lucide-react";
+import { UserPlus, Trash2, AlertTriangle, X, ShieldAlert, Copy, Link, LogOut, Search, Loader2, CheckCircle2 } from "lucide-react";
+import { getValidUserDetails } from "@/lib/api";
 import { ReportSheet } from "./ReportSheet";
 import {
   AlertDialog,
@@ -37,10 +38,11 @@ interface GroupSettingsSheetProps {
     emoji: string;
     members: Member[];
   };
-  onAddMember: (name: string) => void;
+  onAddMember: (member: { name: string; userId?: string; email?: string }) => void;
   onRemoveMember: (memberId: string) => void;
   onUpdateGroup: (data: { name?: string; emoji?: string }) => void;
   onDeleteGroup: () => void;
+  onLeaveGroup: () => void;
   isOwner?: boolean;
 }
 
@@ -66,12 +68,43 @@ const GroupSettingsSheet = ({
   const [showDeleteGroup, setShowDeleteGroup] = useState(false);
   const [groupName, setGroupName] = useState(group.name);
   const [selectedEmoji, setSelectedEmoji] = useState(group.emoji);
+  const [showLeaveGroup, setShowLeaveGroup] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResult, setSearchResult] = useState<any>(null);
+  const [searchError, setSearchError] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
 
-  const handleAddMember = () => {
-    if (newMemberName.trim()) {
-      onAddMember(newMemberName.trim());
+  const currentUserMember = group.members.find(m => m.isCurrentUser);
+  const userBalance = currentUserMember?.balance || 0;
+  const hasUnsettledBalance = userBalance !== 0;
+
+  const handleAddMember = (member: { name: string; userId?: string; email?: string }) => {
+    if (member.name.trim()) {
+      onAddMember(member);
       setNewMemberName("");
+      setSearchResult(null);
+      setSearchError(false);
       setShowAddMember(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!newMemberName.trim()) return;
+    setIsSearching(true);
+    setSearchError(false);
+    setSearchResult(null);
+
+    try {
+      const result = await getValidUserDetails(newMemberName.trim());
+      if (result.success && result.user) {
+        setSearchResult(result.user);
+      } else {
+        setSearchError(true);
+      }
+    } catch (error) {
+      setSearchError(true);
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -93,6 +126,14 @@ const GroupSettingsSheet = ({
     navigator.clipboard.writeText(inviteLink);
     toast.success("Invite link copied!", {
       description: `Send this link to ${memberName} to let them claim this profile.`
+    });
+  };
+
+  const handleCopyGroupInvite = () => {
+    const inviteLink = `${window.location.origin}/join/${group.id}`;
+    navigator.clipboard.writeText(inviteLink);
+    toast.success("Group invite link copied!", {
+      description: "Anyone with this link can join the group."
     });
   };
 
@@ -159,46 +200,162 @@ const GroupSettingsSheet = ({
               <div className="flex items-center justify-between mb-4">
                 <Label className="text-sm font-black text-[#4a6850]/80 uppercase tracking-wide">Members ({Array.isArray(group.members) ? group.members.length : Object.keys(group.members || {}).length})</Label>
                 {/* Allow Add Member for everyone? User didn't specify, but implies owner control. Lets keeping Add accessible for now to be safe, or hide it if strict. User said 'Only owner can remove member'. I will keep Add open but Remove restricted. */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAddMember(true)}
-                  className="text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-[32px] px-5 py-2 h-10 shadow-sm transition-all hover:scale-105 active:scale-95 border border-[#4a6850]/10"
-                >
-                  <UserPlus className="w-4 h-4 mr-1.5" />
-                  Add
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyGroupInvite}
+                    className="text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-[32px] px-4 py-2 h-10 shadow-sm transition-all hover:scale-105 active:scale-95 border border-[#4a6850]/10"
+                    title="Copy group invite link"
+                  >
+                    <Link className="w-4 h-4 mr-1.5" />
+                    Invite Link
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAddMember(true)}
+                    className="text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-[32px] px-5 py-2 h-10 shadow-sm transition-all hover:scale-105 active:scale-95 border border-[#4a6850]/10"
+                  >
+                    <UserPlus className="w-4 h-4 mr-1.5" />
+                    Add
+                  </Button>
+                </div>
               </div>
 
               {/* Add Member Input */}
               {showAddMember && (
-                <div className="flex gap-3 mb-6 animate-fade-in bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-[32px] p-5 border border-[#4a6850]/20 shadow-sm">
-                  <Input
-                    placeholder="Member name"
-                    value={newMemberName}
-                    onChange={(e) => setNewMemberName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleAddMember()}
-                    className="h-14 rounded-2xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/40 focus:border-[#4a6850] bg-white focus:ring-0"
-                    autoFocus
-                  />
-                  <Button
-                    onClick={handleAddMember}
-                    disabled={!newMemberName.trim()}
-                    className="h-14 px-6 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
-                  >
-                    Add
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setShowAddMember(false);
-                      setNewMemberName("");
-                    }}
-                    className="h-14 w-14 rounded-2xl hover:bg-gray-100 shadow-lg hover:shadow-xl transition-all"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+                <div className="space-y-4 mb-6 animate-fade-in bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-[32px] p-6 border border-[#4a6850]/20 shadow-sm">
+                  <div className="flex gap-3">
+                    <div className="relative flex-1">
+                      <Input
+                        placeholder="Username or Name"
+                        value={newMemberName}
+                        onChange={(e) => {
+                          setNewMemberName(e.target.value);
+                          if (searchResult || searchError) {
+                            setSearchResult(null);
+                            setSearchError(false);
+                          }
+                        }}
+                        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                        className="h-14 rounded-2xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/40 focus:border-[#4a6850] bg-white focus:ring-0 pr-12"
+                        autoFocus
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleSearch}
+                        disabled={isSearching || !newMemberName.trim()}
+                        className="absolute right-2 top-2 h-10 w-10 text-[#4a6850] hover:bg-[#4a6850]/10 rounded-xl"
+                      >
+                        {isSearching ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <Search className="w-5 h-5" />
+                        )}
+                      </Button>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setShowAddMember(false);
+                        setNewMemberName("");
+                        setSearchResult(null);
+                        setSearchError(false);
+                      }}
+                      className="h-14 w-14 rounded-2xl hover:bg-gray-100 shadow-lg hover:shadow-xl transition-all flex-shrink-0 bg-white"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {/* Search Result */}
+                  {searchResult && (
+                    <div className="bg-white p-4 rounded-2xl border-2 border-green-100 shadow-lg animate-slide-up">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Avatar name={searchResult.displayName || searchResult.username} size="md" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-black text-gray-900 truncate">{searchResult.displayName || searchResult.username}</p>
+                          <p className="text-xs text-gray-500 font-bold">@{searchResult.username}</p>
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-green-600 font-black bg-green-50 px-2 py-1 rounded-lg">
+                          <CheckCircle2 className="w-3 h-3" />
+                          VERIFIED
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={() => handleAddMember({ 
+                          name: searchResult.displayName || searchResult.username, 
+                          userId: searchResult.uid 
+                        })} 
+                        className="w-full h-12 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-xl shadow-lg transition-all"
+                      >
+                        Invite to Group
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Search Error / Not Found */}
+                  {searchError && (
+                    <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 animate-slide-up">
+                      <div className="flex items-center gap-2 text-blue-800 font-bold text-sm mb-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        User not found
+                      </div>
+                      <p className="text-[11px] text-blue-700 font-bold mb-4 italic">
+                        "@{newMemberName}" is not on Hostel Ledger yet.
+                      </p>
+                      
+                      <div className="space-y-3">
+                        <Button 
+                          onClick={() => handleAddMember({ name: newMemberName })}
+                          variant="outline"
+                          className="w-full h-12 border-[#4a6850]/20 text-[#4a6850] font-black rounded-xl bg-white hover:bg-gray-50 flex items-center justify-center gap-2"
+                        >
+                          <UserPlus className="w-4 h-4" />
+                          Add as Temporary Member
+                        </Button>
+
+                        <div className="relative">
+                          <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t border-blue-100" />
+                          </div>
+                          <div className="relative flex justify-center text-[10px] uppercase">
+                            <span className="bg-[#f8fafc] px-2 text-blue-400 font-bold">Or Invite by Email</span>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="friend@email.com"
+                            value={inviteEmail}
+                            onChange={(e) => setInviteEmail(e.target.value)}
+                            className="h-12 rounded-xl border-blue-100 shadow-sm font-bold text-gray-900 placeholder:text-blue-200 focus:border-blue-300 bg-white"
+                          />
+                          <Button 
+                            onClick={() => {
+                              if (inviteEmail.trim()) {
+                                handleAddMember({ name: newMemberName, email: inviteEmail.trim() });
+                                setInviteEmail("");
+                              }
+                            }}
+                            className="h-12 px-6 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md"
+                            disabled={!inviteEmail.trim()}
+                          >
+                            Invite
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {!searchResult && !searchError && (
+                    <p className="text-[10px] text-[#4a6850]/60 font-black text-center uppercase tracking-widest px-4">
+                      Search for friends to sync expenses automatically
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -274,7 +431,7 @@ const GroupSettingsSheet = ({
                 Report Group
               </Button>
             </div>
-            {isOwner && (
+            {isOwner ? (
               <div className="pt-6 border-t border-[#4a6850]/10">
                 <Label className="text-red-600 font-black text-sm uppercase tracking-wide">Danger Zone</Label>
                 <Button
@@ -284,6 +441,18 @@ const GroupSettingsSheet = ({
                 >
                   <Trash2 className="w-5 h-5 mr-2" />
                   Delete Group
+                </Button>
+              </div>
+            ) : (
+              <div className="pt-6 border-t border-[#4a6850]/10">
+                <Label className="text-red-600 font-black text-sm uppercase tracking-wide">Danger Zone</Label>
+                <Button
+                  variant="destructive"
+                  className="w-full mt-4 h-16 rounded-[32px] bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black shadow-[0_8px_32px_rgba(239,68,68,0.3)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  onClick={() => setShowLeaveGroup(true)}
+                >
+                  <LogOut className="w-5 h-5 mr-2" />
+                  Leave Group
                 </Button>
               </div>
             )}
@@ -358,6 +527,53 @@ const GroupSettingsSheet = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Leave Group Confirmation */}
+      <AlertDialog open={showLeaveGroup} onOpenChange={setShowLeaveGroup}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <LogOut className="w-5 h-5 text-destructive" />
+              Leave {group.name}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {hasUnsettledBalance ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-2xl">
+                    <div className="flex items-center gap-2 text-red-600 font-black text-sm mb-1 uppercase tracking-wide">
+                      <AlertTriangle className="w-4 h-4" />
+                      Unsettled Balance
+                    </div>
+                    <p className="text-sm text-red-700 font-bold">
+                      You have an unsettled balance of <span className="underline italic">Rs {Math.abs(userBalance).toLocaleString()}</span>. 
+                      You must settle all expenses before leaving the group.
+                    </p>
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    Reach out to other members to settle up your debts or collect what is owed to you.
+                  </p>
+                </div>
+              ) : (
+                "Are you sure you want to leave this group? You will no longer be able to view transactions or participate in the group chat."
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            {!hasUnsettledBalance && (
+              <AlertDialogAction
+                onClick={() => {
+                  onLeaveGroup();
+                  setShowLeaveGroup(false);
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Leave Group
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <ReportSheet
         isOpen={isReportOpen}
         onClose={() => setIsReportOpen(false)}

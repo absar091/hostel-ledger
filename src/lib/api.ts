@@ -43,9 +43,16 @@ const callApi = async (endpoint: string, body: any, token?: string, method: stri
             throw new Error(errorMsg);
         }
 
-        const result = await response.json();
-        console.log(`[API] ${endpoint} success`);
-        return result;
+        const contentType = response.headers.get('Content-Type');
+        if (contentType && contentType.includes('application/json')) {
+            const result = await response.json();
+            console.log(`[API] ${endpoint} success (JSON)`);
+            return result;
+        }
+
+        // Return raw response for binary/other data types
+        console.log(`[API] ${endpoint} success (Binary/Other: ${contentType})`);
+        return response;
     } catch (error: any) {
         clearTimeout(timeoutId);
         if (error.name === 'AbortError') {
@@ -101,6 +108,10 @@ export const getValidUserDetails = async (username: string) => {
 
 export const claimEmailInvite = async (groupId: string) => {
     return await callSecureApi('/api/claim-email-invite', { groupId });
+};
+
+export const joinGroup = async (groupId: string) => {
+    return await callSecureApi('/api/join-group', { groupId });
 };
 
 export const sendMoney = async (recipientUsername: string, amount: number, note?: string) => {

@@ -369,7 +369,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
     }
 
     return (
-        <div className={`flex flex-col ${fullHeight ? 'h-full mb-0' : 'h-[calc(100vh-320px)] lg:h-[600px] mb-6'} bg-gradient-to-b from-[#f0f4f1] to-[#e8ece9] rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] overflow-hidden`}>
+        <div className={`flex flex-col ${fullHeight ? 'h-[calc(100vh-210px)] mb-0' : 'h-[500px] sm:h-[600px] mb-6'} bg-gradient-to-b from-[#f0f4f1] to-[#e8ece9] rounded-3xl border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] overflow-hidden`}>
             {/* Messages Area */}
             <div
                 ref={messagesContainerRef}
@@ -425,7 +425,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
             </div>
 
             {/* Input Area */}
-            <div className="px-4 py-3 bg-white/90 backdrop-blur-sm border-t border-[#4a6850]/10 relative">
+            <div className="px-4 py-3 sm:py-4 bg-white/95 backdrop-blur-md border-t border-[#4a6850]/10 relative pb-[calc(12px+env(safe-area-inset-bottom,0px))]">
                 {/* Referencing Hint */}
                 {showTxnHint && (
                     <div className="absolute bottom-full left-4 mb-2 p-3 bg-white border border-emerald-100 rounded-2xl shadow-xl z-20 max-w-xs animate-in slide-in-from-bottom-2 zoom-in-95">
@@ -481,34 +481,36 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                     </div>
                 )}
 
-                <div className="flex items-center gap-2">
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleImageUpload}
-                        accept="image/*"
-                        className="hidden"
-                    />
-                    <button
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploading || !!attachedImage}
-                        className="p-2 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50"
-                    >
-                        {isUploading ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                            <ImageIcon className="w-5 h-5" />
-                        )}
-                    </button>
-                    <button
-                        onClick={() => setShowTxnHint(!showTxnHint)}
-                        className={cn(
-                            "p-2 rounded-xl transition-all",
-                            showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
-                        )}
-                    >
-                        <Info className="w-5 h-5" />
-                    </button>
+                <div className="flex items-center gap-2 max-w-full overflow-hidden">
+                    <div className="flex items-center">
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleImageUpload}
+                            accept="image/*"
+                            className="hidden"
+                        />
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading || !!attachedImage}
+                            className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
+                        >
+                            {isUploading ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <ImageIcon className="w-5 h-5" />
+                            )}
+                        </button>
+                        <button
+                            onClick={() => setShowTxnHint(!showTxnHint)}
+                            className={cn(
+                                "p-2.5 rounded-xl transition-all shrink-0",
+                                showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
+                            )}
+                        >
+                            <Info className="w-5 h-5" />
+                        </button>
+                    </div>
                     <input
                         ref={inputRef}
                         type="text"
@@ -520,12 +522,12 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         onKeyDown={handleKeyDown}
                         placeholder={t("chat.input_placeholder")}
                         maxLength={2000}
-                        className="flex-1 bg-[#f0f4f1] border border-[#4a6850]/10 rounded-2xl px-4 py-3 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4a6850]/30 focus:border-[#4a6850]/30 transition-all"
+                        className="flex-1 bg-[#f0f4f1] border border-[#4a6850]/10 rounded-2xl px-4 py-3.5 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4a6850]/30 focus:border-[#4a6850]/30 transition-all min-w-0"
                     />
                     <button
                         onClick={handleSend}
                         disabled={(!inputText.trim() && !attachedImage) || isSending}
-                        className="w-11 h-11 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
+                        className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
                     >
                         {isSending ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
