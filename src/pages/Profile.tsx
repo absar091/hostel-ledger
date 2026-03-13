@@ -734,6 +734,20 @@ const Profile = () => {
             </div>
           </SheetContent>
         </Sheet>
+
+        {/* System Status Link - NEW */}
+        <div className="mt-12 mb-8 py-8 border-t border-gray-100 flex flex-col items-center gap-4">
+            <a 
+                href="https://status.hostelledger.aarx.online" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-gray-50 text-[#4a6850] font-black hover:bg-gray-100 transition-all text-base shadow-sm"
+            >
+                <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
+                View System Status
+            </a>
+            <p className="text-gray-400 text-sm font-bold">Version {import.meta.env.VITE_APP_VERSION || '1.0.0'}</p>
+        </div>
       </AppContainer >
     </>
   );

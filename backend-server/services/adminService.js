@@ -260,6 +260,37 @@ class AdminService {
     }
   }
 
+  async getUserGroups(uid) {
+    try {
+      const userGroupsRef = admin.database().ref(`userGroups/${uid}`);
+      const snapshot = await userGroupsRef.once('value');
+      
+      if (!snapshot.exists()) return [];
+
+      const groupIds = Object.keys(snapshot.val());
+      const groups = [];
+
+      for (const groupId of groupIds) {
+        const groupSnap = await admin.database().ref(`groups/${groupId}`).once('value');
+        if (groupSnap.exists()) {
+          const data = groupSnap.val();
+          groups.push({
+            id: groupId,
+            name: data.name,
+            emoji: data.emoji,
+            memberCount: Object.keys(data.members || {}).length,
+            createdAt: data.createdAt,
+            isPersonal: data.isPersonal || false
+          });
+        }
+      }
+      return groups;
+    } catch (error) {
+      console.error(`Error fetching user groups for ${uid}:`, error);
+      throw error;
+    }
+  }
+
   // --- REPORTING SYSTEM (Admin Facing) ---
 
   async getReports() {
@@ -283,48 +314,58 @@ class AdminService {
 
   async getTickets() {
     try {
-      const ticketsSnapshot = await admin.database().ref('support_tickets').once('value');
+      // Support tickets are stored under supportTickets/$uid/$ticketId
+      const ticketsSnapshot = await admin.database().ref('supportTickets').once('value');
       const tickets = [];
       if (ticketsSnapshot.exists()) {
-        ticketsSnapshot.forEach(child => {
-          tickets.push({ id: child.key, ...child.val() });
+        ticketsSnapshot.forEach(userNode => {
+          userNode.forEach(ticketNode => {
+            tickets.push({ 
+              id: ticketNode.key, 
+              userId: userNode.key,
+              ...ticketNode.val() 
+            });
+          });
         });
       }
-      return tickets.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      return tickets.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
     } catch (error) {
       console.error('Error fetching tickets:', error);
       throw error;
     }
   }
 
-  async replyToTicket(ticketId, adminReply) {
+  async replyToTicket(userId, ticketId, adminReply) {
     try {
-      const ticketRef = admin.database().ref(`support_tickets/${ticketId}`);
+      const ticketRef = admin.database().ref(`supportTickets/${userId}/${ticketId}`);
       const ticketSnapshot = await ticketRef.once('value');
       if (!ticketSnapshot.exists()) throw new Error('Ticket not found');
 
       const ticketData = ticketSnapshot.val();
 
+      // Add to messages structure
+      const messageRef = ticketRef.child('messages').push();
+      await messageRef.set({
+        text: adminReply,
+        sender: 'admin',
+        timestamp: admin.database.ServerValue.TIMESTAMP,
+        read: false
+      });
+
       await ticketRef.update({
         status: 'replied',
-        adminReply: adminReply,
-        repliedAt: admin.database.ServerValue.TIMESTAMP
+        updatedAt: admin.database.ServerValue.TIMESTAMP
       });
 
       // Notify the user in-app
-      if (ticketData.uid) {
-        const notificationId = `ticket_reply_${ticketId}_${Date.now()}`;
-        await admin.database().ref(`notifications/${ticketData.uid}/${notificationId}`).set({
-          type: 'support_reply',
-          title: `Reply to Ticket #${ticketId}`,
-          message: adminReply,
-          createdAt: admin.database.ServerValue.TIMESTAMP,
-          read: false
-        });
-      }
-
-      // If you want to also email the reply to the user, you can inject emailService here.
-      // But they will see it via the in-app notification and dashboard.
+      const notificationId = `ticket_reply_${ticketId}_${Date.now()}`;
+      await admin.database().ref(`notifications/${userId}/${notificationId}`).set({
+        type: 'support_reply',
+        title: `Reply to Ticket #${ticketId}`,
+        message: adminReply,
+        createdAt: admin.database.ServerValue.TIMESTAMP,
+        read: false
+      });
 
       return { success: true, message: 'Replied to ticket successfully.' };
     } catch (error) {

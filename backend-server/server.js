@@ -12,8 +12,19 @@ const cloudinary = require('cloudinary').v2;
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { loadEmailTemplate } = require('./utils/email');
 const logger = require('./utils/logger');
+const os = require('os');
+
+// --- STABILITY MEASURES ---
+process.on('uncaughtException', (err) => {
+    logger.error('❌ Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+});
+// --------------------------
+
 const {
   validateCreateGroup,
   validateAmount,
@@ -324,25 +335,56 @@ emailService.verifyConnection().then(connected => {
   }
 });
 
-// Root endpoint
+const { getStatusPageHTML } = require('./utils/statusPage');
+
+// Root endpoint with premium status dashboard
 app.get('/', (req, res) => {
+  const isHtml = req.accepts('html');
+  const endpoints = {
+    health: '/health',
+    sendEmail: '/api/send-email',
+    sendVerification: '/api/send-verification',
+    sendPasswordReset: '/api/send-password-reset',
+    sendWelcome: '/api/send-welcome',
+    sendTransactionAlert: '/api/send-transaction-alert',
+    pushNotify: '/api/push-notify',
+    pushNotifyMultiple: '/api/push-notify-multiple',
+    pushTest: '/api/push-test'
+  };
+
+  if (isHtml) {
+    const statusData = {
+      version: pkg.version,
+      env: process.env.NODE_ENV || 'development',
+      system: {
+        uptime: process.uptime(),
+        platform: os.platform(),
+        release: os.release(),
+        memory: {
+          total: os.totalmem(),
+          free: os.freemem(),
+          usage: ((1 - os.freemem() / os.totalmem()) * 100).toFixed(2) + '%'
+        },
+        cpuCount: os.cpus().length,
+        serverTime: new Date().toISOString()
+      },
+      timestamp: new Date().toISOString(),
+      firebaseActive: !!admin.apps.length,
+      oneSignalActive: !!(process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY),
+      smtpActive: emailService.isConnectionVerified,
+      aiActive: !!(genAI && aiModels.length > 0),
+      endpoints
+    };
+    return res.send(getStatusPageHTML(statusData));
+  }
+
   logger.log('info', '📍 Root endpoint accessed from:', req.get('origin') || 'direct');
   res.json({
     success: true,
     message: 'Hostel Ledger Email API',
     version: pkg.version,
     pushProvider: 'OneSignal',
-    endpoints: {
-      health: '/health',
-      sendEmail: '/api/send-email',
-      sendVerification: '/api/send-verification',
-      sendPasswordReset: '/api/send-password-reset',
-      sendWelcome: '/api/send-welcome',
-      sendTransactionAlert: '/api/send-transaction-alert',
-      pushNotify: '/api/push-notify (OneSignal)',
-      pushNotifyMultiple: '/api/push-notify-multiple (OneSignal)',
-      pushTest: '/api/push-test'
-    },
+    endpoints,
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
   });
@@ -418,7 +460,7 @@ const authenticate = async (req, res, next) => {
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     req.user = decodedToken;
-    logger.log('authenticated', `✅ Authenticated user: ${decodedToken.uid}`);
+    logger.info(`✅ Authenticated user: ${decodedToken.uid}`);
     next();
   } catch (error) {
     logger.error('❌ Token verification failed:', error.message);
@@ -428,6 +470,58 @@ const authenticate = async (req, res, next) => {
     });
   }
 };
+
+/**
+ * Get Transaction Preview
+ * Allows users to fetch basic details of a transaction by ID if they belong to the group
+ */
+app.post('/api/get-transaction-preview', authenticate, async (req, res) => {
+  try {
+    const { transactionId, groupId: requestedGroupId } = req.body;
+    const uid = req.user.uid;
+
+    if (!transactionId) {
+      return res.status(400).json({ error: 'Transaction ID is required.' });
+    }
+
+    // 1. Fetch transaction first to find out which group it belongs to
+    const transactionSnap = await admin.database().ref(`transactions/${transactionId}`).once('value');
+    
+    if (!transactionSnap.exists()) {
+      return res.status(404).json({ error: 'Transaction not found.' });
+    }
+
+    const txn = transactionSnap.val();
+    const actualGroupId = txn.groupId;
+
+    if (!actualGroupId) {
+      return res.status(500).json({ error: 'Transaction data is corrupted (missing group reference).' });
+    }
+
+    // 2. Verify user belongs to the ACTUAL group this transaction belongs to
+    // This allows cross-group sharing while maintaining security
+    const userGroupSnap = await admin.database().ref(`userGroups/${uid}/${actualGroupId}`).once('value');
+    if (!userGroupSnap.exists()) {
+      // Re-verify: it might be a temporary member or something, but usually userGroups is the source of truth
+      return res.status(403).json({ error: 'Forbidden: You do not have access to the group this transaction belongs to.' });
+    }
+
+    res.json({
+      success: true,
+      transaction: {
+        id: transactionId,
+        title: txn.title,
+        amount: txn.amount,
+        type: txn.type,
+        date: txn.date,
+        paidByName: txn.paidByName || 'Unknown'
+      }
+    });
+  } catch (error) {
+    logger.error('Error fetching transaction preview:', error);
+    res.status(500).json({ error: 'Failed to fetch transaction preview.' });
+  }
+});
 
 // ============================================
 // 2FA Endpoints
@@ -5024,6 +5118,207 @@ app.use('*', (req, res) => {
     error: 'Endpoint not found'
   });
 });
+
+// --- AI Support Bot & Email Notifications ---
+
+// Gemini System Prompt for Support Bot
+const SUPPORT_AI_SYSTEM_PROMPT = `
+You are the Hostel Ledger AI Support Assistant. Your goal is to help users resolve common issues related to the Hostel Ledger application.
+Key Features of the App:
+- Tracking shared expenses in groups.
+- Real-time balances and settlement.
+- Personal spaces for individual tracking.
+- Wallet system for managing payments.
+- Support for images and transaction references in chat.
+Common Issues & Guidance:
+- Adding Expense: Go to a group, click the + button, enter amount and split details.
+- Settlement: View the settlement tab in a group to see who owes whom. Use the 'Settle' button to record a payment.
+- Wallet: You can add money to your wallet to pay for expenses directly.
+- Transaction Reference: You can share a transaction by typing 'GROUP_ID/TRANSACTION_ID'.
+- Groups: Create groups for different people or occasions.
+Response Guidelines:
+- Be professional, helpful, and concise.
+- If the user asks for a 'live agent', 'human', 'admin', or seems frustrated/unsatisfied, tell them you are connecting them to a live support representative and that they will be notified via email when an agent responds.
+- If they ask for a live chat, confirm you are notifying the support team.
+- Do not make up features.
+- If you don't know the answer, politely ask the user to wait for a live agent.
+Always wrap your response in helpful advice and mention they can click "Talk to Agent" if they need further help.
+`;
+
+/**
+ * Sends a support ticket update email
+ */
+async function sendSupportEmail(userEmail, userName, ticketNumber, status, issueSummary, messageText = '') {
+  try {
+    const result = await emailService.sendSupportTicketUpdate(userEmail, {
+      userName,
+      ticketNumber,
+      status,
+      issueSummary,
+      latestMessage: messageText
+    });
+    
+    if (result.success) {
+      logger.info(`📧 Support email sent to ${userEmail} via ${result.provider} for ticket ${ticketNumber}`);
+    } else {
+      throw new Error(result.error);
+    }
+  } catch (error) {
+    logger.error('❌ Error sending support email:', error);
+  }
+}
+
+/**
+ * Handles AI response for support messages
+ */
+async function handleAIResponse(userId, ticketId, ticketData, userMessage) {
+  try {
+    const prompt = `
+      ${SUPPORT_AI_SYSTEM_PROMPT}
+      
+      User Message: "${userMessage}"
+      Ticket Context: Status is ${ticketData.status}. Previous messages summary: ${ticketData.subject}.
+      
+      Assistant:`;
+
+    const aiResponse = await generateContentWithFallback(prompt);
+    
+    // Add AI message to ticket
+    if (aiResponse) {
+      const messagesRef = admin.database().ref(`supportTickets/${userId}/${ticketId}/messages`);
+      const newMessageRef = messagesRef.push();
+      
+      await newMessageRef.set({
+        text: aiResponse,
+        sender: "admin", // Bot acts as admin
+        isBot: true,
+        timestamp: Date.now(),
+        read: false
+      });
+
+      // Update ticket timing
+      await admin.database().ref(`supportTickets/${userId}/${ticketId}`).update({
+        updatedAt: Date.now()
+      });
+
+      logger.info(`🤖 AI Bot responded to ticket ${ticketId}`);
+    }
+  } catch (error) {
+    logger.error('❌ Error in AI Support Bot:', error);
+  }
+}
+
+// Initial Listener Setup for Support Tickets
+const setupSupportListeners = () => {
+  const supportRef = admin.database().ref('supportTickets');
+  
+  supportRef.on('child_added', (userSnapshot) => {
+    const userId = userSnapshot.key;
+    
+    userSnapshot.ref.on('child_added', (ticketSnapshot) => {
+      const ticketId = ticketSnapshot.key;
+      const initialTicketData = ticketSnapshot.val();
+
+      // 1. Send initial email if it's a new ticket
+      if (initialTicketData.status === 'open' && !initialTicketData.initialEmailSent) {
+        sendSupportEmail(
+          initialTicketData.userEmail, 
+          initialTicketData.userName, 
+          initialTicketData.ticketNumber, 
+          'open', 
+          initialTicketData.subject
+        ).then(() => {
+          ticketSnapshot.ref.update({ initialEmailSent: true });
+        });
+      }
+
+      // 2. Listen for status changes to send emails
+      ticketSnapshot.ref.child('status').on('value', async (statusSnap) => {
+        const newStatus = statusSnap.val();
+        if (!newStatus) return;
+
+        const ticketData = (await ticketSnapshot.ref.once('value')).val();
+        
+        // Prevent sending email on initial creation (already handled or too soon)
+        const isInitial = Date.now() - ticketData.createdAt < 10000;
+        
+        // Only send if status actually changed and it's not the very first 'open' status
+        if (!isInitial && ticketData.lastEmailedStatus !== newStatus) {
+          await sendSupportEmail(
+            ticketData.userEmail,
+            ticketData.userName,
+            ticketData.ticketNumber,
+            newStatus,
+            ticketData.subject
+          );
+          
+          await ticketSnapshot.ref.update({
+            lastEmailedStatus: newStatus,
+            updatedAt: Date.now()
+          });
+        }
+      });
+
+      // 3. Listen for new messages from user
+      ticketSnapshot.ref.child('messages').on('child_added', (msgSnapshot) => {
+        const msg = msgSnapshot.val();
+        
+        // Only respond to newest user messages (within last 30s)
+        const isRecent = Date.now() - msg.timestamp < 30000;
+        
+        if (msg.sender === 'user' && isRecent) {
+          ticketSnapshot.ref.once('value').then(latestTicketSnap => {
+            const data = latestTicketSnap.val();
+            
+            if (data.isAIActive !== false && !data.talkToAgent) {
+              const agentKeywords = ['live agent', 'human', 'speak with someone', 'admin', 'operator'];
+              const wantsAgent = agentKeywords.some(kw => msg.text.toLowerCase().includes(kw));
+
+              if (wantsAgent) {
+                latestTicketSnap.ref.update({ 
+                  talkToAgent: true, 
+                  isAIActive: false,
+                  status: 'in_progress' 
+                });
+                latestTicketSnap.ref.child('messages').push().set({
+                  text: "I understand. I am connecting you to a live support representative. They will be notified and respond as soon as possible. You'll receive an email update when they reply.",
+                  sender: "admin",
+                  isBot: true,
+                  timestamp: Date.now(),
+                  read: false
+                });
+              } else {
+                handleAIResponse(userId, ticketId, data, msg.text);
+              }
+            }
+          });
+        }
+      });
+    });
+  });
+
+  logger.info('🎧 Support system listeners initialized');
+};
+
+// Initialize listeners
+if (admin.apps.length > 0) {
+  setupSupportListeners();
+}
+
+// --- GLOBAL ERROR HANDLING ---
+app.use((err, req, res, next) => {
+    logger.error(`❌ Global Error Handler: ${err.message}`, {
+        stack: err.stack,
+        path: req.path,
+        method: req.method
+    });
+
+    res.status(err.status || 500).json({
+        success: false,
+        error: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message
+    });
+});
+// ------------------------------
 
 const PORT = process.env.PORT || 3000;
 

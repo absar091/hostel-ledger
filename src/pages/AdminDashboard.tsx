@@ -19,6 +19,7 @@ import {
   TrendingUp,
   Users,
   MessageSquare,
+  FileText,
 } from "@/lib/icons";
 import { ref, onValue, off, set, push, update } from "firebase/database";
 import { database } from "@/lib/firebase";
@@ -35,6 +36,12 @@ interface Message {
   sender: "user" | "admin";
   timestamp: number;
   read?: boolean;
+  image?: string;
+  transactionRef?: {
+    transactionId: string;
+    groupId: string;
+    details?: any;
+  };
 }
 
 interface Ticket {
@@ -51,9 +58,58 @@ interface Ticket {
   messages: Message[];
 }
 
+// --- HELPER COMPONENTS ---
+
+const UserGroupsList = ({ userId }: { userId: string }) => {
+  const { firebaseUser } = useFirebaseAuth();
+  const [groups, setGroups] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        if (!firebaseUser) return;
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${userId}/groups`, {
+          headers: {
+            'Authorization': `Bearer ${await firebaseUser.getIdToken()}`
+          }
+        });
+        const data = await response.json();
+        setGroups(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Error fetching user groups:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (userId) fetchGroups();
+  }, [userId]);
+
+  if (loading) return <div className="text-xs text-gray-500 animate-pulse">Loading groups...</div>;
+  if (groups.length === 0) return <div className="text-xs text-gray-400 italic">No groups found.</div>;
+
+  return (
+    <div className="space-y-3">
+      {groups.map(group => (
+        <div key={group.id} className="p-2 rounded-lg bg-gray-50 border border-gray-100">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">{group.emoji || '👥'}</span>
+            <span className="text-xs font-semibold text-gray-900 truncate">{group.name}</span>
+          </div>
+          <div className="flex justify-between items-center text-[10px] text-gray-500">
+            <span>{group.memberCount} members</span>
+            <span>{new Date(group.createdAt).toLocaleDateString()}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { user } = useFirebaseAuth();
+  const { user, firebaseUser } = useFirebaseAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [message, setMessage] = useState("");
@@ -74,23 +130,32 @@ const AdminDashboard = () => {
       return;
     }
 
-    // Load all tickets
+    // Load all tickets from nested structure
     const ticketsRef = ref(database, "supportTickets");
     const unsubscribe = onValue(ticketsRef, (snapshot) => {
       if (snapshot.exists()) {
-        const ticketsData = snapshot.val();
-        const ticketsList: Ticket[] = Object.entries(ticketsData).map(([id, data]: [string, any]) => ({
-          id,
-          ...data,
-          messages: data.messages
-            ? Object.entries(data.messages)
-                .map(([msgId, msg]: [string, any]) => ({
-                  id: msgId,
-                  ...msg,
-                }))
-                .sort((a, b) => a.timestamp - b.timestamp)
-            : [],
-        }));
+        const allUsersTickets = snapshot.val();
+        const ticketsList: Ticket[] = [];
+
+        Object.entries(allUsersTickets).forEach(([uid, userTickets]: [string, any]) => {
+          // Check if userTickets is indeed an object (could be empty or malformed if manually edited)
+          if (typeof userTickets === 'object' && userTickets !== null) {
+            Object.entries(userTickets).forEach(([ticketId, data]: [string, any]) => {
+              ticketsList.push({
+                id: ticketId,
+                ...(data as any),
+                messages: data.messages
+                  ? Object.entries(data.messages)
+                      .map(([msgId, msg]: [string, any]) => ({
+                        id: msgId,
+                        ...msg,
+                      }))
+                      .sort((a, b) => a.timestamp - b.timestamp)
+                  : [],
+              });
+            });
+          }
+        });
 
         // Sort by most recent first
         ticketsList.sort((a, b) => b.updatedAt - a.updatedAt);
@@ -126,7 +191,7 @@ const AdminDashboard = () => {
     setIsSending(true);
 
     try {
-      const messagesRef = ref(database, `supportTickets/${selectedTicket.id}/messages`);
+      const messagesRef = ref(database, `supportTickets/${selectedTicket.userId}/${selectedTicket.id}/messages`);
       const newMessageRef = push(messagesRef);
       await set(newMessageRef, {
         text: message,
@@ -136,7 +201,7 @@ const AdminDashboard = () => {
       });
 
       // Update ticket status and timestamp
-      const ticketRef = ref(database, `supportTickets/${selectedTicket.id}`);
+      const ticketRef = ref(database, `supportTickets/${selectedTicket.userId}/${selectedTicket.id}`);
       await update(ticketRef, {
         status: selectedTicket.status === "open" ? "in_progress" : selectedTicket.status,
         updatedAt: Date.now(),
@@ -154,7 +219,10 @@ const AdminDashboard = () => {
 
   const updateTicketStatus = async (ticketId: string, status: Ticket["status"]) => {
     try {
-      const ticketRef = ref(database, `supportTickets/${ticketId}`);
+      const ticket = tickets.find(t => t.id === ticketId);
+      if (!ticket) return;
+      
+      const ticketRef = ref(database, `supportTickets/${ticket.userId}/${ticketId}`);
       await update(ticketRef, {
         status,
         updatedAt: Date.now(),
@@ -168,7 +236,10 @@ const AdminDashboard = () => {
 
   const updateTicketPriority = async (ticketId: string, priority: Ticket["priority"]) => {
     try {
-      const ticketRef = ref(database, `supportTickets/${ticketId}`);
+      const ticket = tickets.find(t => t.id === ticketId);
+      if (!ticket) return;
+
+      const ticketRef = ref(database, `supportTickets/${ticket.userId}/${ticketId}`);
       await update(ticketRef, {
         priority,
         updatedAt: Date.now(),
@@ -188,7 +259,7 @@ const AdminDashboard = () => {
       const updates: any = {};
       ticket.messages.forEach((msg) => {
         if (msg.sender === "user" && !msg.read) {
-          updates[`supportTickets/${ticketId}/messages/${msg.id}/read`] = true;
+          updates[`supportTickets/${ticket.userId}/${ticketId}/messages/${msg.id}/read`] = true;
         }
       });
 
@@ -536,46 +607,80 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                  {selectedTicket.messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={cn("flex", msg.sender === "admin" ? "justify-end" : "justify-start")}
-                    >
+                <div className="flex-1 flex overflow-hidden">
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                    {selectedTicket.messages.map((msg) => (
                       <div
-                        className={cn(
-                          "max-w-[75%] rounded-2xl px-4 py-3",
-                          msg.sender === "admin"
-                            ? "bg-emerald-600 text-white"
-                            : "bg-white border border-gray-200 text-gray-900"
-                        )}
+                        key={msg.id}
+                        className={cn("flex", msg.sender === "admin" ? "justify-end" : "justify-start")}
                       >
-                        {msg.sender === "user" && (
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
-                              <User className="w-4 h-4 text-gray-600" />
-                            </div>
-                            <span className="text-xs font-semibold text-gray-700">
-                              {selectedTicket.userName}
-                            </span>
-                          </div>
-                        )}
-                        <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
-                        <p
+                        <div
                           className={cn(
-                            "text-xs mt-1",
-                            msg.sender === "admin" ? "text-emerald-100" : "text-gray-500"
+                            "max-w-[75%] rounded-2xl px-4 py-3",
+                            msg.sender === "admin"
+                              ? "bg-emerald-600 text-white"
+                              : "bg-white border border-gray-200 text-gray-900"
                           )}
                         >
-                          {new Date(msg.timestamp).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
+                          {msg.sender === "user" && (
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                                <User className="w-4 h-4 text-gray-600" />
+                              </div>
+                              <span className="text-xs font-semibold text-gray-700">
+                                {selectedTicket.userName}
+                              </span>
+                            </div>
+                          )}
+                          {msg.image && (
+                            <div className="mb-2 rounded-lg overflow-hidden border border-emerald-500/20 max-w-sm">
+                              <img src={msg.image} alt="Attachment" className="max-w-full h-auto cursor-pointer" onClick={() => window.open(msg.image, '_blank')} />
+                            </div>
+                          )}
+                          {msg.transactionRef && (
+                            <div className="mb-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                              <div className="flex items-center gap-2 mb-1">
+                                <FileText className="w-4 h-4 text-emerald-600" />
+                                <span className="text-xs font-bold text-emerald-800">Transaction Reference</span>
+                              </div>
+                              {msg.transactionRef.details ? (
+                                <>
+                                  <p className="text-sm font-bold text-gray-900">{msg.transactionRef.details.title}</p>
+                                  <p className="text-xs text-emerald-700">
+                                    {msg.transactionRef.details.amount} • {msg.transactionRef.details.paidByName}
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="text-xs text-gray-500 italic">Transaction details loading...</p>
+                              )}
+                            </div>
+                          )}
+                          <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
+                          <p
+                            className={cn(
+                              "text-xs mt-1",
+                              msg.sender === "admin" ? "text-emerald-100" : "text-gray-500"
+                            )}
+                          >
+                            {new Date(msg.timestamp).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  <div ref={messagesEndRef} />
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  {/* User Context Sidebar */}
+                  <div className="w-64 border-l border-gray-200 bg-white p-4 overflow-y-auto hidden xl:block">
+                    <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Users className="w-4 h-4 text-emerald-600" />
+                      User's Groups
+                    </h3>
+                    <UserGroupsList userId={selectedTicket.userId} />
+                  </div>
                 </div>
 
                 {/* Reply Input */}

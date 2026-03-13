@@ -74,6 +74,17 @@ router.delete('/users/:uid', async (req, res) => {
   }
 });
 
+// Get groups user belongs to
+router.get('/users/:uid/groups', async (req, res) => {
+  try {
+    const { uid } = req.params;
+    const groups = await adminService.getUserGroups(uid);
+    res.json(groups);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve groups' });
+  }
+});
+
 module.exports = router;
 
 // --- PHASE 2 ROUTES ---

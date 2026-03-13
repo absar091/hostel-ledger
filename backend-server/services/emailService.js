@@ -265,6 +265,7 @@ const getCommonTemplate = (title, content, actionButton = '', showUnsubscribe = 
 // ============================================================================
 
 const emailService = {
+    isConnectionVerified: false,
     /**
      * Verify SMTP credentials on startup (non-blocking)
      */
@@ -319,9 +320,11 @@ const emailService = {
                 allGood = false;
             }
 
+            emailService.isConnectionVerified = allGood;
             return allGood;
         } catch (fatalError) {
             console.error('❌ unexpected error during SMTP verification:', fatalError);
+            emailService.isConnectionVerified = false;
             return false;
         }
     },
@@ -359,7 +362,7 @@ const emailService = {
         const safeSender = escapeHtml(senderName);
         const safeGroup = escapeHtml(groupName);
 
-        const title = isNewUser ? 'You\'ve been invited to Hostel Ledger!' : 'You\'re invited!';
+        const title = isNewUser ? "You've been invited to Hostel Ledger!" : "You're invited!";
         const buttonText = isNewUser ? 'Sign Up & Join' : 'Join Group';
 
         const html = getCommonTemplate(
@@ -643,6 +646,62 @@ const emailService = {
             subject: 'Security Alert: 2FA Disabled',
             html
         });
+    },
+
+    /**
+     * Send Support Ticket Update (Transactional)
+     */
+    sendSupportTicketUpdate: async (userEmail, data) => {
+        // data = { userName, ticketNumber, status, issueSummary, latestMessage }
+        const safeName = escapeHtml(data.userName);
+        const safeStatus = escapeHtml(data.status.replace('_', ' '));
+        const safeSummary = escapeHtml(data.issueSummary);
+        const safeMessage = data.latestMessage ? escapeHtml(data.latestMessage) : '';
+
+        const content = `
+        <p>Hi ${safeName},</p>
+        <p>Your support ticket status has been updated.</p>
+
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #e9ecef;">
+          <div style="margin-bottom: 10px;">
+            <span style="color: #6c757d; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Ticket Number</span>
+            <div style="font-weight: 700; color: #212529; font-size: 18px;">#${data.ticketNumber}</div>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <span style="color: #6c757d; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Current Status</span>
+            <div style="font-weight: 700; color: #198754; font-size: 16px; text-transform: uppercase;">${safeStatus}</div>
+          </div>
+          <div style="margin-bottom: 0;">
+            <span style="color: #6c757d; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Issue Summary</span>
+            <p style="margin: 5px 0 0 0; color: #495057; font-size: 14px; font-style: italic;">"${safeSummary}"</p>
+          </div>
+        </div>
+
+        ${safeMessage ? `
+        <div style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 20px;">
+          <p style="font-weight: 600; color: #212529; margin-bottom: 8px;">Latest Message:</p>
+          <div style="background-color: #ffffff; padding: 15px; border-radius: 10px; border: 1px solid #eee; font-size: 14px; line-height: 1.5; color: #444;">
+            ${safeMessage}
+          </div>
+        </div>` : ''}
+
+        <p style="margin-top: 25px;">You can view the full conversation and respond by clicking the button below.</p>
+        `;
+
+        const actionButton = `<a href="https://app.hostelledger.aarx.online/support" class="button">View Support Chat</a>`;
+
+        return sendEmailSafe({
+            to: userEmail,
+            subject: `[Update] Ticket #${data.ticketNumber}: Status changed to ${safeStatus}`,
+            html: getCommonTemplate(`Ticket #${data.ticketNumber} Update`, content, actionButton, true)
+        });
+    },
+
+    /**
+     * Send Support Email (Generic Transactional)
+     */
+    sendEmailSafe: async (options) => {
+        return sendEmailSafe(options);
     }
 
 };

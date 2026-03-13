@@ -26,15 +26,17 @@ router.post('/support', async (req, res) => {
     const ticketId = generateTicketId();
 
     const ticketData = {
-      uid,
+      userId: uid,
       email: email || req.user.email || 'unknown',
       subject,
       message,
       status: 'open',
-      createdAt: admin.database.ServerValue.TIMESTAMP
+      priority: 'medium',
+      createdAt: admin.database.ServerValue.TIMESTAMP,
+      updatedAt: admin.database.ServerValue.TIMESTAMP
     };
 
-    await admin.database().ref(`support_tickets/${ticketId}`).set(ticketData);
+    await admin.database().ref(`supportTickets/${uid}/${ticketId}`).set(ticketData);
 
     // Send confirmation email asynchronously (fire and forget to not block UI)
     if (emailService && emailService.isConfigured()) {

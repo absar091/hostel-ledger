@@ -46,9 +46,26 @@ export async function uploadToCloudinary(
   onProgress?: (progress: UploadProgress) => void
 ): Promise<UploadResult> {
   try {
-    // Validate file type
+    // Precise Validation - Security First
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.heic'];
+    const harmfulExtensions = ['.php', '.sh', '.exe', '.bat', '.js', '.html', '.htm', '.py', '.rb'];
+    
+    const fileName = file.name.toLowerCase();
+    const fileExt = fileName.substring(fileName.lastIndexOf('.'));
+
+    // Block harmful extensions explicitly (case-insensitive)
+    if (harmfulExtensions.some(ext => fileName.endsWith(ext))) {
+      return { success: false, error: 'Security alert: File type blocked' };
+    }
+
+    // Allow only specific image extensions
+    if (!allowedExtensions.includes(fileExt)) {
+      return { success: false, error: 'Only JPG, PNG, WEBP and HEIC images are allowed' };
+    }
+
+    // Validate MIME type
     if (!file.type.startsWith('image/')) {
-      return { success: false, error: 'Please select an image file' };
+      return { success: false, error: 'Please select a valid image file' };
     }
 
     // Validate file size (5MB max before compression)

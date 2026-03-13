@@ -82,21 +82,22 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
         ? "You" : (toMember?.name || transaction.toName || "Unknown");
 
     const handleCopyId = () => {
-        if (transaction.id) {
+        if (transaction.id && transaction.groupId) {
+            const reference = `${transaction.groupId}/${transaction.id}`;
             const onSuccess = () => {
-                toast.success("Transaction ID copied! 📋");
+                toast.success("Reference copied! Paste in chat to share 📋");
                 setIsCopied(true);
                 setTimeout(() => setIsCopied(false), 2000);
             };
 
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(transaction.id)
+                navigator.clipboard.writeText(reference)
                     .then(onSuccess)
-                    .catch(() => toast.error("Failed to copy ID"));
+                    .catch(() => toast.error("Failed to copy reference"));
             } else {
                 try {
                     const textArea = document.createElement("textarea");
-                    textArea.value = transaction.id;
+                    textArea.value = reference;
                     document.body.appendChild(textArea);
                     textArea.select();
                     document.execCommand('copy');
@@ -252,25 +253,30 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                     {formatAmount(transaction.amount)}
                                 </div>
 
-                                {/* Transaction ID - New addition */}
-                                <div className="flex items-center justify-center gap-2 mb-4">
-                                    <span className="text-[10px] font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded truncate max-w-[200px]">
-                                        {transaction.id}
-                                    </span>
-                                    <button
-                                        onClick={handleCopyId}
-                                        className={`p-1.5 rounded-full transition-all ${isCopied
-                                            ? "bg-emerald-50 text-emerald-500"
-                                            : "hover:bg-slate-100 text-slate-400 hover:text-[#4a6850]"
-                                            }`}
-                                        title={isCopied ? "Copied!" : "Copy ID"}
-                                    >
-                                        {isCopied ? (
-                                            <Check className="w-3.5 h-3.5" />
-                                        ) : (
-                                            <Copy className="w-3.5 h-3.5" />
-                                        )}
-                                    </button>
+                                {/* Transaction ID - Full Reference for sharing */}
+                                <div className="flex flex-col items-center gap-2 mb-6">
+                                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 shadow-sm transition-all hover:border-emerald-200 group">
+                                        <div className="flex flex-col items-start">
+                                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Share Reference</span>
+                                            <span className="text-[11px] font-mono font-bold text-[#4a6850] truncate max-w-[220px]">
+                                                {transaction.groupId}/{transaction.id}
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={handleCopyId}
+                                            className={`p-2 rounded-full transition-all ${isCopied
+                                                ? "bg-emerald-100 text-emerald-600 scale-110"
+                                                : "bg-white text-slate-400 hover:text-emerald-600 shadow-sm border border-slate-100 group-hover:border-emerald-200"
+                                                }`}
+                                            title={isCopied ? "Copied!" : "Copy Reference"}
+                                        >
+                                            {isCopied ? (
+                                                <Check className="w-3.5 h-3.5" />
+                                            ) : (
+                                                <Copy className="w-3.5 h-3.5" />
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Badge Logic Fixed: Check if user is payer properly, and use resolvedParticipants */}

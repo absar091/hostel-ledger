@@ -1,11 +1,22 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
+import { cn } from "@/lib/utils";
 import { ref, onValue, query, limitToLast, orderByChild, off } from "firebase/database";
 import { database } from "@/lib/firebase";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { callSecureApi } from "@/lib/api";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useTranslation } from "react-i18next";
-import { Send, MessageCircle, Loader2, ChevronUp, Info } from "lucide-react";
+import { 
+    Send, 
+    MessageCircle, 
+    Loader2, 
+    ChevronUp, 
+    X, 
+    FileText,
+    Sparkles,
+    Info,
+    ImageIcon
+} from "@/lib/icons";
 import Avatar from "./Avatar";
 
 interface ChatMessage {
@@ -18,6 +29,11 @@ interface ChatMessage {
     actorName?: string;
     data?: Record<string, any>;
     timestamp: number;
+    image?: string;
+    transactionRef?: {
+        id: string;
+        details?: any;
+    };
 }
 
 interface GroupChatProps {
@@ -82,6 +98,23 @@ const ChatBubble = memo(({ message, isOwn }: { message: ChatMessage; isOwn: bool
                             : "bg-white text-gray-900 border border-[#4a6850]/10 rounded-bl-md"
                             }`}
                     >
+                        {message.image && (
+                            <div className="mb-2 rounded-lg overflow-hidden border border-white/20">
+                                <img src={message.image} alt="Attachment" className="max-w-full h-auto" />
+                            </div>
+                        )}
+                        {message.transactionRef && (
+                            <div className={`mb-2 p-3 rounded-xl border ${isOwn ? 'bg-white/10 border-white/20 text-white' : 'bg-emerald-50 border-emerald-100 text-[#4a6850]'}`}>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <FileText className="w-4 h-4" />
+                                    <span className="text-[10px] font-black uppercase tracking-wider">Transaction Ref</span>
+                                </div>
+                                <p className="text-sm font-black">{message.transactionRef.details?.title}</p>
+                                <p className={`text-[10px] font-bold ${isOwn ? 'text-white/70' : 'text-[#4a6850]/70'}`}>
+                                    {message.transactionRef.details?.amount} • {message.transactionRef.details?.paidByName}
+                                </p>
+                            </div>
+                        )}
                         {message.text}
                     </div>
                     <div
@@ -98,7 +131,7 @@ const ChatBubble = memo(({ message, isOwn }: { message: ChatMessage; isOwn: bool
 
 const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupChatProps) => {
     const { t } = useTranslation();
-    const { user } = useFirebaseAuth();
+    const { user, firebaseUser } = useFirebaseAuth();
     const { formatAmount } = useCurrency();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputText, setInputText] = useState("");
@@ -106,6 +139,12 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
     const [isLoadingOlder, setIsLoadingOlder] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [initialLoad, setInitialLoad] = useState(true);
+    const [attachedImage, setAttachedImage] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [referencedTxn, setReferencedTxn] = useState<any>(null);
+    const [txnGroupId, setTxnGroupId] = useState<string | null>(null);
+    const [showTxnHint, setShowTxnHint] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -216,20 +255,87 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
     // Send message
     const handleSend = async () => {
         const text = inputText.trim();
-        if (!text || isSending) return;
+        if ((!text && !attachedImage) || isSending) return;
 
         setIsSending(true);
         setInputText("");
 
         try {
-            await callSecureApi("/api/send-message", { groupId, expenseId, text });
-            // Realtime listener will pick up the new message
+            const payload: any = { groupId, expenseId, text };
+            if (attachedImage) payload.image = attachedImage;
+            if (referencedTxn) {
+                payload.transactionRef = {
+                    id: referencedTxn.id,
+                    details: referencedTxn
+                };
+            }
+
+            await callSecureApi("/api/send-message", { ...payload });
+            
+            setAttachedImage(null);
+            setReferencedTxn(null);
+            setTxnGroupId(null);
             setTimeout(() => inputRef.current?.focus(), 100);
         } catch (err: any) {
             console.error("Failed to send message:", err);
             setInputText(text); // Restore on failure
         } finally {
             setIsSending(false);
+        }
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        try {
+            const { uploadToCloudinary } = await import("@/lib/cloudinary");
+            const result = await uploadToCloudinary(file);
+            
+            if (result.success && result.url) {
+                setAttachedImage(result.url);
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const detectTransactionId = async (text: string) => {
+        // Robust detection: handles GROUP/ID, GROUP / ID, GROUP \ ID
+        const fullMatch = text.match(/([a-zA-Z0-9_-]+)\s*[\/\\]\s*([-a-zA-Z0-9_]{10,})/i);
+        const singleMatch = text.match(/(txn-[a-f0-9]{6,}|TXN-[a-f0-9]{6,}|-[-a-zA-Z0-9_]{15,})/i);
+        
+        if (fullMatch) {
+            const gId = fullMatch[1];
+            const tId = fullMatch[2];
+            // Fetch preview even if it's from another group (server verifies access)
+            fetchTxnPreview(tId, gId);
+        } else if (singleMatch) {
+            const tId = singleMatch[0];
+            fetchTxnPreview(tId, groupId);
+        }
+    };
+
+    const fetchTxnPreview = async (tId: string, gId: string) => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/get-transaction-preview`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await firebaseUser.getIdToken()}`
+                },
+                body: JSON.stringify({ transactionId: tId, groupId: gId })
+            });
+            const data = await response.json();
+            if (data.success) {
+                setReferencedTxn(data.transaction);
+                setTxnGroupId(gId);
+            }
+        } catch (err) {
+            console.error("Preview fetch error:", err);
         }
     };
 
@@ -319,13 +425,98 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
             </div>
 
             {/* Input Area */}
-            <div className="px-4 py-3 bg-white/90 backdrop-blur-sm border-t border-[#4a6850]/10">
+            <div className="px-4 py-3 bg-white/90 backdrop-blur-sm border-t border-[#4a6850]/10 relative">
+                {/* Referencing Hint */}
+                {showTxnHint && (
+                    <div className="absolute bottom-full left-4 mb-2 p-3 bg-white border border-emerald-100 rounded-2xl shadow-xl z-20 max-w-xs animate-in slide-in-from-bottom-2 zoom-in-95">
+                        <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                                <Sparkles className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-gray-900 mb-1">Pro Tip: Referencing</p>
+                                <p className="text-[10px] text-gray-600 leading-relaxed">
+                                    To reference a transaction, type its <span className="font-mono bg-gray-100 px-1 rounded text-emerald-700">GROUP_ID/TRANSACTION_ID</span>. 
+                                    A preview card will automatically appear!
+                                </p>
+                            </div>
+                            <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5">
+                                <X className="w-3 h-3" />
+                            </button>
+                        </div>
+                    </div>
+                )}
+                {/* Transaction Preview */}
+                {referencedTxn && (
+                    <div className="mb-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200 relative animate-in slide-in-from-bottom-2">
+                        <button 
+                            onClick={() => setReferencedTxn(null)}
+                            className="absolute top-2 right-2 p-1 hover:bg-emerald-100 rounded-full"
+                        >
+                            <X className="w-4 h-4 text-emerald-600" />
+                        </button>
+                        <div className="flex items-center gap-2 mb-1">
+                            <FileText className="w-4 h-4 text-emerald-600" />
+                            <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider">Referencing Transaction</span>
+                        </div>
+                        <p className="text-sm font-black text-gray-900">{referencedTxn.title}</p>
+                        <p className="text-[10px] font-bold text-[#4a6850]/70">{referencedTxn.amount} • {referencedTxn.paidByName}</p>
+                    </div>
+                )}
+
+                {/* Image Preview */}
+                {attachedImage && (
+                    <div className="mb-3 relative inline-block group animate-in zoom-in-95">
+                        <img 
+                            src={attachedImage} 
+                            alt="Preview" 
+                            className="w-20 h-20 object-cover rounded-xl border border-[#4a6850]/10"
+                        />
+                        <button 
+                            onClick={() => setAttachedImage(null)}
+                            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                        >
+                            <X className="w-3 h-3" />
+                        </button>
+                    </div>
+                )}
+
                 <div className="flex items-center gap-2">
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleImageUpload}
+                        accept="image/*"
+                        className="hidden"
+                    />
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading || !!attachedImage}
+                        className="p-2 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50"
+                    >
+                        {isUploading ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                            <ImageIcon className="w-5 h-5" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setShowTxnHint(!showTxnHint)}
+                        className={cn(
+                            "p-2 rounded-xl transition-all",
+                            showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
+                        )}
+                    >
+                        <Info className="w-5 h-5" />
+                    </button>
                     <input
                         ref={inputRef}
                         type="text"
                         value={inputText}
-                        onChange={(e) => setInputText(e.target.value)}
+                        onChange={(e) => {
+                            setInputText(e.target.value);
+                            detectTransactionId(e.target.value);
+                        }}
                         onKeyDown={handleKeyDown}
                         placeholder={t("chat.input_placeholder")}
                         maxLength={2000}
@@ -333,7 +524,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                     />
                     <button
                         onClick={handleSend}
-                        disabled={!inputText.trim() || isSending}
+                        disabled={(!inputText.trim() && !attachedImage) || isSending}
                         className="w-11 h-11 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
                     >
                         {isSending ? (

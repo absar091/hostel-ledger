@@ -1,5 +1,5 @@
 // Centralized icon exports to reduce bundle splitting
-// Version: 2.0 - Support System Icons Added
+// Version: 2.1 - Enhanced Support & Chat Icons
 export {
   ArrowUpRight,
   ArrowDownLeft,
@@ -27,6 +27,7 @@ export {
   Bell,
   HelpCircle,
   ChevronRight,
+  ChevronUp,
   Share2,
   Copy,
   MessageCircle,
@@ -50,5 +51,9 @@ export {
   Filter,
   TrendingUp,
   ExternalLink,
-  Settings
+  Settings,
+  FileText,
+  Image as ImageIcon,
+  Paperclip,
+  Trash2
 } from "lucide-react";
