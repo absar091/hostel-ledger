@@ -411,7 +411,7 @@ const GroupDetail = () => {
         a.href = url;
         
         // Determine extension
-        let ext = format;
+        let ext: string = format;
         if (format === 'excel') ext = 'xlsx';
         
         a.download = `Group-Report-${id}.${ext}`;
@@ -1104,6 +1104,7 @@ const GroupDetail = () => {
             setSelectedMember(null);
           }}
           member={{
+            id: selectedMember.id,
             name: selectedMember.name,
             balance: selectedMember.balance,
             paymentDetails: selectedMember.paymentDetails,
