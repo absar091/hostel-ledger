@@ -198,6 +198,7 @@ export default function PersonalSpace() {
                 <Button
                     onClick={() => setIsSendMoneyOpen(true)}
                     className="h-14 w-14 rounded-full shadow-xl bg-[#4a6850] hover:bg-[#3d5a44] p-0 flex items-center justify-center"
+                    aria-label={t('send_money.title')}
                 >
                     <Plus className="w-7 h-7 text-white" />
                 </Button>
