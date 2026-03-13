@@ -100,11 +100,15 @@
   ],
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "https://hostel-ledger-backend.vercel.app/api/$1"
+    },
+    {
       "source": "/_/auth/action",
       "destination": "/_auth-action.html"
     },
     {
-      "source": "/((?!OneSignalSDK|OneSignalSDKWorker).*)",
+      "source": "/((?!api|OneSignalSDK|OneSignalSDKWorker).*)",
       "destination": "/index.html"
     }
   ]
