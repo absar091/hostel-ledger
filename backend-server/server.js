@@ -340,16 +340,84 @@ const { getStatusPageHTML } = require('./utils/statusPage');
 // Root endpoint with premium status dashboard
 app.get('/', (req, res) => {
   const isHtml = req.accepts('html');
+  
+  const firebaseActive = !!admin.apps.length;
+  const smtpActive = emailService.isConnectionVerified;
+  const oneSignalActive = !!(process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY);
+  const aiActive = !!(genAI && aiModels.length > 0);
+
   const endpoints = {
-    health: '/health',
-    sendEmail: '/api/send-email',
-    sendVerification: '/api/send-verification',
-    sendPasswordReset: '/api/send-password-reset',
-    sendWelcome: '/api/send-welcome',
-    sendTransactionAlert: '/api/send-transaction-alert',
-    pushNotify: '/api/push-notify',
-    pushNotifyMultiple: '/api/push-notify-multiple',
-    pushTest: '/api/push-test'
+    'Core Infrastructure': {
+      status: 'Operational',
+      items: {
+        health: '/health',
+        statusDashboard: '/',
+        pushTest: '/api/push-test'
+      }
+    },
+    'Authentication & Security': {
+      status: firebaseActive ? 'Operational' : 'Service Down',
+      items: {
+        verificationRequest: '/api/verification/request',
+        verificationVerify: '/api/verification/verify',
+        verificationCheck: '/api/verification/check',
+        passwordReset: '/api/send-password-reset',
+        emailExistence: '/api/check-email-exists',
+        twoFactorSetup: '/api/2fa/setup',
+        twoFactorVerify: '/api/2fa/verify',
+        twoFactorStatus: '/api/2fa/status'
+      }
+    },
+    'Financial Services': {
+      status: firebaseActive ? 'Operational' : 'Service Down',
+      items: {
+        recordPayment: '/api/record-payment',
+        recordExpense: '/api/record-expense',
+        walletUpdate: '/api/wallet/update',
+        p2pTransfer: '/api/wallet/p2p-transfer',
+        moneyRequest: '/api/wallet/respond-money-request',
+        expenseParsing: '/api/ai/parse-expense-audio',
+        syncWallets: '/api/wallet/sync-all'
+      }
+    },
+    'Group Management': {
+      status: firebaseActive ? 'Operational' : 'Service Down',
+      items: {
+        groupSearch: '/api/groups-search',
+        groupCreate: '/api/groups-create',
+        groupUpdate: '/api/groups-update',
+        groupDelete: '/api/groups-delete',
+        memberRemove: '/api/groups-remove-member',
+        groupMerge: '/api/groups-merge',
+        groupInvitation: '/api/groups-invitation',
+        externalInvitation: '/api/send-external-invitation'
+      }
+    },
+    'Communication & AI': {
+      status: (smtpActive && oneSignalActive && aiActive) ? 'Operational' : (smtpActive || oneSignalActive || aiActive ? 'Degraded' : 'Service Down'),
+      items: {
+        emailService: '/api/send-email',
+        pushNotification: '/api/push-notify',
+        broadcastNotify: '/api/push-notify-multiple',
+        groupChat: '/api/groups/chat/send',
+        supportAssistant: '/api/ai/support-assistant'
+      }
+    },
+    'Support & Safety': {
+      status: (firebaseActive && smtpActive) ? 'Operational' : 'Limited Support',
+      items: {
+        userSupport: '/api/user/support',
+        reportSystem: '/api/user/report'
+      }
+    },
+    'Maintenance Tasks': {
+      status: firebaseActive ? 'Operational' : 'Service Down',
+      items: {
+        memberCleanup: '/api/cleanup-members',
+        unverifiedCleanup: '/api/cleanup-unverified',
+        imageCleanup: '/api/delete-images'
+      }
+    }
   };
 
   if (isHtml) {
@@ -369,10 +437,10 @@ app.get('/', (req, res) => {
         serverTime: new Date().toISOString()
       },
       timestamp: new Date().toISOString(),
-      firebaseActive: !!admin.apps.length,
-      oneSignalActive: !!(process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY),
-      smtpActive: emailService.isConnectionVerified,
-      aiActive: !!(genAI && aiModels.length > 0),
+      firebaseActive,
+      oneSignalActive,
+      smtpActive,
+      aiActive,
       endpoints
     };
     return res.send(getStatusPageHTML(statusData));
@@ -381,12 +449,16 @@ app.get('/', (req, res) => {
   logger.log('info', '📍 Root endpoint accessed from:', req.get('origin') || 'direct');
   res.json({
     success: true,
-    message: 'Hostel Ledger Email API',
+    message: 'Hostel Ledger API Status',
     version: pkg.version,
-    pushProvider: 'OneSignal',
+    services: {
+        firebase: firebaseActive,
+        smtp: smtpActive,
+        onesignal: oneSignalActive,
+        ai: aiActive
+    },
     endpoints,
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    timestamp: new Date().toISOString()
   });
 });
 

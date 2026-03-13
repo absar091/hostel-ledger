@@ -252,12 +252,52 @@ function getStatusPageHTML(data) {
         .method-post { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
 
         .status-badge {
-            background: rgba(16, 185, 129, 0.1);
-            color: #34d399;
             padding: 4px 10px;
             border-radius: 8px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .status-ok {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .status-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .status-down {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .status-dot.active {
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+
+        .status-dot.degraded {
+            background: #f59e0b;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+
+        .status-dot.inactive {
+            background: #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
         }
 
         footer {
@@ -385,27 +425,49 @@ function getStatusPageHTML(data) {
             </div>
             <table class="api-table">
                 <tbody>
-                    ${Object.entries(endpoints).map(([key, path]) => {
-                        // Create a clean display name from the key
-                        const name = key
-                            .replace(/([A-Z])/g, ' $1') // Space before capitals
-                            .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
-                            .replace('Push Notify', 'Push Notification')
-                            .replace('Send ', '') // Remove redundant "Send"
-                            + ' Service';
+                    ${Object.entries(endpoints).map(([category, categoryData]) => {
+                        const services = categoryData.items;
+                        const categoryStatus = categoryData.status;
                         
+                        // Determine category badge class
+                        let badgeClass = 'status-badge';
+                        if (categoryStatus === 'Operational') badgeClass += ' status-ok';
+                        else if (categoryStatus === 'Service Down') badgeClass += ' status-down';
+                        else badgeClass += ' status-warning';
+
                         return `
-                        <tr class="api-row">
-                            <td class="api-cell">
-                                <div style="display: flex; align-items: center; gap: 12px;">
-                                    <div class="status-dot active" style="width: 8px; height: 8px;"></div>
-                                    <span class="api-name">${name}</span>
-                                </div>
-                            </td>
-                            <td class="api-cell" style="text-align: right;">
-                                <span class="status-badge">200 OK</span>
+                        <tr class="category-row">
+                            <td class="category-header">${category}</td>
+                            <td class="category-header" style="text-align: right;">
+                                <span class="${badgeClass}">${categoryStatus}</span>
                             </td>
                         </tr>
+                        ${Object.entries(services).map(([key, path]) => {
+                            const name = key
+                                .replace(/([A-Z])/g, ' $1')
+                                .replace(/^./, str => str.toUpperCase())
+                                .replace('Push Notify', 'Push Notification')
+                                .replace('Send ', '')
+                                + (key.toLowerCase().includes('service') || key.toLowerCase().includes('system') ? '' : ' Service');
+                            
+                            // For individual items, we show "Operational" if the category is OK
+                            // but we can color the dot based on the category status too
+                            const dotClass = categoryStatus === 'Operational' ? 'active' : (categoryStatus === 'Service Down' ? 'inactive' : 'degraded');
+
+                            return `
+                            <tr class="api-row">
+                                <td class="api-cell">
+                                    <div style="display: flex; align-items: center; gap: 12px; padding-left: 12px;">
+                                        <div class="status-dot ${dotClass}" style="width: 6px; height: 6px;"></div>
+                                        <span class="api-name">${name}</span>
+                                    </div>
+                                </td>
+                                <td class="api-cell" style="text-align: right;">
+                                    <span class="api-path">${path}</span>
+                                </td>
+                            </tr>
+                            `;
+                        }).join('')}
                         `;
                     }).join('')}
                 </tbody>
