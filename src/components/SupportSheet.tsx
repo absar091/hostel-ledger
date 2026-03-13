@@ -117,10 +117,6 @@ export function SupportSheet({ isOpen, onClose }: SupportSheetProps) {
                 type="submit" 
                 disabled={loading}
               >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-                {loading ? 'Submitting...' : 'Submit Ticket'}
-              </button>
-            </form>
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                 {loading ? 'Submitting...' : 'Submit Ticket'}
               </button>
