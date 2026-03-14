@@ -421,9 +421,13 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         case 'auth/invalid-credential':
           errorMessage = "Invalid email or password. Please check your credentials or create an account.";
           break;
+        case 'auth/user-disabled':
+          errorMessage = "Your account has been suspended. Please contact support@aarx.online to appeal.";
+          break;
         default:
           errorMessage = error.message || "Login failed";
       }
+
 
       return { success: false, error: errorMessage };
     } finally {
