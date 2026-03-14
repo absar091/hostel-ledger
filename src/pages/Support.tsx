@@ -477,6 +477,7 @@ const Support = () => {
                 <div className="flex items-center gap-2">
                   <p className="text-lg font-bold text-emerald-900">{currentTicket.ticketNumber}</p>
                   <button
+                    aria-label="Copy ticket number"
                     onClick={copyTicketNumber}
                     className="p-1 hover:bg-emerald-100 rounded transition-colors"
                   >
@@ -681,7 +682,7 @@ const Support = () => {
                           A preview card will automatically appear for you!
                         </p>
                       </div>
-                      <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5">
+                      <button aria-label="Dismiss hint" onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5">
                         <X className="w-3 h-3" />
                       </button>
                     </div>
@@ -692,6 +693,7 @@ const Support = () => {
                 {referencedTxn && (
                   <div className="mb-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200 relative animate-in slide-in-from-bottom-2">
                     <button 
+                      aria-label="Remove referenced transaction"
                       onClick={() => setReferencedTxn(null)}
                       className="absolute top-2 right-2 p-1 hover:bg-emerald-100 rounded-full"
                     >
@@ -715,6 +717,7 @@ const Support = () => {
                       className="w-24 h-24 object-cover rounded-xl border border-gray-200"
                     />
                     <button 
+                      aria-label="Remove attached image"
                       onClick={() => setAttachedImage(null)}
                       className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
                     >
@@ -732,6 +735,7 @@ const Support = () => {
                     className="hidden"
                   />
                    <button
+                    aria-label="Attach image"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading || !!attachedImage}
                     className="p-3 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all disabled:opacity-50"
@@ -743,6 +747,8 @@ const Support = () => {
                     )}
                   </button>
                   <button
+                    aria-label="Reference transaction hint"
+                    aria-expanded={showTxnHint}
                     onClick={() => setShowTxnHint(!showTxnHint)}
                     className={cn(
                       "p-3 rounded-xl transition-all",
@@ -764,6 +770,7 @@ const Support = () => {
                     disabled={isSending}
                   />
                   <button
+                    aria-label="Send message"
                     onClick={sendMessage}
                     disabled={(!message.trim() && !attachedImage) || isSending}
                     className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
