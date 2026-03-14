@@ -181,7 +181,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
     try {
       const response = await parseExpenseWithAI(aiInput, selectedGroup);
       if (response.success && response.data) {
-        const { amount, description, payerId, participantIds, category } = response.data;
+        const { amount, description, payerId, participantIds, category, payers } = response.data;
 
         if (amount) setAmount(String(amount));
         if (description) setNote(description);
@@ -191,11 +191,24 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
           setSelectedCategory('others');
         }
 
-        // Match payerId if possible, or fallback to current user
-        if (payerId) {
-          setPaidBy(payerId);
-        } else if (user) {
-          setPaidBy(user.uid);
+        // Handle multi-payers
+        if (payers && Array.isArray(payers) && payers.length > 1) {
+          setPayerMode('multiple');
+          setMultiPayers(payers.map((p: any) => ({
+            id: p.id,
+            amount: String(p.amount)
+          })));
+          // Set primary payer for consistency
+          const primary = payers.reduce((prev: any, curr: any) => (prev.amount > curr.amount) ? prev : curr);
+          setPaidBy(primary.id);
+        } else {
+          setPayerMode('single');
+          // Match payerId if possible, or fallback to current user
+          if (payerId) {
+            setPaidBy(payerId);
+          } else if (user) {
+            setPaidBy(user.uid);
+          }
         }
 
         // Match participantIds
@@ -244,7 +257,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
         try {
           const response = await parseExpenseWithAudio(base64Audio, file.type, selectedGroup);
           if (response.success && response.data) {
-            const { amount, description, payerId, participantIds, category } = response.data;
+            const { amount, description, payerId, participantIds, category, payers } = response.data;
 
             if (amount) setAmount(String(amount));
             if (description) setNote(description);
@@ -254,8 +267,20 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
               setSelectedCategory('others');
             }
 
-            if (payerId) setPaidBy(payerId);
-            else if (user) setPaidBy(user.uid);
+            // Handle multi-payers
+            if (payers && Array.isArray(payers) && payers.length > 1) {
+              setPayerMode('multiple');
+              setMultiPayers(payers.map((p: any) => ({
+                id: p.id,
+                amount: String(p.amount)
+              })));
+              const primary = payers.reduce((prev: any, curr: any) => (prev.amount > curr.amount) ? prev : curr);
+              setPaidBy(primary.id);
+            } else {
+              setPayerMode('single');
+              if (payerId) setPaidBy(payerId);
+              else if (user) setPaidBy(user.uid);
+            }
 
             if (participantIds && participantIds.length > 0) {
               const validIds = participantIds.filter((pid: string) => members.some(m => m.id === pid));
@@ -322,7 +347,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
           try {
             const response = await parseExpenseWithAudio(base64Audio, mediaRecorder.mimeType, selectedGroup);
             if (response.success && response.data) {
-              const { amount, description, payerId, participantIds, category } = response.data;
+              const { amount, description, payerId, participantIds, category, payers } = response.data;
 
               if (amount) setAmount(String(amount));
               if (description) setNote(description);
@@ -332,8 +357,20 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                 setSelectedCategory('others');
               }
 
-              if (payerId) setPaidBy(payerId);
-              else if (user) setPaidBy(user.uid);
+              // Handle multi-payers
+              if (payers && Array.isArray(payers) && payers.length > 1) {
+                setPayerMode('multiple');
+                setMultiPayers(payers.map((p: any) => ({
+                  id: p.id,
+                  amount: String(p.amount)
+                })));
+                const primary = payers.reduce((prev: any, curr: any) => (prev.amount > curr.amount) ? prev : curr);
+                setPaidBy(primary.id);
+              } else {
+                setPayerMode('single');
+                if (payerId) setPaidBy(payerId);
+                else if (user) setPaidBy(user.uid);
+              }
 
               if (participantIds && participantIds.length > 0) {
                 const validIds = participantIds.filter((pid: string) => members.some(m => m.id === pid));
