@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowDownLeft, Users, Phone, CreditCard } from "lucide-react";
+import { ArrowLeft, ArrowDownLeft, Users, Phone, CreditCard, Bell, Loader2 } from "lucide-react";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import Sidebar from "@/components/Sidebar";
@@ -11,6 +11,8 @@ import { useUserPreferences } from "@/hooks/useUserPreferences";
 import Avatar from "@/components/Avatar";
 import { useTranslation } from "react-i18next";
 import MobileHeader from "@/components/MobileHeader";
+import { callSecureApi } from "@/lib/api";
+import { toast } from "sonner";
 
 interface PersonToReceiveFrom {
   id: string;
@@ -36,6 +38,7 @@ const ToReceive = () => {
   const { groups, fetchGroupDetail } = useFirebaseData();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
   const [showPageGuide, setShowPageGuide] = useState(false);
+  const [remindingId, setRemindingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (shouldShowPageGuide('to-receive')) {
@@ -101,6 +104,36 @@ const ToReceive = () => {
   const handlePersonClick = (person: PersonToReceiveFrom) => {
     // Navigate to group detail page
     navigate(`/group/${person.groupId}`);
+  };
+
+  const handleRemindClick = async (e: React.MouseEvent, person: PersonToReceiveFrom) => {
+    e.stopPropagation();
+    if (remindingId) return;
+
+    const uniqueId = `${person.id}-${person.groupId}`;
+    setRemindingId(uniqueId);
+    
+    try {
+      const result = await callSecureApi('/api/reminders/send', {
+        groupId: person.groupId,
+        debtorId: person.id,
+        creditorId: user?.uid,
+        amount: person.amount
+      });
+
+      if (result.success) {
+        toast.success("Reminder sent successfully", {
+          description: `A notification has been sent to ${person.name}.`
+        });
+      } else {
+        toast.error(result.error || "Failed to send reminder");
+      }
+    } catch (err: any) {
+      console.error("Reminder error:", err);
+      toast.error(err.message || "Network error sending reminder");
+    } finally {
+      setRemindingId(null);
+    }
   };
 
   const formatPaymentDetails = (paymentDetails?: PersonToReceiveFrom['paymentDetails']) => {
@@ -171,59 +204,75 @@ const ToReceive = () => {
           {peopleWhoOweMe.length > 0 ? (
             <div className="space-y-3">
               {peopleWhoOweMe.map((person) => (
-                <button
+                <div
                   key={`${person.id}-${person.groupId}`}
                   onClick={() => handlePersonClick(person)}
-                  className="w-full bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all duration-200 text-left group"
+                  className="w-full bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all duration-200 text-left group relative cursor-pointer"
                 >
+                  {/* Remind Button Overlay */}
+                  <div className="absolute right-6 top-6 z-20">
+                    <button
+                      onClick={(e) => handleRemindClick(e, person)}
+                      disabled={remindingId === `${person.id}-${person.groupId}`}
+                      className="w-12 h-12 rounded-2xl bg-[#4a6850]/5 flex items-center justify-center text-[#4a6850] hover:bg-[#4a6850] hover:text-white active:scale-90 transition-all duration-300 shadow-sm disabled:opacity-50 group/remind"
+                      title="Send Reminder"
+                    >
+                      {remindingId === `${person.id}-${person.groupId}` ? (
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                      ) : (
+                        <Bell className="w-6 h-6 group-hover/remind:animate-bounce" />
+                      )}
+                    </button>
+                  </div>
+
                   <div className="flex items-start gap-4">
                     {/* Avatar */}
                     <Avatar name={person.name} size="md" />
 
                     {/* Person Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0 pr-14">
+                      <div className="flex flex-col mb-3">
+                        <div className="flex items-center gap-2 mb-1">
                           <h3 className="font-black text-gray-900 text-lg truncate tracking-tight">{person.name}</h3>
                           {person.isTemporary && (
                             <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">{t('group.temp')}</span>
                           )}
                         </div>
-                        <div className="text-2xl font-black text-[#4a6850] tabular-nums">
+                        <div className="text-3xl font-black text-[#4a6850] tabular-nums tracking-tighter">
                           Rs {person.amount.toLocaleString()}
                         </div>
                       </div>
 
-                      {/* Contact Info */}
-                      {person.phone && (
-                        <div className="flex items-center gap-2 mb-2">
-                          <Phone className="w-4 h-4 text-[#4a6850]/60" />
-                          <span className="text-sm text-[#4a6850]/80 font-bold">{person.phone}</span>
-                        </div>
-                      )}
+                      {/* Contact & Payment Info Row */}
+                      <div className="flex flex-wrap gap-x-4 gap-y-2 mb-4">
+                        {person.phone && (
+                          <div className="flex items-center gap-1.5">
+                            <Phone className="w-3.5 h-3.5 text-[#4a6850]/50" />
+                            <span className="text-xs text-[#4a6850]/70 font-bold">{person.phone}</span>
+                          </div>
+                        )}
 
-                      {/* Payment Details */}
-                      {formatPaymentDetails(person.paymentDetails) && (
-                        <div className="flex items-start gap-2 mb-3">
-                          <CreditCard className="w-4 h-4 text-[#4a6850]/60 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-[#4a6850]/80 leading-relaxed font-medium">
-                            {formatPaymentDetails(person.paymentDetails)}
-                          </span>
-                        </div>
-                      )}
+                        {formatPaymentDetails(person.paymentDetails) && (
+                          <div className="flex items-center gap-1.5">
+                            <CreditCard className="w-3.5 h-3.5 text-[#4a6850]/50" />
+                            <span className="text-xs text-[#4a6850]/70 font-medium truncate max-w-[150px]">
+                              {formatPaymentDetails(person.paymentDetails)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
 
                       {/* Group Info - At Bottom */}
-                      <div className="flex items-center gap-2 pt-2 border-t border-[#4a6850]/10">
-                        <div className="w-5 h-5 bg-gradient-to-br from-[#4a6850]/20 to-[#3d5643]/20 rounded-lg flex items-center justify-center">
-                          <Users className="w-3 h-3 text-[#4a6850] font-bold" />
+                      <div className="flex items-center gap-2 pt-3 border-t border-[#4a6850]/10">
+                        <div className="w-5 h-5 bg-[#4a6850]/10 rounded-lg flex items-center justify-center">
+                          <Users className="w-3 h-3 text-[#4a6850]" />
                         </div>
-                        <span className="text-xs text-[#4a6850]/80 font-black">{person.groupName}</span>
-                        <span className="text-xs text-[#4a6850]/40 font-bold">•</span>
-                        <span className="text-xs text-[#4a6850]/60 font-bold">{t('to_receive.tap_to_view')}</span>
+                        <span className="text-xs text-[#4a6850]/80 font-black uppercase tracking-wider">{person.groupName}</span>
+                        <span className="text-[10px] text-[#4a6850]/30 font-bold ml-auto">{t('to_receive.tap_to_view')}</span>
                       </div>
                     </div>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           ) : (

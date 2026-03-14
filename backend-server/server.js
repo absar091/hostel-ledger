@@ -35,6 +35,7 @@ const {
 } = require('./utils/validation');
 const { sanitize } = require('./utils/sanitize');
 const { getDeviceFromUA, getLocationFromIP } = require('./utils/deviceInfo');
+const detectFraud = require('./middleware/fraudDetection');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
 const pkg = require('./package.json');
@@ -2803,8 +2804,8 @@ app.post('/api/get-individual-debts', generalLimiter, authenticate, async (req, 
   }
 });
 
-// Add Expense endpoint (Secure)
-app.post('/api/add-expense', generalLimiter, async (req, res) => {
+// Add Expense endpoint (Secure with Multi-Payer support)
+app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (req, res) => {
   let { groupId, amount, paidBy, payers, participants, note, place } = req.body;
 
   // Validate Lengths
@@ -3250,7 +3251,7 @@ app.post('/api/add-expense', generalLimiter, async (req, res) => {
 
 
 // Record Payment endpoint (Secure)
-app.post('/api/record-payment', generalLimiter, async (req, res) => {
+app.post('/api/record-payment', generalLimiter, authenticate, detectFraud, async (req, res) => {
   let { groupId, fromMember, toMember, amount, method, note } = req.body;
 
   // Validate Lengths
@@ -3625,7 +3626,7 @@ app.post('/api/record-payment', generalLimiter, async (req, res) => {
 
 
 // Update Wallet endpoint (Manual adjustments - Secure)
-app.post('/api/update-wallet', generalLimiter, async (req, res) => {
+app.post('/api/update-wallet', generalLimiter, authenticate, detectFraud, async (req, res) => {
   let { amount, type, note } = req.body; // type: 'add' or 'deduct'
 
   // Validate Length
@@ -5271,6 +5272,99 @@ app.post('/api/get-messages', generalLimiter, authenticate, async (req, res) => 
   }
 });
 
+// --- SMART PAYMENT REMINDERS ---
+
+/**
+ * Send Payment Reminder (Manual)
+ * Triggered by user to remind someone of a debt
+ */
+app.post('/api/reminders/send', generalLimiter, authenticate, async (req, res) => {
+  const { groupId, debtorId, creditorId, amount, currency = 'PKR' } = req.body;
+  const senderId = req.user.uid;
+
+  if (!groupId || !debtorId || !creditorId || !amount) {
+    return res.status(400).json({ success: false, error: 'Missing required reminder details' });
+  }
+
+  try {
+    const db = admin.database();
+
+    // 1. Authorization: Only the creditor (or someone in the group if we want to be lax) can send a reminder
+    if (senderId !== creditorId) {
+       return res.status(403).json({ success: false, error: 'Only the creditor can send a reminder.' });
+    }
+
+    // 2. Fetch Group & Users
+    const [groupSnap, debtorSnap, creditorSnap] = await Promise.all([
+      db.ref(`groups/${groupId}`).get(),
+      db.ref(`users/${debtorId}`).get(),
+      db.ref(`users/${creditorId}`).get()
+    ]);
+
+    if (!groupSnap.exists()) return res.status(404).json({ success: false, error: 'Group not found' });
+    if (!debtorSnap.exists()) return res.status(404).json({ success: false, error: 'Recipient user not found' });
+
+    const group = groupSnap.val();
+    const creditor = creditorSnap.val();
+    const debtor = debtorSnap.val();
+
+    console.log(`🔔 Reminder requested by ${creditor.name} (${creditorId}) for ${debtor.name} (${debtorId}) in ${group.name}`);
+
+    // 3. Send Notifications
+    const notificationPromises = [];
+
+    // B. Determine Debtor Email (Fallback to Auth if not in DB)
+    let debtorEmail = debtor.email;
+    if (!debtorEmail) {
+      console.log(`ℹ️ Email missing in DB for ${debtorId}, fetching from Firebase Auth...`);
+      try {
+        const userRecord = await admin.auth().getUser(debtorId);
+        debtorEmail = userRecord.email;
+        console.log(`✅ Found email in Auth: ${debtorEmail}`);
+      } catch (authErr) {
+        console.warn(`⚠️ Could not fetch email from Auth for ${debtorId}:`, authErr.message);
+      }
+    }
+
+    // A. Push Notification
+    notificationPromises.push(
+      sendOneSignalNotificationInternal({
+        userIds: [debtorId],
+        title: `Payment Reminder: ${group.name}`,
+        body: `${creditor.name} reminded you about the Rs ${amount.toLocaleString()} debt.`,
+        data: { type: 'reminder', groupId, creditorId, amount }
+      }).catch(err => console.error('Reminder Push failed:', err.message))
+    );
+
+    // B. Email Notification
+    if (debtorEmail) {
+       notificationPromises.push(
+         emailService.sendEmailSafe({
+           to: debtorEmail,
+           subject: `Payment Reminder: Rs ${amount} for ${group.name}`,
+           html: emailService.getCommonTemplate(
+             'Payment Reminder',
+             `<p>Hi ${debtor.name},</p>
+              <p><strong>${creditor.name}</strong> is reminding you about an outstanding balance in <strong>${group.name}</strong>.</p>
+              <div class="amount-large">Rs ${amount.toLocaleString()}</div>
+              <p>Please settle up when you can. You can record a payment directly in the app.</p>`,
+             `<a href="https://app.hostelledger.aarx.online/dashboard" class="button">Go to App</a>`,
+             true
+           )
+         }).catch(err => console.error('Reminder Email failed:', err.message))
+       );
+    }
+
+    await Promise.allSettled(notificationPromises);
+
+    res.json({ success: true, message: 'Payment reminder sent successfully.' });
+
+  } catch (error) {
+    console.error('❌ Send reminder error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 // 404 handler - MUST BE LAST
 app.use('*', (req, res) => {
   res.status(404).json({
@@ -5459,6 +5553,8 @@ const setupSupportListeners = () => {
 
   logger.info('🎧 Support system listeners initialized');
 };
+
+
 
 const { startWeeklyReportCron } = require('./services/cronService');
 
