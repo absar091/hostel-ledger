@@ -137,10 +137,15 @@ const syncWalletBalanceToGroups = async (db, userId, balance, isEnabled) => {
           updates[`groups/${groupId}/members/${memberIndex}/walletBalance`] = isEnabled ? balance : null;
         }
       } else {
-        // Object based members
-        const memberKey = Object.keys(members).find(key => members[key].userId === userId || members[key].id === userId);
-        if (memberKey) {
-          updates[`groups/${groupId}/members/${memberKey}/walletBalance`] = isEnabled ? balance : null;
+        // Object based members: fast path O(1)
+        if (members[userId] && (members[userId].userId === userId || members[userId].id === userId)) {
+          updates[`groups/${groupId}/members/${userId}/walletBalance`] = isEnabled ? balance : null;
+        } else {
+          // Fallback O(N) lookup
+          const memberKey = Object.keys(members).find(key => members[key].userId === userId || members[key].id === userId);
+          if (memberKey) {
+            updates[`groups/${groupId}/members/${memberKey}/walletBalance`] = isEnabled ? balance : null;
+          }
         }
       }
     });
