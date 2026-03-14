@@ -48,7 +48,7 @@ class AdminService {
     }
   }
 
-  async updateUserStatus(uid, newStatus) {
+  async updateUserStatus(uid, newStatus, reason = 'Violation of safety guidelines') {
     if (!['active', 'disabled', 'banned'].includes(newStatus)) {
       throw new Error(`Invalid status: ${newStatus}`);
     }
@@ -57,11 +57,30 @@ class AdminService {
       const disableAuth = newStatus === 'disabled' || newStatus === 'banned';
       await admin.auth().updateUser(uid, { disabled: disableAuth });
 
+      // If banned, revoke all tokens to stop active sessions immediately
+      if (newStatus === 'banned') {
+        await admin.auth().revokeRefreshTokens(uid);
+      }
+
       // Update database status
       await admin.database().ref(`users/${uid}`).update({
         accountStatus: newStatus,
-        statusUpdatedAt: admin.database.ServerValue.TIMESTAMP
+        statusUpdatedAt: admin.database.ServerValue.TIMESTAMP,
+        suspensionReason: newStatus === 'banned' ? reason : null
       });
+
+      // Send email based on status
+      try {
+        const userRecord = await admin.auth().getUser(uid);
+        const emailService = require('./emailService');
+        if (newStatus === 'banned') {
+          await emailService.sendAccountSuspendedEmail(userRecord.email, userRecord.displayName || 'User', reason);
+        } else if (newStatus === 'active') {
+          await emailService.sendAccountReactivatedEmail(userRecord.email, userRecord.displayName || 'User');
+        }
+      } catch (emailError) {
+        console.error(`Failed to send status email to ${uid}:`, emailError);
+      }
 
       return { success: true, message: `User status updated to ${newStatus}` };
     } catch (error) {

@@ -20,6 +20,93 @@ import AdminRoute from "@/components/AdminRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import BroadcastBanner from "@/components/BroadcastBanner";
 
+
+// Full-page banned screen - matches app theme
+const BannedScreen = ({ onLogout }: { onLogout: () => void }) => {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { setTimeout(() => setVisible(true), 60); }, []);
+
+  return (
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background px-4 py-10"
+      style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+
+      {/* Subtle top teal bar to match app branding */}
+      <div className="fixed top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg, #10b981, #14b8a6, #10b981)' }} />
+
+      <div
+        className="w-full max-w-sm bg-white rounded-3xl border border-gray-100 overflow-hidden"
+        style={{
+          boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+          transform: visible ? 'translateY(0)' : 'translateY(16px)',
+          opacity: visible ? 1 : 0,
+          transition: 'all 0.4s cubic-bezier(0.34, 1.3, 0.64, 1)',
+        }}
+      >
+        {/* Header area */}
+        <div className="px-6 pt-8 pb-6 text-center border-b border-gray-50">
+          {/* Icon */}
+          <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4 border border-red-100">
+            <svg className="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+          </div>
+
+          {/* Status pill */}
+          <div className="inline-flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-full px-3 py-1 mb-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
+            <span className="text-red-600 text-xs font-semibold uppercase tracking-wide">Account Suspended</span>
+          </div>
+
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Your access has been restricted</h1>
+          <p className="text-sm text-gray-500 leading-relaxed">
+            Our security system detected unusual activity and temporarily suspended your account.
+          </p>
+        </div>
+
+        {/* Info box */}
+        <div className="mx-6 my-5 bg-amber-50 border border-amber-100 rounded-2xl p-4">
+          <div className="flex gap-3">
+            <svg className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+            </svg>
+            <div>
+              <p className="text-sm font-semibold text-amber-800 mb-0.5">Think this is a mistake?</p>
+              <p className="text-xs text-amber-700 leading-relaxed">Contact our support team and we'll review your account within 24 hours.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="px-6 pb-8 flex flex-col gap-3">
+          <a
+            href="mailto:support@aarx.online?subject=Account%20Suspension%20Appeal"
+            className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-2xl text-white text-sm font-semibold"
+            style={{ background: 'linear-gradient(135deg, #10b981, #0d9488)', boxShadow: '0 4px 14px rgba(16,185,129,0.3)' }}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Contact Support
+          </a>
+
+          <button
+            onClick={onLogout}
+            className="w-full py-3 px-5 rounded-2xl text-sm font-medium text-gray-500 bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors"
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <p className="mt-5 text-xs text-gray-400 text-center">
+        Hostel Ledger &middot; <a href="mailto:support@aarx.online" className="text-emerald-600 hover:underline">support@aarx.online</a>
+      </p>
+    </div>
+  );
+};
+
+
 // Direct imports for better reliability in production
 import Index from "./pages/Index";
 import Groups from "./pages/Groups";
@@ -123,20 +210,14 @@ const SplashScreen = ({ offline = false }: { offline?: boolean }) => {
 
 // Protected Route wrapper with mobile-first loading and email verification
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading, is2FAVerified } = useFirebaseAuth();
+  const { user, isLoading, is2FAVerified, logout } = useFirebaseAuth();
   const [offline, setOffline] = useState(!navigator.onLine);
 
   useEffect(() => {
-    const handleOnline = () => {
-      setOffline(false);
-    };
-    const handleOffline = () => {
-      setOffline(true);
-    };
-
+    const handleOnline = () => { setOffline(false); };
+    const handleOffline = () => { setOffline(true); };
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
@@ -155,13 +236,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       try {
         const cachedUser = localStorage.getItem('cachedUser');
         if (cachedUser) {
-          // User has cached data but auth context hasn't loaded it yet
-          // This shouldn't happen because FirebaseAuthContext loads it
-          // But if it does, show loading screen briefly
           console.log('⚠️ Cached user exists but not loaded in context yet');
           return <SplashScreen offline={true} />;
         } else {
-          // No cached user - show offline screen
           console.log('❌ No cached user found - showing offline screen');
           return <OfflineScreen onRetry={() => window.location.reload()} />;
         }
@@ -172,6 +249,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
     // No user and online - redirect to login
     return <Navigate to="/login" replace />;
+  }
+
+  // 🚨 Banned user check — show ban screen before anything else
+  if (user.accountStatus === 'banned') {
+    return <BannedScreen onLogout={logout} />;
   }
 
   // User is loaded - check 2FA first

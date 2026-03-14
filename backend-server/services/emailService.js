@@ -267,6 +267,10 @@ const getCommonTemplate = (title, content, actionButton = '', showUnsubscribe = 
 // ============================================================================
 
 const emailService = {
+    // Helper access for templates
+    getCommonTemplate,
+    escapeHtml,
+    
     isConnectionVerified: false,
     /**
      * Verify SMTP credentials on startup (non-blocking)
@@ -651,8 +655,63 @@ const emailService = {
     },
 
     /**
-     * Send Support Ticket Update (Transactional)
+     * Send Account Suspended Alert
      */
+    sendAccountSuspendedEmail: async (email, name, reason) => {
+        const safeName = escapeHtml(name);
+        const safeReason = escapeHtml(reason);
+        
+        const content = `
+        <p>Hi ${safeName},</p>
+        <p>We are writing to inform you that your Hostel Ledger account has been <strong>suspended</strong> due to a violation of our security policies.</p>
+        
+        <div style="background-color: #fff5f5; padding: 20px; border-radius: 12px; margin: 24px 0; border: 1px solid #feb2b2;">
+            <p style="margin: 0; color: #c53030; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px;">Reason for Suspension</p>
+            <p style="margin: 8px 0 0 0; color: #2d3748; font-size: 15px;">${safeReason}</p>
+        </div>
+
+        <p>Our automated fraud detection system flagged your account for suspicious activity. While this suspension is automated for safety, we are happy to review your case if you believe this was a mistake.</p>
+        
+        <p>To appeal this decision, please contact our support team with your account details.</p>
+        `;
+
+        const actionButton = `<a href="mailto:support@aarx.online" class="button" style="background-color: #c53030;">Contact Support</a>`;
+
+        return sendEmailSafe({
+            to: email,
+            subject: 'Action Required: Your Account has been Suspended',
+            html: getCommonTemplate('Account Suspended', content, actionButton, false)
+        });
+    },
+
+    /**
+     * Send Account Reactivated Email
+     */
+    sendAccountReactivatedEmail: async (email, name) => {
+        const safeName = escapeHtml(name);
+
+        const content = `
+        <p>Hi ${safeName},</p>
+        <p>Great news! Your Hostel Ledger account has been <strong>reactivated</strong> and you now have full access again.</p>
+
+        <div style="background-color: #f0fff4; padding: 20px; border-radius: 12px; margin: 24px 0; border: 1px solid #9ae6b4;">
+            <p style="margin: 0; color: #276749; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px;">Account Status</p>
+            <p style="margin: 8px 0 0 0; color: #2d3748; font-size: 15px;">Active &amp; Fully Restored</p>
+        </div>
+
+        <p>If you have any questions or concerns, our support team is always here to help.</p>
+        <p>Thank you for your patience.</p>
+        `;
+
+        const actionButton = `<a href="https://app.hostelledger.aarx.online" class="button" style="background-color: #276749;">Go to App</a>`;
+
+        return sendEmailSafe({
+            to: email,
+            subject: 'Your Hostel Ledger Account Has Been Reactivated',
+            html: getCommonTemplate('Account Reactivated', content, actionButton, false)
+        });
+    },
+
     sendSupportTicketUpdate: async (userEmail, data) => {
         // data = { userName, ticketNumber, status, issueSummary, latestMessage }
         const safeName = escapeHtml(data.userName);

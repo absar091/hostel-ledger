@@ -35,6 +35,7 @@ const {
 } = require('./utils/validation');
 const { sanitize } = require('./utils/sanitize');
 const { getDeviceFromUA, getLocationFromIP } = require('./utils/deviceInfo');
+const { getCurrencySymbol } = require('./utils/currency');
 const detectFraud = require('./middleware/fraudDetection');
 // Note: web-push removed - using OneSignal for push notifications
 require('dotenv').config();
@@ -616,7 +617,7 @@ app.get('/api/2fa/status', (req, res) => {
  * Setup 2FA
  * Generates a secret and returns a QR code
  */
-app.post('/api/2fa/setup', (req, res, next) => { console.log(`🔹 2FA Setup Request from IP: ${req.ip}`); next(); }, authenticate, async (req, res) => {
+app.post('/api/2fa/setup', detectFraud, (req, res, next) => { console.log(`🔹 2FA Setup Request from IP: ${req.ip}`); next(); }, authenticate, async (req, res) => {
   try {
     const userId = req.user.uid;
 
@@ -652,7 +653,7 @@ app.post('/api/2fa/setup', (req, res, next) => { console.log(`🔹 2FA Setup Req
  * Verify 2FA Setup
  * Validates the token against the temp secret and enables 2FA
  */
-app.post('/api/2fa/verify-setup', authenticate, async (req, res) => {
+app.post('/api/2fa/verify-setup', detectFraud, authenticate, async (req, res) => {
   try {
     const userId = req.user.uid;
     const { token } = req.body;
@@ -721,7 +722,7 @@ app.post('/api/2fa/verify-setup', authenticate, async (req, res) => {
 /**
  * Verify 2FA Token (Login Challenge)
  */
-app.post('/api/2fa/verify', authenticate, async (req, res) => {
+app.post('/api/2fa/verify', detectFraud, authenticate, async (req, res) => {
   try {
     const userId = req.user.uid;
     const { token, isTrusted, deviceInfo } = req.body;
@@ -771,6 +772,7 @@ app.post('/api/2fa/verify', authenticate, async (req, res) => {
       res.json({
         success: true,
         message: 'Verification successful',
+        location: await getLocationFromIP(req.ip),
         deviceToken: deviceToken
       });
     } else {
@@ -786,7 +788,7 @@ app.post('/api/2fa/verify', authenticate, async (req, res) => {
 /**
  * Check if a device is trusted
  */
-app.post('/api/2fa/check-trust', authenticate, async (req, res) => {
+app.post('/api/2fa/check-trust', detectFraud, authenticate, async (req, res) => {
   try {
     const userId = req.user.uid;
     const { deviceToken } = req.body;
@@ -824,7 +826,7 @@ app.post('/api/2fa/check-trust', authenticate, async (req, res) => {
 /**
  * Initiate 2FA Reset (Email Link)
  */
-app.post('/api/2fa/initiate-reset', strictEmailLimiter, async (req, res) => {
+app.post('/api/2fa/initiate-reset', detectFraud, strictEmailLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -890,7 +892,7 @@ app.post('/api/2fa/initiate-reset', strictEmailLimiter, async (req, res) => {
 /**
  * Complete 2FA Reset (Disable via Token)
  */
-app.post('/api/2fa/complete-reset', generalLimiter, async (req, res) => {
+app.post('/api/2fa/complete-reset', detectFraud, generalLimiter, async (req, res) => {
   try {
     const { uid, token } = req.body;
 
@@ -954,7 +956,7 @@ app.post('/api/2fa/complete-reset', generalLimiter, async (req, res) => {
 /**
  * Disable 2FA
  */
-app.post('/api/2fa/disable', authenticate, async (req, res) => {
+app.post('/api/2fa/disable', detectFraud, authenticate, async (req, res) => {
   try {
     const userId = req.user.uid;
     const { token } = req.body;
@@ -1058,7 +1060,7 @@ app.post('/api/delete-image', authenticate, async (req, res) => {
 /**
  * Create Group Endpoint
  */
-app.post('/api/create-group', createLimiter, authenticate, async (req, res) => {
+app.post('/api/create-group', detectFraud, createLimiter, authenticate, async (req, res) => {
   // Input Validation
   const validationError = validateCreateGroup(req.body);
   if (validationError) {
@@ -1404,7 +1406,7 @@ app.post('/api/get-valid-user-details', userSearchLimiter, authenticate, async (
  * AI Expense Parsing Endpoint
  * Uses Gemini 2.5 Flash to extract expense data from natural language
  */
-app.post('/api/ai/parse-expense', generalLimiter, authenticate, async (req, res) => {
+app.post('/api/ai/parse-expense', detectFraud, generalLimiter, authenticate, async (req, res) => {
   if (!aiModels || aiModels.length === 0) {
     return res.status(503).json({ success: false, error: 'AI service not configured on server' });
   }
@@ -1485,7 +1487,7 @@ app.post('/api/ai/parse-expense', generalLimiter, authenticate, async (req, res)
  * AI Audio Expense Parsing Endpoint
  * Uses Gemini Multimodal Audio to extract expense data from voice recordings
  */
-app.post('/api/ai/parse-expense-audio', generalLimiter, authenticate, async (req, res) => {
+app.post('/api/ai/parse-expense-audio', detectFraud, generalLimiter, authenticate, async (req, res) => {
   if (!aiModels || aiModels.length === 0) {
     return res.status(503).json({ success: false, error: 'AI service not configured on server' });
   }
@@ -1696,7 +1698,7 @@ app.get('/api/ai/insights', generalLimiter, authenticate, async (req, res) => {
 // ============================================
 // RESPOND TO INVITATION (Accept/Decline)
 // ============================================
-app.post('/api/respond-invitation', authenticate, async (req, res) => {
+app.post('/api/respond-invitation', detectFraud, authenticate, async (req, res) => {
   try {
     const userId = req.user.uid;
     const { invitationId, accept } = req.body;
@@ -3848,7 +3850,7 @@ app.post('/api/cleanup-temp-members', generalLimiter, adminAuth, async (req, res
 // INVITATION SYSTEM ENDPOINTS
 // ============================================
 
-app.post('/api/send-invitation', generalLimiter, async (req, res) => {
+app.post('/api/send-invitation', detectFraud, generalLimiter, async (req, res) => {
   try {
     const { groupId, inviteeUsername } = req.body;
     const senderUid = req.user.uid;
@@ -4150,7 +4152,7 @@ app.post('/api/send-external-invitation', strictEmailLimiter, async (req, res) =
 // ============================================
 // DELETE GROUP
 // ============================================
-app.post('/api/delete-group', authenticate, async (req, res) => {
+app.post('/api/delete-group', detectFraud, authenticate, async (req, res) => {
   try {
     const userId = req.user.uid;
     const { groupId } = req.body;
@@ -4215,7 +4217,7 @@ app.post('/api/delete-group', authenticate, async (req, res) => {
 // ============================================
 // REMOVE MEMBER FROM GROUP
 // ============================================
-app.post('/api/remove-member', authenticate, async (req, res) => {
+app.post('/api/remove-member', detectFraud, authenticate, async (req, res) => {
   try {
     const userId = req.user.uid;
     const { groupId, memberId } = req.body;
@@ -4290,7 +4292,7 @@ app.post('/api/remove-member', authenticate, async (req, res) => {
 // ============================================
 // UPDATE GROUP (Name, Emoji, etc.)
 // ============================================
-app.post('/api/update-group', authenticate, async (req, res) => {
+app.post('/api/update-group', detectFraud, authenticate, async (req, res) => {
   try {
     const userId = req.user.uid;
     let { groupId, name, emoji } = req.body;
@@ -4372,7 +4374,7 @@ app.post('/api/update-group', authenticate, async (req, res) => {
 // ============================================
 // JOIN GROUP (General Join by ID)
 // ============================================
-app.post('/api/join-group', authenticate, async (req, res) => {
+app.post('/api/join-group', detectFraud, authenticate, async (req, res) => {
   try {
     const userId = req.user.uid;
     const { groupId } = req.body;
@@ -4484,7 +4486,7 @@ app.post('/api/sync-balance-to-groups', authenticate, async (req, res) => {
 // ============================================
 // MERGE MEMBERS (Combine duplicate profiles)
 // ============================================
-app.post('/api/merge-members', authenticate, async (req, res) => {
+app.post('/api/merge-members', detectFraud, authenticate, async (req, res) => {
   try {
     const userId = req.user.uid;
     const { groupId, fromMemberId, toMemberId } = req.body;
@@ -4774,7 +4776,7 @@ app.post('/api/cleanup-unverified-users', adminAuth, async (req, res) => {
  * Creates a pending P2P transaction. 
  * Money does NOT move until the receiver accepts.
  */
-app.post('/api/send-money', authenticate, async (req, res) => {
+app.post('/api/send-money', detectFraud, authenticate, async (req, res) => {
   let { recipientUsername, amount, note } = req.body;
 
   // Validate Length
@@ -4902,7 +4904,7 @@ app.post('/api/send-money', authenticate, async (req, res) => {
  * Accepts or Rejects a P2P transaction.
  * If accepted, updates wallet balances atomically.
  */
-app.post('/api/respond-money-request', authenticate, async (req, res) => {
+app.post('/api/respond-money-request', detectFraud, authenticate, async (req, res) => {
   const { transactionId, accept } = req.body;
   const responderUid = req.user.uid;
 
@@ -5084,7 +5086,7 @@ const sendSystemMessage = async (db, groupId, event, actorName, data = {}) => {
 };
 
 // Send Message endpoint
-app.post('/api/send-message', chatLimiter, authenticate, async (req, res) => {
+app.post('/api/send-message', detectFraud, chatLimiter, authenticate, async (req, res) => {
   try {
     let { groupId, text, expenseId } = req.body;
     const currentUserId = req.user.uid;
@@ -5278,7 +5280,7 @@ app.post('/api/get-messages', generalLimiter, authenticate, async (req, res) => 
  * Send Payment Reminder (Manual)
  * Triggered by user to remind someone of a debt
  */
-app.post('/api/reminders/send', generalLimiter, authenticate, async (req, res) => {
+app.post('/api/reminders/send', detectFraud, generalLimiter, authenticate, async (req, res) => {
   const { groupId, debtorId, creditorId, amount, currency = 'PKR' } = req.body;
   const senderId = req.user.uid;
 
@@ -5304,9 +5306,15 @@ app.post('/api/reminders/send', generalLimiter, authenticate, async (req, res) =
     if (!groupSnap.exists()) return res.status(404).json({ success: false, error: 'Group not found' });
     if (!debtorSnap.exists()) return res.status(404).json({ success: false, error: 'Recipient user not found' });
 
+    if (!creditorSnap.exists()) return res.status(404).json({ success: false, error: 'Creditor user not found' });
+
     const group = groupSnap.val();
     const creditor = creditorSnap.val();
     const debtor = debtorSnap.val();
+
+    // Ensure amount is a number for toLocaleString
+    const numericAmount = Number(amount) || 0;
+    const symbol = getCurrencySymbol(currency);
 
     console.log(`🔔 Reminder requested by ${creditor.name} (${creditorId}) for ${debtor.name} (${debtorId}) in ${group.name}`);
 
@@ -5331,8 +5339,8 @@ app.post('/api/reminders/send', generalLimiter, authenticate, async (req, res) =
       sendOneSignalNotificationInternal({
         userIds: [debtorId],
         title: `Payment Reminder: ${group.name}`,
-        body: `${creditor.name} reminded you about the Rs ${amount.toLocaleString()} debt.`,
-        data: { type: 'reminder', groupId, creditorId, amount }
+        body: `${creditor.name} reminded you about the ${symbol} ${numericAmount.toLocaleString()} debt.`,
+        data: { type: 'reminder', groupId, creditorId, amount: numericAmount }
       }).catch(err => console.error('Reminder Push failed:', err.message))
     );
 

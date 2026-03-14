@@ -33,14 +33,23 @@ const callApi = async (endpoint: string, body: any, token?: string, method: stri
 
         if (!response.ok) {
             let errorMsg = `API call failed: ${response.statusText}`;
+            let errorCode = '';
             try {
                 const errorData = await response.json();
-                errorMsg = errorData.error || errorMsg;
+                // Use the specific message first, fall back to error field
+                errorMsg = errorData.message || errorData.error || errorMsg;
+                errorCode = errorData.code || '';
             } catch (e) {
                 // Not a JSON error
             }
             console.error(`[API] ${endpoint} failed:`, errorMsg);
-            throw new Error(errorMsg);
+            // Attach the code to the error so callers can handle USER_BANNED specially
+            const err = new Error(errorMsg) as any;
+            err.code = errorCode;
+            if (errorCode === 'USER_BANNED') {
+                err.isBanned = true;
+            }
+            throw err;
         }
 
         const contentType = response.headers.get('Content-Type');

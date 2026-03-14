@@ -38,6 +38,7 @@ const getLocationFromIP = async (ip) => {
             city: 'Unknown',
             region: 'Unknown',
             country: 'Unknown',
+            isp: 'Unknown',
             timezone: 'UTC'
         };
     }
@@ -48,6 +49,7 @@ const getLocationFromIP = async (ip) => {
             city: 'Localhost',
             region: 'Local',
             country: 'Local',
+            isp: 'Internal Loopback',
             timezone: 'UTC'
         };
     }
@@ -63,6 +65,7 @@ const getLocationFromIP = async (ip) => {
                 city: 'Unknown',
                 region: 'Unknown',
                 country: 'Unknown',
+                isp: 'Unknown',
                 timezone: 'UTC'
             };
         }
@@ -71,6 +74,7 @@ const getLocationFromIP = async (ip) => {
             city: data.city || 'Unknown',
             region: data.regionName || 'Unknown',
             country: data.country || 'Unknown',
+            isp: data.isp || 'Unknown',
             timezone: data.timezone || 'UTC'
         };
     } catch (error) {
@@ -79,6 +83,7 @@ const getLocationFromIP = async (ip) => {
             city: 'Unknown',
             region: 'Unknown',
             country: 'Unknown',
+            isp: 'Unknown',
             timezone: 'UTC'
         };
     }
