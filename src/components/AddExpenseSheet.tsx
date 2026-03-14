@@ -199,7 +199,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
             amount: String(p.amount)
           })));
           // Set primary payer for consistency
-          const primary = payers.reduce((prev: any, curr: any) => (prev.amount > curr.amount) ? prev : curr);
+          const primary = payers.reduce((prev: any, curr: any) => (parseFloat(prev.amount) > parseFloat(curr.amount)) ? prev : curr);
           setPaidBy(primary.id);
         } else {
           setPayerMode('single');
@@ -274,7 +274,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                 id: p.id,
                 amount: String(p.amount)
               })));
-              const primary = payers.reduce((prev: any, curr: any) => (prev.amount > curr.amount) ? prev : curr);
+              const primary = payers.reduce((prev: any, curr: any) => (parseFloat(String(prev.amount)) > parseFloat(String(curr.amount))) ? prev : curr);
               setPaidBy(primary.id);
             } else {
               setPayerMode('single');
@@ -364,7 +364,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                   id: p.id,
                   amount: String(p.amount)
                 })));
-                const primary = payers.reduce((prev: any, curr: any) => (prev.amount > curr.amount) ? prev : curr);
+                const primary = payers.reduce((prev: any, curr: any) => (parseFloat(String(prev.amount)) > parseFloat(String(curr.amount))) ? prev : curr);
                 setPaidBy(primary.id);
               } else {
                 setPayerMode('single');
@@ -632,7 +632,14 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
     }
   };
 
-  const paidByName = members.find((m) => m.id === paidBy)?.name;
+  const paidByName = useMemo(() => {
+    if (payerMode === 'multiple') {
+      return t('sheets.add_expense.multiple_payers');
+    }
+    const name = members.find((m) => m.id === paidBy)?.name;
+    const you = t('sheets.add_expense.you');
+    return name === you ? you : (name || you);
+  }, [members, paidBy, payerMode, t]);
   const selectedGroupData = groups.find((g) => g.id === selectedGroup);
 
   // Calculate split details for display
@@ -1246,37 +1253,65 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                     </div>
                   ) : (
                     <>
-                      <div className="text-sm text-white/90 font-bold">
-                        {t('sheets.add_expense.paid_by_label')} {paidByName} • {t('sheets.add_expense.participants_label')} {participants.length}
+                      <div className="text-sm text-white/95 font-bold mb-3 border-b border-white/10 pb-2">
+                        {t('sheets.add_expense.paid_by_label')} <span className="text-white font-black">{paidByName}</span> • {t('sheets.add_expense.participants_label')} <span className="text-white font-black">{participants.length}</span>
                       </div>
-                      <div className="text-sm text-white/90 font-bold">
-                        {formatAmount(splitDetails.perPerson)} {t('sheets.add_expense.per_person')}
+
+                      {payerMode === 'multiple' && multiPayers.length > 0 && (
+                        <div className="space-y-2 mb-4 bg-black/10 p-4 rounded-2xl border border-white/5">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-2">Payer Breakdown</p>
+                          {multiPayers.map(p => {
+                            const member = members.find(m => m.id === p.id);
+                            const name = p.id === user?.uid ? t('sheets.add_expense.you') : (member?.name || 'Unknown');
+                            return (
+                              <div key={p.id} className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-xl">
+                                <span className="text-xs font-bold truncate pr-2">{name}</span>
+                                <span className="text-xs font-black whitespace-nowrap">{formatAmount(parseFloat(p.amount))}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      <div className="text-xs text-white/90 font-bold mb-4">
+                        {formatAmount(splitDetails.perPerson)} <span className="text-white/70">{t('sheets.add_expense.per_person')}</span>
                       </div>
 
                       {splitDetails.isCurrentUserPayer ? (
                         <>
                           {splitDetails.toReceive > 0 && (
-                            <div className="text-emerald-200 font-black mt-3 text-lg">
-                              You will receive {formatAmount(splitDetails.toReceive)}
+                            <div className="bg-emerald-400/20 p-4 rounded-2xl border border-emerald-400/30">
+                              <p className="text-[10px] font-black uppercase text-emerald-200/70 mb-1 tracking-wide">Net Settlement</p>
+                              <div className="text-emerald-200 font-black text-lg leading-none">
+                                You will receive {formatAmount(splitDetails.toReceive)}
+                              </div>
                             </div>
                           )}
                         </>
                       ) : (
-                        <>
-                          <div className="text-emerald-200 font-black mt-3 text-lg">
-                            {paidByName} will receive {formatAmount(splitDetails.toReceive > 0 ? splitDetails.toReceive : splitDetails.perPerson * splitDetails.othersCount)}
+                        <div className="space-y-3">
+                          <div className="bg-emerald-400/10 p-4 rounded-2xl border border-white/5">
+                            <p className="text-[10px] font-black uppercase text-white/50 mb-1 tracking-wide">Group Summary</p>
+                            <div className="text-emerald-200 font-black text-lg leading-none">
+                              {paidByName} will receive {formatAmount(splitDetails.toReceive > 0 ? splitDetails.toReceive : splitDetails.perPerson * splitDetails.othersCount)}
+                            </div>
                           </div>
+                          
                           {splitDetails.toGive > 0 && (
-                            <div className="text-orange-200 font-black mt-1 text-lg">
-                              You owe {formatAmount(splitDetails.toGive)}
+                            <div className="bg-orange-400/20 p-4 rounded-2xl border border-orange-400/30">
+                              <p className="text-[10px] font-black uppercase text-orange-200/70 mb-1 tracking-wide">Your Action</p>
+                              <div className="text-orange-200 font-black text-lg leading-none">
+                                You owe {formatAmount(splitDetails.toGive)}
+                              </div>
                             </div>
                           )}
+
                           {!splitDetails.isCurrentUserParticipant && (
-                            <div className="text-white/70 font-bold mt-1 text-sm">
-                              You are not a participant
+                            <div className="text-white/60 font-bold text-xs bg-white/5 p-3 rounded-xl text-center">
+                              You are not a participant in this expense
                             </div>
                           )}
-                        </>
+                        </div>
                       )}
                     </>
                   )}

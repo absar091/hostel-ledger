@@ -255,7 +255,9 @@ const resources = {
                     "when_settled": "When Settled",
                     "when_settled_desc": "Member will be removed when their balance reaches zero.",
                     "until_settled": "Until Settled",
-                    "seven_days": "7 Days"
+                    "seven_days": "7 Days",
+                    "multiple_payers": "Multiple Payers",
+                    "you": "You"
                 },
                 "record_payment": {
                     "title": "Record Payment",
@@ -1072,7 +1074,9 @@ const resources = {
                     "when_settled": "جب حساب برابر ہو جائے",
                     "when_settled_desc": "ممبر کو تب ہٹایا جائے گا جب ان کا بیلنس صفر ہو جائے گا۔",
                     "until_settled": "حساب برابر ہونے تک",
-                    "seven_days": "7 دن"
+                    "seven_days": "7 دن",
+                    "multiple_payers": "متعدد ادا کرنے والے",
+                    "you": "آپ"
                 },
                 "record_payment": {
                     "title": "ادائیگی ریکارڈ کریں",
