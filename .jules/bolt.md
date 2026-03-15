@@ -1,0 +1,3 @@
+## 2024-05-24 - Memoize Context Calculation Functions
+**Learning:** In React Context providers (like `FirebaseAuthContext`), exposed calculation functions such as `getSettlements` or `getTotalToReceive` must be wrapped in `useCallback` to maintain referential equality. Otherwise, they trigger unnecessary performance-degrading re-renders in downstream consumer components every time the context state changes, even if the result of the function hasn't changed.
+**Action:** Always wrap utility/calculation functions exposed by a React Context in `useCallback` with the appropriate dependency array to prevent downstream re-renders.
