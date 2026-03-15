@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from './ui/sheet';
 import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
-import { Loader2 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { Loader2 } from '@/lib/icons';
+import { toast } from 'sonner';
 
 interface ReportSheetProps {
   isOpen: boolean;
@@ -45,7 +45,7 @@ export function ReportSheet({ isOpen, onClose, targetId, targetType }: ReportShe
       toast.success('Report submitted successfully. Our team will review this shortly.');
       onClose();
       setDetails('');
-    } catch (error: unknown) {
+    } catch (error: any) {
       toast.error(error.message || 'An error occurred');
     } finally {
       setLoading(false);

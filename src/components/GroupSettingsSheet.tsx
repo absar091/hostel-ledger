@@ -59,6 +59,7 @@ const GroupSettingsSheet = ({
   onRemoveMember,
   onUpdateGroup,
   onDeleteGroup,
+  onLeaveGroup,
   isOwner = false,
 }: GroupSettingsSheetProps) => {
   const [showAddMember, setShowAddMember] = useState(false);

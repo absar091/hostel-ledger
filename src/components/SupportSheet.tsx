@@ -3,8 +3,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
 
 
-import { Loader2 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { Loader2 } from '@/lib/icons';
+import { toast } from 'sonner';
 
 interface SupportSheetProps {
   isOpen: boolean;
@@ -47,7 +47,7 @@ export function SupportSheet({ isOpen, onClose }: SupportSheetProps) {
       const data = await response.json();
       setTicketId(data.ticketId);
       toast.success('Support ticket submitted!');
-    } catch (error: unknown) {
+    } catch (error: any) {
       toast.error(error.message || 'An error occurred');
     } finally {
       setLoading(false);
@@ -118,10 +118,6 @@ export function SupportSheet({ isOpen, onClose }: SupportSheetProps) {
                 disabled={loading}
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-                {loading ? 'Submitting...' : 'Submit Ticket'}
-              </button>
-            </form>
-                {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                 {loading ? 'Submitting...' : 'Submit Ticket'}
               </button>
             </form>

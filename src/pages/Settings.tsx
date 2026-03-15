@@ -7,24 +7,16 @@ import DesktopHeader from '@/components/DesktopHeader';
 import AppContainer from '@/components/AppContainer';
 import BottomNav from '@/components/BottomNav';
 import {
-    Bell,
     Mail,
     Smartphone,
-    ArrowLeft,
-    Shield,
     Eye,
     ChevronRight,
-    Lock,
-    User,
     Info,
-    MessageCircle,
     Check,
-    LogOut,
-    Share2
-,
-  MessageCircle,
-  ShieldAlert
-} from 'lucide-react';
+    Globe,
+    DollarSign,
+    Download
+} from '@/lib/icons';
 import { useNavigate } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
 import { useFileExport } from "@/hooks/useFileExport";
@@ -37,10 +29,6 @@ import { getCurrency, DEFAULT_CURRENCY } from '@/lib/currency';
 import { getLanguage, DEFAULT_LANGUAGE } from '@/lib/languages';
 import CurrencySelectionSheet from '@/components/CurrencySelectionSheet';
 import LanguageSelectionSheet from '@/components/LanguageSelectionSheet';
-import { Globe, DollarSign, Download ,
-  MessageCircle,
-  ShieldAlert
-} from 'lucide-react';
 import MobileHeader from '@/components/MobileHeader';
 
 const Settings = () => {

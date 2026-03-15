@@ -55,5 +55,19 @@ export {
   FileText,
   Image as ImageIcon,
   Paperclip,
-  Trash2
+  Trash2,
+  AlertTriangle,
+  History,
+  Activity,
+  CheckCircle2,
+  LockKeyhole,
+  UserPlus,
+  ShieldAlert,
+  ShieldCheck,
+  Server,
+  Database,
+  Terminal,
+  FileSearch,
+  Globe,
+  DollarSign
 } from "lucide-react";

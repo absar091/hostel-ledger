@@ -68,6 +68,7 @@ router.post('/report', async (req, res) => {
 
     await reportRef.set({
       reportedBy: uid,
+      reporterName: req.user.displayName || 'Anonymous',
       targetId,
       targetType,
       reason,

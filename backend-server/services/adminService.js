@@ -73,13 +73,18 @@ class AdminService {
       try {
         const userRecord = await admin.auth().getUser(uid);
         const emailService = require('./emailService');
+        
+        console.log(`📧 Attempting to send status email for user ${uid}. Status: ${newStatus}, Email: ${userRecord.email}`);
+        
         if (newStatus === 'banned') {
+          console.log(`🚫 Sending account suspended email to ${userRecord.email}`);
           await emailService.sendAccountSuspendedEmail(userRecord.email, userRecord.displayName || 'User', reason);
         } else if (newStatus === 'active') {
+          console.log(`✅ Sending account reactivation email to ${userRecord.email}`);
           await emailService.sendAccountReactivatedEmail(userRecord.email, userRecord.displayName || 'User');
         }
       } catch (emailError) {
-        console.error(`Failed to send status email to ${uid}:`, emailError);
+        console.error(`❌ Failed to send status email to ${uid}:`, emailError);
       }
 
       return { success: true, message: `User status updated to ${newStatus}` };
@@ -184,6 +189,12 @@ class AdminService {
           read: false
         };
       });
+
+      updates['settings/broadcast'] = {
+        title,
+        message,
+        timestamp: timestamp
+      };
 
       if (Object.keys(updates).length > 0) {
         await admin.database().ref().update(updates);
@@ -333,23 +344,80 @@ class AdminService {
 
   async getTickets() {
     try {
-      // Support tickets are stored under supportTickets/$uid/$ticketId
       const ticketsSnapshot = await admin.database().ref('supportTickets').once('value');
       const tickets = [];
       if (ticketsSnapshot.exists()) {
-        ticketsSnapshot.forEach(userNode => {
-          userNode.forEach(ticketNode => {
-            tickets.push({ 
-              id: ticketNode.key, 
-              userId: userNode.key,
-              ...ticketNode.val() 
+        const ticketsData = ticketsSnapshot.val();
+        for (const userId in ticketsData) {
+          for (const ticketId in ticketsData[userId]) {
+            tickets.push({
+              id: ticketId,
+              userId: userId,
+              ...ticketsData[userId][ticketId]
             });
-          });
-        });
+          }
+        }
       }
       return tickets.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
     } catch (error) {
       console.error('Error fetching tickets:', error);
+      throw error;
+    }
+  }
+
+  async listUsers() {
+    try {
+      // 1. Fetch all users from Auth (limited to 1000 for safety, but usually sufficient for this app)
+      const listUsersResult = await admin.auth().listUsers(1000);
+      const authUsers = listUsersResult.users;
+
+      // 2. Fetch all users from Database
+      const usersSnapshot = await admin.database().ref('users').once('value');
+      const dbUsers = usersSnapshot.val() || {};
+
+      // 3. Merge data
+      const mergedUsers = authUsers.map(user => {
+        const dbData = dbUsers[user.uid] || {};
+        return {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || dbData.displayName || 'No Name',
+          disabled: user.disabled,
+          role: dbData.role || 'user',
+          accountStatus: dbData.accountStatus || (user.disabled ? 'disabled' : 'active'),
+          walletBalance: dbData.walletBalance || 0,
+          createdAt: user.metadata.creationTime,
+          lastSignIn: user.metadata.lastSignInTime
+        };
+      });
+
+      return mergedUsers;
+    } catch (error) {
+      console.error('Error listing users:', error);
+      throw error;
+    }
+  }
+
+  async listGroups() {
+    try {
+      const groupsSnapshot = await admin.database().ref('groups').once('value');
+      const groupsData = groupsSnapshot.val() || {};
+      
+      const groups = [];
+      for (const groupId in groupsData) {
+        const group = groupsData[groupId];
+        groups.push({
+          id: groupId,
+          name: group.name,
+          emoji: group.emoji,
+          createdAt: group.createdAt,
+          memberCount: Object.keys(group.members || {}).length,
+          members: group.members // Return for detailed view
+        });
+      }
+      return groups.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    } catch (error) {
+      console.error('Error listing groups:', error);
       throw error;
     }
   }
@@ -380,15 +448,32 @@ class AdminService {
       const notificationId = `ticket_reply_${ticketId}_${Date.now()}`;
       await admin.database().ref(`notifications/${userId}/${notificationId}`).set({
         type: 'support_reply',
-        title: `Reply to Ticket #${ticketId}`,
+        title: `Reply to Ticket ${ticketData.ticketNumber || '#' + ticketId.substring(0, 6)}`,
         message: adminReply,
         createdAt: admin.database.ServerValue.TIMESTAMP,
         read: false
       });
-
-      return { success: true, message: 'Replied to ticket successfully.' };
+      return { success: true };
     } catch (error) {
       console.error('Error replying to ticket:', error);
+      throw error;
+    }
+  }
+
+  async updateTicketStatus(userId, ticketId, newStatus) {
+    try {
+      const ticketRef = admin.database().ref(`supportTickets/${userId}/${ticketId}`);
+      const ticketSnapshot = await ticketRef.once('value');
+      if (!ticketSnapshot.exists()) throw new Error('Ticket not found');
+
+      await ticketRef.update({
+        status: newStatus,
+        updatedAt: admin.database.ServerValue.TIMESTAMP
+      });
+
+      return { success: true, message: `Ticket status updated to ${newStatus}` };
+    } catch (error) {
+      console.error('Error updating ticket status:', error);
       throw error;
     }
   }

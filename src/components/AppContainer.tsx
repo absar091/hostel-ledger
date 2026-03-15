@@ -15,7 +15,7 @@ const AppContainer = ({ children, className }: AppContainerProps) => {
   return (
     <div className={cn(
       "min-h-screen bg-white pb-24 lg:pb-0 transition-all duration-300",
-      isOpen ? "lg:ml-64" : "lg:ml-20",
+      isOpen ? "lg:ml-72" : "lg:ml-20",
       className
     )}>
       {children}

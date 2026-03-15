@@ -10,7 +10,10 @@ export const usePWAInstall = () => {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [platform, setPlatform] = useState<'iOS' | 'Android' | 'Desktop' | 'Unknown'>('Unknown');
 
   useEffect(() => {
     // Check if already installed
@@ -21,15 +24,23 @@ export const usePWAInstall = () => {
       setIsInstalled(standalone || isIOSStandalone);
     };
 
-    // Check if iOS
-    const checkIOS = () => {
+    // Check platform
+    const checkPlatform = () => {
       const userAgent = window.navigator.userAgent.toLowerCase();
       const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
+      const isAndroidDevice = /android/.test(userAgent);
+      
       setIsIOS(isIOSDevice);
+      setIsAndroid(isAndroidDevice);
+      setIsDesktop(!isIOSDevice && !isAndroidDevice);
+      
+      if (isIOSDevice) setPlatform('iOS');
+      else if (isAndroidDevice) setPlatform('Android');
+      else setPlatform('Desktop');
     };
 
     checkInstalled();
-    checkIOS();
+    checkPlatform();
 
     // Listen for beforeinstallprompt event (Android/Desktop Chrome)
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -86,7 +97,15 @@ export const usePWAInstall = () => {
     isInstallable,
     isInstalled,
     isIOS,
+    isAndroid,
+    isDesktop,
     isStandalone,
+    platform,
     promptInstall,
+    showInstallPrompt: promptInstall,
+    dismissPrompt: () => {
+      setInstallPrompt(null);
+      setIsInstallable(false);
+    }
   };
 };

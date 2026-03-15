@@ -70,7 +70,6 @@ const QuickActions = ({ onAddExpense, onReceivedMoney, onNewGroup }: QuickAction
         </TooltipContent>
       </Tooltip>
     </div>
-    </div >
   );
 };
 

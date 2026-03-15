@@ -879,7 +879,6 @@ app.post('/api/2fa/initiate-reset', detectFraud, strictEmailLimiter, async (req,
     const location = await getLocationFromIP(ip);
 
     await emailService.send2FAReset(email, resetLink, userData.name || 'User', { device, browser, os, ip, location });
-    await emailService.send2FAReset(email, resetLink, userData.name || 'User');
 
     res.json({ success: true, message: 'Reset link sent to your email' });
 
@@ -3008,9 +3007,7 @@ app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (r
     const walletBalancesSnapshot = {};
 
     if (amountPaidByCurrentUser > 0) {
-      if (walletBalanceBefore < amountPaidByCurrentUser) {
-        return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
-      }
+      // Hybrid Solution: Allow negative balance if user wants to track only expenses
       walletBalanceAfter -= amountPaidByCurrentUser;
       // Use atomic increment
       updates[`users/${currentUserId}/walletBalance`] = admin.database.ServerValue.increment(-amountPaidByCurrentUser);
@@ -3423,9 +3420,7 @@ app.post('/api/record-payment', generalLimiter, authenticate, detectFraud, async
         updates[`users/${otherPerson.userId}/walletBalance`] = admin.database.ServerValue.increment(amount);
       } else {
         // Current user received -> Other user paid
-        if (otherUserBalanceBefore < amount) {
-          return res.status(400).json({ success: false, error: 'Other user has insufficient wallet balance' });
-        }
+        // Hybrid Solution: Allow negative balance for tracking
         otherUserBalanceAfter -= amount;
         // Use atomic increment
         updates[`users/${otherPerson.userId}/walletBalance`] = admin.database.ServerValue.increment(-amount);
@@ -3552,6 +3547,63 @@ app.post('/api/record-payment', generalLimiter, authenticate, detectFraud, async
     if (otherUser && otherPerson.userId) {
       syncWalletBalanceToGroups(db, otherPerson.userId, otherUserBalanceAfter, otherUser.showBalanceToOthers || false)
         .catch(err => console.error("Wallet sync failed (other):", err));
+    }
+
+    // --- AUTO-REMOVE TEMP MEMBERS AFTER SETTLEMENT ---
+    // Check if either party is a temp member with deletionCondition === 'SETTLED'
+    // If their net balance is now 0 across all settlements in this group, remove them
+    const tempMembersToCheck = [fromPerson, toPerson].filter(
+      m => m.isTemporary && m.deletionCondition === 'SETTLED'
+    );
+
+    if (tempMembersToCheck.length > 0) {
+      // Fire-and-forget: don't block the response
+      (async () => {
+        try {
+          // Re-read the fresh group data after the settlement update
+          const freshGroupSnap = await db.ref(`groups/${groupId}`).get();
+          if (!freshGroupSnap.exists()) return;
+          const freshGroup = freshGroupSnap.val();
+          const freshMembers = normalizeMembers(freshGroup.members);
+
+          for (const tempMember of tempMembersToCheck) {
+            // Check if this temp member has any remaining debt with ANY member in the group
+            // We need to check all real members' settlements against this temp member
+            let hasOutstandingDebt = false;
+
+            for (const member of freshMembers) {
+              if (member.id === tempMember.id) continue;
+              const storageKey = member.userId || member.id;
+
+              // Check this member's settlement with the temp member
+              const settlementSnap = await db.ref(`users/${storageKey}/settlements/${groupId}/${tempMember.id}`).get();
+              if (settlementSnap.exists()) {
+                const settlement = settlementSnap.val();
+                const netBalance = (settlement.toReceive || 0) - (settlement.toPay || 0);
+                if (Math.abs(netBalance) > 0.01) {
+                  hasOutstandingDebt = true;
+                  break;
+                }
+              }
+            }
+
+            if (!hasOutstandingDebt) {
+              // Remove this temp member from the group
+              const updatedMembers = freshMembers.filter(m => m.id !== tempMember.id);
+              await db.ref(`groups/${groupId}/members`).set(updatedMembers);
+              console.log(`🧹 Auto-removed settled temp member "${tempMember.name}" (${tempMember.id}) from group ${groupId}`);
+
+              // Send a system message about the removal
+              sendSystemMessage(db, groupId, 'member_removed', tempMember.name, {
+                reason: 'auto_settled',
+                memberId: tempMember.id
+              }).catch(() => { });
+            }
+          }
+        } catch (cleanupErr) {
+          console.error('⚠️ Temp member cleanup after settlement failed:', cleanupErr.message);
+        }
+      })();
     }
 
     // 7. Notifications (Awaited for Vercel/Serverless)

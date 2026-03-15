@@ -85,6 +85,26 @@ router.get('/users/:uid/groups', async (req, res) => {
   }
 });
 
+// List all users
+router.get('/users', async (req, res) => {
+  try {
+    const users = await adminService.listUsers();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to list users' });
+  }
+});
+
+// List all groups
+router.get('/groups', async (req, res) => {
+  try {
+    const groups = await adminService.listGroups();
+    res.json(groups);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to list groups' });
+  }
+});
+
 module.exports = router;
 
 // --- PHASE 2 ROUTES ---
@@ -198,15 +218,32 @@ router.get('/tickets', async (req, res) => {
 router.post('/tickets/:ticketId/reply', async (req, res) => {
   try {
     const { ticketId } = req.params;
-    const { adminReply } = req.body;
+    const { adminReply, userId } = req.body;
 
-    if (!adminReply) {
-       return res.status(400).json({ error: 'Reply message is required.' });
+    if (!adminReply || !userId) {
+       return res.status(400).json({ error: 'Reply message and userId are required.' });
     }
 
-    const result = await adminService.replyToTicket(ticketId, adminReply);
+    const result = await adminService.replyToTicket(userId, ticketId, adminReply);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Failed to reply to ticket' });
+  }
+});
+
+// Update Ticket Status
+router.post('/tickets/:ticketId/status', async (req, res) => {
+  try {
+    const { ticketId } = req.params;
+    const { userId, status } = req.body;
+
+    if (!userId || !status) {
+      return res.status(400).json({ error: 'userId and status are required.' });
+    }
+
+    const result = await adminService.updateTicketStatus(userId, ticketId, status);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update ticket status' });
   }
 });

@@ -142,3 +142,69 @@ export const parseExpenseWithAudio = async (audioData: string, mimeType: string,
 export const getAIInsights = async () => {
     return await callSecureApi('/api/ai/insights', {}, 'GET');
 };
+
+// --- ADMIN MANAGEMENT APIs ---
+
+export const adminGetUsers = async () => {
+    return await callSecureApi('/api/admin/users', {}, 'GET');
+};
+
+export const adminGetGroups = async () => {
+    return await callSecureApi('/api/admin/groups', {}, 'GET');
+};
+
+export const adminGetSystemStats = async () => {
+    return await callSecureApi('/api/admin/system/stats', {}, 'GET');
+};
+
+export const adminUpdateUserStatus = async (uid: string, status: 'active' | 'disabled' | 'banned') => {
+    return await callSecureApi(`/api/admin/users/${uid}/status`, { status });
+};
+
+export const adminResetUserPassword = async (uid: string, newPassword: string) => {
+    return await callSecureApi(`/api/admin/users/${uid}/password`, { newPassword });
+};
+
+export const adminResetUserWallet = async (uid: string) => {
+    return await callSecureApi(`/api/admin/users/${uid}/wallet-reset`);
+};
+
+export const adminDeleteUser = async (uid: string) => {
+    return await callSecureApi(`/api/admin/users/${uid}`, {}, 'DELETE');
+};
+
+export const adminToggleMaintenance = async (enabled: boolean) => {
+    return await callSecureApi('/api/admin/system/maintenance', { enabled });
+};
+
+export const adminBroadcast = async (title: string, message: string) => {
+    return await callSecureApi('/api/admin/system/broadcast', { title, message });
+};
+
+export const adminGetTickets = async () => {
+    return await callSecureApi('/api/admin/tickets', {}, 'GET');
+};
+
+export const adminReplyTicket = async (ticketId: string, userId: string, adminReply: string) => {
+    return await callSecureApi(`/api/admin/tickets/${ticketId}/reply`, { userId, adminReply });
+};
+
+export const adminUpdateTicketStatus = async (ticketId: string, userId: string, status: string) => {
+    return await callSecureApi(`/api/admin/tickets/${ticketId}/status`, { userId, status });
+};
+
+export const adminGetReports = async () => {
+    return await callSecureApi('/api/admin/reports', {}, 'GET');
+};
+
+export const adminGetGroupDetails = async (groupId: string) => {
+    return await callSecureApi(`/api/admin/groups/${groupId}`, {}, 'GET');
+};
+
+export const adminDeleteGroupForce = async (groupId: string) => {
+    return await callSecureApi(`/api/admin/groups/${groupId}`, {}, 'DELETE');
+};
+
+export const adminRemoveMemberForce = async (groupId: string, uid: string) => {
+    return await callSecureApi(`/api/admin/groups/${groupId}/members/${uid}`, {}, 'DELETE');
+};

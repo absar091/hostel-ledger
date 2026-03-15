@@ -257,6 +257,8 @@ interface FirebaseDataContextType {
   claimEmailInvite: (groupId: string) => Promise<{ success: boolean; error?: string }>;
   joinGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>;
   updateGroupBudget: (groupId: string, budget: Group['budget']) => Promise<{ success: boolean; error?: string }>;
+  maintenanceMode: boolean;
+  globalBroadcast: { title: string; message: string; timestamp: number } | null;
 }
 
 const FirebaseDataContext = createContext<FirebaseDataContextType | undefined>(undefined);
@@ -273,6 +275,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [globalBroadcast, setGlobalBroadcast] = useState<{ title: string; message: string; timestamp: number } | null>(null);
 
   // Persist groups to offline cache whenever they change
   useEffect(() => {
@@ -301,6 +305,26 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    // Global maintenance mode listener (doesn't require auth for data structure, but usually auth'd users only)
+    const maintenanceRef = ref(database, 'settings/system');
+    const maintenanceListener = onValue(maintenanceRef, (snapshot) => {
+      const settings = snapshot.val();
+      setMaintenanceMode(!!settings?.maintenanceMode);
+    });
+
+    const broadcastRef = ref(database, 'settings/broadcast');
+    const broadcastListener = onValue(broadcastRef, (snapshot) => {
+      setGlobalBroadcast(snapshot.val());
+    });
+
+    return () => {
+      off(maintenanceRef, 'value', maintenanceListener);
+      off(broadcastRef, 'value', broadcastListener);
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
     setIsLoading(true);
 
     // Try to load cached data immediately
@@ -1559,7 +1583,9 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     deleteAccountData,
     claimEmailInvite,
     joinGroup,
-    updateGroupBudget
+    updateGroupBudget,
+    maintenanceMode,
+    globalBroadcast
   }), [
     groups,
     transactions,
@@ -1568,7 +1594,9 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     fetchGroupDetail,
     claimEmailInvite,
     joinGroup,
-    updateGroupBudget
+    updateGroupBudget,
+    maintenanceMode,
+    globalBroadcast
   ]);
 
   return (
