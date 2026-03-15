@@ -247,7 +247,7 @@ const Activity = () => {
             <button
               onClick={() => setFilterType("all")}
               aria-pressed={filterType === "all"}
-              className={`px-5 py-3 rounded-2xl text-sm font-black whitespace-nowrap transition-all shadow-lg ${filterType === "all"
+              className={`px-5 py-3 rounded-2xl text-sm font-black whitespace-nowrap transition-all shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 ${filterType === "all"
                 ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white scale-105"
                 : "bg-white text-[#4a6850]/80 hover:bg-[#4a6850]/5 border border-[#4a6850]/10"
                 }`}
@@ -257,7 +257,7 @@ const Activity = () => {
             <button
               onClick={() => setFilterType("expense")}
               aria-pressed={filterType === "expense"}
-              className={`px-5 py-3 rounded-2xl text-sm font-black whitespace-nowrap transition-all shadow-lg ${filterType === "expense"
+              className={`px-5 py-3 rounded-2xl text-sm font-black whitespace-nowrap transition-all shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 ${filterType === "expense"
                 ? "bg-gradient-to-r from-red-500 to-red-600 text-white scale-105"
                 : "bg-white text-red-600/80 hover:bg-red-50 border border-red-500/10"
                 }`}
@@ -267,7 +267,7 @@ const Activity = () => {
             <button
               onClick={() => setFilterType("payment")}
               aria-pressed={filterType === "payment"}
-              className={`px-5 py-3 rounded-2xl text-sm font-black whitespace-nowrap transition-all shadow-lg ${filterType === "payment"
+              className={`px-5 py-3 rounded-2xl text-sm font-black whitespace-nowrap transition-all shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 ${filterType === "payment"
                 ? "bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white scale-105"
                 : "bg-white text-[#4a6850]/80 hover:bg-[#4a6850]/5 border border-[#4a6850]/10"
                 }`}
@@ -277,7 +277,7 @@ const Activity = () => {
             <button
               onClick={() => setFilterType("wallet")}
               aria-pressed={filterType === "wallet"}
-              className={`px-5 py-3 rounded-2xl text-sm font-black whitespace-nowrap transition-all shadow-lg ${filterType === "wallet"
+              className={`px-5 py-3 rounded-2xl text-sm font-black whitespace-nowrap transition-all shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 ${filterType === "wallet"
                 ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white scale-105"
                 : "bg-white text-blue-600/80 hover:bg-blue-50 border border-blue-500/10"
                 }`}
@@ -291,7 +291,7 @@ const Activity = () => {
             <button
               onClick={() => setFilterDate("all")}
               aria-pressed={filterDate === "all"}
-              className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition-all ${filterDate === "all"
+              className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 ${filterDate === "all"
                 ? "bg-gray-800 text-white shadow-lg scale-105"
                 : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
                 }`}
@@ -301,7 +301,7 @@ const Activity = () => {
             <button
               onClick={() => setFilterDate("today")}
               aria-pressed={filterDate === "today"}
-              className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition-all ${filterDate === "today"
+              className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 ${filterDate === "today"
                 ? "bg-gray-800 text-white shadow-lg scale-105"
                 : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
                 }`}
@@ -311,7 +311,7 @@ const Activity = () => {
             <button
               onClick={() => setFilterDate("week")}
               aria-pressed={filterDate === "week"}
-              className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition-all ${filterDate === "week"
+              className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 ${filterDate === "week"
                 ? "bg-gray-800 text-white shadow-lg scale-105"
                 : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
                 }`}
@@ -321,7 +321,7 @@ const Activity = () => {
             <button
               onClick={() => setFilterDate("month")}
               aria-pressed={filterDate === "month"}
-              className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition-all ${filterDate === "month"
+              className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 ${filterDate === "month"
                 ? "bg-gray-800 text-white shadow-lg scale-105"
                 : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
                 }`}
