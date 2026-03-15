@@ -66,8 +66,10 @@ const Sidebar = () => {
 
       {/* Toggle Button */}
       <button
+        type="button"
         onClick={toggleSidebar}
         aria-label={isOpen ? t('sidebar.collapse') : t('sidebar.expand')}
+        aria-expanded={isOpen}
         className="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
       >
         {isOpen ? (
