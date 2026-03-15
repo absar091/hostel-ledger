@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { verifyAdmin } = require('../middleware/adminAuth');
 const adminService = require('../services/adminService');
+const { isValidFirebaseId } = require('../utils/validation');
 
 // All admin routes must be protected
 router.use(verifyAdmin);
@@ -24,6 +25,8 @@ router.get('/users/:identifier', async (req, res) => {
 router.post('/users/:uid/status', async (req, res) => {
   try {
     const { uid } = req.params;
+    if (!isValidFirebaseId(uid)) return res.status(400).json({ error: 'Invalid user ID format' });
+
     const { status } = req.body;
 
     if (!['active', 'disabled', 'banned'].includes(status)) {
@@ -45,6 +48,8 @@ router.post('/users/:uid/status', async (req, res) => {
 router.post('/users/:uid/password', async (req, res) => {
   try {
     const { uid } = req.params;
+    if (!isValidFirebaseId(uid)) return res.status(400).json({ error: 'Invalid user ID format' });
+
     const { newPassword } = req.body;
 
     if (uid === req.user.uid) {
@@ -62,6 +67,7 @@ router.post('/users/:uid/password', async (req, res) => {
 router.delete('/users/:uid', async (req, res) => {
   try {
     const { uid } = req.params;
+    if (!isValidFirebaseId(uid)) return res.status(400).json({ error: 'Invalid user ID format' });
 
     if (uid === req.user.uid) {
         return res.status(400).json({ error: 'Cannot delete your own account here.' });
@@ -78,6 +84,8 @@ router.delete('/users/:uid', async (req, res) => {
 router.get('/users/:uid/groups', async (req, res) => {
   try {
     const { uid } = req.params;
+    if (!isValidFirebaseId(uid)) return res.status(400).json({ error: 'Invalid user ID format' });
+
     const groups = await adminService.getUserGroups(uid);
     res.json(groups);
   } catch (error) {
@@ -151,6 +159,8 @@ router.post('/system/broadcast', async (req, res) => {
 router.post('/users/:uid/wallet-reset', async (req, res) => {
   try {
     const { uid } = req.params;
+    if (!isValidFirebaseId(uid)) return res.status(400).json({ error: 'Invalid user ID format' });
+
     const result = await adminService.resetUserWallet(uid);
     res.json(result);
   } catch (error) {
@@ -162,6 +172,8 @@ router.post('/users/:uid/wallet-reset', async (req, res) => {
 router.get('/groups/:groupId', async (req, res) => {
   try {
     const groupId = req.params.groupId.trim();
+    if (!isValidFirebaseId(groupId)) return res.status(400).json({ error: 'Invalid group ID format' });
+
     const groupData = await adminService.getGroupDetails(groupId);
     res.json(groupData);
   } catch (error) {
@@ -173,6 +185,8 @@ router.get('/groups/:groupId', async (req, res) => {
 router.delete('/groups/:groupId', async (req, res) => {
   try {
     const groupId = req.params.groupId.trim();
+    if (!isValidFirebaseId(groupId)) return res.status(400).json({ error: 'Invalid group ID format' });
+
     const result = await adminService.deleteGroupForce(groupId);
     res.json(result);
   } catch (error) {
@@ -185,6 +199,9 @@ router.delete('/groups/:groupId/members/:uid', async (req, res) => {
   try {
     const groupId = req.params.groupId.trim();
     const uid = req.params.uid.trim();
+    if (!isValidFirebaseId(groupId)) return res.status(400).json({ error: 'Invalid group ID format' });
+    if (!isValidFirebaseId(uid)) return res.status(400).json({ error: 'Invalid user ID format' });
+
     const result = await adminService.removeGroupMemberForce(groupId, uid);
     res.json(result);
   } catch (error) {
@@ -218,11 +235,14 @@ router.get('/tickets', async (req, res) => {
 router.post('/tickets/:ticketId/reply', async (req, res) => {
   try {
     const { ticketId } = req.params;
+    if (!isValidFirebaseId(ticketId)) return res.status(400).json({ error: 'Invalid ticket ID format' });
+
     const { adminReply, userId } = req.body;
 
     if (!adminReply || !userId) {
        return res.status(400).json({ error: 'Reply message and userId are required.' });
     }
+    if (!isValidFirebaseId(userId)) return res.status(400).json({ error: 'Invalid user ID format' });
 
     const result = await adminService.replyToTicket(userId, ticketId, adminReply);
     res.json(result);
@@ -235,11 +255,14 @@ router.post('/tickets/:ticketId/reply', async (req, res) => {
 router.post('/tickets/:ticketId/status', async (req, res) => {
   try {
     const { ticketId } = req.params;
+    if (!isValidFirebaseId(ticketId)) return res.status(400).json({ error: 'Invalid ticket ID format' });
+
     const { userId, status } = req.body;
 
     if (!userId || !status) {
       return res.status(400).json({ error: 'userId and status are required.' });
     }
+    if (!isValidFirebaseId(userId)) return res.status(400).json({ error: 'Invalid user ID format' });
 
     const result = await adminService.updateTicketStatus(userId, ticketId, status);
     res.json(result);
