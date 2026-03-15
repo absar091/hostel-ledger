@@ -4464,7 +4464,7 @@ app.post('/api/join-group', detectFraud, authenticate, async (req, res) => {
     const userData = userSnap.val();
 
     // Create new member object
-    const newMemberId = `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const newMemberId = `member_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
     const newMember = {
       id: newMemberId,
       userId: userId,
