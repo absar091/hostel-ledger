@@ -63,6 +63,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
               <Tooltip key={tab.id}>
                 <TooltipTrigger asChild>
                   <button
+                    type="button"
                     onClick={() => onTabChange(tab.id)}
                     className="touch-target w-16 h-16 -mt-8 rounded-[20px] bg-[#4B6B54] shadow-[0_8px_30px_rgba(75,107,84,0.4)] flex items-center justify-center border-4 border-white hover:bg-[#3D5643] active:scale-95 transition-all duration-200"
                   >
@@ -84,6 +85,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
             <Tooltip key={tab.id}>
               <TooltipTrigger asChild>
                 <button
+                  type="button"
                   onClick={() => onTabChange(tab.id)}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
