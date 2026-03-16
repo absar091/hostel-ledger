@@ -8,6 +8,7 @@ const ExcelJS = require('exceljs');
 const { Parser } = require('json2csv');
 const { getCurrencySymbol } = require('../utils/currency');
 const logger = require('../utils/logger');
+const { isValidFirebaseId } = require('../utils/validation');
 
 router.use(authenticate);
 
@@ -73,6 +74,11 @@ async function getGroupDataForExport(groupId, uid) {
  */
 router.get('/group-report/:groupId', async (req, res) => {
   const { groupId } = req.params;
+
+  if (!isValidFirebaseId(groupId)) {
+    return res.status(400).json({ error: 'Invalid group ID' });
+  }
+
   const { format, currency } = req.query;
   const uid = req.user.uid;
 
