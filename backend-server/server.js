@@ -138,7 +138,11 @@ const syncWalletBalanceToGroups = async (db, userId, balance, isEnabled) => {
         }
       } else {
         // Object based members
-        const memberKey = Object.keys(members).find(key => members[key].userId === userId || members[key].id === userId);
+        // Performance optimization: O(1) fast-path lookup by userId before falling back to O(N) iteration
+        let memberKey = (members[userId] && (members[userId].userId === userId || members[userId].id === userId)) ? userId : undefined;
+        if (!memberKey) {
+          memberKey = Object.keys(members).find(key => members[key].userId === userId || members[key].id === userId);
+        }
         if (memberKey) {
           updates[`groups/${groupId}/members/${memberKey}/walletBalance`] = isEnabled ? balance : null;
         }
@@ -1793,7 +1797,15 @@ app.post('/api/respond-invitation', detectFraud, authenticate, async (req, res) 
           members[memberIndex] = memberEntry;
         } else {
           // It's an object, we need to find the key
-          const memberKey = Object.keys(members).find(key => members[key].userId === userId || members[key].id === membersArray[memberIndex].id);
+          // Performance optimization: O(1) fast-path lookup by userId before falling back to O(N) iteration
+          let memberKey = (members[userId] && (members[userId].userId === userId || members[userId].id === membersArray[memberIndex].id)) ? userId : undefined;
+          if (!memberKey && members[membersArray[memberIndex].id] && (members[membersArray[memberIndex].id].userId === userId || members[membersArray[memberIndex].id].id === membersArray[memberIndex].id)) {
+            memberKey = membersArray[memberIndex].id;
+          }
+          if (!memberKey) {
+            memberKey = Object.keys(members).find(key => members[key].userId === userId || members[key].id === membersArray[memberIndex].id);
+          }
+
           if (memberKey) {
             members[memberKey] = memberEntry;
           } else {
@@ -2916,10 +2928,17 @@ app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (r
                 if (isMembersArray) {
                   emailUpdates[`groups/${groupId}/members/${index}/email`] = email;
                 } else {
-                  const memberKey = Object.keys(group.members).find(k => {
-                    const mem = group.members[k];
-                    return (mem.id && mem.id === m.id) || k === m.id;
-                  });
+                  // Performance optimization: O(1) fast-path lookup before O(N) iteration
+                  let memberKey = undefined;
+                  if (group.members[m.id] && (group.members[m.id].id === m.id || group.members[m.id].userId === m.id)) {
+                    memberKey = m.id;
+                  }
+                  if (!memberKey) {
+                    memberKey = Object.keys(group.members).find(k => {
+                      const mem = group.members[k];
+                      return (mem.id && mem.id === m.id) || k === m.id;
+                    });
+                  }
                   if (memberKey) {
                     emailUpdates[`groups/${groupId}/members/${memberKey}/email`] = email;
                   }
