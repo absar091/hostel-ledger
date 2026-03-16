@@ -160,7 +160,11 @@ const Support = () => {
     try {
       const ticketsRef = ref(database, `supportTickets/${user.uid}`);
       const newTicketRef = push(ticketsRef);
-      const ticketNumber = `TKT-${Date.now().toString().slice(-8)}`;
+      // Use cryptographically secure random values instead of Date.now()
+      const randomValue = new Uint32Array(1);
+      globalThis.crypto.getRandomValues(randomValue);
+      const randomHex = randomValue[0].toString(16).toUpperCase().padStart(8, '0');
+      const ticketNumber = `TKT-${randomHex}`;
 
       const newTicket: Omit<Ticket, "id" | "messages"> & { messages: any } = {
         ticketNumber,
