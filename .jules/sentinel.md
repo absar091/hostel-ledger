@@ -22,3 +22,7 @@
 **Vulnerability:** The `createToken` and `verifyToken` functions in `src/lib/jwt.ts` used a hardcoded fallback string (`'hostel-ledger-super-secret-key-2024-change-in-production'`) if the `VITE_JWT_SECRET` environment variable was not defined.
 **Learning:** Hardcoded fallback keys compromise the security of any cryptographic operations that rely on them. If an environment variable containing a secret is missing, it is safer to fail securely (e.g., by throwing an error) rather than using a predictable, publicly known fallback key.
 **Prevention:** Remove hardcoded fallback secrets. Explicitly check for the presence of required environment variables containing secrets and throw an error if they are missing.
+## 2026-03-16 - Predictable Ticket IDs in Support
+**Vulnerability:** Support tickets were generated using `Date.now().toString().slice(-8)`, making ticket IDs predictable and susceptible to enumeration or guessing.
+**Learning:** Relying on timestamps or simple concatenation for IDs is insecure. It creates predictability that attackers can use to brute force or enumerate resources.
+**Prevention:** Always use cryptographically secure methods like `globalThis.crypto.getRandomValues` or `crypto.randomUUID()` to generate IDs, tokens, or ticket numbers.
