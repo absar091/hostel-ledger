@@ -11,7 +11,11 @@ interface TokenPayload {
 }
 
 // Get JWT secret from environment (Vite uses import.meta.env)
-const JWT_SECRET = import.meta.env.VITE_JWT_SECRET || 'hostel-ledger-super-secret-key-2024-change-in-production';
+const JWT_SECRET = import.meta.env.VITE_JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('VITE_JWT_SECRET environment variable is not defined');
+}
 
 // Simple base64 encoding/decoding for demo purposes
 // In production, use proper JWT with signing

@@ -17,3 +17,8 @@
 **Vulnerability:** The `/api/send-welcome` endpoint accepted an `email` parameter from the request body and used it directly to send emails without validating if it belonged to the authenticated user. This allowed any authenticated user to send welcome emails to arbitrary email addresses (acting as an open relay).
 **Learning:** Endpoints that trigger email sending, even if authenticated, must strictly validate that the recipient matches the authenticated user's email or a closely related entity (like an invited group member) to prevent abuse and spam. In this architecture, failing to cross-check `req.body.email` with `req.user?.email` leads to a privilege escalation / abuse vector.
 **Prevention:** Always verify `req.body.email === req.user?.email` for self-targeted notifications. For group-targeted notifications, verify that the authenticated user has sufficient permissions (e.g., is a member of the group) before sending to another member's email.
+
+## 2024-05-24 - Cryptographic vulnerability due to hardcoded fallback key
+**Vulnerability:** The `createToken` and `verifyToken` functions in `src/lib/jwt.ts` used a hardcoded fallback string (`'hostel-ledger-super-secret-key-2024-change-in-production'`) if the `VITE_JWT_SECRET` environment variable was not defined.
+**Learning:** Hardcoded fallback keys compromise the security of any cryptographic operations that rely on them. If an environment variable containing a secret is missing, it is safer to fail securely (e.g., by throwing an error) rather than using a predictable, publicly known fallback key.
+**Prevention:** Remove hardcoded fallback secrets. Explicitly check for the presence of required environment variables containing secrets and throw an error if they are missing.
