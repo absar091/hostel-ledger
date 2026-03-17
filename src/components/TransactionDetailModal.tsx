@@ -474,6 +474,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                         e.stopPropagation();
                                         setShowChat(true);
                                     }}
+                                    aria-expanded={showChat}
                                     className="w-full flex items-center justify-between p-4 lg:p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl lg:rounded-3xl border border-blue-200 shadow-lg group hover:from-blue-100 hover:to-blue-200 transition-all active:scale-[0.98]"
                                 >
                                     <div className="flex items-center gap-3 lg:gap-4">

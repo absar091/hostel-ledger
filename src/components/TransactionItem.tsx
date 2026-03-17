@@ -137,6 +137,7 @@ export const TransactionItem = memo(({
               e.stopPropagation();
               setShowChat(true);
             }}
+            aria-expanded={showChat}
             className="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90"
             title={t('chat.discuss')}
           >
