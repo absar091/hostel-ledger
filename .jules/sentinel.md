@@ -26,3 +26,7 @@
 **Vulnerability:** Support tickets were generated using `Date.now().toString().slice(-8)`, making ticket IDs predictable and susceptible to enumeration or guessing.
 **Learning:** Relying on timestamps or simple concatenation for IDs is insecure. It creates predictability that attackers can use to brute force or enumerate resources.
 **Prevention:** Always use cryptographically secure methods like `globalThis.crypto.getRandomValues` or `crypto.randomUUID()` to generate IDs, tokens, or ticket numbers.
+## 2026-03-17 - Path Traversal / NoSQL Injection in AI Parse Expense Endpoints
+**Vulnerability:** The `/api/ai/parse-expense` and `/api/ai/parse-expense-audio` endpoints accepted a `groupId` directly from the request body and interpolated it into a Firebase Realtime Database path (`db.ref(\`groups/${groupId}\`)`) without prior validation. This allowed potential path traversal or NoSQL injection attacks to bypass authorization and extract arbitrary paths via AI.
+**Learning:** Even AI-assisted endpoints or those that seem non-destructive can expose data if user-provided identifiers used to look up context are not strictly validated.
+**Prevention:** Always explicitly validate client-provided IDs (e.g., using `isValidFirebaseId`) before interpolating them into database paths.
