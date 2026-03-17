@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import {
   User,
   signInWithEmailAndPassword,
@@ -1004,7 +1004,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     return isNaN(balance) ? 0 : balance;
   };
 
-  const getSettlements = (groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
+  // OPTIMIZATION: Memoize getSettlements to prevent unnecessary re-renders in components
+  // that use it in dependency arrays (like Groups.tsx)
+  const getSettlements = useCallback((groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
     if (!user?.settlements) return {};
 
     if (groupId) {
@@ -1026,7 +1028,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       return aggregated;
     }
-  };
+  }, [user?.settlements]);
 
   const getTotalToReceive = (groupId?: string): number => {
     const settlements = getSettlements(groupId);
@@ -1217,9 +1219,11 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const getFavoriteGroups = (): string[] => {
+  // OPTIMIZATION: Memoize getFavoriteGroups to maintain referential equality
+  // and prevent child component re-renders
+  const getFavoriteGroups = useCallback((): string[] => {
     return user?.favoriteGroups || [];
-  };
+  }, [user?.favoriteGroups]);
 
   const createGroup = async (groupData: any): Promise<{ success: boolean; groupId?: string; error?: string }> => {
     try {
