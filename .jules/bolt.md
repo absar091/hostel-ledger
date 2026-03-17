@@ -1,0 +1,3 @@
+## 2024-05-18 - Optimized FirebaseAuthContext Providers
+**Learning:** In large React Context providers like `FirebaseAuthContext`, unmemoized functions related to state computations (like `getSettlements`, `getTotalToReceive`, `getTotalToPay`, `getSettlementDelta`) can cause unnecessary re-renders of downstream components if they are not wrapped in `useCallback`. Even if the entire provider value is not memoized using `useMemo` (which could cause stale closures), selectively memoizing calculation functions ensures that referential equality is maintained, preventing excessive evaluation in child `useEffect` hooks.
+**Action:** Selectively wrap exposed calculation functions in `useCallback` to maintain referential equality and prevent unnecessary downstream executions.
