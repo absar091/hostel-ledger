@@ -212,16 +212,6 @@ class AdminService {
 
   // --- ADVANCED USER CONTROLS ---
 
-  async resetUserWallet(uid) {
-    try {
-      await admin.database().ref(`users/${uid}`).update({ walletBalance: 0 });
-      return { success: true, message: `Wallet balance for ${uid} reset to 0.` };
-    } catch (error) {
-      console.error(`Error resetting wallet for ${uid}:`, error);
-      throw error;
-    }
-  }
-
   // --- ADVANCED GROUP MANAGEMENT ---
 
   async getGroupDetails(groupId) {
@@ -385,7 +375,7 @@ class AdminService {
           disabled: user.disabled,
           role: dbData.role || 'user',
           accountStatus: dbData.accountStatus || (user.disabled ? 'disabled' : 'active'),
-          walletBalance: dbData.walletBalance || 0,
+
           createdAt: user.metadata.creationTime,
           lastSignIn: user.metadata.lastSignInTime
         };

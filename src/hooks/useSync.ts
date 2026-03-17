@@ -84,9 +84,11 @@ export const useSync = () => {
                     groupId: expense.groupId,
                     amount: expense.amount,
                     paidBy: expense.paidBy,
+                    payers: expense.payers, // Added payers as well, just in case
                     participants: expense.participants,
                     note: expense.note,
                     place: expense.place,
+                    location: expense.location,
                     clientTxnId: expense.clientTxnId || expense.id,
                 });
 

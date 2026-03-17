@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useRef, useState } from "react";
-import { ArrowUpRight, ArrowDownLeft, CreditCard, Users, User, X, Share2, Copy, Download, Image, Check, MessageSquareText } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, CreditCard, Users, User, X, Share2, Copy, Download, Image, Check, MessageSquareText, MapPin } from "lucide-react";
 import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
@@ -449,14 +449,57 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
 
                                 {/* Place (for expenses) - iPhone Style */}
                                 {transaction.place && (
-                                    <div className="flex items-center gap-3 lg:gap-4 p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg">
-                                        <div className="w-5 lg:w-6 h-5 lg:h-6 rounded-full bg-[#4a6850]/20 flex-shrink-0 flex items-center justify-center">
-                                            <div className="w-1.5 lg:w-2 h-1.5 lg:h-2 rounded-full bg-[#4a6850]"></div>
+                                    <div className="flex flex-col p-4 lg:p-5 bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-2xl lg:rounded-3xl border border-[#4a6850]/20 shadow-lg gap-4">
+                                        <div className="flex items-center gap-3 lg:gap-4">
+                                            <div className="w-10 h-10 rounded-2xl bg-[#4a6850]/10 flex-shrink-0 flex items-center justify-center">
+                                                <MapPin className="w-5 h-5 text-[#4a6850]" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Place</div>
+                                                <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transaction.place}</div>
+                                            </div>
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="text-[10px] lg:text-xs text-[#4a6850]/70 font-semibold uppercase tracking-wide">Place</div>
-                                            <div className="font-bold text-gray-900 truncate text-sm lg:text-base tracking-tight">{transaction.place}</div>
-                                        </div>
+
+                                        {transaction.location && (
+                                            <div className="mt-3 flex gap-4 bg-white/50 p-3 rounded-2xl border border-[#4a6850]/10 shadow-sm">
+                                                {/* Visual Map Preview (Small Square) */}
+                                                <div
+                                                    className="relative w-24 h-24 rounded-xl overflow-hidden shadow-md flex-shrink-0 cursor-pointer group"
+                                                    onClick={() => {
+                                                        const url = `https://www.google.com/maps/search/?api=1&query=${transaction.location?.lat},${transaction.location?.lng}`;
+                                                        window.open(url, '_blank');
+                                                    }}
+                                                >
+                                                    <img
+                                                        src={`https://static-maps.yandex.ru/1.x/?ll=${transaction.location.lng},${transaction.location.lat}&size=200,200&z=15&l=map&pt=${transaction.location.lng},${transaction.location.lat},pm2rdm`}
+                                                        alt="Map Location"
+                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                        loading="lazy"
+                                                    />
+                                                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
+                                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <div className="bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-lg">
+                                                            <ArrowUpRight className="w-4 h-4 text-[#4a6850]" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col justify-center gap-2">
+                                                    <span className="text-xs text-[#4a6850]/80 font-mono font-bold bg-[#4a6850]/5 px-2 py-1 rounded-lg border border-[#4a6850]/10">
+                                                        {transaction.location.lat.toFixed(4)}, {transaction.location.lng.toFixed(4)}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => {
+                                                            const url = `https://www.google.com/maps/search/?api=1&query=${transaction.location?.lat},${transaction.location?.lng}`;
+                                                            window.open(url, '_blank');
+                                                        }}
+                                                        className="inline-flex items-center gap-1.5 text-xs text-blue-600 font-black uppercase tracking-wider hover:underline w-fit"
+                                                    >
+                                                        View on Maps <ArrowUpRight className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
@@ -765,6 +808,11 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 <div>
                                     <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>Place</div>
                                     <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{transaction.place}</div>
+                                    {transaction.location && (
+                                        <div style={{ fontSize: '9px', color: '#6B7280', fontFamily: 'monospace', marginTop: '2px' }}>
+                                            {transaction.location.lat.toFixed(4)}, {transaction.location.lng.toFixed(4)}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}

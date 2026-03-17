@@ -28,10 +28,18 @@
         ".write": "$uid === auth.uid && auth != null"
       }
     },
-    "user_p2p_transactions": {
+    "budgets": {
+      "$groupId": {
+        ".read": "auth != null && root.child('userGroups').child(auth.uid).child($groupId).exists()",
+        ".write": "auth != null && root.child('userGroups').child(auth.uid).child($groupId).exists()",
+        ".validate": "newData.hasChildren(['limit', 'spent', 'policy'])"
+      }
+    },
+    "personalBudgets": {
       "$uid": {
         ".read": "$uid === auth.uid",
-        ".write": false
+        ".write": "$uid === auth.uid",
+        ".validate": "newData.hasChildren(['limit', 'spent', 'resetPeriod', 'lastReset'])"
       }
     },
     "transactions": {

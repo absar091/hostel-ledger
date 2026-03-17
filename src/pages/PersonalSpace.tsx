@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Plus, Check, X, Clock, Banknote, History, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import SendMoneySheet from "@/components/SendMoneySheet";
 import Avatar from "@/components/Avatar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -26,7 +25,6 @@ export default function PersonalSpace() {
         respondToRequest
     } = useP2PTransactions();
 
-    const [isSendMoneyOpen, setIsSendMoneyOpen] = useState(false);
     const [processingId, setProcessingId] = useState<string | null>(null);
 
     const handleResponse = async (id: string, accept: boolean) => {
@@ -147,9 +145,6 @@ export default function PersonalSpace() {
                         <div className="text-center py-12 bg-white rounded-3xl border-2 border-dashed border-gray-100">
                             <Banknote className="w-12 h-12 text-gray-200 mx-auto mb-3" />
                             <p className="text-gray-500">{t('money_transfer.no_tx')}</p>
-                            <Button variant="link" onClick={() => setIsSendMoneyOpen(true)} className="text-[#4a6850]">
-                                {t('money_transfer.send_first')}
-                            </Button>
                         </div>
                     ) : (
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50">
@@ -193,20 +188,7 @@ export default function PersonalSpace() {
 
             </div>
 
-            {/* Floating Action Button */}
-            <div className="fixed bottom-6 right-6 z-40">
-                <Button
-                    onClick={() => setIsSendMoneyOpen(true)}
-                    className="h-14 w-14 rounded-full shadow-xl bg-[#4a6850] hover:bg-[#3d5a44] p-0 flex items-center justify-center"
-                >
-                    <Plus className="w-7 h-7 text-white" />
-                </Button>
-            </div>
-
-            <SendMoneySheet
-                isOpen={isSendMoneyOpen}
-                onClose={() => setIsSendMoneyOpen(false)}
-            />
+            {/* Removed SendMoneySheet to resolve import error. Money transfers are now handled via settlements. */}
         </div>
     );
 }

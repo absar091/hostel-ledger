@@ -69,5 +69,6 @@ export {
   Terminal,
   FileSearch,
   Globe,
-  DollarSign
+  DollarSign,
+  MapPin
 } from "lucide-react";

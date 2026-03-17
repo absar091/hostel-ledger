@@ -534,6 +534,54 @@ const emailService = {
             subject: `Temporary Member Alert: ${safeMember}`,
             html
         });
+    },
+
+    /**
+     * Send Budget Alert (Transactional)
+     */
+    sendBudgetAlert: async (data) => {
+        const { email, name, type, amount, spent, remaining, groupName } = data;
+        const safeName = escapeHtml(name);
+        const safeType = escapeHtml(type); // 'Group' or 'Personal'
+        const safeGroup = groupName ? escapeHtml(groupName) : '';
+
+        const titleText = type === 'Group' ? `Budget Alert: ${safeGroup}` : 'Personal Budget Alert';
+        const contextText = type === 'Group' 
+            ? `The budget for group <strong>${safeGroup}</strong> has reached 80% of its limit.`
+            : `You have spent 80% of your personal budget.`;
+
+        const html = getCommonTemplate(
+            `⚠️ ${titleText}`,
+            `
+        <p>Hi ${safeName},</p>
+        <p>${contextText}</p>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <div style="display: flex; justify-content: space-between; max-width: 300px; margin: 0 auto; padding: 10px 0; border-bottom: 1px solid #eee;">
+            <span style="color: #666;">Budget Limit:</span>
+            <span style="font-weight: 600;">Rs ${amount.toLocaleString()}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; max-width: 300px; margin: 0 auto; padding: 10px 0; border-bottom: 1px solid #eee;">
+            <span style="color: #666;">Amount Spent:</span>
+            <span style="font-weight: 600; color: #d32f2f;">Rs ${spent.toLocaleString()}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; max-width: 300px; margin: 0 auto; padding: 10px 0;">
+            <span style="color: #666;">Remaining:</span>
+            <span style="font-weight: 600; color: #198754;">Rs ${remaining.toLocaleString()}</span>
+          </div>
+        </div>
+        
+        <p>You can adjust your budget settings in the app.</p>
+      `,
+            `<a href="https://app.hostelledger.aarx.online" class="button">View Dashboard</a>`,
+            true // Allow unsubscribe
+        );
+
+        return sendEmailSafe({
+            to: email,
+            subject: `${titleText} (Remaining: Rs ${remaining.toLocaleString()})`,
+            html
+        });
     }
 ,
     /**

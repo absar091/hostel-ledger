@@ -239,7 +239,7 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                   )}
 
                   <p className="text-xs text-[#4a6850]/80 mt-2 text-center font-bold">
-                    This will add money to your Available Budget
+                    This records the incoming payment in your history.
                   </p>
                 </div>
               )}
@@ -326,20 +326,20 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                   )}
 
                   <p className="text-xs text-red-600 mt-2 text-center font-bold">
-                    This will deduct money from your Available Budget
+                    This records your payment in the system.
                   </p>
                 </div>
               )}
 
-              {/* Enterprise Note - Compact */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-300 rounded-2xl p-4 shadow-md">
+              {/* Info Note - Compact */}
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-300 rounded-2xl p-4 shadow-md">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md flex-shrink-0">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center shadow-md flex-shrink-0">
                     <CheckCircle className="w-5 h-5 text-white font-bold" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-black text-blue-900 mb-1.5 text-sm tracking-tight">Enterprise-Safe Tracking</h4>
-                    <p className="text-xs text-blue-700 font-bold leading-relaxed">
+                    <h4 className="font-black text-emerald-900 mb-1.5 text-sm tracking-tight">Accurate Tracking</h4>
+                    <p className="text-xs text-emerald-700 font-bold leading-relaxed">
                       These amounts are tracked separately and never auto-merged.
                       Each settlement requires your explicit confirmation.
                     </p>

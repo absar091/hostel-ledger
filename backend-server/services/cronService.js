@@ -138,43 +138,73 @@ const startWeeklyReportCron = () => {
  */
 const startReminderCron = () => {
     cron.schedule('0 9 * * *', async () => {
-        logger.info('⏰ Starting automated payment reminders cron...');
+        logger.info('⏰ Starting daily payment reminders cron...');
+        // Logic for reminders could go here
+    });
+    logger.info('🚀 Payment reminders cron job scheduled (Daily at 09:00 AM)');
+};
+
+/**
+ * Daily/Weekly/Monthly Personal Budget Reset Cron Job
+ * Runs every day at midnight to check for resets
+ */
+const startBudgetResetCron = () => {
+    cron.schedule('0 0 * * *', async () => {
+        logger.info('⏰ Starting personal budget reset cron...');
         
         try {
             const db = admin.database();
+            const budgetsSnap = await db.ref('personalBudgets').once('value');
             
-            // 1. Fetch all groups
-            const groupsSnap = await db.ref('groups').once('value');
-            if (!groupsSnap.exists()) return;
-
-            const groups = groupsSnap.val();
-            const now = Date.now();
-            const reminderThreshold = 3 * 24 * 60 * 60 * 1000; // 3 days
-
-            for (const groupId in groups) {
-                const group = groups[groupId];
-                if (!group.members) continue;
-
-                // For a scalable version, we would track "last_active" or "last_expense"
-                // For Phase 1, we look at settlements stored in user profiles
-                // This is a heavy operation if done for all users.
-                // Better approach: ONLY check groups that had activity in last 24h
-                // But for now, let's implement a safe, simplified version.
-                
-                // (Omitted heavy scan for demo, in real app we'd use a dedicated 'pendingDebts' index)
+            if (!budgetsSnap.exists()) {
+                logger.info('ℹ️ No personal budgets to reset.');
+                return;
             }
 
-            logger.info('🏁 Automated payment reminders completed.');
+            const updates = {};
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+
+            budgetsSnap.forEach(snap => {
+                const uid = snap.key;
+                const budget = snap.val();
+                
+                let shouldReset = false;
+                
+                if (budget.period === 'daily') {
+                    shouldReset = true;
+                } else if (budget.period === 'weekly') {
+                    // Reset on Mondays
+                    if (now.getDay() === 1) shouldReset = true;
+                } else if (budget.period === 'monthly') {
+                    // Reset on 1st of month
+                    if (now.getDate() === 1) shouldReset = true;
+                }
+
+                if (shouldReset) {
+                    updates[`personalBudgets/${uid}/spent`] = 0;
+                    updates[`personalBudgets/${uid}/lastReset`] = todayStr;
+                }
+            });
+
+            if (Object.keys(updates).length > 0) {
+                await db.ref().update(updates);
+                logger.info(`✅ Reset ${Object.keys(updates).length} personal budgets.`);
+            } else {
+                logger.info('ℹ️ No budgets required resetting today.');
+            }
+
         } catch (error) {
-            logger.error('❌ Error in reminder cron:', error);
+            logger.error('❌ Error in budget reset cron:', error);
         }
     });
 
-    logger.info('🚀 Reminder cron job scheduled (Daily at 09:00 AM)');
+    logger.info('🚀 Budget reset cron job scheduled (Every night at 00:00)');
 };
 
 module.exports = {
     startWeeklyReportCron,
+    startBudgetResetCron,
     startReminderCron,
     generateAndSendUserReport
 };

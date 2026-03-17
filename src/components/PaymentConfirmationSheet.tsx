@@ -1,8 +1,8 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import Avatar from "./Avatar";
-import { Wallet, AlertCircle, CheckCircle } from "lucide-react";
-import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { CreditCard, AlertCircle, CheckCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface PaymentConfirmationSheetProps {
   open: boolean;
@@ -23,8 +23,7 @@ const PaymentConfirmationSheet = ({
   member, 
   onConfirmPayment 
 }: PaymentConfirmationSheetProps) => {
-  const { getWalletBalance } = useFirebaseAuth();
-  const walletBalance = getWalletBalance();
+  const { t } = useTranslation();
 
   if (!member) return null;
 
@@ -67,12 +66,8 @@ const PaymentConfirmationSheet = ({
       </Sheet>
     );
   }
-  
-  const hasEnoughBalance = walletBalance >= amountToPay;
 
   const handlePayNow = async () => {
-    if (!hasEnoughBalance) return;
-
     const result = await onConfirmPayment(member.id, amountToPay);
     if (result.success) {
       onClose();
@@ -86,9 +81,9 @@ const PaymentConfirmationSheet = ({
           {/* Handle Bar */}
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
           
-          <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">Pay from Wallet</SheetTitle>
+          <SheetTitle className="text-center text-2xl font-black text-gray-900 tracking-tight">Confirm Settlement</SheetTitle>
           <SheetDescription className="text-center text-sm text-[#4a6850]/80 font-bold">
-            Confirm payment to a group member from your wallet balance
+            Confirm that you have paid this amount to {member.name}
           </SheetDescription>
         </SheetHeader>
 
@@ -97,76 +92,40 @@ const PaymentConfirmationSheet = ({
           <div className="text-center mb-8">
             <Avatar name={member.name} size="lg" />
             <h3 className="text-2xl font-black mt-4 text-gray-900 tracking-tight">{member.name}</h3>
-            <p className="text-[#4a6850]/80 font-bold">You owe them</p>
-            <div className="text-3xl font-black text-red-600 mt-3 tracking-tighter tabular-nums">
+            <p className="text-[#4a6850]/80 font-bold">Settlement Amount</p>
+            <div className="text-3xl font-black text-[#4a6850] mt-3 tracking-tighter tabular-nums">
               Rs {amountToPay.toLocaleString()}
             </div>
           </div>
 
-          {/* Wallet Balance Check - iPhone Style */}
-          <div className={`rounded-3xl p-6 border-2 shadow-lg mb-6 ${
-            hasEnoughBalance 
-              ? "bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 border-[#4a6850]/20" 
-              : "bg-gradient-to-br from-red-50 to-orange-50 border-red-200"
-          }`}>
-            <div className="flex items-center gap-4">
-              <div className={`w-14 h-14 rounded-3xl flex items-center justify-center shadow-lg ${
-                hasEnoughBalance ? "bg-gradient-to-br from-[#4a6850] to-[#3d5643]" : "bg-gradient-to-br from-red-500 to-orange-500"
-              }`}>
-                {hasEnoughBalance ? (
-                  <CheckCircle className="w-7 h-7 text-white font-bold" />
-                ) : (
-                  <AlertCircle className="w-7 h-7 text-white font-bold" />
-                )}
-              </div>
-              <div className="flex-1">
-                <div className="font-black text-gray-900 text-lg tracking-tight">
-                  {hasEnoughBalance ? "Sufficient Balance" : "Insufficient Balance"}
-                </div>
-                <div className="text-sm text-[#4a6850]/80 font-bold">
-                  Wallet Balance: Rs {walletBalance.toLocaleString()}
-                </div>
-              </div>
-              <Wallet className="w-6 h-6 text-[#4a6850]/60" />
+          {/* Info Card - iPhone Style */}
+          <div className="bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl p-6 border-2 border-[#4a6850]/20 shadow-lg mb-6 text-center">
+            <div className="w-14 h-14 bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <CheckCircle className="w-7 h-7 text-white" />
             </div>
+            <p className="text-sm font-bold text-[#4a6850]/80 leading-relaxed">
+              By confirming, this amount will be deducted from your pending debt to {member.name}.
+            </p>
           </div>
 
           {/* Payment Summary - iPhone Style */}
-          <div className="bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl p-6 border border-[#4a6850]/20 shadow-lg mb-6">
-            <h4 className="font-black text-gray-900 mb-4 text-lg tracking-tight uppercase">Payment Summary</h4>
+          <div className="bg-white rounded-3xl p-6 border border-[#4a6850]/10 shadow-sm mb-6">
+            <h4 className="font-black text-gray-900 mb-4 text-lg tracking-tight uppercase">Settlement Details</h4>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-[#4a6850]/80 font-bold">Amount to pay</span>
-                <span className="font-black text-gray-900 tabular-nums">Rs {amountToPay.toLocaleString()}</span>
+                <span className="text-[#4a6850]/80 font-bold">Recipient</span>
+                <span className="font-black text-gray-900">{member.name}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-[#4a6850]/80 font-bold">Payment method</span>
-                <span className="font-black text-gray-900">Wallet</span>
+                <span className="text-[#4a6850]/80 font-bold">Amount</span>
+                <span className="font-black text-gray-900 tabular-nums">Rs {amountToPay.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between items-center border-t border-[#4a6850]/20 pt-4">
-                <span className="text-[#4a6850]/80 font-bold">Balance after payment</span>
-                <span className={`font-black tabular-nums ${
-                  hasEnoughBalance ? "text-gray-900" : "text-red-600"
-                }`}>
-                  Rs {hasEnoughBalance ? (walletBalance - amountToPay).toLocaleString() : "Insufficient"}
-                </span>
+              <div className="flex justify-between items-center border-t border-gray-100 pt-4">
+                <span className="text-[#4a6850]/80 font-bold">Status</span>
+                <span className="font-black text-amber-600">Pending Confirmation</span>
               </div>
             </div>
           </div>
-
-          {!hasEnoughBalance && (
-            <div className="bg-gradient-to-br from-red-50 to-orange-50 border border-red-200 rounded-3xl p-6 shadow-lg">
-              <div className="flex items-start gap-4">
-                <AlertCircle className="w-6 h-6 text-red-600 mt-1 flex-shrink-0" />
-                <div>
-                  <div className="font-black text-red-600 text-lg tracking-tight">Insufficient Wallet Balance</div>
-                  <div className="text-sm text-red-500/80 mt-2 font-bold leading-relaxed">
-                    You need Rs {(amountToPay - walletBalance).toLocaleString()} more in your wallet to make this payment.
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="flex-shrink-0 pt-6 border-t border-[#4a6850]/10 bg-white">
@@ -180,10 +139,9 @@ const PaymentConfirmationSheet = ({
             </Button>
             <Button
               onClick={handlePayNow}
-              disabled={!hasEnoughBalance}
-              className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all disabled:opacity-50"
+              className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all"
             >
-              {hasEnoughBalance ? "Pay Now" : "Insufficient Balance"}
+              Confirm Payment
             </Button>
           </div>
         </div>

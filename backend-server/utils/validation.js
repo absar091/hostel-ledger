@@ -189,11 +189,32 @@ function validateMethod(method) {
   return null;
 }
 
+/**
+ * Validates latitude and longitude.
+ * @param {Object|null} location - The location object.
+ * @returns {string|null} - Error message if invalid, null if valid.
+ */
+function validateCoordinates(location) {
+    if (!location) return null;
+    const { lat, lng } = location;
+    
+    if (lat !== undefined && (typeof lat !== 'number' || isNaN(lat) || lat < -90 || lat > 90)) {
+        return 'Invalid latitude. Must be between -90 and 90.';
+    }
+    
+    if (lng !== undefined && (typeof lng !== 'number' || isNaN(lng) || lng < -180 || lng > 180)) {
+        return 'Invalid longitude. Must be between -180 and 180.';
+    }
+    
+    return null;
+}
+
 module.exports = {
   validateCreateGroup,
   validateAmount,
   isValidFirebaseId,
   validateNote,
   validatePlace,
-  validateMethod
+  validateMethod,
+  validateCoordinates
 };

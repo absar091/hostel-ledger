@@ -340,6 +340,7 @@ const GroupDetail = () => {
     participants: string[];
     note: string;
     place: string;
+    location?: { lat: number; lng: number };
   }) => {
     try {
       // Members are now added immediately in AddExpenseSheet, so no need for staging replacements here
@@ -351,6 +352,7 @@ const GroupDetail = () => {
         participants: data.participants,
         note: data.note,
         place: data.place,
+        location: data.location,
       });
 
       if (result.success) {

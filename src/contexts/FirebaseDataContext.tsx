@@ -152,10 +152,7 @@ const validatePaymentData = (data: {
   return { isValid: errors.length === 0, errors };
 };
 import {
-  calculateExpenseSplit,
-  calculateExpenseSettlements,
   validateSettlementConsistency,
-  calculateWalletBalanceAfter,
   validatePaymentAmount
 } from "@/lib/expenseLogic";
 import { logger } from "@/lib/logger";
@@ -194,15 +191,20 @@ export interface Group {
   status?: 'invited' | 'joined' | 'archived' | string;
   budget?: {
     amount: number;
-    period: 'monthly' | 'weekly';
-    lastUpdated: string;
+    period: 'weekly' | 'monthly';
+    spent: number;
+    lastReset: string;
+    policies: {
+      alertAt80: boolean;
+      lockAt100: boolean;
+    }
   };
 }
 
 export interface Transaction {
   id: string;
   groupId: string;
-  type: "expense" | "payment" | "wallet_add" | "wallet_deduct";
+  type: "expense" | "payment";
   title: string;
   amount: number;
   date: string;
@@ -217,8 +219,7 @@ export interface Transaction {
   method?: "cash" | "online";
   place?: string;
   note?: string;
-  walletBalanceBefore?: number;
-  walletBalanceAfter?: number;
+
   paidByIsTemporary?: boolean;
   fromIsTemporary?: boolean;
   toIsTemporary?: boolean;
@@ -240,13 +241,13 @@ interface FirebaseDataContextType {
   addMemberToGroup: (groupId: string, member: { id?: string; name: string; paymentDetails?: PaymentDetails; phone?: string; isTemporary?: boolean; deletionCondition?: 'SETTLED' | 'TIME_LIMIT' | null }) => Promise<{ success: boolean; error?: string; memberId?: string }>;
   removeMemberFromGroup: (groupId: string, memberId: string) => Promise<{ success: boolean; error?: string }>;
   updateMemberPaymentDetails: (groupId: string, memberId: string, paymentDetails: PaymentDetails, phone?: string) => Promise<{ success: boolean; error?: string }>;
-  addExpense: (data: { groupId: string; amount: number; paidBy: string; payers?: { id: string; amount: number }[]; participants: string[]; note: string; place: string; clientTxnId?: string }) => Promise<{ success: boolean; error?: string; transaction?: Transaction; duplicate?: boolean }>;
+  addExpense: (data: { groupId: string; amount: number; paidBy: string; payers?: { id: string; amount: number }[]; participants: string[]; note: string; place: string; location?: { lat: number, lng: number }; clientTxnId?: string }) => Promise<{ success: boolean; error?: string; transaction?: Transaction; duplicate?: boolean }>;
   recordPayment: (data: { groupId: string; fromMember: string; toMember: string; amount: number; method: "cash" | "online"; note?: string }) => Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
   mergeMembers: (groupId: string, fromMemberId: string, toMemberId: string) => Promise<{ success: boolean; error?: string }>;
   claimMemberProfile: (groupId: string, memberId: string) => Promise<{ success: boolean; error?: string }>;
   payMyDebt: (groupId: string, toMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
   markPaymentAsPaid: (groupId: string, fromMember: string, amount: number) => Promise<{ success: boolean; error?: string }>;
-  addMoneyToWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string; transaction?: Transaction }>;
+
   getGroupById: (groupId: string) => Group | undefined;
   fetchGroupDetail: (groupId: string) => Promise<Group | null>;
   getTransactionsByGroup: (groupId: string) => Transaction[];
@@ -267,7 +268,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
   const {
     user,
     firebaseUser,
-    addMoneyToWallet: authAddMoneyToWallet,
+
     markPaymentReceived,
     markDebtPaid,
     getSettlements
@@ -498,14 +499,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                   };
                 }
 
-                // 3. For wallet ops, summary is sufficient
-                if (data && (data.type === 'wallet_add' || data.type === 'wallet_deduct')) {
-                  return {
-                    id,
-                    ...data,
-                    date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : (data.date || "Unknown Date")
-                  };
-                }
+
 
                 // Fallback: Fetch full transaction data if summary is incomplete (legacy data)
                 try {
@@ -904,7 +898,17 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addExpense = async (data: { groupId: string; amount: number; paidBy: string; payers?: { id: string; amount: number }[]; participants: string[]; note: string; place: string; clientTxnId?: string }): Promise<{ success: boolean; error?: string; transaction?: Transaction; duplicate?: boolean }> => {
+  const addExpense = async (data: { 
+    groupId: string; 
+    amount: number; 
+    paidBy: string; 
+    payers?: { id: string; amount: number }[]; 
+    participants: string[]; 
+    note: string; 
+    place: string; 
+    location?: { lat: number, lng: number };
+    clientTxnId?: string 
+  }): Promise<{ success: boolean; error?: string; transaction?: Transaction; duplicate?: boolean }> => {
     if (!user) return { success: false, error: "User not authenticated" };
 
     // Generate or use existing clientTxnId
@@ -922,6 +926,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           participants: data.participants,
           note: data.note,
           place: data.place,
+          location: data.location,
           clientTxnId
         });
         return { success: true, error: "Offline: saved to sync later" };
@@ -937,6 +942,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         participants: data.participants,
         note: data.note,
         place: data.place,
+        location: data.location,
         clientTxnId
       });
 
@@ -969,6 +975,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           participants: data.participants,
           note: data.note,
           place: data.place,
+          location: data.location,
           clientTxnId
         });
         return { success: true, error: "Network error: saved to sync later" };
@@ -1101,25 +1108,6 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addMoneyToWallet = async (amount: number, note?: string): Promise<{ success: boolean; error?: string; transaction?: Transaction }> => {
-    if (!user) return { success: false, error: "User not authenticated" };
-
-    const validation = validateAmount(amount);
-    if (!validation.isValid) {
-      return { success: false, error: validation.error || "Invalid amount" };
-    }
-
-    try {
-      const sanitizedAmount = sanitizeAmount(amount);
-      const sanitizedNote = note ? sanitizeString(note) : undefined;
-
-      // Use the secured auth context method which calls the backend
-      return await authAddMoneyToWallet(sanitizedAmount, sanitizedNote);
-    } catch (error: any) {
-      console.error("Add money to wallet error:", error);
-      return { success: false, error: error.message || "Failed to add money to wallet" };
-    }
-  };
 
   // Improved implementations for other methods
   const updateGroup = async (groupId: string, data: Partial<Group>): Promise<{ success: boolean; error?: string }> => {
@@ -1145,10 +1133,15 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       // Optimistic local update
       setGroups(prev => prev.map(g => g.id === groupId ? { ...g, budget } : g));
       
-      const groupRef = ref(database, `groups/${groupId}`);
-      await update(groupRef, { budget });
+      const budgetRef = ref(database, `budgets/${groupId}`);
+      await update(budgetRef, {
+        amount: budget?.amount || 0,
+        period: budget?.period || 'monthly',
+        policies: budget?.policies || { alertAt80: true, lockAt100: true },
+        lastUpdated: new Date().toISOString()
+      });
       
-      // Also update in userGroups index (limited fields)
+      // Also update in userGroups index (limited fields for dashboard performance)
       const userGroupRef = ref(database, `userGroups/${user.uid}/${groupId}`);
       await update(userGroupRef, { 
         budgetAmount: budget?.amount || null,
@@ -1389,10 +1382,10 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       return { eligible: false, reason: "User not authenticated" };
     }
 
-    // 1. Check Wallet Balance
-    if (user.walletBalance > 0) {
-      return { eligible: false, reason: "You have money in your wallet. Please withdraw it before deleting your account." };
-    }
+    // 1. Check Personal Budget - if they have spent > 0 in current period, maybe we warn them?
+    // Actually, deletion script will clean up all data, so we mainly care about debts.
+    // The previous wallet check was to prevent loss of funds. Since HL is no longer a wallet,
+    // we don't need to block deletion if they have "budget" left.
 
     // 2. Check Outstanding Settlements (Global)
     const settlements = getSettlements();
@@ -1573,7 +1566,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     claimMemberProfile,
     payMyDebt,
     markPaymentAsPaid,
-    addMoneyToWallet,
+
     getGroupById,
     fetchGroupDetail,
     getTransactionsByGroup,

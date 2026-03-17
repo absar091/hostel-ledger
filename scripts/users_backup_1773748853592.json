@@ -1,0 +1,727 @@
+{
+  "1X9yC8cnuiXD7VSqcwzh7yw6gQB3": {
+    "accountStatus": "active",
+    "statusUpdatedAt": 1773554314924
+  },
+  "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+    "accountStatus": "active",
+    "createdAt": "2026-02-22T16:19:47.451Z",
+    "email": "ahmadraoabsar@gmail.com",
+    "emailVerified": true,
+    "favoriteGroups": [
+      "personal_1xJdSahZZbM9bJISFckuRzJKhpl1",
+      "-OmPD_keG2SOy-i1K0au",
+      "-OmQ8qhp1Lsn39aMZLm4",
+      "-OnX9537AT5lguPlx30f"
+    ],
+    "groups": {
+      "-OmFkQ_3XIPAvmZMKfte": {
+        "emoji": "🏠",
+        "joinedAt": "2026-02-25T00:16:14.057Z",
+        "memberCount": 3,
+        "name": "Roommates",
+        "role": "member"
+      },
+      "-OmQ8qhp1Lsn39aMZLm4": {
+        "emoji": "🏠",
+        "joinedAt": "2026-02-27T04:04:57.613Z",
+        "memberCount": 4,
+        "name": "Roomates",
+        "role": "member"
+      },
+      "-OnX9537AT5lguPlx30f": {
+        "emoji": "🏠",
+        "joinedAt": "2026-03-12T13:09:20.116Z",
+        "memberCount": 4,
+        "name": "Roommate",
+        "role": "member"
+      }
+    },
+    "is2FAEnabled": false,
+    "name": "Absar  Ahmad Rao",
+    "paymentDetails": {
+      "accountNumber": "03291927gq88qguqiiah",
+      "bankName": "MCB Bank",
+      "jazzCash": "03261536764"
+    },
+    "phone": "03297642797",
+    "photoURL": "https://res.cloudinary.com/dddxba9vu/image/upload/v1773663790/profile-pictures/axhcky9dp6ivm62zvw4d.jpg",
+    "role": "superadmin",
+    "settlements": {
+      "-Om5Ufrj6p5VURI2kN7E": {
+        "member_1771782979274_akne2oa": {
+          "toPay": 0,
+          "toReceive": 0
+        },
+        "member_1771782979274_orvxunn": {
+          "toPay": 0,
+          "toReceive": 0
+        }
+      },
+      "-Om8QpgV1VlHemegyAr0": {
+        "member_1771832302409_v9mvs1b": {
+          "toPay": 0,
+          "toReceive": 0
+        }
+      },
+      "-Om8mLVRPMyu_XyspPOG": {
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 0,
+          "toReceive": 33.34
+        },
+        "member_1771838204023_ik3pb6g": {
+          "toPay": 200,
+          "toReceive": 699.9799999999999
+        }
+      },
+      "-OmElxcwOG-4P0Skasak": {
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 0,
+          "toReceive": 1350
+        }
+      },
+      "-OmFkQ_3XIPAvmZMKfte": {
+        "DDxdQvrlwAWBjpaO8ae6QwVP5Ti1": {
+          "toPay": 199.98,
+          "toReceive": 66.67
+        },
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 0,
+          "toReceive": 0
+        }
+      },
+      "-OmHBXgVk9mXNbdpG4PP": {
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 2942.5,
+          "toReceive": 688.5
+        }
+      },
+      "-OmL6T0dNVfG0Jf2JW6L": {
+        "DDxdQvrlwAWBjpaO8ae6QwVP5Ti1": {
+          "toPay": 66.67,
+          "toReceive": 1002441.65
+        },
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 450,
+          "toReceive": 3941.67
+        },
+        "member_1772121227209_oxtkzcq7y": {
+          "toPay": 0,
+          "toReceive": 125
+        }
+      },
+      "-OmPD_keG2SOy-i1K0au": {
+        "member_1772114041976_7n5kutw": {
+          "toPay": 1100,
+          "toReceive": 700
+        }
+      },
+      "-OmQ8qhp1Lsn39aMZLm4": {
+        "F2pvv1di9bN71CAYkd5ihaBTscJ3": {
+          "toPay": 2715.25,
+          "toReceive": 0
+        },
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 0,
+          "toReceive": 0
+        },
+        "member_1772873009929_2yj0dygnt": {
+          "toPay": 0,
+          "toReceive": 166.66
+        }
+      },
+      "-OnX9537AT5lguPlx30f": {
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 666.66,
+          "toReceive": 2358.34
+        },
+        "U3G79BMAdYf5WtrgtvLIxlaNAUn1": {
+          "toPay": 2683.24,
+          "toReceive": 1433.31
+        }
+      },
+      "-OncO4ibmemAnYQpUaGf": {
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 0,
+          "toReceive": 544
+        },
+        "member_1773425630087_b664frf": {
+          "toPay": 66.67,
+          "toReceive": 166.66
+        },
+        "member_1773499732560_eb7a3f51": {
+          "toPay": 0,
+          "toReceive": 50
+        },
+        "member_1773499837516_99d90065": {
+          "toPay": 0,
+          "toReceive": 50
+        },
+        "member_1773633820306_563b70e5": {
+          "toPay": 0,
+          "toReceive": 0
+        }
+      }
+    },
+    "showBalanceToOthers": true,
+    "statusUpdatedAt": 1773483277033,
+    "suspensionReason": "Automated ban: Security score 120 exceeded critical threshold. Evidence: High velocity and repeated patterns.",
+    "trustedDevices": {
+      "0cf416e3c56dd9c86a08c872db2db54cc41180ebc7db4fd55c30e466e2adf73e": {
+        "createdAt": "2026-03-03T19:36:55.168Z",
+        "ip": "154.81.244.84",
+        "lastUsed": "2026-03-03T19:37:22.118Z",
+        "token": "0cf416e3c56dd9c86a08c872db2db54cc41180ebc7db4fd55c30e466e2adf73e",
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36"
+      },
+      "13de0f4d5f2ab48c33f26648fd52a3720b87a3cac9fb7cb23516f65146602019": {
+        "createdAt": "2026-03-04T15:25:15.743Z",
+        "ip": "119.160.58.56",
+        "lastUsed": "2026-03-04T19:18:19.935Z",
+        "token": "13de0f4d5f2ab48c33f26648fd52a3720b87a3cac9fb7cb23516f65146602019",
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36"
+      },
+      "176a950568c68c34dd2f5e8220a261c4d3be524ac1fb411d91b1eb3b3c7116ee": {
+        "createdAt": "2026-03-04T15:29:10.545Z",
+        "ip": "119.160.58.56",
+        "lastUsed": "2026-03-13T09:41:56.844Z",
+        "token": "176a950568c68c34dd2f5e8220a261c4d3be524ac1fb411d91b1eb3b3c7116ee",
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36"
+      },
+      "2d94bc0649c623b0c568f3a40d64e1795de9f04d7b1c6890e3bd61b445d1df65": {
+        "createdAt": "2026-02-24T11:51:53.662Z",
+        "ip": "154.80.105.23",
+        "lastUsed": "2026-02-24T11:51:53.662Z",
+        "token": "2d94bc0649c623b0c568f3a40d64e1795de9f04d7b1c6890e3bd61b445d1df65",
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36"
+      },
+      "507b4381e5745b066a278e45701339ba2b17e406f5316e08ef6c50c0a7be170e": {
+        "createdAt": "2026-02-23T09:00:15.262Z",
+        "ip": "154.80.112.48",
+        "lastUsed": "2026-02-23T19:40:02.735Z",
+        "token": "507b4381e5745b066a278e45701339ba2b17e406f5316e08ef6c50c0a7be170e",
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36"
+      },
+      "53e7eb70c85db7450f6003982de8c2c1194753e02617c8ac45c499baad4a628e": {
+        "createdAt": "2026-02-24T08:12:14.794Z",
+        "ip": "154.81.245.113",
+        "lastUsed": "2026-02-24T08:12:14.794Z",
+        "token": "53e7eb70c85db7450f6003982de8c2c1194753e02617c8ac45c499baad4a628e",
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36"
+      },
+      "612eef8324464cc9d7f2194d1094c73e22b01392a0df0ac8fffbc5c304f46ca2": {
+        "createdAt": "2026-02-24T11:22:20.311Z",
+        "ip": "154.80.97.11",
+        "lastUsed": "2026-02-24T15:36:36.060Z",
+        "token": "612eef8324464cc9d7f2194d1094c73e22b01392a0df0ac8fffbc5c304f46ca2",
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36"
+      },
+      "7f711917284854b6968001f7cf1bc1bf0959b80c3e0e0583aac9504cc28dc35f": {
+        "createdAt": "2026-03-13T06:19:30.296Z",
+        "ip": "::1",
+        "lastUsed": "2026-03-13T08:03:37.071Z",
+        "token": "7f711917284854b6968001f7cf1bc1bf0959b80c3e0e0583aac9504cc28dc35f",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
+      },
+      "8bf62e28d51f309c158234dad56a1e4562dd4ef2a320c248bc41c45068417ce5": {
+        "createdAt": "2026-03-13T04:41:02.010Z",
+        "ip": "::1",
+        "lastUsed": "2026-03-13T04:41:02.010Z",
+        "token": "8bf62e28d51f309c158234dad56a1e4562dd4ef2a320c248bc41c45068417ce5",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+      },
+      "bb9195f272bae82697e05d483e97bc6e3fb22ba319cc8b91fec2770ccb58498e": {
+        "createdAt": "2026-03-03T16:35:40.221Z",
+        "ip": "154.81.244.84",
+        "lastUsed": "2026-03-03T19:24:32.833Z",
+        "token": "bb9195f272bae82697e05d483e97bc6e3fb22ba319cc8b91fec2770ccb58498e",
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36"
+      },
+      "bc531fc6a6d97c98e27eb47ba5e5d2f26fdec9350c9bdbb9439bb73cad645d72": {
+        "createdAt": "2026-02-24T08:49:28.488Z",
+        "ip": "154.80.123.79",
+        "lastUsed": "2026-02-24T09:34:06.184Z",
+        "token": "bc531fc6a6d97c98e27eb47ba5e5d2f26fdec9350c9bdbb9439bb73cad645d72",
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36"
+      },
+      "ccb598bbae2528f1119d18a75a84a2221851f7b36cd6a75c826507fd33b5444b": {
+        "createdAt": "2026-03-11T16:54:48.080Z",
+        "ip": "39.50.146.67",
+        "lastUsed": "2026-03-15T00:09:04.419Z",
+        "token": "ccb598bbae2528f1119d18a75a84a2221851f7b36cd6a75c826507fd33b5444b",
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36"
+      },
+      "da9ff3706fad880a4ce771ef1f5aff3ef2bd8d35a63b92f1795646355a17be76": {
+        "createdAt": "2026-02-25T16:28:13.045Z",
+        "ip": "119.160.57.1",
+        "lastUsed": "2026-03-08T09:51:43.679Z",
+        "token": "da9ff3706fad880a4ce771ef1f5aff3ef2bd8d35a63b92f1795646355a17be76",
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36"
+      },
+      "ddfaef1010a31b42472c16fca47e943fdf3063fd0ebc4f19ca46eb7d375cd25e": {
+        "createdAt": "2026-03-12T17:07:43.696Z",
+        "ip": "::1",
+        "lastUsed": "2026-03-12T17:08:34.661Z",
+        "token": "ddfaef1010a31b42472c16fca47e943fdf3063fd0ebc4f19ca46eb7d375cd25e",
+        "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+      },
+      "f1bc25c6d581d6febca61277e9e5c41dfef28fba56edc1401367d71d6f8fee16": {
+        "createdAt": "2026-02-24T11:14:48.527Z",
+        "ip": "154.80.97.11",
+        "lastUsed": "2026-02-24T11:22:54.817Z",
+        "token": "f1bc25c6d581d6febca61277e9e5c41dfef28fba56edc1401367d71d6f8fee16",
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36"
+      }
+    },
+    "uid": "1xJdSahZZbM9bJISFckuRzJKhpl1",
+    "username": "absar091",
+    "walletBalance": 17813.339999999997
+  },
+  "6ntxO8oLo6QbmYTizpFHsMGb89L2": {
+    "createdAt": "2026-03-15T09:44:40.355Z",
+    "email": "abidhussainrao29@gmail.com",
+    "emailVerified": true,
+    "name": "Sadia Tufail",
+    "showBalanceToOthers": true,
+    "uid": "6ntxO8oLo6QbmYTizpFHsMGb89L2",
+    "username": "ahmadraoabsargmail",
+    "walletBalance": -21600
+  },
+  "9Rf6Wu6SsuSbQjpiPVB5b9jkFGH2": {
+    "createdAt": "2026-02-23T09:19:11.203Z",
+    "email": "ahmadraoabsar091@gmail.com",
+    "emailVerified": true,
+    "groups": {
+      "-Om8mLVRPMyu_XyspPOG": {
+        "emoji": "🏠",
+        "joinedAt": "2026-02-23T09:20:16.725Z",
+        "memberCount": 0,
+        "name": "Home",
+        "role": "member"
+      }
+    },
+    "is2FAEnabled": true,
+    "name": "ABSAR ",
+    "settlements": {
+      "-Om8mLVRPMyu_XyspPOG": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 699.9799999999999,
+          "toReceive": 200
+        }
+      }
+    },
+    "showBalanceToOthers": true,
+    "trustedDevices": {
+      "b557511cd8aa46713f91ff2faa49f4eb998794eecd8ed1c04e0e05155f8f3d61": {
+        "createdAt": "2026-02-23T14:26:41.686Z",
+        "ip": "154.80.112.48",
+        "lastUsed": "2026-02-23T14:26:41.686Z",
+        "token": "b557511cd8aa46713f91ff2faa49f4eb998794eecd8ed1c04e0e05155f8f3d61",
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36"
+      },
+      "df85d18692e879ebbb8e7a52a9f911923f92dad941df9e2b924b6bf8f414cdb5": {
+        "createdAt": "2026-02-23T14:24:52.230Z",
+        "ip": "154.80.112.48",
+        "lastUsed": "2026-02-23T14:24:52.230Z",
+        "token": "df85d18692e879ebbb8e7a52a9f911923f92dad941df9e2b924b6bf8f414cdb5",
+        "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36"
+      }
+    },
+    "uid": "9Rf6Wu6SsuSbQjpiPVB5b9jkFGH2",
+    "username": "rth",
+    "walletBalance": 0
+  },
+  "DDxdQvrlwAWBjpaO8ae6QwVP5Ti1": {
+    "createdAt": "2026-02-24T17:41:42.178Z",
+    "email": "momnaabid593@gmail.com",
+    "emailVerified": true,
+    "groups": {
+      "-OmL6T0dNVfG0Jf2JW6L": {
+        "coverPhoto": "https://res.cloudinary.com/dddxba9vu/image/upload/v1772045026/profile-pictures/bzelazpwo97a23og1wfr.jpg",
+        "emoji": "🏠",
+        "joinedAt": "2026-02-25T19:05:16.520Z",
+        "memberCount": 3,
+        "name": "Roommates",
+        "role": "member"
+      },
+      "-OmQ8qhp1Lsn39aMZLm4": {
+        "emoji": "🏠",
+        "joinedAt": "2026-03-08T07:05:57.900Z",
+        "memberCount": 6,
+        "name": "Roomates",
+        "role": "member"
+      }
+    },
+    "name": "Abid Hussain",
+    "paymentDetails": {
+      "jazzCash": "03251536764"
+    },
+    "settlements": {
+      "-OmFkQ_3XIPAvmZMKfte": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 66.67,
+          "toReceive": 199.98
+        },
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 0,
+          "toReceive": 0
+        }
+      },
+      "-OmL6T0dNVfG0Jf2JW6L": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 1002441.65,
+          "toReceive": 66.67
+        },
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 0,
+          "toReceive": 66.66
+        }
+      },
+      "-OmQ8qhp1Lsn39aMZLm4": {
+        "F2pvv1di9bN71CAYkd5ihaBTscJ3": {
+          "toPay": 1385.91,
+          "toReceive": 0
+        },
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 866.6600000000001,
+          "toReceive": 0
+        }
+      }
+    },
+    "showBalanceToOthers": true,
+    "uid": "DDxdQvrlwAWBjpaO8ae6QwVP5Ti1",
+    "username": "momna",
+    "walletBalance": 20352.679999999997
+  },
+  "F2pvv1di9bN71CAYkd5ihaBTscJ3": {
+    "createdAt": "2026-02-26T18:10:07.609Z",
+    "email": "kaleemlovelybhutta123@gmail.com",
+    "emailVerified": true,
+    "name": "Kaleem Ullah",
+    "settlements": {
+      "-OmQ8qhp1Lsn39aMZLm4": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 0,
+          "toReceive": 2715.25
+        },
+        "DDxdQvrlwAWBjpaO8ae6QwVP5Ti1": {
+          "toPay": 0,
+          "toReceive": 1385.91
+        },
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 2399.97,
+          "toReceive": 4662.94
+        },
+        "member_1772815089645_i4uyb2aq0": {
+          "toPay": 0,
+          "toReceive": 1116.6699999999998
+        },
+        "member_1772873009929_2yj0dygnt": {
+          "toPay": 0,
+          "toReceive": 533.33
+        }
+      }
+    },
+    "showBalanceToOthers": true,
+    "uid": "F2pvv1di9bN71CAYkd5ihaBTscJ3",
+    "username": "yqy.y",
+    "walletBalance": 1149.96
+  },
+  "RGS2unOwwJQIrmUItKPBOxo2G3C3": {
+    "createdAt": "2026-02-24T12:02:48.003Z",
+    "email": "ahmadraoabshhar091@gmail.com",
+    "emailVerified": true,
+    "name": "Abid Hussain",
+    "showBalanceToOthers": false,
+    "uid": "RGS2unOwwJQIrmUItKPBOxo2G3C3",
+    "username": "absar0915",
+    "walletBalance": 0
+  },
+  "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+    "createdAt": "2026-03-15T09:31:12.466Z",
+    "email": "itsabsarahmadrao@gmail.com",
+    "emailVerified": true,
+    "name": "Absar Ahmad",
+    "settlements": {
+      "-OnX9537AT5lguPlx30f": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 2333.34,
+          "toReceive": 0
+        },
+        "U3G79BMAdYf5WtrgtvLIxlaNAUn1": {
+          "toPay": 1965.6599999999999,
+          "toReceive": 0
+        }
+      },
+      "-OncO4ibmemAnYQpUaGf": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 544,
+          "toReceive": 0
+        }
+      }
+    },
+    "showBalanceToOthers": false,
+    "uid": "RKtihUTUkXa73nM5Vtfri9DsvNs1",
+    "username": "",
+    "walletBalance": 0
+  },
+  "TwfzXXXvGSQTZtfqOonLCC8pAot1": {
+    "createdAt": "2026-03-16T08:08:30.087Z",
+    "email": "testuser@example.com",
+    "emailVerified": true,
+    "name": "Test User",
+    "uid": "TwfzXXXvGSQTZtfqOonLCC8pAot1",
+    "username": "testuser123"
+  },
+  "U3G79BMAdYf5WtrgtvLIxlaNAUn1": {
+    "createdAt": "2026-03-10T15:27:43.590Z",
+    "email": "kamranahmadrao1014@gmail.com",
+    "emailVerified": true,
+    "name": "Absar  Rao",
+    "settlements": {
+      "-OnX9537AT5lguPlx30f": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 1433.31,
+          "toReceive": 2683.24
+        },
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 0,
+          "toReceive": 3107.24
+        },
+        "member_1773399263155_8c6d38c9": {
+          "toPay": 0,
+          "toReceive": 916.25
+        }
+      }
+    },
+    "showBalanceToOthers": true,
+    "uid": "U3G79BMAdYf5WtrgtvLIxlaNAUn1",
+    "username": "kamranahmadrao1014",
+    "walletBalance": 7133.33
+  },
+  "W5NFZFbsluSXsXNNOuPEiQ9ynSB3": {
+    "accountStatus": "active",
+    "createdAt": "2026-03-13T18:12:56.789Z",
+    "email": "absar.ahmad.rao@quizzicallabz.qzz.io",
+    "emailVerified": true,
+    "name": "Momna ABID",
+    "settlements": {
+      "-OncO4ibmemAnYQpUaGf": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 166.66,
+          "toReceive": 66.67
+        },
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 0,
+          "toReceive": 66.67
+        },
+        "member_1773499905338_36a14425": {
+          "toPay": 0,
+          "toReceive": 0
+        }
+      }
+    },
+    "showBalanceToOthers": false,
+    "statusUpdatedAt": 1773565463628,
+    "uid": "W5NFZFbsluSXsXNNOuPEiQ9ynSB3",
+    "username": "absar0912",
+    "walletBalance": 866.66
+  },
+  "member_1771782979274_akne2oa": {
+    "settlements": {
+      "-Om5Ufrj6p5VURI2kN7E": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 0,
+          "toReceive": 0
+        }
+      }
+    }
+  },
+  "member_1771782979274_orvxunn": {
+    "settlements": {
+      "-Om5Ufrj6p5VURI2kN7E": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 0,
+          "toReceive": 0
+        }
+      }
+    }
+  },
+  "member_1772114041976_7n5kutw": {
+    "settlements": {
+      "-OmPD_keG2SOy-i1K0au": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 700,
+          "toReceive": 1100
+        }
+      }
+    }
+  },
+  "member_1772121227209_oxtkzcq7y": {
+    "settlements": {
+      "-OmL6T0dNVfG0Jf2JW6L": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 125,
+          "toReceive": 0
+        }
+      }
+    }
+  },
+  "member_1772815089645_i4uyb2aq0": {
+    "settlements": {
+      "-OmQ8qhp1Lsn39aMZLm4": {
+        "F2pvv1di9bN71CAYkd5ihaBTscJ3": {
+          "toPay": 1116.6699999999998,
+          "toReceive": 0
+        },
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 1566.65,
+          "toReceive": 0
+        }
+      }
+    }
+  },
+  "member_1772873009929_2yj0dygnt": {
+    "settlements": {
+      "-OmQ8qhp1Lsn39aMZLm4": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 166.66,
+          "toReceive": 0
+        },
+        "F2pvv1di9bN71CAYkd5ihaBTscJ3": {
+          "toPay": 533.33,
+          "toReceive": 0
+        },
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 833.3299999999999,
+          "toReceive": 0
+        }
+      }
+    }
+  },
+  "member_1773399263155_8c6d38c9": {
+    "settlements": {
+      "-OnX9537AT5lguPlx30f": {
+        "RKtihUTUkXa73nM5Vtfri9DsvNs1": {
+          "toPay": 0,
+          "toReceive": 25
+        },
+        "U3G79BMAdYf5WtrgtvLIxlaNAUn1": {
+          "toPay": 916.25,
+          "toReceive": 0
+        }
+      }
+    }
+  },
+  "member_1773499732560_eb7a3f51": {
+    "settlements": {
+      "-OncO4ibmemAnYQpUaGf": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 50,
+          "toReceive": 0
+        }
+      }
+    }
+  },
+  "member_1773499837516_99d90065": {
+    "settlements": {
+      "-OncO4ibmemAnYQpUaGf": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 50,
+          "toReceive": 0
+        }
+      }
+    }
+  },
+  "member_1773499905338_36a14425": {
+    "settlements": {
+      "-OncO4ibmemAnYQpUaGf": {
+        "W5NFZFbsluSXsXNNOuPEiQ9ynSB3": {
+          "toPay": 0,
+          "toReceive": 0
+        },
+        "member_1773425630087_b664frf": {
+          "toPay": 66.66,
+          "toReceive": 0
+        }
+      }
+    }
+  },
+  "member_1773633820306_563b70e5": {
+    "settlements": {
+      "-OncO4ibmemAnYQpUaGf": {
+        "1xJdSahZZbM9bJISFckuRzJKhpl1": {
+          "toPay": 0,
+          "toReceive": 0
+        }
+      }
+    }
+  },
+  "wONbbDfrokbBsg00OhF8WRr0GJF3": {
+    "aiInsightsCache": {
+      "data": {
+        "advice": "Remember to regularly review your expenses to better manage your funds and plan for future spending.",
+        "chartData": [
+          {
+            "amount": 0,
+            "day": "Tue"
+          },
+          {
+            "amount": 0,
+            "day": "Wed"
+          },
+          {
+            "amount": 0,
+            "day": "Thu"
+          },
+          {
+            "amount": 0,
+            "day": "Fri"
+          },
+          {
+            "amount": 0,
+            "day": "Sat"
+          },
+          {
+            "amount": 0,
+            "day": "Sun"
+          },
+          {
+            "amount": 5000,
+            "day": "Mon"
+          }
+        ],
+        "highlights": [
+          "You deposited 5000 into your wallet today.",
+          "An expense of 5000 for Personal Space was recorded today.",
+          "Your wallet balance is currently 0 after recent transactions."
+        ],
+        "summary": "Hi Irfan Yaseen, you're currently in a neutral financial position after today's activities."
+      },
+      "timestamp": 1773059786825
+    },
+    "createdAt": "2026-03-09T12:23:36.651Z",
+    "email": "irfanyaseen377@gmail.com",
+    "emailVerified": true,
+    "favoriteGroups": [
+      "personal_wONbbDfrokbBsg00OhF8WRr0GJF3"
+    ],
+    "name": "Irfan Yaseen",
+    "paymentDetails": {
+      "bankName": "Habib Bank Limited (HBL)"
+    },
+    "showBalanceToOthers": true,
+    "uid": "wONbbDfrokbBsg00OhF8WRr0GJF3",
+    "username": "irfanyaseen377",
+    "walletBalance": 0
+  },
+  "wvatCQaK5nUm6Wy0S0v7GeVQ90s1": {
+    "createdAt": "2026-02-24T11:40:51.576Z",
+    "email": "ahmadraoagggbsar@gmail.com",
+    "name": "Sadia Tufail",
+    "showBalanceToOthers": false,
+    "uid": "wvatCQaK5nUm6Wy0S0v7GeVQ90s1",
+    "username": "ggyh",
+    "walletBalance": 0
+  }
+}

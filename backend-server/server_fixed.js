@@ -21,8 +21,7 @@ process.on('uncaughtException', (err) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('❌ Unhandled Rejection:', reason);
-    logger.error('❌ Unhandled Rejection:', reason);
+    logger.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
 });
 // --------------------------
 
@@ -32,8 +31,7 @@ const {
   isValidFirebaseId,
   validateNote,
   validatePlace,
-  validateMethod,
-  validateCoordinates
+  validateMethod
 } = require('./utils/validation');
 const { sanitize } = require('./utils/sanitize');
 const { getDeviceFromUA, getLocationFromIP } = require('./utils/deviceInfo');
@@ -513,10 +511,6 @@ app.post('/api/get-transaction-preview', authenticate, async (req, res) => {
 
     if (!transactionId) {
       return res.status(400).json({ error: 'Transaction ID is required.' });
-    }
-
-    if (!isValidFirebaseId(transactionId)) {
-      return res.status(400).json({ error: 'Invalid transaction ID format.' });
     }
 
     // 1. Fetch transaction first to find out which group it belongs to
@@ -1370,9 +1364,6 @@ app.post('/api/ai/parse-expense', detectFraud, generalLimiter, authenticate, asy
     if (!text) {
       return res.status(400).json({ success: false, error: 'Text is required' });
     }
-    if (!groupId || !isValidFirebaseId(groupId)) {
-      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
-    }
 
     // Get group members for context
     const groupSnap = await admin.database().ref(`groups/${groupId}`).get();
@@ -1453,9 +1444,6 @@ app.post('/api/ai/parse-expense-audio', detectFraud, generalLimiter, authenticat
     const { audioData, mimeType, groupId } = req.body;
     if (!audioData || !mimeType) {
       return res.status(400).json({ success: false, error: 'Audio data and mimeType are required' });
-    }
-    if (!groupId || !isValidFirebaseId(groupId)) {
-      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
     }
 
     // Get group members for context
@@ -3220,8 +3208,7 @@ app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (r
           if (groupBudget.policies?.alertAt80 && newSpent >= alertThreshold && (groupBudget.spent || 0) < alertThreshold) {
             // Send Alert Notification to group members
             const alertTitle = `⚠️ Budget Alert: ${group.name}`;
-            const remainingBudget = Math.max(0, budgetAmount - newSpent);
-            const alertBody = `The group budget has reached 80% of its limit (${newSpent}/${budgetAmount}). Remaining: ${remainingBudget}.`;
+            const alertBody = `The group budget has reached 80% of its limit (${newSpent}/${budgetAmount}).`;
             // Trigger notifications asynchronously
             sendOneSignalNotificationInternal({ 
               userIds: membersArray.filter(m => m.userId).map(m => m.userId), 
@@ -3229,21 +3216,6 @@ app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (r
               body: alertBody,
               data: { groupId, type: 'budget_alert' }
             }).catch(err => logger.error('Budget alert notification failed:', err));
-
-            // Send Email Notifications
-            membersArray.forEach(m => {
-              if (m.email) {
-                emailService.sendBudgetAlert({
-                  email: m.email,
-                  name: m.name || m.email.split('@')[0],
-                  type: 'Group',
-                  amount: budgetAmount,
-                  spent: newSpent,
-                  remaining: remainingBudget,
-                  groupName: group.name
-                }).catch(err => logger.error('Budget email alert failed:', err));
-              }
-            });
           }
         }
       }
@@ -3277,25 +3249,12 @@ app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (r
               // Personal Alert (80%)
               const pAlertThreshold = pAmount * 0.8;
               if (pBudget.policies?.alertAt80 && newPSpent >= pAlertThreshold && (pBudget.spent || 0) < pAlertThreshold) {
-                const pRemaining = Math.max(0, pAmount - newPSpent);
                 sendOneSignalNotificationInternal({ 
                   userIds: [pUid], 
                   title: '📉 Personal Budget Alert', 
-                  body: `You have spent 80% of your personal budget (${newPSpent}/${pAmount}). Remaining: ${pRemaining}.`,
+                  body: `You have spent 80% of your personal budget (${newPSpent}/${pAmount}).`,
                   data: { type: 'personal_budget_alert' }
                 }).catch(err => logger.error('Personal alert notification failed:', err));
-
-                if (req.user && req.user.email) {
-                  emailService.sendBudgetAlert({
-                    email: req.user.email,
-                    name: req.user.name || req.user.email.split('@')[0],
-                    type: 'Personal',
-                    amount: pAmount,
-                    spent: newPSpent,
-                    remaining: pRemaining,
-                    groupName: null
-                  }).catch(err => logger.error('Personal budget email alert failed:', err));
-                }
               }
             }
           }
@@ -3350,7 +3309,6 @@ app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (r
             try {
               const getPref = admin.firestore().doc(`users/${participant.userId}/preferences/notifications`).get();
               const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 3000));
-              timeout.catch(() => {});
               const prefSnap = await Promise.race([getPref, timeout]);
               return {
                 participant,
@@ -3388,7 +3346,6 @@ app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (r
       }
 
       const globalTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Global notification timeout')), 8000));
-      globalTimeout.catch(() => {});
       await Promise.race([Promise.allSettled(notificationPromises), globalTimeout]).catch(e => console.warn('⚠️ Notifications timed out or failed partially:', e.message));
 
     } catch (notifErr) {
@@ -4478,7 +4435,7 @@ app.post('/api/join-group', detectFraud, authenticate, async (req, res) => {
     const userData = userSnap.val();
 
     // Create new member object
-    const newMemberId = `member_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+    const newMemberId = `member_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const newMember = {
       id: newMemberId,
       userId: userId,
@@ -4926,9 +4883,6 @@ app.post('/api/send-message', detectFraud, chatLimiter, authenticate, async (req
     // If expenseId provided, verify it exists in this group
     let expenseData = null;
     if (expenseId) {
-      if (!isValidFirebaseId(expenseId)) {
-        return res.status(400).json({ success: false, error: 'Invalid expense ID format' });
-      }
       // Expenses are in Realtime Database now
       const expenseSnap = await db.ref(`transactions/${expenseId}`).get();
       if (!expenseSnap.exists() || expenseSnap.val().groupId !== groupId) {
@@ -5023,10 +4977,6 @@ app.post('/api/get-messages', generalLimiter, authenticate, async (req, res) => 
       return res.status(400).json({ success: false, error: 'Invalid group ID format' });
     }
 
-    if (expenseId && !isValidFirebaseId(expenseId)) {
-      return res.status(400).json({ success: false, error: 'Invalid expense ID format' });
-    }
-
     const db = admin.database();
 
     // Verify membership
@@ -5092,10 +5042,6 @@ app.post('/api/reminders/send', detectFraud, generalLimiter, authenticate, async
 
   if (!groupId || !debtorId || !creditorId || !amount) {
     return res.status(400).json({ success: false, error: 'Missing required reminder details' });
-  }
-
-  if (!isValidFirebaseId(groupId) || !isValidFirebaseId(debtorId) || !isValidFirebaseId(creditorId)) {
-    return res.status(400).json({ success: false, error: 'Invalid ID format' });
   }
 
   try {

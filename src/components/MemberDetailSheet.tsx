@@ -164,27 +164,6 @@ const MemberDetailSheet = ({
               )}
             </div>
 
-            {/* Wallet Balance Display */}
-            {member.walletBalance !== undefined && member.walletBalance !== null && (
-              <div className="bg-gradient-to-br from-indigo-500/10 to-blue-500/10 rounded-3xl p-5 border border-indigo-500/20 mb-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 shadow-sm">
-                      <Wallet className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-black text-gray-900 text-sm tracking-tight">Wallet Balance</h3>
-                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wide">Visible to group</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-black text-xl text-indigo-700 tracking-tight">
-                      Rs {member.walletBalance.toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Separate Debt Display - NOT auto-balanced */}
             <div className="mt-3 space-y-2 text-center">
@@ -263,7 +242,7 @@ const MemberDetailSheet = ({
                 <TooltipTrigger asChild>
                   <Button
                     onClick={onPayToMember}
-                    className="flex-1 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(59,130,246,0.3)] hover:shadow-[0_12px_40px_rgba(59,130,246,0.4)] hover:from-blue-700 hover:to-indigo-700 transition-all"
+                    className="flex-1 h-14 bg-gradient-to-r from-red-600 to-rose-600 text-white font-black rounded-3xl shadow-[0_8px_32px_rgba(244,63,94,0.3)] hover:shadow-[0_12px_40px_rgba(244,63,94,0.4)] hover:from-red-700 hover:to-rose-700 transition-all"
                   >
                     <ArrowUpRight className="w-5 h-5 mr-2" />
                     Pay to {member.name}

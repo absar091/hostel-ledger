@@ -35,7 +35,7 @@ const Activity = () => {
 
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("activity");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "expense" | "payment" | "wallet">("all");
+  const [filterType, setFilterType] = useState<"all" | "expense" | "payment">("all");
   const [filterDate, setFilterDate] = useState<"all" | "today" | "week" | "month">("all");
   const [showActivityGuide, setShowActivityGuide] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
@@ -61,13 +61,7 @@ const Activity = () => {
     let filtered = allTransactions;
 
     // Filter by type
-    if (filterType !== "all") {
-      if (filterType === "wallet") {
-        filtered = filtered.filter(t => t.type === "wallet_add" || t.type === "wallet_deduct");
-      } else {
-        filtered = filtered.filter(t => t.type === filterType);
-      }
-    }
+      filtered = filtered.filter(t => t.type === filterType);
 
     // Filter by date
     if (filterDate !== "all") {
@@ -112,7 +106,7 @@ const Activity = () => {
   const stats = useMemo(() => {
     const expenses = filteredTransactions.filter(t => t.type === "expense");
     const payments = filteredTransactions.filter(t => t.type === "payment");
-    const walletAdds = filteredTransactions.filter(t => t.type === "wallet_add");
+
 
     const totalSpent = expenses.reduce((sum, t) => {
       // Use the denormalized userShare field which is always correct
@@ -136,13 +130,12 @@ const Activity = () => {
       if (t.to === user?.uid) return sum + (t.amount || 0);
       return sum;
     }, 0);
-    const totalAdded = walletAdds.reduce((sum, t) => sum + t.amount, 0);
+
 
     return {
       totalTransactions: filteredTransactions.length,
       totalSpent,
       totalReceived,
-      totalAdded,
       expenseCount: expenses.length,
       paymentCount: payments.length,
     };
@@ -217,10 +210,7 @@ const Activity = () => {
               <div className="text-2xl lg:text-3xl font-black text-[#4a6850] tracking-tight tabular-nums">{formatAmount(stats.totalReceived)}</div>
             </div>
 
-            <div className="bg-white rounded-3xl p-4 lg:p-5 border border-blue-500/10 shadow-[0_20px_60px_rgba(59,130,246,0.08)]">
-              <div className="text-[10px] lg:text-xs text-blue-500/70 mb-1.5 lg:mb-2 font-black uppercase tracking-widest">{t('activity.stats.total_added')}</div>
-              <div className="text-2xl lg:text-3xl font-black text-blue-600 tracking-tight tabular-nums">{formatAmount(stats.totalAdded)}</div>
-            </div>
+
           </div>
 
           <div className="relative mb-6">
@@ -274,16 +264,7 @@ const Activity = () => {
             >
               {t('activity.filters.payment')} ({stats.paymentCount})
             </button>
-            <button
-              onClick={() => setFilterType("wallet")}
-              aria-pressed={filterType === "wallet"}
-              className={`px-5 py-3 rounded-2xl text-sm font-black whitespace-nowrap transition-all shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 ${filterType === "wallet"
-                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white scale-105"
-                : "bg-white text-blue-600/80 hover:bg-blue-50 border border-blue-500/10"
-                }`}
-            >
-              {t('activity.filters.wallet')}
-            </button>
+
           </div>
 
           <div className="flex gap-3 mt-3 overflow-x-auto pb-3 scrollbar-hide">

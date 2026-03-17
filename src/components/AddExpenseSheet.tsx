@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, ChevronRight, AlertCircle, WifiOff, UserPlus, Clock, Ban, Wallet, Sparkles, Loader2, Mic, MicOff, Upload } from "lucide-react";
+import { Check, ChevronRight, AlertCircle, WifiOff, UserPlus, Clock, Ban, Wallet, Sparkles, Loader2, Mic, MicOff, Upload, MapPin, Navigation } from "lucide-react";
 import Avatar from "./Avatar";
 import Tooltip from "./Tooltip";
 import { cn } from "@/lib/utils";
@@ -28,7 +28,6 @@ interface Member {
   expiresAt?: number | null;
   isPending?: boolean;
   isCurrentUser?: boolean;
-  balance?: number; // Wallet balance if shared
 }
 
 interface Group {
@@ -53,6 +52,7 @@ interface AddExpenseSheetProps {
     participants: string[];
     note: string;
     place: string;
+    location?: { lat: number, lng: number };
   }) => void;
   onAddMember?: (groupId: string, data: { name: string; isTemporary: boolean; deletionCondition: 'SETTLED' | 'TIME_LIMIT' }) => Promise<{ success: boolean; memberId?: string }>;
   initialGroupId?: string;
@@ -90,6 +90,8 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
   const [participants, setParticipants] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [place, setPlace] = useState("");
+  const [location, setLocation] = useState<{ lat: number, lng: number } | null>(null);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('others');
   const [payerMode, setPayerMode] = useState<'single' | 'multiple'>('single');
@@ -484,17 +486,11 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
         toast.error(`Total paid (${formatAmount(totalPaidAmount)}) must match expense amount (${formatAmount(totalAmount)})`);
         return;
       }
-      if (multiPayers.length === 0) {
-        toast.error("Please add at least one payer");
-        return;
-      }
       finalPayers = multiPayers.map(p => ({ id: p.id, amount: parseFloat(p.amount) }));
-      // Set primary payer (largest amount) for legacy support
-      const primary = finalPayers.reduce((prev, current) => (prev.amount > current.amount) ? prev : current);
-      finalPaidBy = primary.id;
-    } else {
-      // Single mode
-      // finalPayers remains undefined (or we could set it for consistency, but backend handles it)
+      // Use the first payer as the primary for backward compatibility
+      if (finalPayers.length > 0) {
+        finalPaidBy = finalPayers[0].id;
+      }
     }
 
     const invalidParticipants = participants.filter(p => !members.some(m => String(m.id) === String(p)));
@@ -506,39 +502,33 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
 
     setIsSubmitting(true);
 
-    if (offline) {
-      // Save for later sync
-      const offlineExpense = {
-        groupId: selectedGroup,
-        groupName: selectedGroupData?.name || "Unknown Group",
-        amount: parseFloat(amount),
-        paidBy: finalPaidBy,
-        payers: finalPayers,
-        participants,
-        note: selectedGroupData?.isPersonal
-          ? `${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.emoji} ${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.label}${note ? ': ' + note : ''}`
-          : note,
-        place,
-        timestamp: Date.now(),
-        synced: false
-      };
+    try {
+      if (offline) {
+        // Save for later sync
+        const offlineExpense = {
+          groupId: selectedGroup,
+          groupName: selectedGroupData?.name || "Unknown Group",
+          amount: parseFloat(amount),
+          paidBy: finalPaidBy,
+          payers: finalPayers,
+          participants,
+          note: selectedGroupData?.isPersonal
+            ? `${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.emoji} ${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.label}${note ? ': ' + note : ''}`
+            : note,
+          place,
+          location,
+          timestamp: Date.now(),
+          synced: false
+        };
 
-      try {
         await saveOfflineExpense(offlineExpense);
         updatePendingCount();
         toast.success(t('sheets.add_expense.offline_saved'), {
           description: t('sheets.add_expense.offline_sync_notice')
         });
-        setIsSubmitting(false);
         onClose();
-      } catch (error) {
-        console.error("Failed to save offline expense:", error);
-        toast.error(t('sheets.add_expense.offline_save_failed'));
-        setIsSubmitting(false);
-      }
-    } else {
-      // Online submission
-      try {
+      } else {
+        // Online submission
         await onSubmit({
           groupId: selectedGroup,
           amount: parseFloat(amount),
@@ -548,21 +538,74 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
           note: selectedGroupData?.isPersonal
             ? `${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.emoji} ${PERSONAL_CATEGORIES.find(c => c.id === selectedCategory)?.label}${note ? ': ' + note : ''}`
             : note,
-          place
+          place,
+          location
         });
-        setIsSubmitting(false);
         onClose();
-      } catch (error) {
-        console.error("Failed to submit expense:", error);
-        toast.error(t('sheets.add_expense.submit_failed'));
-        setIsSubmitting(false);
       }
+    } catch (error) {
+      console.error("Submission error:", error);
+      toast.error(t('sheets.add_expense.submit_failed'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const toggleParticipant = (id: string) => {
     setParticipants((prev) =>
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+    );
+  };
+
+  const handleDetectLocation = async () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setLocation({ lat: latitude, lng: longitude });
+
+        try {
+          // Reverse geocoding using Nominatim (OpenStreetMap)
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+            {
+              headers: {
+                'Accept-Language': 'en-US,en;q=0.9',
+                'User-Agent': 'HostelLedger/1.0' // Good practice for Nominatim
+              }
+            }
+          );
+          const data = await response.json();
+
+          if (data && data.display_name) {
+            // Try to get a more concise name from address details
+            const address = data.address;
+            const concisePlace = address.amenity || address.shop || address.tourism || address.leisure || address.road || address.suburb || data.display_name.split(',')[0];
+            setPlace(concisePlace);
+            toast.success(`Location detected: ${concisePlace}`);
+          }
+        } catch (error) {
+          console.error("Reverse geocoding error:", error);
+          toast.error("Could not resolve address, but coordinates saved.");
+        } finally {
+          setIsDetectingLocation(false);
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        setIsDetectingLocation(false);
+        let msg = "Failed to get location";
+        if (error.code === 1) msg = "Location permission denied";
+        else if (error.code === 2) msg = "Location unavailable";
+        else if (error.code === 3) msg = "Location request timed out";
+        toast.error(msg);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
@@ -1087,16 +1130,6 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                               )}
                             </div>
                             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                              {member.balance !== undefined && member.balance !== null && (
-                                <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-lg border border-emerald-100">
-                                  {formatAmount(member.balance)}
-                                </span>
-                              )}
-                              {(member as any).walletBalance !== undefined && (member as any).walletBalance !== null && (
-                                <span className="text-[11px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-lg border border-blue-100 flex items-center gap-1">
-                                  <Wallet className="w-3 h-3" /> {formatAmount((member as any).walletBalance)}
-                                </span>
-                              )}
                               {member.isTemporary && (
                                 <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-orange-600">
                                   {member.deletionCondition === 'TIME_LIMIT' ? <Clock className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
@@ -1197,9 +1230,76 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                   </div>
                 )}
 
-                <div>
+                {/* Location Section - Moved to Top of Step 5 */}
+                {!selectedGroupData?.isPersonal ? (
+                  <div className="bg-[#4a6850]/5 p-5 rounded-2xl border border-[#4a6850]/10 border-dashed">
+                    <div className="flex items-center justify-between mb-3">
+                      <label htmlFor="add-expense-place" className="text-sm font-black text-[#4a6850] uppercase tracking-wide">
+                        {t('sheets.add_expense.where')}
+                      </label>
+                      {!location && !place && !isDetectingLocation ? (
+                        <button
+                          type="button"
+                          onClick={handleDetectLocation}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#4a6850] text-white hover:bg-[#3d5643] transition-all shadow-md active:scale-95"
+                        >
+                          <Navigation className="w-3.5 h-3.5" />
+                          {t('sheets.add_expense.detect_location')}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleDetectLocation}
+                          disabled={isDetectingLocation}
+                          className={cn(
+                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-sm",
+                            location 
+                              ? "bg-emerald-100 text-emerald-700 border border-emerald-200" 
+                              : "bg-[#4a6850]/10 text-[#4a6850] border border-[#4a6850]/20 hover:bg-[#4a6850]/20"
+                          )}
+                        >
+                          {isDetectingLocation ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : location ? (
+                            <Check className="w-3 h-3" />
+                          ) : (
+                            <Navigation className="w-3 h-3" />
+                          )}
+                          {isDetectingLocation ? t('common.loading') : location ? t('sheets.add_expense.location_set') : t('sheets.add_expense.detect_location')}
+                        </button>
+                      )}
+                    </div>
+                    
+                    {(location || place || isDetectingLocation) && (
+                      <>
+                        <div className="relative">
+                          <Input
+                            id="add-expense-place"
+                            placeholder={t('sheets.add_expense.where_placeholder')}
+                            value={place}
+                            onChange={(e) => setPlace(e.target.value)}
+                            className="h-16 rounded-[32px] border-2 border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/40 focus:border-[#4a6850] focus:shadow-xl focus:ring-0 pl-12"
+                            maxLength={100}
+                          />
+                          <MapPin className={cn(
+                            "absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors",
+                            location ? "text-[#4a6850]" : "text-gray-300"
+                          )} />
+                        </div>
+                        <div className="flex justify-end mt-1 px-4">
+                          <span className={cn("text-[10px] font-bold transition-colors", place.length >= 100 ? "text-red-500" : "text-gray-400")}>
+                            {place.length}/100
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : null}
+
+                {/* Note Section - Moved to Bottom of Step 5 */}
+                <div className="mt-4">
                   <label htmlFor="add-expense-note" className="text-sm font-black text-[#4a6850] mb-3 block uppercase tracking-wide">
-                    {selectedGroupData?.isPersonal ? t('sheets.add_expense.add_note') : t('sheets.add_expense.optional_note')}
+                    {t('sheets.add_expense.what_for_label', 'WHAT WAS IT FOR?')}
                   </label>
                   <Input
                     id="add-expense-note"
@@ -1215,27 +1315,6 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                     </span>
                   </div>
                 </div>
-
-                {!selectedGroupData?.isPersonal && (
-                  <div>
-                    <label htmlFor="add-expense-place" className="text-sm font-black text-[#4a6850] mb-3 block uppercase tracking-wide">
-                      {t('sheets.add_expense.where')}
-                    </label>
-                    <Input
-                      id="add-expense-place"
-                      placeholder={t('sheets.add_expense.where_placeholder')}
-                      value={place}
-                      onChange={(e) => setPlace(e.target.value)}
-                      className="h-16 rounded-[32px] border-2 border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/40 focus:border-[#4a6850] focus:shadow-xl focus:ring-0"
-                      maxLength={100}
-                    />
-                    <div className="flex justify-end mt-1 px-4">
-                      <span className={cn("text-[10px] font-bold transition-colors", place.length >= 100 ? "text-red-500" : "text-gray-400")}>
-                        {place.length}/100
-                      </span>
-                    </div>
-                  </div>
-                )}
 
                 {/* Final Summary - iPhone Style */}
                 <div className="bg-gradient-to-br from-[#4a6850] to-[#3d5643] rounded-[32px] p-6 mt-8 shadow-[0_25px_70px_rgba(74,104,80,0.3)] text-white">

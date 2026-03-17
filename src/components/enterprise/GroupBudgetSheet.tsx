@@ -3,9 +3,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Target, Calendar, AlertCircle, Save, Loader2 } from "lucide-react";
+import { Target, Calendar, AlertCircle, Save, Loader2, Bell, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Group } from "@/contexts/FirebaseDataContext";
+import { Switch } from "@/components/ui/switch";
 
 import { useCurrency } from "@/contexts/CurrencyContext";
 
@@ -20,15 +21,21 @@ const GroupBudgetSheet = ({ open, onClose, group, onUpdateBudget }: GroupBudgetS
   const { symbol } = useCurrency();
   const [amount, setAmount] = useState<string>(group?.budget?.amount?.toString() || "");
   const [period, setPeriod] = useState<'monthly' | 'weekly'>(group?.budget?.period || "monthly");
+  const [alertAt80, setAlertAt80] = useState<boolean>(group?.budget?.policies?.alertAt80 ?? true);
+  const [lockAt100, setLockAt100] = useState<boolean>(group?.budget?.policies?.lockAt100 ?? true);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (group?.budget) {
       setAmount(group.budget.amount.toString());
       setPeriod(group.budget.period);
+      setAlertAt80(group.budget.policies?.alertAt80 ?? true);
+      setLockAt100(group.budget.policies?.lockAt100 ?? true);
     } else {
       setAmount("");
       setPeriod("monthly");
+      setAlertAt80(true);
+      setLockAt100(true);
     }
   }, [group?.budget, open]);
 
@@ -45,7 +52,12 @@ const GroupBudgetSheet = ({ open, onClose, group, onUpdateBudget }: GroupBudgetS
     const result = await onUpdateBudget({
       amount: numAmount,
       period,
-      lastUpdated: new Date().toISOString()
+      spent: group?.budget?.spent || 0,
+      lastReset: group?.budget?.lastReset || new Date().toISOString(),
+      policies: {
+        alertAt80,
+        lockAt100
+      }
     });
 
     setIsSaving(false);
@@ -126,11 +138,39 @@ const GroupBudgetSheet = ({ open, onClose, group, onUpdateBudget }: GroupBudgetS
             </div>
           </div>
 
-          <div className="bg-amber-50 rounded-2xl p-4 flex gap-3 border border-amber-100/50 shadow-sm">
-            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-800 leading-relaxed font-medium">
-              We'll notify the group when spending reaches <strong>80%</strong> of the budget.
-            </p>
+          <div className="space-y-4 pt-2">
+            <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+              Budget Policies
+            </Label>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 rounded-2xl border-2 border-gray-100 bg-gray-50/30">
+                <div className="flex gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                    <Bell className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 text-sm">Alert at 80%</p>
+                    <p className="text-xs text-gray-500 font-medium">Notify members when limit is near</p>
+                  </div>
+                </div>
+                <Switch checked={alertAt80} onCheckedChange={setAlertAt80} />
+              </div>
+
+              <div className="flex items-center justify-between p-4 rounded-2xl border-2 border-gray-100 bg-gray-50/30">
+                <div className="flex gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
+                    <Lock className="w-5 h-5 text-rose-600" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 text-sm">Lock at 100%</p>
+                    <p className="text-xs text-gray-500 font-medium">Prevent new expenses if exceeded</p>
+                  </div>
+                </div>
+                <Switch checked={lockAt100} onCheckedChange={setLockAt100} />
+              </div>
+            </div>
           </div>
 
           <div className="pt-4 sm:pt-6 space-y-3 sm:space-y-4">

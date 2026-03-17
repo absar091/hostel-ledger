@@ -22,7 +22,7 @@ export interface Group {
 export interface Transaction {
   id: string;
   groupId: string;
-  type: "expense" | "payment" | "wallet_add" | "wallet_deduct";
+  type: "expense" | "payment";
   title: string;
   amount: number;
   date: string;
@@ -36,8 +36,7 @@ export interface Transaction {
   method?: "cash" | "online";
   place?: string;
   note?: string;
-  walletBalanceBefore?: number; // Track wallet balance before transaction
-  walletBalanceAfter?: number; // Track wallet balance after transaction
+
   createdAt: string;
   timestamp?: number;
 }
@@ -53,8 +52,6 @@ interface DataContextType {
   updateMemberPaymentDetails: (groupId: string, memberId: string, paymentDetails: PaymentDetails, phone?: string) => void;
   addExpense: (data: { groupId: string; amount: number; paidBy: string; participants: string[]; note: string; place: string }) => { success: boolean; error?: string };
   recordPayment: (data: { groupId: string; fromMember: string; toMember: string; amount: number; method: "cash" | "online"; note?: string }) => void;
-  markPaymentAsPaid: (groupId: string, toMember: string, amount: number) => { success: boolean; error?: string };
-  addMoneyToWallet: (amount: number, note?: string) => void;
   getGroupById: (groupId: string) => Group | undefined;
   getTransactionsByGroup: (groupId: string) => Transaction[];
   getTransactionsByMember: (groupId: string, memberId: string) => Transaction[];
@@ -67,7 +64,7 @@ const GROUPS_KEY = "hostel_wallet_groups";
 const TRANSACTIONS_KEY = "hostel_wallet_transactions";
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
-  const { user, addMoneyToWallet: addToAuthWallet, deductMoneyFromWallet, getWalletBalance } = useAuth();
+  const { user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
@@ -262,18 +259,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, error: "Some participants not found in group" };
     }
 
-    // Check if current user is the payer and has sufficient wallet balance
-    const isCurrentUserPayer = payer.isCurrentUser;
-    if (isCurrentUserPayer) {
-      const currentUserParticipantIndex = participantMembers.findIndex(p => p.isCurrentUser);
-      const userShare = currentUserParticipantIndex >= 0 ? 
-        Math.floor(data.amount / participantMembers.length) + (currentUserParticipantIndex < (data.amount % participantMembers.length) ? 1 : 0) : 0;
-      
-      const walletBalance = getWalletBalance();
-      if (walletBalance < userShare) {
-        return { success: false, error: `Insufficient wallet balance. You need Rs ${userShare} but have Rs ${walletBalance}` };
-      }
-    }
+
 
     // Check for duplicate transactions (same amount, payer, participants within last 5 minutes)
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
@@ -300,16 +286,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       baseAmount + (index < remainder ? 1 : 0)
     );
 
-    // If current user is payer, deduct their share from wallet
-    if (isCurrentUserPayer) {
-      const currentUserParticipantIndex = participantMembers.findIndex(p => p.isCurrentUser);
-      const userShare = currentUserParticipantIndex >= 0 ? splitAmounts[currentUserParticipantIndex] : 0;
-      
-      const deductionSuccess = deductMoneyFromWallet(userShare);
-      if (!deductionSuccess) {
-        return { success: false, error: "Failed to deduct money from wallet" };
-      }
-    }
+    // Payer determination
+    const isCurrentUserPayer = payer.isCurrentUser;
 
     // Create transaction
     const newTransaction: Transaction = {
@@ -332,7 +310,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       })),
       place: data.place,
       note: data.note,
-      walletBalanceAfter: isCurrentUserPayer ? getWalletBalance() : undefined,
+
       createdAt: new Date().toISOString(),
     };
 
@@ -473,60 +451,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const markPaymentAsPaid = (groupId: string, toMember: string, amount: number): { success: boolean; error?: string } => {
-    if (!user) return { success: false, error: "User not logged in" };
 
-    const walletBalance = getWalletBalance();
-    if (walletBalance < amount) {
-      return { success: false, error: `Insufficient wallet balance. You need Rs ${amount} but have Rs ${walletBalance}` };
-    }
-
-    // Deduct from wallet
-    const deductionSuccess = deductMoneyFromWallet(amount);
-    if (!deductionSuccess) {
-      return { success: false, error: "Failed to deduct money from wallet" };
-    }
-
-    // Record the payment transaction
-    recordPayment({
-      groupId,
-      fromMember: user.id,
-      toMember,
-      amount,
-      method: "online", // Assume online since it's from wallet
-      note: "Paid from wallet"
-    });
-
-    return { success: true };
-  };
-
-  const addMoneyToWallet = (amount: number, note?: string) => {
-    if (!user || amount <= 0) return;
-
-    // Add to auth wallet
-    addToAuthWallet(amount);
-
-    // Create wallet transaction record
-    const walletTransaction: Transaction = {
-      id: crypto.randomUUID(),
-      groupId: "wallet", // Special groupId for wallet transactions
-      type: "wallet_add",
-      title: "Money Added to Wallet",
-      amount: amount,
-      date: new Date().toLocaleDateString("en-US", { 
-        month: "short", 
-        day: "numeric",
-        year: "numeric"
-      }),
-      paidBy: user.id,
-      paidByName: user.name,
-      note: note || "Added money to wallet",
-      walletBalanceAfter: getWalletBalance(),
-      createdAt: new Date().toISOString(),
-    };
-
-    saveTransactions([walletTransaction, ...transactions]);
-  };
 
   const getAllTransactions = (): Transaction[] => {
     return transactions;
@@ -545,8 +470,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         updateMemberPaymentDetails,
         addExpense,
         recordPayment,
-        markPaymentAsPaid,
-        addMoneyToWallet,
+
         getGroupById,
         getTransactionsByGroup,
         getTransactionsByMember,

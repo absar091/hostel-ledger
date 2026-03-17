@@ -155,18 +155,7 @@ router.post('/system/broadcast', async (req, res) => {
   }
 });
 
-// Reset User Wallet
-router.post('/users/:uid/wallet-reset', async (req, res) => {
-  try {
-    const { uid } = req.params;
-    if (!isValidFirebaseId(uid)) return res.status(400).json({ error: 'Invalid user ID format' });
 
-    const result = await adminService.resetUserWallet(uid);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to reset user wallet' });
-  }
-});
 
 // Get Group Details
 router.get('/groups/:groupId', async (req, res) => {

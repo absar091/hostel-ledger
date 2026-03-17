@@ -36,6 +36,7 @@ export interface OfflineExpense {
   participants: string[];
   note: string;
   place: string;
+  location?: { lat: number, lng: number };
   timestamp: number;
   createdOffline: boolean;
   syncAttempts?: number;

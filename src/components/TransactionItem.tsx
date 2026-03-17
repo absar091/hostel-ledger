@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { ArrowUpRight, ArrowDownLeft, CreditCard, MessageSquareText } from "@/lib/icons";
+import { ArrowUpRight, ArrowDownLeft, CreditCard, MessageSquareText, MapPin } from "@/lib/icons";
 import { type Transaction } from "@/contexts/FirebaseDataContext";
 import { cn } from "@/lib/utils";
 import ExpenseThreadSheet from "./ExpenseThreadSheet";
@@ -85,18 +85,48 @@ export const TransactionItem = memo(({
     >
       <div
         className={cn(
-          "w-10 h-10 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl flex items-center justify-center transition-colors",
-          transaction.type === "expense"
-            ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
-            : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
+          "relative w-10 h-10 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl flex items-center justify-center transition-all shrink-0 overflow-hidden",
+          transaction.location
+            ? "shadow-inner border border-slate-200 dark:border-slate-700" 
+            : transaction.type === "expense"
+              ? "bg-rose-50 dark:bg-rose-900/20 text-rose-500"
+              : "bg-blue-50 dark:bg-blue-900/20 text-blue-500"
         )}
       >
-        {transaction.type === "expense" ? (
-          <ArrowUpRight className="w-4 h-4 lg:w-5 lg:h-5" />
-        ) : transaction.type === "payment" ? (
-          <ArrowDownLeft className="w-4 h-4 lg:w-5 lg:h-5" />
+        {transaction.location ? (
+          <>
+            {/* Styled Map Background */}
+            <div className="absolute inset-0 opacity-30" 
+                 style={{ 
+                   background: 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)',
+                   backgroundImage: 'radial-gradient(#64748b 0.5px, transparent 0.5px)',
+                   backgroundSize: '10px 10px'
+                 }} 
+            />
+            {/* Subtle grid line to feel more map-like */}
+            <div className="absolute inset-0 border-b border-r border-slate-300/20" />
+            
+            <div className="absolute inset-0 flex items-center justify-center z-10">
+               <MapPin className="w-5 h-5 lg:w-6 lg:h-6 text-rose-500 drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)] animate-in fade-in zoom-in duration-300" />
+            </div>
+            
+            {/* Small categorical icon overlay for context */}
+            <div className="absolute bottom-1 right-1 w-4 h-4 lg:w-5 lg:h-5 bg-white dark:bg-slate-900 rounded-md shadow-sm flex items-center justify-center z-20 border border-slate-100 dark:border-slate-800">
+              {transaction.type === "expense" ? (
+                <ArrowUpRight className="w-2.5 h-2.5 lg:w-3 lg:h-3 text-rose-500" />
+              ) : (
+                <ArrowDownLeft className="w-2.5 h-2.5 lg:w-3 lg:h-3 text-blue-500" />
+              )}
+            </div>
+          </>
         ) : (
-          <CreditCard className="w-4 h-4 lg:w-5 lg:h-5" />
+          transaction.type === "expense" ? (
+            <ArrowUpRight className="w-4 h-4 lg:w-5 lg:h-5" />
+          ) : transaction.type === "payment" ? (
+            <ArrowDownLeft className="w-4 h-4 lg:w-5 lg:h-5" />
+          ) : (
+            <CreditCard className="w-4 h-4 lg:w-5 lg:h-5" />
+          )
         )}
       </div>
       <div className="flex-1 min-w-0">

@@ -46,13 +46,22 @@ export interface UserProfile {
   avatar?: string | null;
   photoURL?: string | null; // Profile picture URL from Cloudinary
   paymentDetails: PaymentDetails;
-  walletBalance: number; // Available Budget (actual money you have)
+  personalBudget?: {
+    amount: number;
+    spent: number;
+    period: 'daily' | 'weekly' | 'monthly';
+    startDate: string;
+    lastReset?: string;
+    policies: {
+      alertAt80: boolean;
+      lockAt100: boolean;
+    }
+  };
   settlements: { [groupId: string]: { [personId: string]: { toReceive: number; toPay: number } } }; // CORRECTED: Group-aware settlement tracking
   createdAt: string;
   emailVerified?: boolean; // Email verification status
   is2FAEnabled?: boolean; // Two-Factor Authentication status
   favoriteGroups?: string[]; // Array of favorite group IDs
-  showBalanceToOthers: boolean; // Privacy setting for wallet balance visibility
   currency?: string; // Currency code (e.g., 'PKR', 'USD', 'EUR') — defaults to PKR
   language?: string; // Language code (e.g., 'en', 'ur', 'hi') — defaults to en
   role?: 'user' | 'admin' | 'superadmin';
@@ -87,9 +96,6 @@ interface FirebaseAuthContextType {
   updateUserProfile: (data: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>;
   uploadProfilePicture: (file: File) => Promise<{ success: boolean; url?: string; error?: string }>;
   removeProfilePicture: () => Promise<{ success: boolean; error?: string }>;
-  addMoneyToWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string; transaction?: any }>;
-  deductMoneyFromWallet: (amount: number, note?: string) => Promise<{ success: boolean; error?: string }>;
-  getWalletBalance: () => number;
   getSettlements: (groupId?: string) => { [personId: string]: { toReceive: number; toPay: number } };
   getTotalToReceive: (groupId?: string) => number;
   getTotalToPay: (groupId?: string) => number;
@@ -268,13 +274,11 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
               avatar: userData.avatar,
               photoURL: userData.photoURL || null,
               paymentDetails: userData.paymentDetails || {},
-              walletBalance: isNaN(userData.walletBalance) ? 0 : (userData.walletBalance || 0),
               settlements: userData.settlements || {},
               createdAt: userData.createdAt,
               emailVerified: isVerified,
               is2FAEnabled: userData.is2FAEnabled || false,
               favoriteGroups: userData.favoriteGroups || [],
-              showBalanceToOthers: userData.showBalanceToOthers ?? false,
               role: userData.role || 'user',
               accountStatus: userData.accountStatus || 'active'
             };
@@ -315,20 +319,38 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
             logger.setUserId(uid);
             setIsLoading(false);
 
-            // Cache user profile
+            // Fetch personal budget via API (RTDB rules block direct client reads)
+            const fetchBudget = async () => {
+              try {
+                const token = await firebaseUser.getIdToken();
+                const apiUrl = import.meta.env.VITE_API_URL || '';
+                const res = await fetch(`${apiUrl}/api/budgets/personal/${uid}`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  console.log('[Budget] API fetch result:', data);
+                  if (data.success && data.budget && data.budget.amount > 0) {
+                    setUser(prev => prev ? ({
+                      ...prev,
+                      personalBudget: data.budget
+                    }) : prev);
+                  }
+                }
+              } catch (err) {
+                console.warn('[Budget] API fetch failed:', err);
+              }
+            };
+            fetchBudget();
+
+            // Store fetchBudget for external refresh
+            (window as any).__refreshBudget = fetchBudget;
             try {
               localStorage.setItem('cachedUser', JSON.stringify(userProfile));
             } catch (error) {
               console.error('Failed to cache user profile:', error);
             }
 
-            // DEFERRED: Sync balance to groups ONLY when showBalanceToOthers is enabled
-            // This was previously blocking initial load with N+1 queries
-            if (userProfile.showBalanceToOthers) {
-              // NOTE: Balance-to-groups sync is DISABLED because Firebase security rules
-              // block direct writes to groups/{gid}/members/ from the frontend.
-              // If "show balance to others" needs to work, move this sync to a backend API endpoint.
-            }
           } else {
             // Profile doesn't exist - Create it
             logger.info("Creating new user profile", { uid });
@@ -340,11 +362,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
               phone: null,
               avatar: null,
               paymentDetails: {},
-              walletBalance: 0,
               settlements: {},
               createdAt: new Date().toISOString(),
-              emailVerified: false,
-              showBalanceToOthers: false
+              emailVerified: false
             };
 
             try {
@@ -507,10 +527,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
           name: sanitizedName,
           phone: sanitizedPhone,
           paymentDetails: {},
-          walletBalance: 0,
           settlements: {},
-          createdAt: new Date().toISOString(),
-          showBalanceToOthers: false
+          createdAt: new Date().toISOString()
         };
 
         const userRef = ref(database, `users/${firebaseUser.uid}`);
@@ -945,65 +963,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addMoneyToWallet = async (amount: number, note?: string): Promise<{ success: boolean; error?: string; transaction?: any }> => {
-    if (!user) {
-      return { success: false, error: "User not authenticated" };
-    }
-
-    try {
-      logger.info("Adding money to wallet via secure API", { amount, note });
-
-      const result = await callSecureApi('/api/update-wallet', {
-        amount,
-        type: 'add',
-        note: note || 'Manual deposit'
-      });
-
-      if (result.success) {
-        logger.info("Wallet updated successfully via server");
-        // No need to manually update local state as the onValue listener will sync it
-        return { success: true, transaction: result.transaction };
-      }
-
-      return { success: false, error: "Failed to add money" };
-    } catch (error: any) {
-      logger.error("Add money API error", { amount, error: error.message });
-      return { success: false, error: error.message || "Failed to add money" };
-    }
-  };
-
-  const deductMoneyFromWallet = async (amount: number, note?: string): Promise<{ success: boolean; error?: string }> => {
-    if (!user) {
-      return { success: false, error: "User not authenticated" };
-    }
-
-    try {
-      logger.info("Deducting money from wallet via secure API", { amount, note });
-
-      const result = await callSecureApi('/api/update-wallet', {
-        amount,
-        type: 'deduct',
-        note: note || 'Manual withdrawal'
-      });
-
-      if (result.success) {
-        logger.info("Wallet deducted successfully via server");
-        return { success: true };
-      }
-
-      return { success: false, error: "Failed to deduct money" };
-    } catch (error: any) {
-      logger.error("Deduct money API error", { amount, error: error.message });
-      return { success: false, error: error.message || "Failed to deduct money" };
-    }
-  };
-
-  // CORRECTED: Enterprise-grade settlement management functions with group awareness
-  const getWalletBalance = (): number => {
-    const balance = user?.walletBalance || 0;
-    return isNaN(balance) ? 0 : balance;
-  };
-
+  // Settlement management functions with group awareness
   const getSettlements = (groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
     if (!user?.settlements) return {};
 
@@ -1101,7 +1061,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
         toMember: personId,
         amount,
         method: "online",
-        note: `Debt payment from wallet`
+        note: `Settlement payment`
       });
 
       if (result.success) {
@@ -1347,9 +1307,6 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       updateUserProfile,
       uploadProfilePicture,
       removeProfilePicture,
-      addMoneyToWallet,
-      deductMoneyFromWallet,
-      getWalletBalance,
       getSettlements,
       getTotalToReceive,
       getTotalToPay,

@@ -7,7 +7,6 @@ import {
   User,
   CreditCard,
   Users,
-  Wallet,
   Send,
   X,
   WifiOff,
@@ -17,6 +16,7 @@ import {
   ArrowRight,
   Sparkles,
   Info,
+  Clock,
 } from "@/lib/icons";
 import { sendExternalInvitation } from "@/lib/api";
 import BottomNav from "@/components/BottomNav";
@@ -29,7 +29,9 @@ import Logo from "@/components/Logo";
 import AddExpenseSheet from "@/components/AddExpenseSheet";
 import RecordPaymentSheet from "@/components/RecordPaymentSheet";
 import InvitationsList from "@/components/InvitationsList";
-import AddMoneySheet from "@/components/AddMoneySheet";
+import PersonalBudgetSheet from "@/components/personal/PersonalBudgetSheet";
+import { Progress } from "@/components/ui/progress";
+
 import PaymentConfirmationSheet from "@/components/PaymentConfirmationSheet";
 import PWAInstallButton from "@/components/PWAInstallButton";
 import NotificationIcon from "@/components/NotificationIcon";
@@ -66,7 +68,6 @@ const Dashboard = () => {
   const { formatAmount } = useCurrency();
   const {
     user,
-    getWalletBalance,
     getTotalToReceive,
     getTotalToPay,
     getSettlementDelta,
@@ -76,7 +77,6 @@ const Dashboard = () => {
     createGroup,
     addExpense,
     recordPayment,
-    addMoneyToWallet,
     payMyDebt,
     getAllTransactions,
     addMemberToGroup,
@@ -104,7 +104,6 @@ const Dashboard = () => {
   >("home");
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
-  const [showAddMoney, setShowAddMoney] = useState(false);
   const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
   const [initialGroupIdForSheet, setInitialGroupIdForSheet] = useState("");
   const [defaultAiMode, setDefaultAiMode] = useState(false);
@@ -119,6 +118,7 @@ const Dashboard = () => {
   // Onboarding and guide states
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showDashboardGuide, setShowDashboardGuide] = useState(false);
+  const [showPersonalBudgetSheet, setShowPersonalBudgetSheet] = useState(false);
 
   // Notification prompt state
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
@@ -240,10 +240,10 @@ const Dashboard = () => {
       emoji: "👋",
     },
     {
-      id: "wallet",
-      title: t('dashboard.onboarding.wallet_title'),
-      description: t('dashboard.onboarding.wallet_desc'),
-      emoji: "💳",
+      id: "overview",
+      title: "Your Overview",
+      description: "See your total clear picture at a glance.",
+      emoji: "📊",
     },
     {
       id: "settlements",
@@ -351,7 +351,6 @@ const Dashboard = () => {
   }, [allTransactions]);
 
   // Calculate totals using new settlement system
-  const walletBalance = getWalletBalance();
   const settlementDelta = getSettlementDelta();
   const totalToReceive = getTotalToReceive();
   const totalToPay = getTotalToPay();
@@ -374,13 +373,12 @@ const Dashboard = () => {
     };
   }, [user?.settlements]);
 
-  // Calculate percentage change for after settlements
-  const afterSettlementsBalance = walletBalance + settlementDelta;
 
   // Persist day-to-day settlement delta
   useEffect(() => {
     if (user?.uid) {
-      const today = new Date().toISOString().split("T")[0];
+      // Use local date string (YYYY-MM-DD) for consistency across timezones
+      const today = new Date().toLocaleDateString('en-CA');
       const todayKey = `settlementDelta_${user.uid}_${today}`;
       localStorage.setItem(todayKey, settlementDelta.toString());
     }
@@ -388,33 +386,32 @@ const Dashboard = () => {
 
   // Calculate day-to-day change for Settlement Delta using localStorage
   const dayToDay = useMemo(() => {
-    if (!user?.uid) return { change: 0, direction: "same" };
+    if (!user?.uid) return { change: 0, direction: "same", isFirstDay: false };
 
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayKey = yesterday.toISOString().split("T")[0];
+    const yesterdayKey = yesterday.toLocaleDateString('en-CA');
     const yesterdayStorageKey = `settlementDelta_${user.uid}_${yesterdayKey}`;
 
     // Get yesterday's settlement delta
-    const yesterdaySettlementDelta = parseFloat(
-      localStorage.getItem(yesterdayStorageKey) || "0",
-    );
+    const yesterdayValue = localStorage.getItem(yesterdayStorageKey);
+    const yesterdaySettlementDelta = parseFloat(yesterdayValue || "0");
 
-    if (yesterdaySettlementDelta === 0 && settlementDelta === 0) {
-      return { change: 0, direction: "same" };
-    }
-
-    if (yesterdaySettlementDelta === 0) {
+    // If no previous data, mark as first day
+    if (yesterdayValue === null || (yesterdaySettlementDelta === 0 && settlementDelta !== 0)) {
       return {
-        change: Math.abs(settlementDelta),
-        direction: settlementDelta > 0 ? "up" : "down",
+        change: 0,
+        direction: settlementDelta > 0 ? "up" : settlementDelta < 0 ? "down" : "same",
         isFirstDay: true,
       };
     }
 
+    if (yesterdaySettlementDelta === 0 && settlementDelta === 0) {
+      return { change: 0, direction: "same", isFirstDay: false };
+    }
+
     const absoluteChange = Math.abs(settlementDelta - yesterdaySettlementDelta);
-    const percentChange =
-      (absoluteChange / Math.abs(yesterdaySettlementDelta)) * 100;
+    const percentChange = (absoluteChange / Math.abs(yesterdaySettlementDelta)) * 100;
 
     return {
       change: percentChange,
@@ -528,6 +525,7 @@ const Dashboard = () => {
     participants: string[];
     note: string;
     place: string;
+    location?: { lat: number; lng: number };
   }) => {
     try {
       // Members are now added immediately in AddExpenseSheet, so no need for staging replacements here
@@ -539,6 +537,7 @@ const Dashboard = () => {
         participants: data.participants,
         note: data.note,
         place: data.place,
+        location: data.location,
       });
 
       if (result.success) {
@@ -648,17 +647,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleAddMoney = async (amount: number, note?: string) => {
-    const result = await addMoneyToWallet(amount, note);
-    if (result.success) {
-      toast.success(t('common.success'), { description: `Added ${formatAmount(amount)} to wallet` });
-      if (result.transaction) {
-        navigate("/receipt", { state: { transaction: result.transaction, type: "wallet_add" } });
-      }
-    } else {
-      toast.error(result.error || "Failed to add money");
-    }
-  };
 
   const handlePaymentConfirmation = async (
     memberId: string,
@@ -727,136 +715,196 @@ const Dashboard = () => {
           {/* Invitations List - Shows only when there are pending invitations */}
           <InvitationsList />
 
-          {/* MAIN FINANCIAL SECTION: Wallet & Settlements */}
-          <section className="space-y-7 px-2" aria-label="Wallet and Settlements">
-            {/* Wallet Balance Card (Deep Forest Theme) */}
-            <div className="relative overflow-hidden group rounded-[32px] bg-gradient-to-br from-[#3E5F50] to-[#2B3F36] p-7 shadow-[0_15px_35px_rgba(43,63,54,0.35),inset_0_1px_0_rgba(255,255,255,0.15)] animate-in zoom-in-95 duration-[250ms] ease-out">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
-              <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
+          {/* ═══════════════════════════════════════════════════════ */}
+          {/* FINANCIAL OVERVIEW — Premium Dashboard Layout           */}
+          {/* Order: Budget Hero → Settlement Delta → To Pay/Receive  */}
+          {/* ═══════════════════════════════════════════════════════ */}
+          <section className="space-y-4 px-2" aria-label="Financial Overview">
+            
+            {/* ── 1. PERSONAL BUDGET — Hero Card (Top) ── */}
+            {user?.personalBudget && (user.personalBudget.amount || 0) > 0 && (() => {
+              const budgetAmount = user.personalBudget.amount;
+              const budgetSpent = user.personalBudget.spent || 0;
+              const ratio = budgetSpent / budgetAmount;
+              const pct = Math.min(Math.round(ratio * 100), 999);
+              const remaining = Math.max(0, budgetAmount - budgetSpent);
+              const over = ratio >= 1;
+              const warn = ratio >= 0.8 && !over;
+              
+              return (
+                <div className="relative overflow-hidden rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.25)]" style={{ background: over ? 'linear-gradient(145deg, #7f1d1d 0%, #991b1b 60%, #b91c1c 100%)' : warn ? 'linear-gradient(145deg, #78350f 0%, #92400e 60%, #b45309 100%)' : 'linear-gradient(145deg, #2D5A47 0%, #1B4332 60%, #1a3a2e 100%)' }}>
+                  {/* Glassmorphism orbs */}
+                  <div className="absolute -top-20 -right-10 w-48 h-48 rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)' }} />
+                  <div className="absolute bottom-0 -left-8 w-36 h-36 rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%)' }} />
 
-              {/* Glass subtle highlight effect */}
-              <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-50 pointer-events-none" />
+                  <div className="relative p-5 pb-6">
+                    {/* Top row: label + edit button */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-white/[0.12] flex items-center justify-center backdrop-blur-xl border border-white/[0.08]">
+                          <Sparkles className="w-4 h-4 text-white/80" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Personal Budget</span>
+                          <p className="text-[13px] font-bold text-white/70 capitalize leading-tight">{user.personalBudget.period} Limit</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => setShowPersonalBudgetSheet(true)}
+                        className="w-8 h-8 rounded-full bg-white/[0.08] flex items-center justify-center border border-white/[0.05] hover:bg-white/[0.15] transition-colors active:scale-95"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 text-white/40" />
+                      </button>
+                    </div>
 
-              <div className="flex justify-between items-start relative z-10">
-                <div>
-                  <div className="flex items-center gap-1 mb-2">
-                    <p className="text-[#C7D6CF] text-[10px] font-black uppercase tracking-[0.15em] drop-shadow-sm">
-                      {t('dashboard.available_balance')}
-                    </p>
+                    {/* Spent amount — responsive */}
+                    <div className="flex items-end justify-between mb-1">
+                      <h4 className="font-black tracking-tight text-white tabular-nums leading-[1]" style={{ fontSize: 'clamp(24px, 5vw, 34px)' }}>
+                        {formatAmount(budgetSpent)}
+                      </h4>
+                      <div className={cn(
+                        "px-2.5 py-1 rounded-full text-[11px] font-black border shrink-0 ml-3",
+                        over ? "bg-white/15 border-white/10 text-white" : warn ? "bg-amber-400/15 border-amber-400/15 text-amber-200" : "bg-emerald-400/15 border-emerald-400/15 text-emerald-300"
+                      )}>
+                        {pct}% used
+                      </div>
+                    </div>
+                    <p className="text-[12px] font-bold text-white/30 mb-4">of {formatAmount(budgetAmount)}</p>
+
+                    {/* Progress bar */}
+                    <div className="relative h-2 w-full bg-white/[0.08] rounded-full overflow-hidden mb-4">
+                      <div 
+                        className={cn(
+                          "h-full rounded-full transition-all duration-1000 ease-out",
+                          over ? "bg-white/60" : warn ? "bg-amber-400/70" : "bg-emerald-400/50"
+                        )}
+                        style={{ width: `${Math.min(100, pct)}%` }}
+                      />
+                    </div>
+
+                    {/* Footer stats */}
+                    <div className="flex justify-between items-center">
+                      <p className="text-[12px] font-bold text-white/30">
+                        <span className="text-white/70 font-black">{formatAmount(remaining)}</span> remaining
+                      </p>
+                      <p className="text-[10px] font-bold text-white/25 flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> 
+                        Resets {user.personalBudget.period === 'daily' ? 'midnight' : user.personalBudget.period === 'weekly' ? 'weekly' : 'monthly'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+            
+            {/* Budget CTA — only when no budget set (same top position) */}
+            {(!user?.personalBudget || !(user.personalBudget.amount > 0)) && (
+              <button 
+                onClick={() => setShowPersonalBudgetSheet(true)}
+                className="w-full bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-dashed border-[#4a6850]/15 p-5 flex items-center gap-4 group hover:border-[#4a6850]/30 transition-all active:scale-[0.98]"
+              >
+                <div className="w-11 h-11 rounded-2xl bg-[#EAF5EF] text-[#4B6B54] flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <p className="text-[14px] font-black text-gray-900 tracking-tight leading-none mb-1">Set Personal Budget</p>
+                  <p className="text-[11px] font-bold text-[#4a6850]/50">Track and control your daily spending</p>
+                </div>
+              </button>
+            )}
+
+            {/* ── 2. SETTLEMENT DELTA + TO RECEIVE + TO PAY — Card Group ── */}
+            <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
+              
+              {/* Settlement Delta — Compact row */}
+              <div className="p-4 px-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm" style={{ background: 'linear-gradient(145deg, #2D5A47 0%, #1B4332 100%)' }}>
+                      <CreditCard className="w-4 h-4 text-white/80" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-[#4a6850]/50 uppercase tracking-[0.18em] mb-0.5">Settlement Delta</p>
+                      <p className="font-black text-gray-900 tabular-nums tracking-tight leading-none" style={{ fontSize: 'clamp(16px, 3.5vw, 20px)' }}>
+                        {settlementDelta > 0 ? "+" : settlementDelta < 0 ? "−" : ""}{formatAmount(Math.abs(settlementDelta))}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {dayToDay.change !== 0 && (
+                      <div className={cn(
+                        "flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-black",
+                        dayToDay.isFirstDay 
+                          ? "bg-blue-50 text-blue-500"
+                          : dayToDay.direction === "up"
+                            ? "bg-[#EAF5EF] text-[#4B6B54]"
+                            : "bg-rose-50 text-rose-500"
+                      )}>
+                        {!dayToDay.isFirstDay && (dayToDay.direction === "up" ? <ArrowUpRight className="w-2.5 h-2.5" /> : <ArrowDownLeft className="w-2.5 h-2.5" />)}
+                        {dayToDay.isFirstDay ? "NEW" : `${dayToDay.change > 0 && dayToDay.change < 1 ? dayToDay.change.toFixed(1) : Math.round(dayToDay.change)}%`}
+                      </div>
+                    )}
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div onClick={(e) => e.stopPropagation()}>
-                          <Info className="w-3 h-3 text-white/50 hover:text-white cursor-help transition-colors" />
-                        </div>
+                        <button className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center hover:bg-[#EAF5EF] transition-colors">
+                          <Info className="w-3 h-3 text-gray-400" />
+                        </button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Your total available balance in wallet</p>
+                        <p>Net balance: {settlementDelta > 0 ? "People owe you" : settlementDelta < 0 ? "You owe others" : "All settled up"}</p>
                       </TooltipContent>
                     </Tooltip>
                   </div>
-                  <h3 className="text-[40px] font-bold tracking-tight text-white tabular-nums leading-none mb-4 drop-shadow-md">
-                    {formatAmount(walletBalance)}
-                  </h3>
                 </div>
               </div>
-              <p className="text-[#C7D6CF]/80 text-[11px] font-medium tracking-wide relative z-10 mt-1">
-                {lastTransactionTime}
-              </p>
-            </div>
 
-            {/* Settlements Section */}
-            <div className="bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[24px] overflow-hidden">
-              <div className="flex flex-col">
-                {/* To Receive Row */}
-                <button
-                  onClick={() => navigate("/to-receive")}
-                  className="p-5 flex items-center justify-between bg-[#F4F9F6] border-b border-gray-100 hover:brightness-[0.98] active:scale-[0.99] transition-all group"
-                >
-                  <div className="flex flex-col items-start gap-1 text-left">
-                    <div className="flex items-center gap-1">
-                      <p className="text-[10px] font-black text-[#5C7E68] uppercase tracking-[0.15em] leading-none">{t('dashboard.total_to_receive')}</p>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div onClick={(e) => e.stopPropagation()}>
-                            <Info className="w-3 h-3 text-[#5C7E68]/50 hover:text-[#5C7E68] cursor-help transition-colors mt-[1px]" />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Total amount others owe you</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <p className="text-[20px] font-bold text-gray-900 tabular-nums leading-tight">+{formatAmount(totalToReceive)}</p>
+              {/* To Receive */}
+              <button
+                onClick={() => navigate("/to-receive")}
+                className="w-full flex items-center justify-between p-4 px-5 active:bg-[#4a6850]/[0.03] transition-colors text-left"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-[#EAF5EF] flex items-center justify-center shadow-sm shrink-0">
+                    <ArrowDownLeft className="w-4.5 h-4.5 text-[#4B6B54]" strokeWidth={2.2} />
                   </div>
-                  <ArrowDownLeft className="w-5 h-5 text-[#5C7E68]" strokeWidth={2.5} />
-                </button>
-
-                {/* To Pay Row */}
-                <button
-                  onClick={() => navigate("/to-pay")}
-                  className="p-5 flex items-center justify-between bg-[#FFF5F5] border-b border-gray-100 hover:brightness-[0.98] active:scale-[0.99] transition-all group"
-                >
-                  <div className="flex flex-col items-start gap-1 text-left">
-                    <div className="flex items-center gap-1">
-                      <p className="text-[10px] font-black text-[#D47070] uppercase tracking-[0.15em] leading-none">{t('dashboard.total_to_pay')}</p>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div onClick={(e) => e.stopPropagation()}>
-                            <Info className="w-3 h-3 text-[#D47070]/50 hover:text-[#D47070] cursor-help transition-colors mt-[1px]" />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Total amount you owe others</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <p className="text-[20px] font-bold text-[#991b1b] tabular-nums leading-tight">-{formatAmount(totalToPay)}</p>
-                  </div>
-                  <ArrowUpRight className="w-5 h-5 text-[#D47070]" strokeWidth={2.5} />
-                </button>
-
-                {/* Settlement Delta Highlight */}
-                <div className="p-5 bg-white flex items-end justify-between">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] leading-none">{t('dashboard.after_settlements')}</p>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div onClick={(e) => e.stopPropagation()}>
-                            <Info className="w-3 h-3 text-gray-400/60 hover:text-gray-500 cursor-help transition-colors mt-[1px]" />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Your projected balance after all pending payments</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <p className="text-[22px] font-bold text-gray-900 tabular-nums leading-tight">{formatAmount(afterSettlementsBalance)}</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <div className="flex items-center gap-1">
-                      <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.15em] text-right">Settlement Delta</p>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div onClick={(e) => e.stopPropagation()}>
-                            <Info className="w-2.5 h-2.5 text-gray-400/60 hover:text-gray-500 cursor-help transition-colors" />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>The net difference between what you owe and what you are owed</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div className={cn(
-                      "flex items-center gap-1 text-[13px] font-black uppercase tracking-tight",
-                      settlementDelta > 0 ? "text-[#4B6B54]" : settlementDelta < 0 ? "text-[#991b1b]" : "text-gray-500"
-                    )}>
-                      {settlementDelta > 0 ? <ArrowDownLeft className="w-3.5 h-3.5" strokeWidth={3} /> : settlementDelta < 0 ? <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={3} /> : null}
-                      {formatAmount(Math.abs(settlementDelta))}
-                    </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black text-[#4a6850]/50 uppercase tracking-[0.18em] mb-0.5">{t('dashboard.total_to_receive')}</p>
+                    <p className="font-black text-gray-900 tabular-nums tracking-tight leading-none truncate" style={{ fontSize: 'clamp(15px, 3.5vw, 18px)' }}>
+                      +{formatAmount(totalToReceive)}
+                    </p>
                   </div>
                 </div>
-              </div>
+                <div className="flex items-center gap-2 shrink-0 ml-2">
+                  <span className="text-[10px] font-bold text-[#4a6850]/40 bg-[#EAF5EF] px-2 py-0.5 rounded-full">
+                    {pendingPaymentCounts.toReceiveCount} {pendingPaymentCounts.toReceiveCount === 1 ? 'person' : 'people'}
+                  </span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-[#4a6850]/25" />
+                </div>
+              </button>
+
+              {/* To Pay */}
+              <button
+                onClick={() => navigate("/to-pay")}
+                className="w-full flex items-center justify-between p-4 px-5 active:bg-[#4a6850]/[0.03] transition-colors text-left"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center shadow-sm shrink-0">
+                    <ArrowUpRight className="w-4.5 h-4.5 text-rose-500" strokeWidth={2.2} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black text-rose-400/70 uppercase tracking-[0.18em] mb-0.5">{t('dashboard.total_to_pay')}</p>
+                    <p className="font-black text-gray-900 tabular-nums tracking-tight leading-none truncate" style={{ fontSize: 'clamp(15px, 3.5vw, 18px)' }}>
+                      −{formatAmount(totalToPay)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 ml-2">
+                  <span className="text-[10px] font-bold text-rose-400/50 bg-rose-50 px-2 py-0.5 rounded-full">
+                    {pendingPaymentCounts.toPayCount} {pendingPaymentCounts.toPayCount === 1 ? 'person' : 'people'}
+                  </span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-rose-300/40" />
+                </div>
+              </button>
             </div>
           </section>
 
@@ -925,13 +973,6 @@ const Dashboard = () => {
                 <span className="text-[11px] font-semibold text-gray-700 leading-tight whitespace-nowrap">{t('dashboard.send_money')}</span>
               </button>
 
-              {/* 5. Add Money (Top up Wallet) */}
-              <button onClick={() => setShowAddMoney(true)} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
-                <div className="w-12 h-12 rounded-[16px] bg-[#FFF8E6] text-[#FBBC04] flex items-center justify-center">
-                  <Plus className="w-6 h-6" strokeWidth={2} />
-                </div>
-                <span className="text-[11px] font-semibold text-gray-700 leading-tight whitespace-nowrap">{t('dashboard.add_money')}</span>
-              </button>
 
               {/* 6. AI Insights */}
               <AIInsightsSheet
@@ -1030,7 +1071,6 @@ const Dashboard = () => {
           title="Dashboard Overview"
           description="This is your financial command center! Here you can see your balance, pending settlements, and recent activity."
           tips={[
-            "Tap the wallet card to add money",
             "Use quick actions to split bills instantly",
             "Check recent activity to track all transactions",
           ]}
@@ -1080,11 +1120,6 @@ const Dashboard = () => {
           )
         }
 
-        <AddMoneySheet
-          open={showAddMoney}
-          onClose={() => setShowAddMoney(false)}
-          onSubmit={handleAddMoney}
-        />
 
         <PaymentConfirmationSheet
           open={showPaymentConfirmation}
@@ -1094,6 +1129,11 @@ const Dashboard = () => {
           }}
           member={selectedMemberForPayment}
           onConfirmPayment={handlePaymentConfirmation}
+        />
+
+        <PersonalBudgetSheet
+          open={showPersonalBudgetSheet}
+          onClose={() => setShowPersonalBudgetSheet(false)}
         />
       </AppContainer >
     </>

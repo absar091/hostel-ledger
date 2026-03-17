@@ -15,7 +15,6 @@ export interface UserProfile {
   phone?: string;
   avatar?: string;
   paymentDetails: PaymentDetails;
-  walletBalance: number; // Actual money in wallet
   createdAt: string;
 }
 
@@ -26,9 +25,6 @@ interface AuthContextType {
   signup: (data: { email: string; password: string; name: string; phone?: string }) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   updateProfile: (data: Partial<UserProfile>) => void;
-  addMoneyToWallet: (amount: number) => void;
-  deductMoneyFromWallet: (amount: number) => boolean; // Returns false if insufficient balance
-  getWalletBalance: () => number;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -95,7 +91,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       name: data.name,
       phone: data.phone,
       paymentDetails: {},
-      walletBalance: 0, // Start with 0 balance
       createdAt: new Date().toISOString(),
     };
 
@@ -129,54 +124,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(userWithoutPassword);
   };
 
-  const addMoneyToWallet = (amount: number) => {
-    if (!user || amount <= 0) return;
-
-    const users = getUsers();
-    const userIndex = users.findIndex((u) => u.id === user.id);
-    
-    if (userIndex === -1) return;
-
-    const updatedUser = { 
-      ...users[userIndex], 
-      walletBalance: (users[userIndex].walletBalance || 0) + amount 
-    };
-    users[userIndex] = updatedUser;
-    saveUsers(users);
-
-    const { password: _, ...userWithoutPassword } = updatedUser;
-    setUser(userWithoutPassword);
-  };
-
-  const deductMoneyFromWallet = (amount: number): boolean => {
-    if (!user || amount <= 0) return false;
-
-    const users = getUsers();
-    const userIndex = users.findIndex((u) => u.id === user.id);
-    
-    if (userIndex === -1) return false;
-
-    const currentBalance = users[userIndex].walletBalance || 0;
-    if (currentBalance < amount) {
-      return false; // Insufficient balance
-    }
-
-    const updatedUser = { 
-      ...users[userIndex], 
-      walletBalance: currentBalance - amount 
-    };
-    users[userIndex] = updatedUser;
-    saveUsers(users);
-
-    const { password: _, ...userWithoutPassword } = updatedUser;
-    setUser(userWithoutPassword);
-    return true;
-  };
-
-  const getWalletBalance = (): number => {
-    return user?.walletBalance || 0;
-  };
-
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -184,10 +131,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       login, 
       signup, 
       logout, 
-      updateProfile,
-      addMoneyToWallet,
-      deductMoneyFromWallet,
-      getWalletBalance
+      updateProfile
     }}>
       {children}
     </AuthContext.Provider>
