@@ -737,7 +737,7 @@ const Dashboard = () => {
                   <div className="absolute -top-20 -right-10 w-48 h-48 rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)' }} />
                   <div className="absolute bottom-0 -left-8 w-36 h-36 rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%)' }} />
 
-                  <div className="relative p-5 pb-6">
+                  <div className="relative p-4 md:p-5 pb-5 md:pb-6">
                     {/* Top row: label + edit button */}
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2.5">
@@ -759,7 +759,7 @@ const Dashboard = () => {
 
                     {/* Spent amount — responsive */}
                     <div className="flex items-end justify-between mb-1">
-                      <h4 className="font-black tracking-tight text-white tabular-nums leading-[1]" style={{ fontSize: 'clamp(24px, 5vw, 34px)' }}>
+                      <h4 className="font-black tracking-tight text-white tabular-nums leading-[1]" style={{ fontSize: 'clamp(20px, 4.5vw, 34px)' }}>
                         {formatAmount(budgetSpent)}
                       </h4>
                       <div className={cn(
@@ -814,10 +814,10 @@ const Dashboard = () => {
             )}
 
             {/* ── 2. SETTLEMENT DELTA + TO RECEIVE + TO PAY — Card Group ── */}
-            <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
+            <div className="bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
               
               {/* Settlement Delta — Compact row */}
-              <div className="p-4 px-5">
+              <div className="p-3.5 md:p-4 px-4 md:px-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm" style={{ background: 'linear-gradient(145deg, #2D5A47 0%, #1B4332 100%)' }}>
@@ -861,7 +861,7 @@ const Dashboard = () => {
               {/* To Receive */}
               <button
                 onClick={() => navigate("/to-receive")}
-                className="w-full flex items-center justify-between p-4 px-5 active:bg-[#4a6850]/[0.03] transition-colors text-left"
+                className="w-full flex items-center justify-between p-3.5 md:p-4 px-4 md:px-5 active:bg-[#4a6850]/[0.03] transition-colors text-left"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 rounded-xl bg-[#EAF5EF] flex items-center justify-center shadow-sm shrink-0">
@@ -885,7 +885,7 @@ const Dashboard = () => {
               {/* To Pay */}
               <button
                 onClick={() => navigate("/to-pay")}
-                className="w-full flex items-center justify-between p-4 px-5 active:bg-[#4a6850]/[0.03] transition-colors text-left"
+                className="w-full flex items-center justify-between p-3.5 md:p-4 px-4 md:px-5 active:bg-[#4a6850]/[0.03] transition-colors text-left"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center shadow-sm shrink-0">
@@ -934,7 +934,7 @@ const Dashboard = () => {
             {/* Scrollable Container */}
             <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar -mx-2 px-2 snap-x">
               {/* 1. Log (Split Bill) */}
-              <button onClick={handleAddExpense} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+              <button onClick={handleAddExpense} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-3.5 md:p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
                 <div className="w-12 h-12 rounded-[16px] bg-[#EAF5EF] text-[#4B6B54] flex items-center justify-center">
                   <CreditCard className="w-6 h-6" strokeWidth={2} />
                 </div>
@@ -942,7 +942,7 @@ const Dashboard = () => {
               </button>
 
               {/* 2. Solo (Personal Expense) */}
-              <button onClick={handlePersonalExpense} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+              <button onClick={handlePersonalExpense} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-3.5 md:p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
                 <div className="w-12 h-12 rounded-[16px] bg-[#EBF3FE] text-[#4285F4] flex items-center justify-center">
                   <User className="w-6 h-6" strokeWidth={2} />
                 </div>
@@ -950,7 +950,7 @@ const Dashboard = () => {
               </button>
 
               {/* 3. Received (Record Payment) */}
-              <button onClick={handleReceivedMoney} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+              <button onClick={handleReceivedMoney} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-3.5 md:p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
                 <div className="w-12 h-12 rounded-[16px] bg-[#EAF5EF] text-[#34A853] flex items-center justify-center">
                   <ArrowDownLeft className="w-6 h-6" strokeWidth={2} />
                 </div>
@@ -958,7 +958,7 @@ const Dashboard = () => {
               </button>
 
               {/* 4. New Group */}
-              <button onClick={() => navigate("/create-group")} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+              <button onClick={() => navigate("/create-group")} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-3.5 md:p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
                 <div className="w-12 h-12 rounded-[16px] bg-[#F4F6F8] text-[#4A5568] flex items-center justify-center">
                   <Users className="w-6 h-6" strokeWidth={2} />
                 </div>
@@ -966,7 +966,7 @@ const Dashboard = () => {
               </button>
 
               {/* 5. Send Money (to personal-space) */}
-              <button onClick={() => navigate("/personal-space")} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+              <button onClick={() => navigate("/personal-space")} className="flex-shrink-0 w-[30%] bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-3.5 md:p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
                 <div className="w-12 h-12 rounded-[16px] bg-[#F4F0FE] text-[#8B5CF6] flex items-center justify-center">
                   <Send className="w-6 h-6" strokeWidth={2} />
                 </div>
@@ -977,7 +977,7 @@ const Dashboard = () => {
               {/* 6. AI Insights */}
               <AIInsightsSheet
                 trigger={
-                  <button className="flex-shrink-0 w-24 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
+                  <button className="flex-shrink-0 w-24 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] rounded-[20px] p-3.5 md:p-4 flex flex-col items-center gap-3 snap-center active:scale-95 transition-all">
                     <div className="w-12 h-12 rounded-[16px] bg-[#E8F8F5] text-[#1ABC9C] flex items-center justify-center">
                       <Sparkles className="w-6 h-6" strokeWidth={2} />
                     </div>

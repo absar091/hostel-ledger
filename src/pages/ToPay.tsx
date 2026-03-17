@@ -147,7 +147,7 @@ const ToPay = () => {
         {/* People List */}
         <main className="px-4 pt-6">
           {/* Total Summary Card - iPhone Style with Rose Theme */}
-          <div className="bg-gradient-to-br from-[#fef3f2] to-[#fef8f7] rounded-3xl p-8 shadow-lg border border-rose-100 relative overflow-hidden mb-6">
+          <div className="bg-gradient-to-br from-[#fef3f2] to-[#fef8f7] rounded-3xl p-5 md:p-8 shadow-lg border border-rose-100 relative overflow-hidden mb-6">
             {/* Decorative circles to match dashboard */}
             <div className="absolute -right-8 -top-8 w-32 h-32 bg-rose-500/5 rounded-full pointer-events-none"></div>
             <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-500/5 rounded-full pointer-events-none"></div>
@@ -159,7 +159,7 @@ const ToPay = () => {
                 </div>
                 <span className="text-sm text-rose-500/70 font-black tracking-wide uppercase">{t('to_pay.total_amount')}</span>
               </div>
-              <div className="text-5xl font-black mb-3 tracking-tighter tabular-nums text-rose-500">
+              <div className="text-4xl md:text-5xl font-black mb-3 tracking-tighter tabular-nums text-rose-500">
                 Rs {totalToPay.toLocaleString()}
               </div>
               <div className="text-sm text-rose-500 font-bold">
@@ -177,7 +177,7 @@ const ToPay = () => {
                 <button
                   key={`${person.id}-${person.groupId}`}
                   onClick={() => handlePersonClick(person)}
-                  className="w-full bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(244,63,94,0.08)] border border-rose-500/10 hover:shadow-[0_25px_70px_rgba(244,63,94,0.15)] hover:border-rose-500/20 transition-all duration-200 text-left group"
+                  className="w-full bg-white rounded-3xl p-4 md:p-5 shadow-[0_20px_60px_rgba(244,63,94,0.08)] border border-rose-500/10 hover:shadow-[0_25px_70px_rgba(244,63,94,0.15)] hover:border-rose-500/20 transition-all duration-200 text-left group"
                 >
                   <div className="flex items-start gap-4">
                     {/* Avatar */}
@@ -187,12 +187,12 @@ const ToPay = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-black text-gray-900 text-lg truncate tracking-tight">{person.name}</h3>
+                          <h3 className="font-black text-gray-900 text-base md:text-lg truncate tracking-tight">{person.name}</h3>
                           {person.isTemporary && (
                             <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">{t('group.temp')}</span>
                           )}
                         </div>
-                        <div className="text-2xl font-black text-rose-500 tabular-nums">
+                        <div className="text-xl md:text-2xl font-black text-rose-500 tabular-nums">
                           Rs {person.amount.toLocaleString()}
                         </div>
                       </div>
@@ -200,16 +200,16 @@ const ToPay = () => {
                       {/* Contact Info */}
                       {person.phone && (
                         <div className="flex items-center gap-2 mb-2">
-                          <Phone className="w-4 h-4 text-rose-500/60" />
-                          <span className="text-sm text-rose-500/80 font-bold">{person.phone}</span>
+                          <Phone className="w-3.5 h-3.5 md:w-4 md:h-4 text-rose-500/60" />
+                          <span className="text-xs md:text-sm text-rose-500/80 font-bold">{person.phone}</span>
                         </div>
                       )}
 
                       {/* Payment Details */}
                       {formatPaymentDetails(person.paymentDetails) && (
                         <div className="flex items-start gap-2 mb-3">
-                          <CreditCard className="w-4 h-4 text-rose-500/60 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-rose-500/80 leading-relaxed font-medium">
+                          <CreditCard className="w-3.5 h-3.5 md:w-4 md:h-4 text-rose-500/60 mt-0.5 flex-shrink-0" />
+                          <span className="text-xs md:text-sm text-rose-500/80 leading-relaxed font-medium">
                             {formatPaymentDetails(person.paymentDetails)}
                           </span>
                         </div>

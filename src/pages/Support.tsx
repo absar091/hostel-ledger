@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import AppContainer from "@/components/AppContainer";
 import DesktopHeader from "@/components/DesktopHeader";
 import MobileHeader from "@/components/MobileHeader";
+import Sidebar from "@/components/Sidebar";
 
 interface Message {
   id: string;
@@ -414,15 +415,15 @@ const Support = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "open":
-        return "bg-blue-100 text-blue-700";
+        return "bg-blue-50 text-blue-600 border border-blue-100";
       case "in_progress":
-        return "bg-amber-100 text-amber-700";
+        return "bg-amber-50 text-amber-600 border border-amber-100";
       case "resolved":
-        return "bg-green-100 text-green-700";
+        return "bg-[#EAF5EF] text-[#4a6850] border border-[#4a6850]/10";
       case "closed":
-        return "bg-gray-100 text-gray-700";
+        return "bg-gray-50 text-gray-400 border border-gray-100";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-gray-50 text-gray-500";
     }
   };
 
@@ -442,88 +443,98 @@ const Support = () => {
   };
 
   return (
-    <AppContainer>
+    <AppContainer className="bg-white">
+      <Sidebar />
       <DesktopHeader />
-      <MobileHeader />
+      <MobileHeader title="Support Center" showBackButton={true} />
 
       <main className="flex-1 w-full max-w-4xl mx-auto p-6 pb-24 lg:pb-12">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-4 mb-8">
           <button
             onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors"
+            className="w-12 h-12 rounded-2xl bg-white border border-[#4a6850]/10 flex items-center justify-center shadow-sm hover:bg-[#4a6850]/5 transition-all active:scale-95"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
+            <ArrowLeft className="w-6 h-6 text-[#4a6850]" />
           </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Support Center</h1>
-            <p className="text-sm text-gray-500">We're here to help you</p>
+          <div className="flex-1">
+            <h1 className="text-3xl font-black text-[#4a6850] tracking-tight">Support Center</h1>
+            <p className="text-sm text-[#4a6850]/60 font-bold uppercase tracking-wider">How can we help you today?</p>
           </div>
         </div>
 
         {/* Current Ticket Info */}
         {currentTicket && (
-          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 mb-6 border border-emerald-200">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="text-sm font-semibold text-gray-900">Active Ticket</h3>
-                  <span
-                    className={cn(
-                      "px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1",
-                      getStatusColor(currentTicket.status)
-                    )}
-                  >
-                    {getStatusIcon(currentTicket.status)}
-                    {currentTicket.status.replace("_", " ").toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <p className="text-lg font-bold text-emerald-900">{currentTicket.ticketNumber}</p>
-                  <button
-                    onClick={copyTicketNumber}
-                    className="p-1 hover:bg-emerald-100 rounded transition-colors"
-                  >
-                    {copiedTicket ? (
-                      <Check className="w-4 h-4 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-4 h-4 text-emerald-600" />
-                    )}
-                  </button>
-                </div>
-              </div>
-              <div className="text-right flex flex-col items-end gap-2">
+          <div className="bg-gradient-to-br from-[#EAF5EF] to-[#F1F8F4] rounded-[2rem] p-6 mb-8 border border-[#4a6850]/10 shadow-lg shadow-[#4a6850]/5 relative overflow-hidden">
+            {/* Decorative circles to match dashboard style */}
+            <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#4a6850]/5 rounded-full pointer-events-none"></div>
+            <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-[#4a6850]/5 rounded-full pointer-events-none"></div>
+
+            <div className="relative z-10">
+              <div className="flex items-start justify-between mb-4">
                 <div>
-                  <p className="text-xs text-gray-600">Created</p>
-                  <p className="text-xs font-semibold text-gray-900">
-                    {new Date(currentTicket.createdAt).toLocaleDateString()}
-                  </p>
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div className="w-8 h-8 rounded-xl bg-[#4a6850]/10 flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-[#4a6850]" />
+                    </div>
+                    <h3 className="text-xs font-black text-[#4a6850]/70 uppercase tracking-widest">Active Request</h3>
+                    <span
+                      className={cn(
+                        "px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm",
+                        getStatusColor(currentTicket.status)
+                      )}
+                    >
+                      {getStatusIcon(currentTicket.status)}
+                      {currentTicket.status.replace("_", " ")}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <p className="text-2xl font-black text-[#4a6850] tracking-tighter tabular-nums">{currentTicket.ticketNumber}</p>
+                    <button
+                      onClick={copyTicketNumber}
+                      className="p-1.5 hover:bg-[#4a6850]/10 rounded-lg transition-colors active:scale-90"
+                    >
+                      {copiedTicket ? (
+                        <Check className="w-4 h-4 text-[#4a6850]" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-[#4a6850]" />
+                      )}
+                    </button>
+                  </div>
                 </div>
-                {!currentTicket.talkToAgent && currentTicket.status !== "closed" && (
-                  <button
-                    onClick={handleTalkToAgent}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-200 transition-all shadow-sm"
-                  >
-                    <User className="w-3 h-3" />
-                    Talk to Agent
-                  </button>
-                )}
+                <div className="text-right flex flex-col items-end gap-3">
+                  <div className="flex flex-col items-end">
+                    <p className="text-[10px] text-[#4a6850]/50 font-black uppercase tracking-wider mb-0.5">Created On</p>
+                    <p className="text-sm font-black text-[#4a6850]">
+                      {new Date(currentTicket.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  {!currentTicket.talkToAgent && currentTicket.status !== "closed" && (
+                    <button
+                      onClick={handleTalkToAgent}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#4a6850] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#3d5642] transition-all shadow-md active:scale-95"
+                    >
+                      <User className="w-3.5 h-3.5" />
+                      Talk to Agent
+                    </button>
+                  )}
+                </div>
               </div>
+              <p className="text-sm text-[#4a6850]/80 font-bold leading-relaxed">{currentTicket.subject}</p>
             </div>
-            <p className="text-sm text-gray-700">{currentTicket.subject}</p>
           </div>
         )}
 
         {/* Contact Methods Tabs */}
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mb-6">
-          <div className="flex border-b border-gray-200">
+        <div className="bg-white rounded-[2rem] border border-[#4a6850]/10 overflow-hidden mb-8 shadow-xl shadow-[#4a6850]/5">
+          <div className="flex p-2 gap-1 bg-gray-50/50">
             <button
               onClick={() => setActiveTab("chat")}
               className={cn(
-                "flex-1 px-4 py-3 text-sm font-semibold transition-colors flex items-center justify-center gap-2",
+                "flex-1 px-4 py-3.5 text-[11px] md:text-xs font-black uppercase tracking-widest transition-all rounded-2xl flex items-center justify-center gap-2.5",
                 activeTab === "chat"
-                  ? "bg-emerald-50 text-emerald-700 border-b-2 border-emerald-600"
-                  : "text-gray-600 hover:bg-gray-50"
+                  ? "bg-[#4a6850] text-white shadow-lg shadow-[#4a6850]/20"
+                  : "text-[#4a6850]/40 hover:text-[#4a6850]/70 hover:bg-white"
               )}
             >
               <MessageCircle className="w-4 h-4" />
@@ -532,10 +543,10 @@ const Support = () => {
             <button
               onClick={() => setActiveTab("email")}
               className={cn(
-                "flex-1 px-4 py-3 text-sm font-semibold transition-colors flex items-center justify-center gap-2",
+                "flex-1 px-4 py-3.5 text-[11px] md:text-xs font-black uppercase tracking-widest transition-all rounded-2xl flex items-center justify-center gap-2.5",
                 activeTab === "email"
-                  ? "bg-emerald-50 text-emerald-700 border-b-2 border-emerald-600"
-                  : "text-gray-600 hover:bg-gray-50"
+                  ? "bg-[#4a6850] text-white shadow-lg shadow-[#4a6850]/20"
+                  : "text-[#4a6850]/40 hover:text-[#4a6850]/70 hover:bg-white"
               )}
             >
               <Mail className="w-4 h-4" />
@@ -544,10 +555,10 @@ const Support = () => {
             <button
               onClick={() => setActiveTab("whatsapp")}
               className={cn(
-                "flex-1 px-4 py-3 text-sm font-semibold transition-colors flex items-center justify-center gap-2",
+                "flex-1 px-4 py-3.5 text-[11px] md:text-xs font-black uppercase tracking-widest transition-all rounded-2xl flex items-center justify-center gap-2.5",
                 activeTab === "whatsapp"
-                  ? "bg-emerald-50 text-emerald-700 border-b-2 border-emerald-600"
-                  : "text-gray-600 hover:bg-gray-50"
+                  ? "bg-[#4a6850] text-white shadow-lg shadow-[#4a6850]/20"
+                  : "text-[#4a6850]/40 hover:text-[#4a6850]/70 hover:bg-white"
               )}
             >
               <Phone className="w-4 h-4" />
@@ -565,16 +576,16 @@ const Support = () => {
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center h-full">
-                    <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                    <Loader2 className="w-8 h-8 animate-spin text-[#4a6850]" />
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center">
-                    <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
-                      <MessageCircle className="w-8 h-8 text-emerald-600" />
+                  <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                    <div className="w-20 h-20 bg-[#EAF5EF] rounded-[2rem] flex items-center justify-center mb-6 shadow-sm">
+                      <MessageCircle className="w-10 h-10 text-[#4a6850]" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Start a Conversation</h3>
-                    <p className="text-sm text-gray-600 max-w-xs">
-                      Send us a message and we'll get back to you as soon as possible
+                    <h3 className="text-xl font-black text-[#4a6850] mb-2 tracking-tight">Need some help?</h3>
+                    <p className="text-sm text-[#4a6850]/60 font-bold leading-relaxed max-w-[240px]">
+                      Send us a message and our team will get back to you shortly!
                     </p>
                   </div>
                 ) : (
@@ -589,22 +600,22 @@ const Support = () => {
                       >
                         <div
                           className={cn(
-                            "max-w-[75%] rounded-2xl px-4 py-3",
+                            "max-w-[85%] md:max-w-[75%] rounded-[1.5rem] px-5 py-4 shadow-sm",
                             msg.sender === "user"
-                              ? "bg-emerald-600 text-white"
-                              : "bg-white border border-gray-200 text-gray-900"
+                              ? "bg-[#4a6850] text-white rounded-br-none"
+                              : "bg-white border border-[#4a6850]/5 text-[#4a6850] rounded-bl-none"
                           )}
                         >
                           {msg.sender === "admin" && (
                             <div className="flex items-center gap-2 mb-1">
                               <div className={cn(
                                 "w-6 h-6 rounded-full flex items-center justify-center",
-                                msg.isBot ? "bg-purple-100" : "bg-emerald-100"
+                                msg.isBot ? "bg-purple-100" : "bg-[#EAF5EF]"
                               )}>
                                 {msg.isBot ? (
                                   <Sparkles className="w-3 h-3 text-purple-600" />
                                 ) : (
-                                  <User className="w-3 h-3 text-emerald-600" />
+                                  <User className="w-3 h-3 text-[#4a6850]" />
                                 )}
                               </div>
                               <span className={cn(
@@ -632,11 +643,11 @@ const Support = () => {
                               </p>
                             </div>
                           )}
-                          <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
+                          <p className="text-sm font-bold leading-relaxed whitespace-pre-wrap break-words">{msg.text}</p>
                           <p
                             className={cn(
-                              "text-xs mt-1",
-                              msg.sender === "user" ? "text-emerald-100" : "text-gray-500"
+                              "text-[10px] font-black uppercase tracking-wider mt-2 opacity-50",
+                              msg.sender === "user" ? "text-white" : "text-[#4a6850]/60"
                             )}
                           >
                             {new Date(msg.timestamp).toLocaleTimeString([], {
@@ -727,7 +738,7 @@ const Support = () => {
                   </div>
                 )}
 
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -735,26 +746,28 @@ const Support = () => {
                     accept="image/*"
                     className="hidden"
                   />
-                   <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading || !!attachedImage}
-                    className="p-3 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all disabled:opacity-50"
-                  >
-                    {isUploading ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <ImageIcon className="w-5 h-5" />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setShowTxnHint(!showTxnHint)}
-                    className={cn(
-                      "p-3 rounded-xl transition-all",
-                      showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-gray-400 hover:text-emerald-600 hover:bg-emerald-50"
-                    )}
-                  >
-                    <Info className="w-5 h-5" />
-                  </button>
+                  <div className="flex gap-1 shrink-0">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading || !!attachedImage}
+                      className="w-12 h-12 flex items-center justify-center text-[#4a6850]/40 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-2xl transition-all disabled:opacity-50 active:scale-90 shrink-0"
+                    >
+                      {isUploading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <ImageIcon className="w-5 h-5" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setShowTxnHint(!showTxnHint)}
+                      className={cn(
+                        "w-12 h-12 flex items-center justify-center rounded-2xl transition-all active:scale-90 shrink-0",
+                        showTxnHint ? "bg-[#4a6850]/10 text-[#4a6850]" : "text-[#4a6850]/40 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
+                      )}
+                    >
+                      <Info className="w-5 h-5" />
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={message}
@@ -763,73 +776,76 @@ const Support = () => {
                       detectTransactionId(e.target.value);
                     }}
                     onKeyPress={(e) => e.key === "Enter" && !isSending && sendMessage()}
-                    placeholder="Type your message..."
-                    className="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    placeholder="Type message..."
+                    className="flex-1 min-w-0 px-4 py-3.5 rounded-2xl border border-[#4a6850]/10 bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-[#4a6850]/20 focus:bg-white text-sm font-bold transition-all"
                     disabled={isSending}
                   />
                   <button
                     onClick={sendMessage}
                     disabled={(!message.trim() && !attachedImage) || isSending}
-                    className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="w-12 md:w-auto px-0 md:px-6 h-12 bg-[#4a6850] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#3d5642] transition-all shadow-lg shadow-[#4a6850]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95 shrink-0"
                   >
                     {isSending ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
-                      <Send className="w-5 h-5" />
+                      <>
+                        <Send className="w-5 h-5" />
+                        <span className="hidden md:block">Send</span>
+                      </>
                     )}
                   </button>
                 </div>
               </div>
             </div>
-          )}
-
-          {/* Email Support */}
+          )}          {/* Email Support */}
           {activeTab === "email" && (
-            <div className="p-8 text-center">
-              <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Mail className="w-10 h-10 text-emerald-600" />
+            <div className="p-12 text-center">
+              <div className="w-24 h-24 bg-[#EAF5EF] rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-sm">
+                <Mail className="w-12 h-12 text-[#4a6850]" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Email Support</h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                Send us an email and we'll respond within 24 hours
+              <h3 className="text-2xl font-black text-[#4a6850] mb-3 tracking-tight">Email Support</h3>
+              <p className="text-[#4a6850]/60 font-bold mb-8 max-w-sm mx-auto leading-relaxed">
+                Send us an email and our dedicated team will respond within 24 hours.
               </p>
-              <div className="bg-gray-50 rounded-xl p-4 mb-6 inline-block">
-                <p className="text-sm text-gray-600 mb-1">Email Address</p>
-                <p className="text-lg font-bold text-gray-900">{SUPPORT_EMAIL}</p>
+              <div className="bg-[#EAF5EF]/50 rounded-[1.5rem] p-5 mb-8 inline-block border border-[#4a6850]/5">
+                <p className="text-[10px] text-[#4a6850]/50 font-black uppercase tracking-widest mb-1">Support Email</p>
+                <p className="text-lg font-black text-[#4a6850]">{SUPPORT_EMAIL}</p>
               </div>
-              <button
-                onClick={openEmail}
-                className="bg-emerald-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-emerald-700 transition-colors inline-flex items-center gap-2"
-              >
-                <Mail className="w-5 h-5" />
-                Send Email
-                <ExternalLink className="w-4 h-4" />
-              </button>
+              <div>
+                <button
+                  onClick={openEmail}
+                  className="px-8 py-4 bg-[#4a6850] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#3d5642] transition-all shadow-lg shadow-[#4a6850]/20 active:scale-95 flex items-center gap-3 mx-auto"
+                >
+                  <Mail className="w-5 h-5" />
+                  Compose Email
+                </button>
+              </div>
             </div>
           )}
 
           {/* WhatsApp Support */}
           {activeTab === "whatsapp" && (
-            <div className="p-8 text-center">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Phone className="w-10 h-10 text-green-600" />
+            <div className="p-12 text-center">
+              <div className="w-24 h-24 bg-[#EAF5EF] rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-sm">
+                <Phone className="w-12 h-12 text-[#4a6850]" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">WhatsApp Support</h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                Chat with us on WhatsApp for instant support
+              <h3 className="text-2xl font-black text-[#4a6850] mb-3 tracking-tight">WhatsApp Support</h3>
+              <p className="text-[#4a6850]/60 font-bold mb-8 max-w-sm mx-auto leading-relaxed">
+                Instant help via WhatsApp. Best for quick questions and urgent issues.
               </p>
-              <div className="bg-gray-50 rounded-xl p-4 mb-6 inline-block">
-                <p className="text-sm text-gray-600 mb-1">WhatsApp Number</p>
-                <p className="text-lg font-bold text-gray-900">{SUPPORT_WHATSAPP}</p>
+              <div className="bg-[#EAF5EF]/50 rounded-[1.5rem] p-5 mb-8 inline-block border border-[#4a6850]/5">
+                <p className="text-[10px] text-[#4a6850]/50 font-black uppercase tracking-widest mb-1">Contact Number</p>
+                <p className="text-lg font-black text-[#4a6850]">{SUPPORT_WHATSAPP}</p>
               </div>
-              <button
-                onClick={openWhatsApp}
-                className="bg-green-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors inline-flex items-center gap-2"
-              >
-                <Phone className="w-5 h-5" />
-                Open WhatsApp
-                <ExternalLink className="w-4 h-4" />
-              </button>
+              <div>
+                <button
+                  onClick={openWhatsApp}
+                  className="px-8 py-4 bg-[#25D366] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#128C7E] transition-all shadow-lg shadow-[#25D366]/20 active:scale-95 flex items-center gap-3 mx-auto"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  Chat on WhatsApp
+                </button>
+              </div>
             </div>
           )}
         </div>

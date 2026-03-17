@@ -177,7 +177,7 @@ const ToReceive = () => {
         {/* People List */}
         <main className="px-4 pt-6">
           {/* Total Summary Card - iPhone Style with #4a6850 */}
-          <div className="bg-gradient-to-br from-[#e8f5e9] to-[#f1f8f4] rounded-3xl p-8 shadow-lg border border-[#4a6850]/10 relative overflow-hidden mb-6">
+          <div className="bg-gradient-to-br from-[#e8f5e9] to-[#f1f8f4] rounded-3xl p-5 md:p-8 shadow-lg border border-[#4a6850]/10 relative overflow-hidden mb-6">
             {/* Decorative circles to match dashboard */}
             <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#4a6850]/5 rounded-full pointer-events-none"></div>
             <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-[#4a6850]/5 rounded-full pointer-events-none"></div>
@@ -189,7 +189,7 @@ const ToReceive = () => {
                 </div>
                 <span className="text-sm text-[#4a6850]/70 font-black tracking-wide uppercase">{t('to_receive.total_amount')}</span>
               </div>
-              <div className="text-5xl font-black mb-3 tracking-tighter tabular-nums text-[#4a6850]">
+              <div className="text-4xl md:text-5xl font-black mb-3 tracking-tighter tabular-nums text-[#4a6850]">
                 Rs {totalToReceive.toLocaleString()}
               </div>
               <div className="text-sm text-[#4a6850] font-bold">
@@ -207,20 +207,20 @@ const ToReceive = () => {
                 <div
                   key={`${person.id}-${person.groupId}`}
                   onClick={() => handlePersonClick(person)}
-                  className="w-full bg-white rounded-3xl p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all duration-200 text-left group relative cursor-pointer"
+                  className="w-full bg-white rounded-3xl p-4 md:p-5 shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all duration-200 text-left group relative cursor-pointer"
                 >
                   {/* Remind Button Overlay */}
-                  <div className="absolute right-6 top-6 z-20">
+                  <div className="absolute right-4 md:right-6 top-4 md:top-6 z-20">
                     <button
                       onClick={(e) => handleRemindClick(e, person)}
                       disabled={remindingId === `${person.id}-${person.groupId}`}
-                      className="w-12 h-12 rounded-2xl bg-[#4a6850]/5 flex items-center justify-center text-[#4a6850] hover:bg-[#4a6850] hover:text-white active:scale-90 transition-all duration-300 shadow-sm disabled:opacity-50 group/remind"
+                      className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-[#4a6850]/5 flex items-center justify-center text-[#4a6850] hover:bg-[#4a6850] hover:text-white active:scale-90 transition-all duration-300 shadow-sm disabled:opacity-50 group/remind"
                       title="Send Reminder"
                     >
                       {remindingId === `${person.id}-${person.groupId}` ? (
-                        <Loader2 className="w-6 h-6 animate-spin" />
+                        <Loader2 className="w-5 h-5 md:w-6 md:h-6 animate-spin" />
                       ) : (
-                        <Bell className="w-6 h-6 group-hover/remind:animate-bounce" />
+                        <Bell className="w-5 h-5 md:w-6 md:h-6 group-hover/remind:animate-bounce" />
                       )}
                     </button>
                   </div>
@@ -230,31 +230,31 @@ const ToReceive = () => {
                     <Avatar name={person.name} size="md" />
 
                     {/* Person Info */}
-                    <div className="flex-1 min-w-0 pr-14">
-                      <div className="flex flex-col mb-3">
+                    <div className="flex-1 min-w-0 pr-12 md:pr-14">
+                      <div className="flex flex-col mb-2 md:mb-3">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-black text-gray-900 text-lg truncate tracking-tight">{person.name}</h3>
+                          <h3 className="font-black text-gray-900 text-base md:text-lg truncate tracking-tight">{person.name}</h3>
                           {person.isTemporary && (
                             <span className="px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">{t('group.temp')}</span>
                           )}
                         </div>
-                        <div className="text-3xl font-black text-[#4a6850] tabular-nums tracking-tighter">
+                        <div className="text-2xl md:text-3xl font-black text-[#4a6850] tabular-nums tracking-tighter">
                           Rs {person.amount.toLocaleString()}
                         </div>
                       </div>
 
                       {/* Contact & Payment Info Row */}
-                      <div className="flex flex-wrap gap-x-4 gap-y-2 mb-4">
+                      <div className="flex flex-wrap gap-x-4 gap-y-2 mb-3 md:mb-4">
                         {person.phone && (
                           <div className="flex items-center gap-1.5">
-                            <Phone className="w-3.5 h-3.5 text-[#4a6850]/50" />
+                            <Phone className="w-3 h-3 md:w-3.5 md:h-3.5 text-[#4a6850]/50" />
                             <span className="text-xs text-[#4a6850]/70 font-bold">{person.phone}</span>
                           </div>
                         )}
 
                         {formatPaymentDetails(person.paymentDetails) && (
                           <div className="flex items-center gap-1.5">
-                            <CreditCard className="w-3.5 h-3.5 text-[#4a6850]/50" />
+                            <CreditCard className="w-3 h-3 md:w-3.5 md:h-3.5 text-[#4a6850]/50" />
                             <span className="text-xs text-[#4a6850]/70 font-medium truncate max-w-[150px]">
                               {formatPaymentDetails(person.paymentDetails)}
                             </span>
@@ -263,9 +263,9 @@ const ToReceive = () => {
                       </div>
 
                       {/* Group Info - At Bottom */}
-                      <div className="flex items-center gap-2 pt-3 border-t border-[#4a6850]/10">
-                        <div className="w-5 h-5 bg-[#4a6850]/10 rounded-lg flex items-center justify-center">
-                          <Users className="w-3 h-3 text-[#4a6850]" />
+                      <div className="flex items-center gap-2 pt-2 md:pt-3 border-t border-[#4a6850]/10">
+                        <div className="w-4 h-4 md:w-5 md:h-5 bg-[#4a6850]/10 rounded-lg flex items-center justify-center">
+                          <Users className="w-2.5 h-2.5 md:w-3 md:h-3 text-[#4a6850]" />
                         </div>
                         <span className="text-xs text-[#4a6850]/80 font-black uppercase tracking-wider">{person.groupName}</span>
                         <span className="text-[10px] text-[#4a6850]/30 font-bold ml-auto">{t('to_receive.tap_to_view')}</span>
