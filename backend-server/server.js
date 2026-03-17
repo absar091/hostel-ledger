@@ -5185,6 +5185,9 @@ app.post('/api/send-message', detectFraud, chatLimiter, authenticate, async (req
     // If expenseId provided, verify it exists in this group
     let expenseData = null;
     if (expenseId) {
+      if (!isValidFirebaseId(expenseId)) {
+        return res.status(400).json({ success: false, error: 'Invalid expense ID format' });
+      }
       // Expenses are in Realtime Database now
       const expenseSnap = await db.ref(`transactions/${expenseId}`).get();
       if (!expenseSnap.exists() || expenseSnap.val().groupId !== groupId) {
@@ -5279,6 +5282,10 @@ app.post('/api/get-messages', generalLimiter, authenticate, async (req, res) => 
       return res.status(400).json({ success: false, error: 'Invalid group ID format' });
     }
 
+    if (expenseId && !isValidFirebaseId(expenseId)) {
+      return res.status(400).json({ success: false, error: 'Invalid expense ID format' });
+    }
+
     const db = admin.database();
 
     // Verify membership
@@ -5344,6 +5351,10 @@ app.post('/api/reminders/send', detectFraud, generalLimiter, authenticate, async
 
   if (!groupId || !debtorId || !creditorId || !amount) {
     return res.status(400).json({ success: false, error: 'Missing required reminder details' });
+  }
+
+  if (!isValidFirebaseId(groupId) || !isValidFirebaseId(debtorId) || !isValidFirebaseId(creditorId)) {
+    return res.status(400).json({ success: false, error: 'Invalid ID format' });
   }
 
   try {
