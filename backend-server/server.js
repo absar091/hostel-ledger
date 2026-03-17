@@ -564,6 +564,10 @@ app.post('/api/get-transaction-preview', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Transaction ID is required.' });
     }
 
+    if (!isValidFirebaseId(transactionId)) {
+      return res.status(400).json({ error: 'Invalid transaction ID format.' });
+    }
+
     // 1. Fetch transaction first to find out which group it belongs to
     const transactionSnap = await admin.database().ref(`transactions/${transactionId}`).once('value');
     
