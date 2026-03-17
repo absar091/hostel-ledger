@@ -61,7 +61,9 @@ const Activity = () => {
     let filtered = allTransactions;
 
     // Filter by type
+    if (filterType !== "all") {
       filtered = filtered.filter(t => t.type === filterType);
+    }
 
     // Filter by date
     if (filterDate !== "all") {

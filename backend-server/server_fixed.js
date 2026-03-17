@@ -31,7 +31,8 @@ const {
   isValidFirebaseId,
   validateNote,
   validatePlace,
-  validateMethod
+  validateMethod,
+  validateCoordinates
 } = require('./utils/validation');
 const { sanitize } = require('./utils/sanitize');
 const { getDeviceFromUA, getLocationFromIP } = require('./utils/deviceInfo');
