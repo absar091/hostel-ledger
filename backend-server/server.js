@@ -2716,6 +2716,9 @@ app.delete('/api/push-unsubscribe/:userId', generalLimiter, async (req, res) => 
 app.get('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req, res) => {
   try {
     const { groupId } = req.params;
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
     const db = admin.database();
 
     const snapshot = await db.ref(`budgets/${groupId}`).get();
@@ -2734,6 +2737,9 @@ app.get('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req,
 app.post('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req, res) => {
   try {
     const { groupId } = req.params;
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
     const { amount, period, policies } = req.body;
     const db = admin.database();
 
