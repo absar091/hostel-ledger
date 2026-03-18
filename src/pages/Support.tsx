@@ -448,127 +448,121 @@ const Support = () => {
       <DesktopHeader />
       <MobileHeader title="Support Center" showBackButton={true} />
 
-      <main className="flex-1 w-full max-w-4xl mx-auto p-6 pb-24 lg:pb-12">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
+      <main className="flex-1 w-full max-w-4xl mx-auto flex flex-col h-[calc(100dvh-64px)] lg:h-auto lg:p-6 pb-0">
+        {/* Modern Header - Hidden on mobile if redundant with MobileHeader */}
+        <div className="hidden lg:flex items-center gap-4 mb-8 p-6 pb-0">
           <button
             onClick={() => navigate(-1)}
-            className="w-12 h-12 rounded-2xl bg-white border border-[#4a6850]/10 flex items-center justify-center shadow-sm hover:bg-[#4a6850]/5 transition-all active:scale-95"
+            className="w-11 h-11 rounded-2xl bg-white border border-[#4a6850]/10 flex items-center justify-center shadow-sm hover:bg-[#4a6850]/5 transition-all active:scale-95"
           >
-            <ArrowLeft className="w-6 h-6 text-[#4a6850]" />
+            <ArrowLeft className="w-5 h-5 text-[#4a6850]" />
           </button>
           <div className="flex-1">
-            <h1 className="text-3xl font-black text-[#4a6850] tracking-tight">Support Center</h1>
-            <p className="text-sm text-[#4a6850]/60 font-bold uppercase tracking-wider">How can we help you today?</p>
+            <h1 className="text-2xl font-black text-[#4a6850] tracking-tight">Support Center</h1>
+            <p className="text-[10px] text-[#4a6850]/50 font-black uppercase tracking-widest">How can we help you?</p>
           </div>
         </div>
 
-        {/* Current Ticket Info */}
+        {/* Current Ticket Info - Compact & Premium */}
         {currentTicket && (
-          <div className="bg-gradient-to-br from-[#EAF5EF] to-[#F1F8F4] rounded-[2rem] p-6 mb-8 border border-[#4a6850]/10 shadow-lg shadow-[#4a6850]/5 relative overflow-hidden">
-            {/* Decorative circles to match dashboard style */}
-            <div className="absolute -right-8 -top-8 w-32 h-32 bg-[#4a6850]/5 rounded-full pointer-events-none"></div>
-            <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-[#4a6850]/5 rounded-full pointer-events-none"></div>
+          <div className="px-4 lg:px-0 mb-4 lg:mb-8">
+            <div className="bg-gradient-to-br from-[#EAF5EF] to-[#F1F8F4] rounded-3xl p-5 border border-[#4a6850]/10 shadow-sm relative overflow-hidden">
+              {/* Decorative circles */}
+              <div className="absolute -right-8 -top-8 w-24 h-24 bg-[#4a6850]/5 rounded-full pointer-events-none"></div>
+              <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-[#4a6850]/5 rounded-full pointer-events-none"></div>
 
-            <div className="relative z-10">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div className="w-8 h-8 rounded-xl bg-[#4a6850]/10 flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-[#4a6850]" />
-                    </div>
-                    <h3 className="text-xs font-black text-[#4a6850]/70 uppercase tracking-widest">Active Request</h3>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
                     <span
                       className={cn(
-                        "px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm",
+                        "px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm",
                         getStatusColor(currentTicket.status)
                       )}
                     >
                       {getStatusIcon(currentTicket.status)}
                       {currentTicket.status.replace("_", " ")}
                     </span>
+                    <div className="flex items-center gap-1.5 ml-1">
+                      <p className="text-sm font-black text-[#4a6850] tabular-nums">{currentTicket.ticketNumber}</p>
+                      <button
+                        onClick={copyTicketNumber}
+                        className="p-1 hover:bg-[#4a6850]/10 rounded-md transition-colors active:scale-90"
+                      >
+                        {copiedTicket ? (
+                          <Check className="w-3 h-3 text-[#4a6850]" />
+                        ) : (
+                          <Copy className="w-3 h-3 text-[#4a6850]" />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <p className="text-2xl font-black text-[#4a6850] tracking-tighter tabular-nums">{currentTicket.ticketNumber}</p>
-                    <button
-                      onClick={copyTicketNumber}
-                      className="p-1.5 hover:bg-[#4a6850]/10 rounded-lg transition-colors active:scale-90"
-                    >
-                      {copiedTicket ? (
-                        <Check className="w-4 h-4 text-[#4a6850]" />
-                      ) : (
-                        <Copy className="w-4 h-4 text-[#4a6850]" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                <div className="text-right flex flex-col items-end gap-3">
-                  <div className="flex flex-col items-end">
-                    <p className="text-[10px] text-[#4a6850]/50 font-black uppercase tracking-wider mb-0.5">Created On</p>
-                    <p className="text-sm font-black text-[#4a6850]">
-                      {new Date(currentTicket.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
+                  
                   {!currentTicket.talkToAgent && currentTicket.status !== "closed" && (
                     <button
                       onClick={handleTalkToAgent}
-                      className="flex items-center gap-2 px-4 py-2 bg-[#4a6850] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#3d5642] transition-all shadow-md active:scale-95"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#4a6850] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#3d5642] transition-all shadow-md active:scale-95"
                     >
-                      <User className="w-3.5 h-3.5" />
-                      Talk to Agent
+                      <User className="w-3 h-3" />
+                      Agent
                     </button>
                   )}
                 </div>
+                <p className="text-[13px] text-[#4a6850]/80 font-bold leading-tight line-clamp-1">{currentTicket.subject}</p>
               </div>
-              <p className="text-sm text-[#4a6850]/80 font-bold leading-relaxed">{currentTicket.subject}</p>
             </div>
           </div>
         )}
 
-        {/* Contact Methods Tabs */}
-        <div className="bg-white rounded-[2rem] border border-[#4a6850]/10 overflow-hidden mb-8 shadow-xl shadow-[#4a6850]/5">
-          <div className="flex p-2 gap-1 bg-gray-50/50">
-            <button
-              onClick={() => setActiveTab("chat")}
-              className={cn(
-                "flex-1 px-4 py-3.5 text-[11px] md:text-xs font-black uppercase tracking-widest transition-all rounded-2xl flex items-center justify-center gap-2.5",
-                activeTab === "chat"
-                  ? "bg-[#4a6850] text-white shadow-lg shadow-[#4a6850]/20"
-                  : "text-[#4a6850]/40 hover:text-[#4a6850]/70 hover:bg-white"
-              )}
-            >
-              <MessageCircle className="w-4 h-4" />
-              Live Chat
-            </button>
-            <button
-              onClick={() => setActiveTab("email")}
-              className={cn(
-                "flex-1 px-4 py-3.5 text-[11px] md:text-xs font-black uppercase tracking-widest transition-all rounded-2xl flex items-center justify-center gap-2.5",
-                activeTab === "email"
-                  ? "bg-[#4a6850] text-white shadow-lg shadow-[#4a6850]/20"
-                  : "text-[#4a6850]/40 hover:text-[#4a6850]/70 hover:bg-white"
-              )}
-            >
-              <Mail className="w-4 h-4" />
-              Email
-            </button>
-            <button
-              onClick={() => setActiveTab("whatsapp")}
-              className={cn(
-                "flex-1 px-4 py-3.5 text-[11px] md:text-xs font-black uppercase tracking-widest transition-all rounded-2xl flex items-center justify-center gap-2.5",
-                activeTab === "whatsapp"
-                  ? "bg-[#4a6850] text-white shadow-lg shadow-[#4a6850]/20"
-                  : "text-[#4a6850]/40 hover:text-[#4a6850]/70 hover:bg-white"
-              )}
-            >
-              <Phone className="w-4 h-4" />
-              WhatsApp
-            </button>
+        {/* Contact Methods - iOS Segmented Control Style */}
+        <div className="flex-1 flex flex-col min-h-0 lg:rounded-[2rem] lg:border lg:border-[#4a6850]/10 overflow-hidden lg:shadow-xl lg:shadow-[#4a6850]/5 bg-white">
+          <div className="px-4 py-3 lg:p-2 lg:bg-gray-50/50">
+            <div className="flex p-1 bg-gray-100/80 rounded-2xl relative">
+              <button
+                onClick={() => setActiveTab("chat")}
+                className={cn(
+                  "flex-1 px-2 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-xl flex items-center justify-center gap-2 relative z-10",
+                  activeTab === "chat" ? "text-[#4a6850]" : "text-[#4a6850]/40"
+                )}
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>Chat</span>
+                {activeTab === "chat" && (
+                  <div className="absolute inset-0 bg-white rounded-xl shadow-sm -z-10 animate-in fade-in zoom-in-95 duration-200" />
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab("email")}
+                className={cn(
+                  "flex-1 px-2 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-xl flex items-center justify-center gap-2 relative z-10",
+                  activeTab === "email" ? "text-[#4a6850]" : "text-[#4a6850]/40"
+                )}
+              >
+                <Mail className="w-3.5 h-3.5" />
+                <span>Email</span>
+                {activeTab === "email" && (
+                  <div className="absolute inset-0 bg-white rounded-xl shadow-sm -z-10 animate-in fade-in zoom-in-95 duration-200" />
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab("whatsapp")}
+                className={cn(
+                  "flex-1 px-2 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-xl flex items-center justify-center gap-2 relative z-10",
+                  activeTab === "whatsapp" ? "text-[#4a6850]" : "text-[#4a6850]/40"
+                )}
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>WhatsApp</span>
+                {activeTab === "whatsapp" && (
+                  <div className="absolute inset-0 bg-white rounded-xl shadow-sm -z-10 animate-in fade-in zoom-in-95 duration-200" />
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Live Chat */}
           {activeTab === "chat" && (
-            <div className="flex flex-col h-[500px]">
+            <div className="flex flex-col flex-1 min-h-0 bg-gray-50/30 overflow-hidden relative">
               {/* Messages */}
               <div
                 ref={chatContainerRef}
@@ -594,18 +588,18 @@ const Support = () => {
                       <div
                         key={msg.id}
                         className={cn(
-                          "flex",
+                          "flex mb-4 last:mb-0",
                           msg.sender === "user" ? "justify-end" : "justify-start"
                         )}
                       >
-                        <div
-                          className={cn(
-                            "max-w-[85%] md:max-w-[75%] rounded-[1.5rem] px-5 py-4 shadow-sm",
-                            msg.sender === "user"
-                              ? "bg-[#4a6850] text-white rounded-br-none"
-                              : "bg-white border border-[#4a6850]/5 text-[#4a6850] rounded-bl-none"
-                          )}
-                        >
+                      <div
+                        className={cn(
+                          "max-w-[85%] md:max-w-[75%] rounded-2xl px-4 py-3 shadow-sm",
+                          msg.sender === "user"
+                            ? "bg-[#4a6850] text-white rounded-tr-none"
+                            : "bg-white border border-[#4a6850]/5 text-[#4a6850] rounded-tl-none"
+                        )}
+                      >
                           {msg.sender === "admin" && (
                             <div className="flex items-center gap-2 mb-1">
                               <div className={cn(
@@ -643,7 +637,7 @@ const Support = () => {
                               </p>
                             </div>
                           )}
-                          <p className="text-sm font-bold leading-relaxed whitespace-pre-wrap break-words">{msg.text}</p>
+                          <p className="text-[13px] font-bold leading-relaxed whitespace-pre-wrap break-words">{msg.text}</p>
                           <p
                             className={cn(
                               "text-[10px] font-black uppercase tracking-wider mt-2 opacity-50",
@@ -660,18 +654,18 @@ const Support = () => {
                     ))}
                     <div ref={messagesEndRef} />
                     {isBotTyping && (
-                      <div className="flex justify-start animate-in fade-in slide-in-from-left-2 duration-300">
-                        <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3 flex items-center gap-2">
+                      <div className="flex justify-start mb-4 animate-in fade-in slide-in-from-left-2 duration-300">
+                        <div className="bg-white border border-[#4a6850]/5 rounded-2xl px-4 py-2.5 flex items-center gap-2 shadow-sm">
                           <div className={cn(
-                            "w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center"
+                            "w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center shrink-0"
                           )}>
                             <Sparkles className="w-3 h-3 text-purple-600 animate-pulse" />
                           </div>
-                          <div className="flex gap-1 items-center">
-                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce"></span>
-                            <span className="text-[10px] font-bold text-purple-600 ml-1 uppercase tracking-wider">AI typing...</span>
+                          <div className="flex gap-0.5 items-center">
+                            <span className="w-1 h-1 bg-purple-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                            <span className="w-1 h-1 bg-purple-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                            <span className="w-1 h-1 bg-purple-400 rounded-full animate-bounce"></span>
+                            <span className="text-[9px] font-black text-purple-600 ml-1.5 uppercase tracking-widest">AI assistant typing</span>
                           </div>
                         </div>
                       </div>
@@ -679,24 +673,22 @@ const Support = () => {
                   </>
                 )}
               </div>
-
-              {/* Input */}
-              <div className="p-4 bg-white border-t border-gray-200 relative">
+              {/* Support Chat Input - Compact & Mobile Optimized */}
+              <div className="p-3 lg:p-4 bg-white border-t border-[#4a6850]/5 relative">
                 {/* Referencing Hint */}
                 {showTxnHint && (
-                  <div className="absolute bottom-full left-4 mb-2 p-3 bg-white border border-emerald-100 rounded-2xl shadow-xl z-10 max-w-xs animate-in slide-in-from-bottom-2 zoom-in-95">
+                  <div className="absolute bottom-full left-3 right-3 mb-3 p-3 bg-white border border-emerald-100 rounded-2xl shadow-xl z-10 animate-in slide-in-from-bottom-2 zoom-in-95">
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                        <Sparkles className="w-4 h-4 text-emerald-600" />
+                      <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-gray-900 mb-1">Pro Tip: Referencing</p>
-                        <p className="text-[10px] text-gray-600 leading-relaxed">
-                          To reference a transaction, type its <span className="font-mono bg-gray-100 px-1 rounded text-emerald-700">GROUP_ID/TRANSACTION_ID</span>. 
-                          A preview card will automatically appear for you!
+                        <p className="text-[10px] font-black text-gray-900 mb-0.5 uppercase tracking-wide">Referencing Pro-Tip</p>
+                        <p className="text-[9px] text-gray-600 leading-relaxed font-bold">
+                          Type <span className="font-mono bg-gray-100 px-1 rounded text-emerald-700">GROUP/ID</span> to auto-generate a preview card for your transactions.
                         </p>
                       </div>
-                      <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5">
+                      <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 shrink-0">
                         <X className="w-3 h-3" />
                       </button>
                     </div>
@@ -705,35 +697,37 @@ const Support = () => {
 
                 {/* Transaction Preview */}
                 {referencedTxn && (
-                  <div className="mb-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200 relative animate-in slide-in-from-bottom-2">
+                  <div className="mb-2 p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 relative animate-in slide-in-from-bottom-2">
                     <button 
                       onClick={() => setReferencedTxn(null)}
-                      className="absolute top-2 right-2 p-1 hover:bg-emerald-100 rounded-full"
+                      className="absolute top-1.5 right-1.5 p-1 hover:bg-emerald-100 rounded-full"
                     >
-                      <X className="w-4 h-4 text-emerald-600" />
+                      <X className="w-3.5 h-3.5 text-emerald-600" />
                     </button>
-                    <div className="flex items-center gap-2 mb-1">
-                      <FileText className="w-4 h-4 text-emerald-600" />
-                      <span className="text-xs font-bold text-emerald-800">Referencing Transaction</span>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-[9px] font-black text-emerald-800 uppercase tracking-wide">Included Transaction</span>
                     </div>
-                    <p className="text-sm font-bold text-gray-900">{referencedTxn.title}</p>
-                    <p className="text-xs text-emerald-700">{referencedTxn.amount} • {referencedTxn.paidByName}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-black text-gray-900">{referencedTxn.title}</p>
+                      <p className="text-[10px] font-black text-emerald-700">{referencedTxn.amount}</p>
+                    </div>
                   </div>
                 )}
 
                 {/* Image Preview */}
                 {attachedImage && (
-                  <div className="mb-3 relative inline-block group animate-in zoom-in-95">
+                  <div className="mb-2 relative inline-block animate-in zoom-in-95">
                     <img 
                       src={attachedImage} 
                       alt="Preview" 
-                      className="w-24 h-24 object-cover rounded-xl border border-gray-200"
+                      className="w-16 h-16 object-cover rounded-xl border border-gray-200"
                     />
                     <button 
                       onClick={() => setAttachedImage(null)}
-                      className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                      className="absolute -top-1.5 -right-1.5 p-1 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600 transition-colors"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-2.5 h-2.5" />
                     </button>
                   </div>
                 )}
@@ -746,146 +740,128 @@ const Support = () => {
                     accept="image/*"
                     className="hidden"
                   />
-                  <div className="flex gap-1 shrink-0">
+                  <div className="flex shrink-0">
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploading || !!attachedImage}
-                      className="w-12 h-12 flex items-center justify-center text-[#4a6850]/40 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-2xl transition-all disabled:opacity-50 active:scale-90 shrink-0"
+                      className="w-10 h-10 flex items-center justify-center text-[#4a6850]/40 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 active:scale-90"
                     >
                       {isUploading ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <ImageIcon className="w-5 h-5" />
+                        <Paperclip className="w-4 h-4" />
                       )}
-                    </button>
-                    <button
-                      onClick={() => setShowTxnHint(!showTxnHint)}
-                      className={cn(
-                        "w-12 h-12 flex items-center justify-center rounded-2xl transition-all active:scale-90 shrink-0",
-                        showTxnHint ? "bg-[#4a6850]/10 text-[#4a6850]" : "text-[#4a6850]/40 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
-                      )}
-                    >
-                      <Info className="w-5 h-5" />
                     </button>
                   </div>
-                  <input
-                    type="text"
-                    value={message}
-                    onChange={(e) => {
-                      setMessage(e.target.value);
-                      detectTransactionId(e.target.value);
-                    }}
-                    onKeyPress={(e) => e.key === "Enter" && !isSending && sendMessage()}
-                    placeholder="Type message..."
-                    className="flex-1 min-w-0 px-4 py-3.5 rounded-2xl border border-[#4a6850]/10 bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-[#4a6850]/20 focus:bg-white text-sm font-bold transition-all"
-                    disabled={isSending}
-                  />
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={message}
+                      onChange={(e) => {
+                        setMessage(e.target.value);
+                        detectTransactionId(e.target.value);
+                      }}
+                      onKeyPress={(e) => e.key === "Enter" && !isSending && sendMessage()}
+                      placeholder="Type message..."
+                      className="w-full px-4 py-2.5 rounded-xl border border-[#4a6850]/10 bg-gray-50/50 focus:outline-none focus:ring-1 focus:ring-[#4a6850]/20 focus:bg-white text-[13px] font-bold transition-all placeholder:text-[#4a6850]/30"
+                      disabled={isSending}
+                    />
+                  </div>
                   <button
                     onClick={sendMessage}
                     disabled={(!message.trim() && !attachedImage) || isSending}
-                    className="w-12 md:w-auto px-0 md:px-6 h-12 bg-[#4a6850] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#3d5642] transition-all shadow-lg shadow-[#4a6850]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95 shrink-0"
+                    className="w-10 h-10 bg-[#4a6850] text-white rounded-xl shadow-md disabled:opacity-50 flex items-center justify-center active:scale-90 transition-all shrink-0"
                   >
                     {isSending ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <>
-                        <Send className="w-5 h-5" />
-                        <span className="hidden md:block">Send</span>
-                      </>
+                      <Send className="w-4 h-4" />
                     )}
                   </button>
                 </div>
               </div>
             </div>
-          )}          {/* Email Support */}
+          )}
+
+          {/* Email Support Tab */}
           {activeTab === "email" && (
-            <div className="p-12 text-center">
-              <div className="w-24 h-24 bg-[#EAF5EF] rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-sm">
-                <Mail className="w-12 h-12 text-[#4a6850]" />
+            <div className="flex-1 flex flex-col items-center justify-center p-8 lg:p-12 text-center animate-in fade-in zoom-in-98 duration-300">
+              <div className="w-20 h-20 bg-[#EAF5EF] rounded-[2rem] flex items-center justify-center mb-8 shadow-sm">
+                <Mail className="w-10 h-10 text-[#4a6850]" />
               </div>
               <h3 className="text-2xl font-black text-[#4a6850] mb-3 tracking-tight">Email Support</h3>
-              <p className="text-[#4a6850]/60 font-bold mb-8 max-w-sm mx-auto leading-relaxed">
-                Send us an email and our dedicated team will respond within 24 hours.
+              <p className="text-sm text-[#4a6850]/60 font-bold mb-8 max-w-[280px] leading-relaxed">
+                Send us an email and our team will get back to you within 24 hours.
               </p>
-              <div className="bg-[#EAF5EF]/50 rounded-[1.5rem] p-5 mb-8 inline-block border border-[#4a6850]/5">
-                <p className="text-[10px] text-[#4a6850]/50 font-black uppercase tracking-widest mb-1">Support Email</p>
-                <p className="text-lg font-black text-[#4a6850]">{SUPPORT_EMAIL}</p>
+              
+              <div className="bg-[#EAF5EF]/50 rounded-2xl p-4 mb-8 w-full max-w-[320px] border border-[#4a6850]/5">
+                <p className="text-[9px] text-[#4a6850]/40 font-black uppercase tracking-widest mb-1.5">Official Support Channel</p>
+                <p className="text-base font-black text-[#4a6850] tracking-tight">{SUPPORT_EMAIL}</p>
               </div>
-              <div>
-                <button
-                  onClick={openEmail}
-                  className="px-8 py-4 bg-[#4a6850] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#3d5642] transition-all shadow-lg shadow-[#4a6850]/20 active:scale-95 flex items-center gap-3 mx-auto"
-                >
-                  <Mail className="w-5 h-5" />
-                  Compose Email
-                </button>
-              </div>
+
+              <button
+                onClick={openEmail}
+                className="w-full max-w-[280px] py-4 bg-[#4a6850] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#3d5642] transition-all shadow-lg shadow-[#4a6850]/10 active:scale-95 flex items-center justify-center gap-3"
+              >
+                <Mail className="w-5 h-5" />
+                Compose Now
+              </button>
             </div>
           )}
 
-          {/* WhatsApp Support */}
+          {/* WhatsApp Support Tab */}
           {activeTab === "whatsapp" && (
-            <div className="p-12 text-center">
-              <div className="w-24 h-24 bg-[#EAF5EF] rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-sm">
-                <Phone className="w-12 h-12 text-[#4a6850]" />
+            <div className="flex-1 flex flex-col items-center justify-center p-8 lg:p-12 text-center animate-in fade-in zoom-in-98 duration-300">
+              <div className="w-20 h-20 bg-[#EAF5EF] rounded-[2rem] flex items-center justify-center mb-8 shadow-sm">
+                <Phone className="w-10 h-10 text-[#4a6850]" />
               </div>
               <h3 className="text-2xl font-black text-[#4a6850] mb-3 tracking-tight">WhatsApp Support</h3>
-              <p className="text-[#4a6850]/60 font-bold mb-8 max-w-sm mx-auto leading-relaxed">
-                Instant help via WhatsApp. Best for quick questions and urgent issues.
+              <p className="text-sm text-[#4a6850]/60 font-bold mb-8 max-w-[280px] leading-relaxed">
+                Connect with us instantly on WhatsApp for any urgent queries.
               </p>
-              <div className="bg-[#EAF5EF]/50 rounded-[1.5rem] p-5 mb-8 inline-block border border-[#4a6850]/5">
-                <p className="text-[10px] text-[#4a6850]/50 font-black uppercase tracking-widest mb-1">Contact Number</p>
-                <p className="text-lg font-black text-[#4a6850]">{SUPPORT_WHATSAPP}</p>
+
+              <div className="bg-[#EAF5EF]/50 rounded-2xl p-4 mb-8 w-full max-w-[320px] border border-[#4a6850]/5">
+                <p className="text-[9px] text-[#4a6850]/40 font-black uppercase tracking-widest mb-1.5">Direct Help Line</p>
+                <p className="text-base font-black text-[#4a6850] tracking-tight">{SUPPORT_WHATSAPP}</p>
               </div>
-              <div>
-                <button
-                  onClick={openWhatsApp}
-                  className="px-8 py-4 bg-[#25D366] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#128C7E] transition-all shadow-lg shadow-[#25D366]/20 active:scale-95 flex items-center gap-3 mx-auto"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  Chat on WhatsApp
-                </button>
-              </div>
+
+              <button
+                onClick={openWhatsApp}
+                className="w-full max-w-[280px] py-4 bg-[#25D366] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#128C7E] transition-all shadow-lg shadow-[#25D366]/10 active:scale-95 flex items-center justify-center gap-3"
+              >
+                <MessageCircle className="w-5 h-5" />
+                Open WhatsApp
+              </button>
             </div>
           )}
         </div>
 
-        {/* FAQ Section */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Frequently Asked Questions</h3>
-          <div className="space-y-4">
-            <details className="group">
-              <summary className="cursor-pointer font-semibold text-gray-900 hover:text-emerald-600 transition-colors">
-                How do I split expenses with my group?
-              </summary>
-              <p className="mt-2 text-sm text-gray-600 pl-4">
-                Go to your group, tap "Add Expense", enter the amount, select who paid and who participated. The app will automatically calculate everyone's share.
-              </p>
-            </details>
-            <details className="group">
-              <summary className="cursor-pointer font-semibold text-gray-900 hover:text-emerald-600 transition-colors">
-                How do I record a payment?
-              </summary>
-              <p className="mt-2 text-sm text-gray-600 pl-4">
-                When someone pays you back, go to "To Receive" section, find the person, and tap "Record Payment" to mark it as paid.
-              </p>
-            </details>
-            <details className="group">
-              <summary className="cursor-pointer font-semibold text-gray-900 hover:text-emerald-600 transition-colors">
-                Can I use the app offline?
-              </summary>
-              <p className="mt-2 text-sm text-gray-600 pl-4">
-                Yes! The app works offline and will sync your data automatically when you're back online.
-              </p>
-            </details>
-            <details className="group">
-              <summary className="cursor-pointer font-semibold text-gray-900 hover:text-emerald-600 transition-colors">
-                How do I invite members to my group?
-              </summary>
-              <p className="mt-2 text-sm text-gray-600 pl-4">
-                When creating a group, you can add members by their username or email. They'll receive an invitation to join.
-              </p>
-            </details>
+        {/* FAQ Section - Clean & Modern */}
+        <div className="px-4 lg:px-0 py-8 lg:py-12">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-1.5 h-6 bg-[#4a6850] rounded-full" />
+            <h3 className="text-lg font-black text-[#4a6850] uppercase tracking-tight">Quick Help</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+            {[
+              { q: "How do I split expenses?", a: "Go to your group, tap 'Add Expense', enter amount, and select participants." },
+              { q: "How do I record a payment?", a: "Visit 'To Receive' section, find the member, and tap 'Record Payment'." },
+              { q: "Can I use the app offline?", a: "Yes! The app works offline and syncs automatically when you're back online." },
+              { q: "How do I invite members?", a: "Add members by username or email when creating or editing a group." }
+            ].map((faq, idx) => (
+              <details key={idx} className="group bg-white border border-[#4a6850]/5 rounded-2xl p-4 transition-all hover:border-[#4a6850]/20 shadow-sm overflow-hidden">
+                <summary className="cursor-pointer font-bold text-[#4a6850] text-[13px] flex items-center justify-between list-none">
+                  {faq.q}
+                  <div className="w-6 h-6 rounded-full bg-[#4a6850]/5 flex items-center justify-center group-open:rotate-180 transition-transform">
+                    <Sparkles className="w-3 h-3 text-[#4a6850]/40" />
+                  </div>
+                </summary>
+                <p className="mt-3 text-[12px] text-[#4a6850]/60 font-bold leading-relaxed animate-in slide-in-from-top-1">
+                  {faq.a}
+                </p>
+              </details>
+            ))}
           </div>
         </div>
       </main>

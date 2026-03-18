@@ -4292,8 +4292,11 @@ app.post('/api/remove-member', detectFraud, authenticate, async (req, res) => {
     updates[`groups/${groupId}/members`] = updatedMembers;
     updates[`groups/${groupId}/memberCount`] = updatedMembers.length;
 
-    // Update denormalized count for the requester
-    updates[`userGroups/${userId}/${groupId}/memberCount`] = updatedMembers.length;
+    // Update denormalized count for the requester - ONLY if not self-leaving
+    // If self-leaving, the entire userGroups entry for this user is removed below
+    if (!isSelfLeave) {
+      updates[`userGroups/${userId}/${groupId}/memberCount`] = updatedMembers.length;
+    }
 
     // If the removed member had a userId, remove their userGroups entry too
     const removedUserId = memberToRemove.userId;

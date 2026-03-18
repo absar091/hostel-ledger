@@ -141,93 +141,102 @@ const GroupSettingsSheet = ({
   return (
     <>
       <Sheet open={open} onOpenChange={onClose}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white shadow-[0_25px_70px_rgba(74,104,80,0.3)] border-t-2 border-[#4a6850]/20 z-[100]">
-          {/* Updated Header to match AddExpenseSheet style */}
-          <SheetHeader className="flex-shrink-0 mb-6 pt-2 overflow-hidden">
-            {/* Handle Bar */}
-            <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6"></div>
-
-            <div className="flex flex-col items-center justify-center gap-1.5 px-4">
-              <SheetTitle className="text-center font-black text-2xl tracking-tight text-gray-900">Group Settings</SheetTitle>
-              <SheetDescription className="text-center text-xs text-[#4a6850]/80 font-bold max-w-[280px]">
-                Manage group details, members, and preferences
-              </SheetDescription>
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-[32px] flex flex-col bg-white border-t border-[#4a6850]/10 z-[100] px-0">
+          <div className="mx-auto w-12 h-1.5 bg-gray-200/80 rounded-full mt-4 flex-shrink-0" />
+          
+          <SheetHeader className="px-6 pt-6 pb-2 text-left space-y-1">
+            <div className="flex items-center justify-between">
+              <div>
+                <SheetTitle className="text-2xl font-black text-[#4a6850] tracking-tight">
+                  Group Settings
+                </SheetTitle>
+                <SheetDescription className="text-[11px] font-bold text-[#4a6850]/40 uppercase tracking-widest">
+                  {group.name} • {Array.isArray(group.members) ? group.members.length : 0} Members
+                </SheetDescription>
+              </div>
+              <div className="w-10 h-10 bg-[#4a6850]/5 rounded-2xl flex items-center justify-center text-xl shadow-inner border border-[#4a6850]/10">
+                {selectedEmoji}
+              </div>
             </div>
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto space-y-6 pb-4">
-            {/* Group Name & Emoji */}
-            <div className="space-y-6">
-              <div>
-                <Label htmlFor="groupName" className="text-sm font-black text-[#4a6850]/80 mb-3 block uppercase tracking-wide">Group Name</Label>
-                <Input
-                  id="groupName"
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                  onBlur={handleUpdateGroup}
-                  disabled={!isOwner}
-                  className="h-16 rounded-[32px] border-2 border-[#4a6850]/20 shadow-lg font-bold text-gray-900 focus:border-[#4a6850] focus:shadow-xl focus:ring-0 disabled:opacity-70 disabled:cursor-not-allowed"
-                />
-              </div>
+            <div className="space-y-4 px-4">
+              <div className="bg-[#4a6850]/5 rounded-3xl p-4 border border-[#4a6850]/10 shadow-sm">
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <Label htmlFor="groupName" className="text-[10px] font-black text-[#4a6850]/40 mb-1.5 block uppercase tracking-widest pl-1">Group Name</Label>
+                    <div className="relative">
+                      <Input
+                        id="groupName"
+                        value={groupName}
+                        onChange={(e) => setGroupName(e.target.value)}
+                        onBlur={handleUpdateGroup}
+                        disabled={!isOwner}
+                        className="h-11 rounded-2xl border-none bg-white shadow-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#4a6850]/10 transition-all disabled:opacity-70 disabled:cursor-not-allowed px-4"
+                      />
+                      {!isOwner && (
+                        <ShieldAlert className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#4a6850]/20" />
+                      )}
+                    </div>
+                  </div>
+                </div>
 
-              <div>
-                <Label className="text-sm font-black text-[#4a6850]/80 mb-4 block uppercase tracking-wide">Group Icon</Label>
-                <div className="flex flex-wrap gap-3 mt-1.5">
-                  {EMOJIS.map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => {
-                        if (isOwner) {
-                          setSelectedEmoji(emoji);
-                          onUpdateGroup({ emoji });
-                        }
-                      }}
-                      disabled={!isOwner}
-                      // Reduced size from w-14 h-14 to w-12 h-12
-                      className={`w-12 h-12 rounded-2xl text-2xl flex items-center justify-center transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 ${selectedEmoji === emoji
-                        ? "bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white scale-110 border-2 border-[#4a6850]"
-                        : "bg-white hover:bg-[#4a6850]/5 border border-[#4a6850]/10 hover:border-[#4a6850]/20"
-                        } ${!isOwner ? "cursor-not-allowed opacity-70" : ""}`}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
+                <div className="mt-4 pt-4 border-t border-[#4a6850]/5">
+                  <Label className="text-[10px] font-black text-[#4a6850]/40 mb-2.5 block uppercase tracking-widest pl-1">Theme Icon</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {EMOJIS.map((emoji) => (
+                      <button
+                        key={emoji}
+                        onClick={() => {
+                          if (isOwner) {
+                            setSelectedEmoji(emoji);
+                            onUpdateGroup({ emoji });
+                          }
+                        }}
+                        disabled={!isOwner}
+                        className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center transition-all duration-300 active:scale-90 ${selectedEmoji === emoji
+                          ? "bg-[#4a6850] text-white shadow-md scale-110"
+                          : "bg-white border border-[#4a6850]/10 hover:border-[#4a6850]/30"
+                          } ${!isOwner ? "cursor-not-allowed opacity-50" : ""}`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Members Section */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <Label className="text-sm font-black text-[#4a6850]/80 uppercase tracking-wide">Members ({Array.isArray(group.members) ? group.members.length : Object.keys(group.members || {}).length})</Label>
-                {/* Allow Add Member for everyone? User didn't specify, but implies owner control. Lets keeping Add accessible for now to be safe, or hide it if strict. User said 'Only owner can remove member'. I will keep Add open but Remove restricted. */}
+            <div className="px-4">
+              <div className="flex items-center justify-between mb-3 pl-1">
+                <div className="flex flex-col">
+                  <Label className="text-[10px] font-black text-[#4a6850]/40 uppercase tracking-widest">Members</Label>
+                  <p className="text-[10px] font-bold text-[#4a6850]/30">{Array.isArray(group.members) ? group.members.length : 0} People in Group</p>
+                </div>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon"
                     onClick={handleCopyGroupInvite}
-                    className="text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-[32px] px-4 py-2 h-10 shadow-sm transition-all hover:scale-105 active:scale-95 border border-[#4a6850]/10"
-                    title="Copy group invite link"
+                    className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90"
                   >
-                    <Link className="w-4 h-4 mr-1.5" />
-                    Invite Link
+                    <Link className="w-4 h-4" />
                   </Button>
                   <Button
-                    variant="ghost"
-                    size="sm"
                     onClick={() => setShowAddMember(true)}
-                    className="text-[#4a6850] hover:bg-[#4a6850]/10 font-black rounded-[32px] px-5 py-2 h-10 shadow-sm transition-all hover:scale-105 active:scale-95 border border-[#4a6850]/10"
+                    className="h-10 px-4 bg-[#4a6850] hover:bg-[#3d5643] text-white font-black rounded-2xl shadow-sm transition-all active:scale-95 flex items-center gap-2 text-[11px] uppercase tracking-wider"
                   >
-                    <UserPlus className="w-4 h-4 mr-1.5" />
+                    <UserPlus className="w-3.5 h-3.5" />
                     Add
                   </Button>
                 </div>
               </div>
 
-              {/* Add Member Input */}
+              {/* Add Member Input - Compacted */}
               {showAddMember && (
-                <div className="space-y-4 mb-6 animate-fade-in bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-[32px] p-6 border border-[#4a6850]/20 shadow-sm">
-                  <div className="flex gap-3">
+                <div className="space-y-3 mb-6 animate-fade-in bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl p-4 border border-[#4a6850]/20 shadow-sm">
+                  <div className="flex gap-2">
                     <div className="relative flex-1">
                       <Input
                         placeholder="Username or Name"
@@ -240,7 +249,7 @@ const GroupSettingsSheet = ({
                           }
                         }}
                         onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                        className="h-14 rounded-2xl border-[#4a6850]/20 shadow-lg font-bold text-gray-900 placeholder:text-[#4a6850]/40 focus:border-[#4a6850] bg-white focus:ring-0 pr-12"
+                        className="h-11 rounded-xl border-[#4a6850]/10 shadow-sm font-bold text-gray-900 placeholder:text-[#4a6850]/30 focus:border-[#4a6850]/40 bg-white focus:ring-0 pr-10"
                         autoFocus
                       />
                       <Button
@@ -248,12 +257,12 @@ const GroupSettingsSheet = ({
                         size="icon"
                         onClick={handleSearch}
                         disabled={isSearching || !newMemberName.trim()}
-                        className="absolute right-2 top-2 h-10 w-10 text-[#4a6850] hover:bg-[#4a6850]/10 rounded-xl"
+                        className="absolute right-1 top-1 h-9 w-9 text-[#4a6850] hover:bg-[#4a6850]/10 rounded-lg"
                       >
                         {isSearching ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                          <Search className="w-5 h-5" />
+                          <Search className="w-4 h-4" />
                         )}
                       </Button>
                     </div>
@@ -266,7 +275,7 @@ const GroupSettingsSheet = ({
                         setSearchResult(null);
                         setSearchError(false);
                       }}
-                      className="h-14 w-14 rounded-2xl hover:bg-gray-100 shadow-lg hover:shadow-xl transition-all flex-shrink-0 bg-white"
+                      className="h-11 w-11 rounded-xl hover:bg-gray-100 shadow-sm hover:shadow-md transition-all flex-shrink-0 bg-white"
                     >
                       <X className="w-4 h-4" />
                     </Button>
@@ -274,14 +283,14 @@ const GroupSettingsSheet = ({
 
                   {/* Search Result */}
                   {searchResult && (
-                    <div className="bg-white p-4 rounded-2xl border-2 border-green-100 shadow-lg animate-slide-up">
-                      <div className="flex items-center gap-3 mb-4">
-                        <Avatar name={searchResult.displayName || searchResult.username} size="md" />
+                    <div className="bg-white p-3 rounded-2xl border border-green-100 shadow-sm animate-slide-up">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Avatar name={searchResult.displayName || searchResult.username} size="sm" />
                         <div className="flex-1 min-w-0">
-                          <p className="font-black text-gray-900 truncate">{searchResult.displayName || searchResult.username}</p>
-                          <p className="text-xs text-gray-500 font-bold">@{searchResult.username}</p>
+                          <p className="font-black text-gray-900 text-sm truncate">{searchResult.displayName || searchResult.username}</p>
+                          <p className="text-[10px] text-gray-500 font-bold">@{searchResult.username}</p>
                         </div>
-                        <div className="flex items-center gap-1 text-[10px] text-green-600 font-black bg-green-50 px-2 py-1 rounded-lg">
+                        <div className="flex items-center gap-1 text-[9px] text-green-600 font-black bg-green-50 px-2 py-0.5 rounded-lg">
                           <CheckCircle2 className="w-3 h-3" />
                           VERIFIED
                         </div>
@@ -291,7 +300,7 @@ const GroupSettingsSheet = ({
                           name: searchResult.displayName || searchResult.username, 
                           userId: searchResult.uid 
                         })} 
-                        className="w-full h-12 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-xl shadow-lg transition-all"
+                        className="w-full h-10 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-xl text-[11px] tracking-wider uppercase"
                       >
                         Invite to Group
                       </Button>
@@ -300,31 +309,31 @@ const GroupSettingsSheet = ({
 
                   {/* Search Error / Not Found */}
                   {searchError && (
-                    <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 animate-slide-up">
-                      <div className="flex items-center gap-2 text-blue-800 font-bold text-sm mb-2">
-                        <AlertTriangle className="w-4 h-4" />
+                    <div className="bg-blue-50/50 p-3 rounded-2xl border border-blue-100 animate-slide-up">
+                      <div className="flex items-center gap-2 text-blue-800 font-bold text-xs mb-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5" />
                         User not found
                       </div>
-                      <p className="text-[11px] text-blue-700 font-bold mb-4 italic">
+                      <p className="text-[10px] text-blue-700 font-bold mb-3 italic">
                         "@{newMemberName}" is not on Hostel Ledger yet.
                       </p>
                       
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         <Button 
                           onClick={() => handleAddMember({ name: newMemberName })}
                           variant="outline"
-                          className="w-full h-12 border-[#4a6850]/20 text-[#4a6850] font-black rounded-xl bg-white hover:bg-gray-50 flex items-center justify-center gap-2"
+                          className="w-full h-10 border-[#4a6850]/10 text-[#4a6850] font-black rounded-xl bg-white hover:bg-gray-50 flex items-center justify-center gap-2 text-[11px]"
                         >
-                          <UserPlus className="w-4 h-4" />
-                          Add as Temporary Member
+                          <UserPlus className="w-3.5 h-3.5" />
+                          Add Temporary
                         </Button>
 
                         <div className="relative">
                           <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t border-blue-100" />
+                            <span className="w-full border-t border-blue-50" />
                           </div>
-                          <div className="relative flex justify-center text-[10px] uppercase">
-                            <span className="bg-[#f8fafc] px-2 text-blue-400 font-bold">Or Invite by Email</span>
+                          <div className="relative flex justify-center text-[9px] uppercase">
+                            <span className="bg-transparent px-2 text-blue-300 font-bold">Or Invite Email</span>
                           </div>
                         </div>
 
@@ -333,7 +342,7 @@ const GroupSettingsSheet = ({
                             placeholder="friend@email.com"
                             value={inviteEmail}
                             onChange={(e) => setInviteEmail(e.target.value)}
-                            className="h-12 rounded-xl border-blue-100 shadow-sm font-bold text-gray-900 placeholder:text-blue-200 focus:border-blue-300 bg-white"
+                            className="h-10 rounded-xl border-blue-50 shadow-sm font-bold text-gray-900 placeholder:text-blue-200 focus:border-blue-200 bg-white text-xs"
                           />
                           <Button 
                             onClick={() => {
@@ -342,7 +351,7 @@ const GroupSettingsSheet = ({
                                 setInviteEmail("");
                               }
                             }}
-                            className="h-12 px-6 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md"
+                            className="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-[11px]"
                             disabled={!inviteEmail.trim()}
                           >
                             Invite
@@ -353,65 +362,51 @@ const GroupSettingsSheet = ({
                   )}
 
                   {!searchResult && !searchError && (
-                    <p className="text-[10px] text-[#4a6850]/60 font-black text-center uppercase tracking-widest px-4">
-                      Search for friends to sync expenses automatically
+                    <p className="text-[9px] text-[#4a6850]/50 font-black text-center uppercase tracking-widest">
+                      Sync expenses automatically
                     </p>
                   )}
                 </div>
               )}
 
-              {/* Members List */}
-              <div className="space-y-3">
+              {/* Simple Members List */}
+              <div className="space-y-2">
                 {group.members.map((member) => (
                   <div
                     key={member.id}
-                    // Reduced padding from p-5 to p-3
-                    className="flex items-center gap-4 p-3 rounded-[32px] bg-white border border-[#4a6850]/10 shadow-lg hover:shadow-xl hover:border-[#4a6850]/20 transition-all hover:scale-[1.01]"
+                    className="flex items-center gap-3 p-2 px-3 rounded-2xl bg-white border border-[#4a6850]/10 shadow-sm"
                   >
-                    <Avatar name={member.name} size="sm" />
+                    <Avatar name={member.name} size="xs" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-black text-gray-900 tracking-tight truncate">
+                      <p className="font-black text-gray-900 text-[13px] tracking-tight truncate">
                         {member.name}
                         {member.isCurrentUser && (
-                          <span className="text-[#4a6850]/80 text-sm ml-2 font-bold">(You)</span>
-                        )}
-                        {!member.isCurrentUser && !member.userId && (
-                          <span className="inline-flex items-center ml-2 px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[10px] font-black uppercase tracking-wider">Unclaimed</span>
+                          <span className="text-[#4a6850]/40 text-[10px] ml-1 font-bold">(You)</span>
                         )}
                       </p>
-                      {/* Fix NaN logic here too just in case context passes undefined */}
                       {(member.balance !== undefined && member.balance !== 0 && !isNaN(member.balance)) && (
-                        <p className={`text-sm font-bold ${member.balance > 0 ? "text-[#4a6850]" : "text-red-600"}`}>
+                        <p className={`text-[10px] font-black uppercase tracking-tight ${member.balance > 0 ? "text-[#4a6850]" : "text-red-500"}`}>
                           {member.balance > 0 ? `Owes Rs ${member.balance.toLocaleString()}` : `Owed Rs ${Math.abs(member.balance).toLocaleString()}`}
                         </p>
                       )}
                     </div>
 
-                    {/* Actions */}
                     <div className="flex items-center gap-1">
-                      {/* Invite Link for Unclaimed Members */}
                       {!member.isCurrentUser && !member.userId && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
+                        <button
                           onClick={() => handleInviteToClaim(member.id, member.name)}
-                          className="text-[#4a6850] hover:text-[#3d5643] hover:bg-[#4a6850]/10 w-10 h-10 rounded-2xl transition-all"
-                          title="Copy invite link for this profile"
+                          className="w-8 h-8 flex items-center justify-center text-[#4a6850]/40 hover:text-[#4a6850] active:scale-90 transition-all"
                         >
-                          <Share2 className="w-4 h-4" />
-                        </Button>
+                          <Share2 className="w-3.5 h-3.5" />
+                        </button>
                       )}
-
-                      {/* RESTRICT REMOVE TO OWNER */}
                       {isOwner && !member.isCurrentUser && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
+                        <button
                           onClick={() => setMemberToRemove(member)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 w-10 h-10 rounded-2xl shadow-lg hover:shadow-xl transition-all"
+                          className="w-8 h-8 flex items-center justify-center text-red-300 hover:text-red-500 active:scale-90 transition-all"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       )}
                     </div>
                   </div>
@@ -419,51 +414,49 @@ const GroupSettingsSheet = ({
               </div>
             </div>
 
-            {/* Danger Zone - RESTRICT TO OWNER */}
+            {/* Compact Danger Zone */}
+            <div className="px-4 space-y-3">
+              <div className="bg-red-50/30 rounded-3xl p-4 border border-red-100/50">
+                <Label className="text-[10px] font-black text-red-300 uppercase tracking-widest pl-1 mb-3 block">Management</Label>
+                
+                <div className="flex flex-col gap-2">
+                  <Button
+                    variant="ghost"
+                    className="h-10 rounded-2xl text-red-500 bg-white border border-red-100 font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 group"
+                    onClick={() => setIsReportOpen(true)}
+                  >
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    Report Group
+                  </Button>
 
-            {/* Report Group Button */}
-            <div className="pt-6 border-t border-[#4a6850]/10 mb-4">
-              <Button
-                variant="outline"
-                className="w-full h-14 rounded-3xl text-red-600 border-red-200 bg-red-50 hover:bg-red-100 font-bold transition-all"
-                onClick={() => setIsReportOpen(true)}
-              >
-                <ShieldAlert className="w-5 h-5 mr-2" />
-                Report Group
-              </Button>
+                  {isOwner ? (
+                    <Button
+                      variant="destructive"
+                      className="h-10 rounded-2xl bg-gradient-to-r from-red-600 to-red-500 text-white font-black text-[11px] uppercase tracking-wider shadow-sm active:scale-95"
+                      onClick={() => setShowDeleteGroup(true)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-2" />
+                      Delete Group
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="destructive"
+                      className="h-10 rounded-2xl bg-gradient-to-r from-red-600 to-red-500 text-white font-black text-[11px] uppercase tracking-wider shadow-sm active:scale-95"
+                      onClick={() => setShowLeaveGroup(true)}
+                    >
+                      <LogOut className="w-3.5 h-3.5 mr-2" />
+                      Leave Group
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
-            {isOwner ? (
-              <div className="pt-6 border-t border-[#4a6850]/10">
-                <Label className="text-red-600 font-black text-sm uppercase tracking-wide">Danger Zone</Label>
-                <Button
-                  variant="destructive"
-                  className="w-full mt-4 h-16 rounded-[32px] bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black shadow-[0_8px_32px_rgba(239,68,68,0.3)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]"
-                  onClick={() => setShowDeleteGroup(true)}
-                >
-                  <Trash2 className="w-5 h-5 mr-2" />
-                  Delete Group
-                </Button>
-              </div>
-            ) : (
-              <div className="pt-6 border-t border-[#4a6850]/10">
-                <Label className="text-red-600 font-black text-sm uppercase tracking-wide">Danger Zone</Label>
-                <Button
-                  variant="destructive"
-                  className="w-full mt-4 h-16 rounded-[32px] bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black shadow-[0_8px_32px_rgba(239,68,68,0.3)] hover:shadow-[0_12px_40px_rgba(239,68,68,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]"
-                  onClick={() => setShowLeaveGroup(true)}
-                >
-                  <LogOut className="w-5 h-5 mr-2" />
-                  Leave Group
-                </Button>
-              </div>
-            )}
           </div>
 
-          <div className="pt-6 border-t border-[#4a6850]/10 mt-auto bg-white flex-shrink-0">
+          <div className="pt-4 mt-auto bg-white flex-shrink-0 px-6 pb-8">
             <Button
               onClick={onClose}
-              variant="secondary"
-              className="w-full h-16 rounded-[32px] font-black shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full h-12 rounded-[20px] bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black uppercase tracking-widest shadow-lg shadow-[#4a6850]/20 transition-all active:scale-95"
             >
               Done
             </Button>
