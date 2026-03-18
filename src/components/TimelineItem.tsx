@@ -254,6 +254,7 @@ const TimelineItemBase = ({
           {/* Phase 2: Discuss Button */}
           {groupId && (
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowChat(true);
