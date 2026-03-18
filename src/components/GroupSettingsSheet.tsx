@@ -184,7 +184,7 @@ const GroupSettingsSheet = ({
 
                 <div className="mt-4 pt-4 border-t border-[#4a6850]/5">
                   <Label className="text-[10px] font-black text-[#4a6850]/40 mb-2.5 block uppercase tracking-widest pl-1">Theme Icon</Label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-5 gap-3">
                     {EMOJIS.map((emoji) => (
                       <button
                         key={emoji}
@@ -195,9 +195,11 @@ const GroupSettingsSheet = ({
                           }
                         }}
                         disabled={!isOwner}
-                        className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center transition-all duration-300 active:scale-90 ${selectedEmoji === emoji
-                          ? "bg-[#4a6850] text-white shadow-md scale-110"
-                          : "bg-white border border-[#4a6850]/10 hover:border-[#4a6850]/30"
+                        aria-label={`Select icon ${emoji}`}
+                        className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all active:scale-95 ${
+                          selectedEmoji === emoji
+                            ? "bg-[#4a6850] text-white shadow-lg shadow-[#4a6850]/20 scale-105"
+                            : "bg-white border border-[#4a6850]/10 hover:border-[#4a6850]/30"
                           } ${!isOwner ? "cursor-not-allowed opacity-50" : ""}`}
                       >
                         {emoji}
@@ -374,11 +376,11 @@ const GroupSettingsSheet = ({
                 {group.members.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center gap-3 p-2 px-3 rounded-2xl bg-white border border-[#4a6850]/10 shadow-sm"
+                    className="flex items-center gap-4 p-3 px-4 rounded-2xl bg-white border border-[#4a6850]/10 shadow-sm"
                   >
-                    <Avatar name={member.name} size="xs" />
+                    <Avatar name={member.name} size="sm" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-black text-gray-900 text-[13px] tracking-tight truncate">
+                      <p className="font-black text-gray-900 text-sm tracking-tight truncate">
                         {member.name}
                         {member.isCurrentUser && (
                           <span className="text-[#4a6850]/40 text-[10px] ml-1 font-bold">(You)</span>
@@ -395,17 +397,19 @@ const GroupSettingsSheet = ({
                       {!member.isCurrentUser && !member.userId && (
                         <button
                           onClick={() => handleInviteToClaim(member.id, member.name)}
-                          className="w-8 h-8 flex items-center justify-center text-[#4a6850]/40 hover:text-[#4a6850] active:scale-90 transition-all"
+                          aria-label={`Invite ${member.name} to claim account`}
+                          className="w-10 h-10 flex items-center justify-center text-[#4a6850]/40 hover:text-[#4a6850] active:scale-90 transition-all rounded-xl hover:bg-[#4a6850]/5"
                         >
-                          <Share2 className="w-3.5 h-3.5" />
+                          <Share2 className="w-4 h-4" />
                         </button>
                       )}
                       {isOwner && !member.isCurrentUser && (
                         <button
                           onClick={() => setMemberToRemove(member)}
-                          className="w-8 h-8 flex items-center justify-center text-red-300 hover:text-red-500 active:scale-90 transition-all"
+                          aria-label={`Remove ${member.name} from group`}
+                          className="w-10 h-10 flex items-center justify-center text-red-300 hover:text-red-500 active:scale-90 transition-all rounded-xl hover:bg-red-50"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>

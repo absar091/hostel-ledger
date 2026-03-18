@@ -4,7 +4,7 @@ import { useState } from "react";
 interface AvatarProps {
   name: string;
   photoURL?: string | null;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
 }
 
@@ -42,6 +42,7 @@ const Avatar = ({ name, photoURL, size = "md", className }: AvatarProps) => {
   const safeName = name || "User";
 
   const sizeClasses = {
+    xs: "w-7 h-7 text-[10px]",
     sm: "w-8 h-8 text-xs",
     md: "w-10 h-10 text-sm",
     lg: "w-14 h-14 text-lg",
@@ -53,7 +54,7 @@ const Avatar = ({ name, photoURL, size = "md", className }: AvatarProps) => {
   return (
     <div
       className={cn(
-        "rounded-full flex items-center justify-center font-semibold text-white shrink-0 relative overflow-hidden",
+        "rounded-full flex items-center justify-center font-semibold text-white shrink-0 relative overflow-hidden ring-1 ring-inset ring-black/5",
         !showImage && getColorFromName(safeName),
         sizeClasses[size],
         className
