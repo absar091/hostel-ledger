@@ -443,12 +443,12 @@ const Support = () => {
   };
 
   return (
-    <AppContainer className="bg-white">
+    <AppContainer className="bg-white flex flex-col min-h-screen">
       <Sidebar />
       <DesktopHeader />
       <MobileHeader title="Support Center" showBackButton={true} />
 
-      <main className="flex-1 w-full max-w-4xl mx-auto flex flex-col h-[calc(100dvh-64px)] lg:h-auto lg:p-6 pb-0">
+      <main className="flex-1 w-full max-w-4xl mx-auto flex flex-col lg:p-6 pb-0 overflow-hidden">
         {/* Modern Header - Hidden on mobile if redundant with MobileHeader */}
         <div className="hidden lg:flex items-center gap-4 mb-8 p-6 pb-0">
           <button
@@ -515,9 +515,9 @@ const Support = () => {
         )}
 
         {/* Contact Methods - iOS Segmented Control Style */}
-        <div className="flex-1 flex flex-col min-h-0 lg:rounded-[2rem] lg:border lg:border-[#4a6850]/10 overflow-hidden lg:shadow-xl lg:shadow-[#4a6850]/5 bg-white">
+        <div className="flex-1 flex flex-col bg-white rounded-[2rem] lg:rounded-[3rem] shadow-xl shadow-[#4a6850]/5 border border-[#4a6850]/5 overflow-hidden">
           <div className="px-4 py-3 lg:p-2 lg:bg-gray-50/50">
-            <div className="flex p-1 bg-gray-100/80 rounded-2xl relative">
+            <div className="flex p-1 bg-gray-100/80 rounded-2xl relative z-20">
               <button
                 onClick={() => setActiveTab("chat")}
                 className={cn(
@@ -782,10 +782,8 @@ const Support = () => {
               </div>
             </div>
           )}
-
-          {/* Email Support Tab */}
           {activeTab === "email" && (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 lg:p-12 text-center animate-in fade-in zoom-in-98 duration-300">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 lg:p-12 text-center animate-in fade-in zoom-in-98 duration-300 overflow-y-auto">
               <div className="w-20 h-20 bg-[#EAF5EF] rounded-[2rem] flex items-center justify-center mb-8 shadow-sm">
                 <Mail className="w-10 h-10 text-[#4a6850]" />
               </div>
@@ -811,7 +809,7 @@ const Support = () => {
 
           {/* WhatsApp Support Tab */}
           {activeTab === "whatsapp" && (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 lg:p-12 text-center animate-in fade-in zoom-in-98 duration-300">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 lg:p-12 text-center animate-in fade-in zoom-in-98 duration-300 overflow-y-auto">
               <div className="w-20 h-20 bg-[#EAF5EF] rounded-[2rem] flex items-center justify-center mb-8 shadow-sm">
                 <Phone className="w-10 h-10 text-[#4a6850]" />
               </div>
