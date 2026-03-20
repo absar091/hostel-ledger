@@ -35,3 +35,11 @@
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+## 2024-05-24 - Path Traversal in Firebase Admin DB Queries
+**Vulnerability:** Path traversal via URL-encoded characters in Express.js `req.params` (e.g., `%2E%2E%2F` -> `../`) when interpolated into Firebase Admin SDK database paths.
+**Learning:** Because Express.js automatically URL-decodes path parameters, passing them directly to Admin SDK references (`db.ref(\`path/${param}\`)`) allows users to escape the intended node and access restricted data, completely bypassing Firebase Security Rules since the Admin SDK ignores them.
+**Prevention:** Explicitly validate all dynamic segments of database paths originating from user input at the endpoint boundary, using strict allowlists or regex format checks (like `isValidFirebaseId`).
+## 2024-05-24 - Unvalidated targetId in user reporting endpoint
+**Vulnerability:** The `/api/user/report` endpoint accepted a `targetId` directly from the request body and saved it to the `reports` collection without validating its format.
+**Learning:** Even if an ID is only saved as data (and not immediately interpolated into a database path), failing to validate referential integrity at the boundary allows attackers to inject maliciously formatted payloads that might exploit secondary contexts (e.g., admin dashboards or downstream processing scripts that read these IDs).
+**Prevention:** Explicitly validate all client-provided referential IDs using constraints like `isValidFirebaseId` upon receipt at the endpoint boundary before persisting them to the database.
