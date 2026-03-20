@@ -34,7 +34,7 @@ const DesktopHeader = () => {
         {/* Settings */}
         <button
           onClick={() => navigate("/settings")}
-          className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"
+          className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
           title="App Settings"
           aria-label="App settings"
         >
@@ -44,7 +44,7 @@ const DesktopHeader = () => {
         {/* Profile */}
         <button
           onClick={() => navigate("/profile")}
-          className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-gray-50 transition-all"
+          className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
           aria-label="View profile"
         >
           <div className="rounded-full ring-2 ring-white shadow-sm overflow-hidden">
