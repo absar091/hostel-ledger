@@ -30,3 +30,7 @@
 **Vulnerability:** The `/api/ai/parse-expense` and `/api/ai/parse-expense-audio` endpoints accepted a `groupId` directly from the request body and interpolated it into a Firebase Realtime Database path (`db.ref(\`groups/${groupId}\`)`) without prior validation. This allowed potential path traversal or NoSQL injection attacks to bypass authorization and extract arbitrary paths via AI.
 **Learning:** Even AI-assisted endpoints or those that seem non-destructive can expose data if user-provided identifiers used to look up context are not strictly validated.
 **Prevention:** Always explicitly validate client-provided IDs (e.g., using `isValidFirebaseId`) before interpolating them into database paths.
+## 2025-01-20 - Unvalidated Target ID in Report Endpoint
+**Vulnerability:** The `/report` endpoint accepted any string for `targetId` without format validation, allowing potentially malicious or improperly formatted IDs to be stored in the database.
+**Learning:** Untrusted client-provided referential IDs must be explicitly validated using constraints like `isValidFirebaseId` upon receipt at the endpoint boundary before being saved to the database.
+**Prevention:** Ensure all user-provided referential IDs, particularly those that map directly to database objects, are validated via `isValidFirebaseId` or similar structural checks before processing.
