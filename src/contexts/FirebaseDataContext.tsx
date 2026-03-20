@@ -1275,6 +1275,8 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
           return [newGroup, ...prev];
         });
       }
+      // Wait for Firebase stabilization (security rules/indices sync)
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       return { success: true };
     } catch (error: any) {
@@ -1339,8 +1341,47 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
       }
 
       return null;
-    } catch (error) {
-      console.error("Error fetching group detail:", error);
+    } catch (error: any) {
+      if (error?.message?.includes("Permission denied") || error?.code === "PERMISSION_DENIED") {
+        // Special case: Permission denied usually means the userGroups write hasn't propagated yet
+        // Retry up to 2 times with backoff
+        let lastError = error;
+        for (let i = 0; i < 2; i++) {
+          const delay = (i + 1) * 800;
+          logger.info(`Permission denied fetching group ${groupId}. Retrying in ${delay}ms... (Attempt ${i + 1}/2)`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          
+          try {
+            const [groupSnap, userGroupSnap] = await Promise.all([
+              get(ref(database, `groups/${groupId}`)),
+              get(ref(database, `userGroups/${user?.uid}/${groupId}`))
+            ]);
+
+            if (groupSnap.exists()) {
+              const data = groupSnap.val();
+              const userGroupData = userGroupSnap.exists() ? userGroupSnap.val() : {};
+              const fullGroup = {
+                id: groupId,
+                ...data,
+                status: userGroupData.status,
+                members: normalizeMembers(data.members, user?.uid)
+              };
+
+              // Update state
+              setGroups(prev => prev.map(g => g.id === groupId ? { ...g, ...fullGroup, memberCount: fullGroup.members?.length || fullGroup.memberCount || 0 } : g));
+              return fullGroup;
+            }
+          } catch (retryError: any) {
+            lastError = retryError;
+            if (!retryError?.message?.includes("Permission denied") && retryError?.code !== "PERMISSION_DENIED") {
+               break; // If it's a different error, stop retrying
+            }
+          }
+        }
+        console.error("Failed to fetch group detail after retries due to permission:", lastError);
+      } else {
+        console.error("Error fetching group detail:", error);
+      }
 
       // Secondary fallback check even on error
       try {
