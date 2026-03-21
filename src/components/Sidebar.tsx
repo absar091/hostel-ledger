@@ -66,6 +66,7 @@ const Sidebar = () => {
 
       {/* Toggle Button */}
       <button
+        type="button"
         onClick={toggleSidebar}
         aria-label={isOpen ? t('sidebar.collapse') : t('sidebar.expand')}
         className="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
@@ -92,6 +93,7 @@ const Sidebar = () => {
 
           return (
             <button
+              type="button"
               key={item.id}
               onClick={() => navigate(item.path)}
               aria-current={active ? "page" : undefined}
@@ -141,6 +143,7 @@ const Sidebar = () => {
               </div>
             </div>
             <button
+              type="button"
               onClick={handleLogout}
               aria-label={t('sidebar.logout')}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200 font-medium"
@@ -152,6 +155,7 @@ const Sidebar = () => {
         ) : (
           <>
             <button
+              type="button"
               onClick={() => navigate("/profile")}
               className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center mx-auto mb-3"
               aria-label={user?.name || "Profile"}
@@ -162,6 +166,7 @@ const Sidebar = () => {
               </span>
             </button>
             <button
+              type="button"
               onClick={handleLogout}
               className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200"
               aria-label={t('sidebar.logout')}
