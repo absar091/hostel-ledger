@@ -87,7 +87,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
             <button
               onClick={handleNativeShare}
               aria-label="Share App"
-              className={`w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors ${className}`}
+              className={`w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors ${className}`}
             >
               <Share2 className="w-5 h-5 text-gray-700" />
             </button>
@@ -114,7 +114,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
           </p>
           <button
             onClick={handleNativeShare}
-            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg"
+            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all shadow-lg"
           >
             Share with Friends 🎉
           </button>
@@ -134,7 +134,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
     <div className="relative">
       <button
         onClick={handleNativeShare}
-        className={`bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg hover:shadow-xl inline-flex items-center gap-2 ${sizeClasses[size]} ${className}`}
+        className={`bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-teal-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all shadow-lg hover:shadow-xl inline-flex items-center gap-2 ${sizeClasses[size]} ${className}`}
       >
         <Share2 className="w-4 h-4" />
         Share App
@@ -151,7 +151,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
                 <button
                   onClick={() => setShowShareMenu(false)}
                   aria-label="Close share menu"
-                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 flex items-center justify-center transition-colors"
                 >
                   <span className="text-gray-600 text-lg" aria-hidden="true">×</span>
                 </button>
@@ -165,7 +165,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
             <div className="p-6 space-y-3">
               <button
                 onClick={handleCopyLink}
-                className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors text-left"
+                className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors text-left"
               >
                 <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center">
                   {copied ? (
@@ -186,7 +186,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
 
               <button
                 onClick={handleWhatsAppShare}
-                className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors text-left"
+                className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors text-left"
               >
                 <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center">
                   <MessageCircle className="w-6 h-6 text-green-600" />
@@ -199,7 +199,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
 
               <button
                 onClick={handleTelegramShare}
-                className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors text-left"
+                className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors text-left"
               >
                 <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
                   <Send className="w-6 h-6 text-blue-600" />
@@ -213,7 +213,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   onClick={handleFacebookShare}
-                  className="flex items-center justify-center gap-2 p-3 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
+                  className="flex items-center justify-center gap-2 p-3 rounded-xl bg-blue-50 hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
                 >
                   <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-xs font-bold">f</span>
@@ -223,7 +223,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
 
                 <button
                   onClick={handleTwitterShare}
-                  className="flex items-center justify-center gap-2 p-3 rounded-xl bg-sky-50 hover:bg-sky-100 transition-colors"
+                  className="flex items-center justify-center gap-2 p-3 rounded-xl bg-sky-50 hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
                 >
                   <div className="w-6 h-6 bg-sky-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-xs font-bold">𝕏</span>
