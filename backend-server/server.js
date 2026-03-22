@@ -3680,20 +3680,26 @@ app.post('/api/record-payment', generalLimiter, authenticate, detectFraud, async
             // We need to check all real members' settlements against this temp member
             let hasOutstandingDebt = false;
 
-            for (const member of freshMembers) {
-              if (member.id === tempMember.id) continue;
-              const storageKey = member.userId || member.id;
-
-              // Check this member's settlement with the temp member
-              const settlementSnap = await db.ref(`users/${storageKey}/settlements/${groupId}/${tempMember.id}`).get();
-              if (settlementSnap.exists()) {
-                const settlement = settlementSnap.val();
-                const netBalance = (settlement.toReceive || 0) - (settlement.toPay || 0);
-                if (Math.abs(netBalance) > 0.01) {
-                  hasOutstandingDebt = true;
-                  break;
+            // ⚡ Bolt Optimization: Use Promise.all to parallelize independent database reads for checking temp member debts.
+            // Expected impact: Reduces latency from O(n) sequential roundtrips to O(1) concurrent roundtrips, significantly speeding up large groups.
+            const settlementPromises = freshMembers
+              .filter(m => m.id !== tempMember.id)
+              .map(async member => {
+                const storageKey = member.userId || member.id;
+                const settlementSnap = await db.ref(`users/${storageKey}/settlements/${groupId}/${tempMember.id}`).get();
+                if (settlementSnap.exists()) {
+                  const settlement = settlementSnap.val();
+                  const netBalance = (settlement.toReceive || 0) - (settlement.toPay || 0);
+                  if (Math.abs(netBalance) > 0.01) {
+                    return true; // Has outstanding debt
+                  }
                 }
-              }
+                return false;
+              });
+
+            const results = await Promise.all(settlementPromises);
+            if (results.some(hasDebt => hasDebt)) {
+              hasOutstandingDebt = true;
             }
 
             if (!hasOutstandingDebt) {
