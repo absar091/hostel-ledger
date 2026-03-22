@@ -1582,10 +1582,14 @@ app.get('/api/ai/insights', generalLimiter, authenticate, async (req, res) => {
     const groupNames = {};
     if (userGroupsSnap.exists()) {
       const groupIds = Object.keys(userGroupsSnap.val());
-      for (const gid of groupIds) {
+
+      // ⚡ Bolt Optimization: Parallelized independent Firebase reads
+      // Replaced sequential for...of loop with Promise.all to fetch group names concurrently.
+      // Expected impact: Eliminates N+1 query bottleneck, reducing endpoint latency by O(N) where N is the number of user groups.
+      await Promise.all(groupIds.map(async (gid) => {
         const gSnap = await admin.database().ref(`groups/${gid}/name`).get();
         if (gSnap.exists()) groupNames[gid] = gSnap.val();
-      }
+      }));
     }
 
     const context = {
