@@ -35,3 +35,7 @@
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+## 2024-05-18 - Missing ID Validation on Path Parameters
+**Vulnerability:** The `groupId` and `userId` route parameters in the budget endpoints were not validated using `isValidFirebaseId()` before being used in database paths, potentially allowing malformed data or inconsistent formats to be processed.
+**Learning:** While most request body parameters were explicitly validated, route parameters (from `req.params`) were often overlooked, creating a blind spot in the general data validation layer.
+**Prevention:** Always validate identifiers from `req.params` against an allowlist pattern (like `isValidFirebaseId`) immediately upon extraction, treating them with the same strictness as `req.body` payloads to maintain data integrity.
