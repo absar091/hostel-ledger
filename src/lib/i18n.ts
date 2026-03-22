@@ -833,7 +833,13 @@ const resources = {
                     "expense_added": "{{actor}} added {{amount}} expense \"{{title}}\"",
                     "payment_recorded": "{{actor}} recorded a payment of {{amount}}",
                     "member_joined": "{{actor}} joined the group"
-                }
+                },
+                "close_tip": "Close tip",
+                "remove_referenced_transaction": "Remove referenced transaction",
+                "remove_attached_image": "Remove attached image",
+                "attach_image": "Attach image",
+                "toggle_transaction_referencing_info": "Toggle transaction referencing info",
+                "send_message": "Send message"
             }
         }
     },
@@ -1655,7 +1661,13 @@ const resources = {
                     "expense_added": "{{actor}} نے {{amount}} کا خرچہ \"{{title}}\" شامل کیا",
                     "payment_recorded": "{{actor}} نے {{amount}} کی ادائیگی ریکارڈ کی",
                     "member_joined": "{{actor}} گروپ میں شامل ہوئے"
-                }
+                },
+                "close_tip": "ٹپ بند کریں",
+                "remove_referenced_transaction": "حوالہ شدہ ٹرانزیکشن ہٹائیں",
+                "remove_attached_image": "منسلک تصویر ہٹائیں",
+                "attach_image": "تصویر منسلک کریں",
+                "toggle_transaction_referencing_info": "ٹرانزیکشن کا حوالہ دینے کی معلومات ٹوگل کریں",
+                "send_message": "پیغام بھیجیں"
             }
         }
     }
