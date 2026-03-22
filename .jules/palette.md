@@ -1,0 +1,3 @@
+## 2024-06-18 - Clear Search Button Alignment Fix
+**Learning:** Found a recurring pattern in the app's custom search inputs where clear/reset buttons were not fully accessible (lacked consistent `type="button"` leading to unexpected form submits if wrapped in forms) and did not follow the standard focus-visible styling pattern used elsewhere.
+**Action:** When adding or modifying interactive elements in inputs, ensure they use `type="button"` and the standard `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50` classes for keyboard navigability.
