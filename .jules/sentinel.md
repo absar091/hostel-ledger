@@ -35,3 +35,7 @@
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+## 2024-05-24 - Unvalidated targetId leading to malicious payload storage
+**Vulnerability:** The `/api/report` endpoint in `userRoutes.js` accepted a `targetId` from the client and stored it in the `reports` node without format validation.
+**Learning:** Untrusted client-provided referential IDs must be explicitly validated using constraints like `isValidFirebaseId` upon receipt at the endpoint boundary before being saved to the database, preventing maliciously formatted payloads from being stored or used in secondary contexts.
+**Prevention:** Always validate client-provided referential IDs using explicit format validation checks.
