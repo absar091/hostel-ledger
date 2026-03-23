@@ -1,0 +1,3 @@
+## 2024-05-24 - Custom Button Focus Visibility
+**Learning:** Custom interactive elements (like plain `<button>` tags used for navigation or actions instead of standard design system `<Button>` components) often lack distinct keyboard focus indicators when custom padding/colors are applied, violating WCAG keyboard accessibility standards.
+**Action:** Always manually apply the established focus ring pattern (`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`) to any custom interactive element to ensure a clear and consistent focus state for keyboard users.
