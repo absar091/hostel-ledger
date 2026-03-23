@@ -35,3 +35,8 @@
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+
+## 2026-05-18 - Missing data format validation in budget endpoints
+**Vulnerability:** Express.js route parameters (`groupId` and `userId`) in the budget management endpoints (`/api/budgets/group/:groupId` and `/api/budgets/personal/:userId`) were being extracted from `req.params` and directly interpolated into Firebase Realtime Database paths without format validation.
+**Learning:** Although Firebase Realtime Database and the Admin SDK natively prevent path traversal by throwing errors on restricted characters (like `../`), interpolating unchecked parameters directly from `req.params` bypasses proper data format validation, potentially leading to inconsistencies and unexpected application states if malformed identifiers are processed.
+**Prevention:** Always strictly validate the format of parameters extracted from `req.params` against an allowlist pattern (e.g., using `isValidFirebaseId()`) before utilizing them in database operations.
