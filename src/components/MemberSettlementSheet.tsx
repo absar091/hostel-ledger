@@ -202,10 +202,11 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                   ) : (
                     <div className="space-y-3">
                       <div>
-                        <label className="text-xs font-black text-[#4a6850] mb-2 block uppercase tracking-wide">
+                        <label htmlFor="custom-receive-amount" className="text-xs font-black text-[#4a6850] mb-2 block uppercase tracking-wide">
                           Amount Received
                         </label>
                         <Input
+                          id="custom-receive-amount"
                           type="number"
                           placeholder="Enter amount"
                           value={customReceiveAmount}
@@ -289,10 +290,11 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                   ) : (
                     <div className="space-y-3">
                       <div>
-                        <label className="text-xs font-black text-red-800 mb-2 block uppercase tracking-wide">
+                        <label htmlFor="custom-pay-amount" className="text-xs font-black text-red-800 mb-2 block uppercase tracking-wide">
                           Amount to Pay
                         </label>
                         <Input
+                          id="custom-pay-amount"
                           type="number"
                           placeholder="Enter amount"
                           value={customPayAmount}
