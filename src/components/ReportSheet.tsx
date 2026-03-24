@@ -45,6 +45,7 @@ export function ReportSheet({ isOpen, onClose, targetId, targetType }: ReportShe
       toast.success('Report submitted successfully. Our team will review this shortly.');
       onClose();
       setDetails('');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.message || 'An error occurred');
     } finally {
@@ -65,8 +66,9 @@ export function ReportSheet({ isOpen, onClose, targetId, targetType }: ReportShe
         <div className="flex-1 overflow-y-auto py-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium dark:text-gray-300">Reason</label>
+                <label htmlFor="report-reason" className="text-sm font-medium dark:text-gray-300">Reason</label>
                 <select
+                  id="report-reason"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg dark:bg-gray-800 dark:text-white outline-none focus:border-red-500"
@@ -80,8 +82,9 @@ export function ReportSheet({ isOpen, onClose, targetId, targetType }: ReportShe
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium dark:text-gray-300">Additional Details (Optional)</label>
+                <label htmlFor="report-details" className="text-sm font-medium dark:text-gray-300">Additional Details (Optional)</label>
                 <textarea
+                  id="report-details"
                   value={details}
                   onChange={(e) => setDetails(e.target.value)}
                   placeholder="Provide any additional context..."
