@@ -1582,10 +1582,13 @@ app.get('/api/ai/insights', generalLimiter, authenticate, async (req, res) => {
     const groupNames = {};
     if (userGroupsSnap.exists()) {
       const groupIds = Object.keys(userGroupsSnap.val());
-      for (const gid of groupIds) {
+
+      // ⚡ Bolt Optimization: Parallelize independent database reads for faster AI Insights response
+      // Expected impact: Reduces latency from O(N) to O(1) network roundtrips for group lookups
+      await Promise.all(groupIds.map(async (gid) => {
         const gSnap = await admin.database().ref(`groups/${gid}/name`).get();
         if (gSnap.exists()) groupNames[gid] = gSnap.val();
-      }
+      }));
     }
 
     const context = {
