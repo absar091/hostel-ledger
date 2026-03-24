@@ -1374,6 +1374,12 @@ app.post('/api/ai/parse-expense', detectFraud, generalLimiter, authenticate, asy
       return res.status(400).json({ success: false, error: 'Invalid group ID format' });
     }
 
+    // Verify user is in group
+    const userGroupSnap = await admin.database().ref(`userGroups/${req.user.uid}/${groupId}`).get();
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You do not have access to this group.' });
+    }
+
     // Get group members for context
     const groupSnap = await admin.database().ref(`groups/${groupId}`).get();
     if (!groupSnap.exists()) {
@@ -1456,6 +1462,12 @@ app.post('/api/ai/parse-expense-audio', detectFraud, generalLimiter, authenticat
     }
     if (!groupId || !isValidFirebaseId(groupId)) {
       return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
+    // Verify user is in group
+    const userGroupSnap = await admin.database().ref(`userGroups/${req.user.uid}/${groupId}`).get();
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You do not have access to this group.' });
     }
 
     // Get group members for context
@@ -2718,6 +2730,12 @@ app.get('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req,
     const { groupId } = req.params;
     const db = admin.database();
 
+    // Verify user is in group
+    const userGroupSnap = await db.ref(`userGroups/${req.user.uid}/${groupId}`).get();
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You do not have access to this group.' });
+    }
+
     const snapshot = await db.ref(`budgets/${groupId}`).get();
     if (!snapshot.exists()) {
       return res.json({ success: true, budget: { amount: 0, spent: 0, period: 'monthly', policies: { alertAt80: true, lockAt100: false } } });
@@ -2739,6 +2757,12 @@ app.post('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req
 
     if (amount === undefined || !period) {
       return res.status(400).json({ success: false, error: 'Missing amount or period' });
+    }
+
+    // Verify user is in group
+    const userGroupSnap = await db.ref(`userGroups/${req.user.uid}/${groupId}`).get();
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You do not have access to this group.' });
     }
 
     const updates = {
