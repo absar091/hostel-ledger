@@ -35,3 +35,7 @@
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+## 2026-03-24 - HTML Injection and Incorrect Email Service Usage in Support Endpoint
+**Vulnerability:** The `/api/user/support` endpoint attempted to send emails using `emailService.sendEmail` which doesn't exist, and `isConfigured()` which is a boolean property (`isConnectionVerified`). More importantly, it directly interpolated the user-provided `subject` into the email body without sanitization, leading to potential HTML injection if the email were successfully sent.
+**Learning:** Always verify the actual API signatures of internal services. When generating email content, all user-provided data must be strictly sanitized using functions like `emailService.escapeHtml()` to prevent injection vulnerabilities that could be rendered by email clients.
+**Prevention:** Use the `emailService.sendEmailSafe({to, subject, html})` method correctly, ensure `isConnectionVerified` is checked as a property, and unconditionally escape any user input embedded in email templates.
