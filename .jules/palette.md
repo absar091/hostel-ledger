@@ -1,0 +1,3 @@
+## 2024-05-17 - Navigation buttons acting as form submits
+**Learning:** React <button> tags placed in shared UI layouts (like BottomNav or DesktopHeader) without an explicit `type` default to `type="submit"`. If these layouts inadvertently wrap or render inside `<form>` elements anywhere in the app, clicking a navigation link can unexpectedly trigger form submissions and page reloads instead of navigation.
+**Action:** Always explicitly set `type="button"` on interactive UI buttons that are strictly for navigation or triggering JS logic to prevent unintended form submissions across the codebase.
