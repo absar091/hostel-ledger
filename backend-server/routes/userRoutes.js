@@ -39,12 +39,13 @@ router.post('/support', async (req, res) => {
     await admin.database().ref(`supportTickets/${uid}/${ticketId}`).set(ticketData);
 
     // Send confirmation email asynchronously (fire and forget to not block UI)
-    if (emailService && emailService.isConfigured()) {
-       emailService.sendEmail(
-         ticketData.email,
-         `Support Ticket Received: ${ticketId}`,
-         `Hello,\n\nWe have received your support request:\n\nSubject: ${subject}\n\nOur team will review this shortly.\n\nTicket ID: ${ticketId}`
-       ).catch(err => console.error("Failed to send ticket email", err));
+    if (emailService && emailService.isConnectionVerified) {
+       const safeSubject = typeof emailService.escapeHtml === 'function' ? emailService.escapeHtml(subject) : subject.replace(/[&<>"']/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; });
+       emailService.sendEmailSafe({
+         to: ticketData.email,
+         subject: `Support Ticket Received: ${ticketId}`,
+         html: `<p>Hello,</p><p>We have received your support request:</p><p><strong>Subject:</strong> ${safeSubject}</p><p>Our team will review this shortly.</p><p>Ticket ID: ${ticketId}</p>`
+       }).catch(err => console.error("Failed to send ticket email", err));
     }
 
     res.json({ success: true, ticketId, message: 'Ticket submitted successfully.' });
