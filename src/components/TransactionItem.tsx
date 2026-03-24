@@ -79,9 +79,10 @@ export const TransactionItem = memo(({
 
   return (
     <button
+      type="button"
       onClick={() => onClick(transaction)}
       aria-label={ariaLabel}
-      className="w-full flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-xl lg:rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:scale-[1.01] active:scale-[0.99] transition-all text-left group"
+      className="w-full flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-xl lg:rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:scale-[1.01] active:scale-[0.99] transition-all text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       <div
         className={cn(
@@ -163,11 +164,13 @@ export const TransactionItem = memo(({
 
         {transaction.type === "expense" && (
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               setShowChat(true);
             }}
-            className="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90"
+            className="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-label={t('chat.discuss')}
             title={t('chat.discuss')}
           >
             <MessageSquareText className="w-4 h-4 lg:w-4.5 lg:h-4.5" />
