@@ -91,7 +91,7 @@ export function SupportSheet({ isOpen, onClose }: SupportSheetProps) {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label htmlFor="support-subject" className="text-xs font-black uppercase tracking-wider text-[#4a6850]">Subject</label>
+                <label htmlFor="support-subject" className="text-xs font-black uppercase tracking-wider text-[#4a6850]">Subject <span className="text-red-500">*</span></label>
                 <input
                   id="support-subject"
                   className="w-full h-12 px-4 bg-white border border-[#4a6850]/10 rounded-2xl font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4a6850]/30 transition-all shadow-sm"
@@ -99,10 +99,12 @@ export function SupportSheet({ isOpen, onClose }: SupportSheetProps) {
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="What do you need help with?"
                   disabled={loading}
+                  required
+                  aria-required="true"
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="support-message" className="text-xs font-black uppercase tracking-wider text-[#4a6850]">Message</label>
+                <label htmlFor="support-message" className="text-xs font-black uppercase tracking-wider text-[#4a6850]">Message <span className="text-red-500">*</span></label>
                 <textarea
                   id="support-message"
                   value={message}
@@ -110,6 +112,8 @@ export function SupportSheet({ isOpen, onClose }: SupportSheetProps) {
                   placeholder="Describe your issue in detail..."
                   className="w-full min-h-[180px] p-4 bg-white border border-[#4a6850]/10 rounded-2xl font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4a6850]/30 transition-all shadow-sm resize-none"
                   disabled={loading}
+                  required
+                  aria-required="true"
                 />
               </div>
               <button 
