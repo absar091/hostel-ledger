@@ -209,6 +209,7 @@ const Profile = () => {
                 <button
                   onClick={handlePhotoClick}
                   disabled={isUploadingPhoto}
+                  aria-label="Update Profile Photo"
                   className="relative group cursor-pointer flex-shrink-0"
                 >
                   <div className="relative">
@@ -291,6 +292,7 @@ const Profile = () => {
                   setEditPhone(user?.phone || "");
                   setShowEditSheet(true);
                 }}
+                aria-label={t('profile.edit_profile')}
                 className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors group"
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -348,6 +350,7 @@ const Profile = () => {
             <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
               <button
                 onClick={() => navigate("/settings")}
+                aria-label={t('profile.general_settings')}
                 className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -387,6 +390,7 @@ const Profile = () => {
             <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/5 divide-y divide-[#4a6850]/5 overflow-hidden">
               <button
                 onClick={() => navigate("/about")}
+                aria-label={t('profile.about')}
                 className="w-full flex items-center justify-between p-5 active:bg-[#4a6850]/5 transition-colors"
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
