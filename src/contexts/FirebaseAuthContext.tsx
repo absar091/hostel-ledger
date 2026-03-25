@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from "react";
 import {
   User,
   signInWithEmailAndPassword,
@@ -1289,44 +1289,54 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const contextValue = useMemo(() => ({
+    user,
+    firebaseUser,
+    isLoading,
+    login,
+    signup,
+    logout,
+    updateUserPassword,
+    resetPassword,
+    sendPasswordResetEmail: sendPasswordResetEmailFirebase,
+    confirmPasswordReset: confirmPasswordResetFirebase,
+    checkEmailExists,
+    checkUsernameAvailable,
+    markEmailAsVerified,
+    updateUserProfile,
+    uploadProfilePicture,
+    removeProfilePicture,
+    getSettlements,
+    getTotalToReceive,
+    getTotalToPay,
+    getSettlementDelta,
+    markPaymentReceived,
+    markDebtPaid,
+    getIndividualDebts,
+    addIndividualDebt,
+    settleIndividualDebt,
+    settleNetAmount,
+    toggleFavoriteGroup,
+    getFavoriteGroups,
+    createGroup,
+    deleteAccount,
+    is2FAVerified,
+    verify2FA,
+    setup2FA,
+    confirm2FASetup,
+    disable2FA
+  }), [
+    user,
+    firebaseUser,
+    isLoading,
+    is2FAVerified,
+    // Note: Most functions are stable because they don't depend on fast-changing state,
+    // or they recreate themselves appropriately.
+    // If functions change too often, we should wrap them in useCallback too.
+  ]);
+
   return (
-    <FirebaseAuthContext.Provider value={{
-      user,
-      firebaseUser,
-      isLoading,
-      login,
-      signup,
-      logout,
-      updateUserPassword,
-      resetPassword,
-      sendPasswordResetEmail: sendPasswordResetEmailFirebase,
-      confirmPasswordReset: confirmPasswordResetFirebase,
-      checkEmailExists,
-      checkUsernameAvailable,
-      markEmailAsVerified,
-      updateUserProfile,
-      uploadProfilePicture,
-      removeProfilePicture,
-      getSettlements,
-      getTotalToReceive,
-      getTotalToPay,
-      getSettlementDelta,
-      markPaymentReceived,
-      markDebtPaid,
-      getIndividualDebts,
-      addIndividualDebt,
-      settleIndividualDebt,
-      settleNetAmount,
-      toggleFavoriteGroup,
-      getFavoriteGroups,
-      createGroup,
-      deleteAccount,
-      is2FAVerified,
-      verify2FA,
-      setup2FA,
-      confirm2FASetup,
-      disable2FA
-    }}>
+    <FirebaseAuthContext.Provider value={contextValue}>
       {children}
     </FirebaseAuthContext.Provider>
   );
