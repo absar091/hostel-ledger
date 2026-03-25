@@ -2716,7 +2716,18 @@ app.delete('/api/push-unsubscribe/:userId', generalLimiter, async (req, res) => 
 app.get('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req, res) => {
   try {
     const { groupId } = req.params;
+
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
     const db = admin.database();
+
+    // Authorization check
+    const userGroupSnap = await db.ref(`userGroups/${req.user.uid}/${groupId}`).once('value');
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ success: false, error: 'Forbidden: You are not a member of this group' });
+    }
 
     const snapshot = await db.ref(`budgets/${groupId}`).get();
     if (!snapshot.exists()) {
@@ -2735,7 +2746,18 @@ app.post('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req
   try {
     const { groupId } = req.params;
     const { amount, period, policies } = req.body;
+
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
     const db = admin.database();
+
+    // Authorization check
+    const userGroupSnap = await db.ref(`userGroups/${req.user.uid}/${groupId}`).once('value');
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ success: false, error: 'Forbidden: You are not a member of this group' });
+    }
 
     if (amount === undefined || !period) {
       return res.status(400).json({ success: false, error: 'Missing amount or period' });
