@@ -35,3 +35,8 @@
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+
+## 2024-03-26 - Missing Access Control in AI Endpoints
+**Vulnerability:** The `/api/ai/parse-expense` and `/api/ai/parse-expense-audio` endpoints were using `groupId` from `req.body` directly to fetch group metadata without verifying if the authenticated user (`req.user.uid`) was actually a member of that group. This allowed any authenticated user to potentially access details (like member lists) of any group, leading to an Insecure Direct Object Reference (IDOR).
+**Learning:** Even when routes are protected by an `authenticate` middleware, specific group operations must independently check `userGroups/${req.user.uid}/${groupId}` in the Firebase Realtime Database before accessing group metadata.
+**Prevention:** Always enforce explicit group membership verification before fulfilling requests involving user-supplied group IDs, treating the group IDs as untrusted inputs.
