@@ -37,8 +37,8 @@ const generateAndSendUserReport = async (uid, userEmail, userName, currencyCode 
             txSnap.forEach(s => transactions.push({ id: s.key, ...s.val() }));
 
             // Calculate debts with everyone in the group
-            const membersSnap = await db.ref(`groups/${groupId}/members`).once('value');
-            const members = membersSnap.val() || {};
+            // ⚡ Bolt Optimization: Extracted child data directly from already fetched parent snapshot to avoid N+1 query bottleneck. Expected impact: Saves 1 database round-trip per group.
+            const members = groupMeta.members || {};
             
             let groupBalance = 0;
 
