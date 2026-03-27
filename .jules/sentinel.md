@@ -35,3 +35,7 @@
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+## 2025-02-18 - Missing IDOR checks in AI parsing endpoints
+**Vulnerability:** Missing authorization checks in `/api/ai/parse-expense` and `/api/ai/parse-expense-audio` endpoints allowing Insecure Direct Object Reference (IDOR).
+**Learning:** Even if the AI endpoints validate inputs, they must explicitly verify group membership to prevent IDOR attacks. Relying solely on input validation is not enough to secure group-specific endpoints.
+**Prevention:** Always verify group membership by querying `userGroups/${req.user.uid}/${groupId}` to confirm access rights before allowing operations in group-specific endpoints.
