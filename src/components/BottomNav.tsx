@@ -64,9 +64,10 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => onTabChange(tab.id)}
+                    aria-label={tab.label}
                     className="touch-target w-16 h-16 -mt-8 rounded-[20px] bg-[#4B6B54] shadow-[0_8px_30px_rgba(75,107,84,0.4)] flex items-center justify-center border-4 border-white hover:bg-[#3D5643] active:scale-95 transition-all duration-200"
                   >
-                    <Icon className="w-7 h-7 text-white font-bold" />
+                    <Icon className="w-7 h-7 text-white font-bold" aria-hidden="true" />
                     <span className="sr-only">{tab.label}</span>
                   </button>
                 </TooltipTrigger>
@@ -86,6 +87,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
                 <button
                   onClick={() => onTabChange(tab.id)}
                   aria-current={isActive ? "page" : undefined}
+                  aria-label={tab.label}
                   className={cn(
                     "touch-target relative flex flex-col items-center gap-1.5 py-2 px-2 rounded-2xl transition-all duration-200",
                     isActive
@@ -93,7 +95,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
                       : "text-gray-400 hover:text-[#4a6850]/70 hover:bg-[#4a6850]/5",
                   )}
                 >
-                  <Icon className={cn("w-5 h-5", isActive && "font-bold")} />
+                  <Icon className={cn("w-5 h-5", isActive && "font-bold")} aria-hidden="true" />
                   <span
                     className={cn(
                       "text-[11px] leading-none",
@@ -104,6 +106,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
                   </span>
 
                   {/* Badge */}
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {(tab as any).badge > 0 && (
                     <span className="absolute top-1 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
                   )}
