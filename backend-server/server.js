@@ -2716,7 +2716,14 @@ app.delete('/api/push-unsubscribe/:userId', generalLimiter, async (req, res) => 
 app.get('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req, res) => {
   try {
     const { groupId } = req.params;
+    const userId = req.user.uid;
     const db = admin.database();
+
+    // SECURITY: Verify group membership to prevent IDOR
+    const userGroupSnap = await db.ref(`userGroups/${userId}/${groupId}`).once('value');
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You do not belong to this group' });
+    }
 
     const snapshot = await db.ref(`budgets/${groupId}`).get();
     if (!snapshot.exists()) {
@@ -2734,8 +2741,15 @@ app.get('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req,
 app.post('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req, res) => {
   try {
     const { groupId } = req.params;
+    const userId = req.user.uid;
     const { amount, period, policies } = req.body;
     const db = admin.database();
+
+    // SECURITY: Verify group membership to prevent IDOR
+    const userGroupSnap = await db.ref(`userGroups/${userId}/${groupId}`).once('value');
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You do not belong to this group' });
+    }
 
     if (amount === undefined || !period) {
       return res.status(400).json({ success: false, error: 'Missing amount or period' });
