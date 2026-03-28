@@ -290,7 +290,9 @@ class AdminService {
       const groupIds = Object.keys(snapshot.val());
       const groups = [];
 
-      for (const groupId of groupIds) {
+      // ⚡ Bolt Optimization: Replaced sequential for...of queries with concurrent Promise.all()
+      // Expected impact: Significantly reduces latency when fetching user groups by executing N queries in parallel instead of sequentially.
+      await Promise.all(groupIds.map(async (groupId) => {
         const groupSnap = await admin.database().ref(`groups/${groupId}`).once('value');
         if (groupSnap.exists()) {
           const data = groupSnap.val();
@@ -303,7 +305,8 @@ class AdminService {
             isPersonal: data.isPersonal || false
           });
         }
-      }
+      }));
+
       return groups;
     } catch (error) {
       console.error(`Error fetching user groups for ${uid}:`, error);
