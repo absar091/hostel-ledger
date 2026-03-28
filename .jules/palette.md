@@ -1,0 +1,3 @@
+## 2024-03-28 - Bottom Navigation Accessibility
+**Learning:** In the `BottomNav` component, using `aria-label` directly on the `<button>` element provides a clear, accessible name for screen readers, while adding `aria-hidden="true"` to the inner `<Icon />` (SVG) prevents redundant or confusing announcements. Even if there's an `<span className="sr-only">` inside, placing `aria-label` on the button itself ensures consistent screen reader behavior across different browser/reader combinations.
+**Action:** When creating or updating navigation buttons containing icons, always apply `aria-label` to the interactive element (`<button>` or `<a>`) and `aria-hidden="true"` to the decorative icon component to guarantee a clean accessibility tree.
