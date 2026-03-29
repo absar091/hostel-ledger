@@ -2716,7 +2716,14 @@ app.delete('/api/push-unsubscribe/:userId', generalLimiter, async (req, res) => 
 app.get('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req, res) => {
   try {
     const { groupId } = req.params;
+    if (!isValidFirebaseId(groupId)) return res.status(400).json({ error: 'Invalid group ID format' });
+
     const db = admin.database();
+
+    const userGroupSnap = await db.ref(`userGroups/${req.user.uid}/${groupId}`).once('value');
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ error: 'Forbidden: You do not have access to this group.' });
+    }
 
     const snapshot = await db.ref(`budgets/${groupId}`).get();
     if (!snapshot.exists()) {
@@ -2734,8 +2741,14 @@ app.get('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req,
 app.post('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req, res) => {
   try {
     const { groupId } = req.params;
+    if (!isValidFirebaseId(groupId)) return res.status(400).json({ error: 'Invalid group ID format' });
     const { amount, period, policies } = req.body;
     const db = admin.database();
+
+    const userGroupSnap = await db.ref(`userGroups/${req.user.uid}/${groupId}`).once('value');
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ error: 'Forbidden: You do not have access to this group.' });
+    }
 
     if (amount === undefined || !period) {
       return res.status(400).json({ success: false, error: 'Missing amount or period' });
@@ -2767,6 +2780,7 @@ app.post('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req
 app.get('/api/budgets/personal/:userId', generalLimiter, authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
+    if (!isValidFirebaseId(userId)) return res.status(400).json({ error: 'Invalid user ID format' });
     if (userId !== req.user.uid) {
       return res.status(403).json({ success: false, error: 'Unauthorized' });
     }
@@ -2788,6 +2802,7 @@ app.get('/api/budgets/personal/:userId', generalLimiter, authenticate, async (re
 app.post('/api/budgets/personal/:userId', generalLimiter, authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
+    if (!isValidFirebaseId(userId)) return res.status(400).json({ error: 'Invalid user ID format' });
     const { amount, period, policies } = req.body;
     if (userId !== req.user.uid) {
       return res.status(403).json({ success: false, error: 'Unauthorized' });
