@@ -86,7 +86,7 @@ const MobileHeader = ({ title, showBackButton = false, rightContent }: MobileHea
               className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center active:scale-95 transition-all text-gray-700 hover:bg-gray-100 border border-gray-100"
               aria-label="Go back"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5" aria-hidden="true" />
             </button>
           ) : (
             <img

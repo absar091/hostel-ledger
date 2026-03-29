@@ -71,9 +71,9 @@ const Sidebar = () => {
         className="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
       >
         {isOpen ? (
-          <ChevronLeft className="w-4 h-4 text-gray-600" />
+          <ChevronLeft className="w-4 h-4 text-gray-600" aria-hidden="true" />
         ) : (
-          <ChevronRight className="w-4 h-4 text-gray-600" />
+          <ChevronRight className="w-4 h-4 text-gray-600" aria-hidden="true" />
         )}
       </button>
 
@@ -86,6 +86,7 @@ const Sidebar = () => {
           </div>
         )}
 
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {navItems.map((item: any) => {
           const Icon = item.icon;
           const active = isActive(item.path);
@@ -167,7 +168,7 @@ const Sidebar = () => {
               aria-label={t('sidebar.logout')}
               title={t('sidebar.logout')}
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-5 h-5" aria-hidden="true" />
             </button>
           </>
         )}
