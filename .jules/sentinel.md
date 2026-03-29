@@ -35,3 +35,7 @@
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+## 2024-10-25 - Insecure Direct Object Reference (IDOR) in Budget Endpoints
+**Vulnerability:** The `/api/budgets/group/:groupId` (GET and POST) endpoints lacked verification that the authenticated user actually belonged to the specified `groupId`.
+**Learning:** Generic authentication middleware verifies identity but does not inherently enforce authorization for specific resources (IDOR).
+**Prevention:** Always verify group membership explicitly (e.g., checking `userGroups/${req.user.uid}/${groupId}`) before returning or modifying group-specific resources like budgets.
