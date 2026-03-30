@@ -2718,6 +2718,16 @@ app.get('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req,
     const { groupId } = req.params;
     const db = admin.database();
 
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
+    // 🛡️ Sentinel Security Fix: Prevent IDOR by verifying user belongs to the group
+    const userGroupSnap = await db.ref(`userGroups/${req.user.uid}/${groupId}`).once('value');
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ success: false, error: 'Forbidden: You do not have access to this group budget.' });
+    }
+
     const snapshot = await db.ref(`budgets/${groupId}`).get();
     if (!snapshot.exists()) {
       return res.json({ success: true, budget: { amount: 0, spent: 0, period: 'monthly', policies: { alertAt80: true, lockAt100: false } } });
@@ -2736,6 +2746,16 @@ app.post('/api/budgets/group/:groupId', generalLimiter, authenticate, async (req
     const { groupId } = req.params;
     const { amount, period, policies } = req.body;
     const db = admin.database();
+
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
+    // 🛡️ Sentinel Security Fix: Prevent IDOR by verifying user belongs to the group
+    const userGroupSnap = await db.ref(`userGroups/${req.user.uid}/${groupId}`).once('value');
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ success: false, error: 'Forbidden: You do not have access to modify this group budget.' });
+    }
 
     if (amount === undefined || !period) {
       return res.status(400).json({ success: false, error: 'Missing amount or period' });
