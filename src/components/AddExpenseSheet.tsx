@@ -872,6 +872,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                           />
                           <button
                             onClick={handleToggleListen}
+                            aria-label={isListening ? "Stop voice recording" : "Start voice recording"}
                             className={cn(
                               "absolute right-4 bottom-4 w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md active:scale-90",
                               isListening
@@ -879,7 +880,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                                 : "bg-white text-[#4a6850] hover:bg-gray-100 border border-gray-200"
                             )}
                           >
-                            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                            {isListening ? <MicOff className="w-5 h-5" aria-hidden="true" /> : <Mic className="w-5 h-5" aria-hidden="true" />}
                           </button>
 
                           {/* Hidden File Input for Native Audio Recording Fallback */}
