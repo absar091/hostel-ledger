@@ -38,7 +38,7 @@ const DesktopHeader = () => {
           title="App Settings"
           aria-label="App settings"
         >
-          <Settings className="w-5 h-5" />
+          <Settings className="w-5 h-5" aria-hidden="true" />
         </button>
 
         {/* Profile */}
