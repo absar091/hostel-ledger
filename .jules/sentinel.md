@@ -35,3 +35,7 @@
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+## 2024-05-24 - Fix Insecure Direct Object Reference in Group Budgets
+**Vulnerability:** The `/api/budgets/group/:groupId` GET and POST endpoints lacked authorization checks to verify if the authenticated user was actually a member of the group before allowing them to view or modify the group's budget.
+**Learning:** Relying solely on the `authenticate` middleware is insufficient for securing endpoints that access resource-specific data (like `groupId`).
+**Prevention:** Always explicitly verify group membership by querying `userGroups/${req.user.uid}/${groupId}` to confirm access rights before processing requests involving group resources.
