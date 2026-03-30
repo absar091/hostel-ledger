@@ -35,3 +35,7 @@
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+## 2026-03-30 - Predictable Notification IDs
+**Vulnerability:** Found `Date.now()` being used in `backend-server/services/adminService.js` to generate `notificationId`s. Relying on timestamps for IDs is insecure and can cause predictability and collisions.
+**Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on timestamps or insecure random number generators.
+**Prevention:** Always use cryptographically secure methods like `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.

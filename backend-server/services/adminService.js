@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const crypto = require('crypto');
 
 class AdminService {
   async getUserByEmailOrUid(identifier) {
@@ -177,7 +178,8 @@ class AdminService {
       const usersSnapshot = await admin.database().ref('users').once('value');
       const updates = {};
       const timestamp = admin.database.ServerValue.TIMESTAMP;
-      const notificationId = `broadcast_${Date.now()}`;
+      // 🛡️ Sentinel Security Fix: Prevent predictable IDs
+      const notificationId = `broadcast_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
 
       usersSnapshot.forEach(child => {
         const uid = child.key;
@@ -435,7 +437,8 @@ class AdminService {
       });
 
       // Notify the user in-app
-      const notificationId = `ticket_reply_${ticketId}_${Date.now()}`;
+      // 🛡️ Sentinel Security Fix: Prevent predictable IDs
+      const notificationId = `ticket_reply_${ticketId}_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
       await admin.database().ref(`notifications/${userId}/${notificationId}`).set({
         type: 'support_reply',
         title: `Reply to Ticket ${ticketData.ticketNumber || '#' + ticketId.substring(0, 6)}`,
