@@ -1,0 +1,3 @@
+## 2024-05-30 - Fix N+1 Query in AI Insights
+**Learning:** The AI Insights endpoint (`/api/ai/insights`) was making sequential database queries inside a `for...of` loop to fetch group names, creating an N+1 query problem that scales linearly with the number of groups a user belongs to. Concurrently assigning properties to a shared dictionary (`groupNames[gid] = gSnap.val()`) from within resolved promises is thread-safe in Node.js.
+**Action:** Use `Promise.all()` to parallelize database queries when iterating over arrays (like group IDs) to avoid blocking the single thread and reduce overall response time.
