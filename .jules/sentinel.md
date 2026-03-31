@@ -29,9 +29,25 @@
 ## 2026-03-17 - Path Traversal / NoSQL Injection in AI Parse Expense Endpoints
 **Vulnerability:** The `/api/ai/parse-expense` and `/api/ai/parse-expense-audio` endpoints accepted a `groupId` directly from the request body and interpolated it into a Firebase Realtime Database path (`db.ref(\`groups/${groupId}\`)`) without prior validation. This allowed potential path traversal or NoSQL injection attacks to bypass authorization and extract arbitrary paths via AI.
 **Learning:** Even AI-assisted endpoints or those that seem non-destructive can expose data if user-provided identifiers used to look up context are not strictly validated.
-**Prevention:** Always explicitly validate client-provided IDs (e.g., using `isValidFirebaseId`) before interpolating them into database paths.
+## 2024-05-24 - Insecure predictability in broadcast notification IDs
+**Vulnerability:** The `broadcastMessage` function in `adminService` used `Date.now()` to generate `notificationId`s (`broadcast_${Date.now()}`).
+**Learning:** Using `Date.now()` generates highly predictable IDs. If two admins broadcast at the same millisecond, an ID collision occurs and one message overwrites the other. Furthermore, predictable IDs can be targeted by attackers guessing sequence numbers in API calls.
+**Prevention:** Always use cryptographically secure random values (e.g., `crypto.randomBytes(4).toString('hex')`) when generating system-wide unique identifiers like notification IDs.
+## 2024-05-24 - Insecure predictability in broadcast notification IDs
+**Vulnerability:** The `broadcastMessage` function in `adminService` used `Date.now()` to generate `notificationId`s (`broadcast_${Date.now()}`).
+**Learning:** Using `Date.now()` generates highly predictable IDs. If two admins broadcast at the same millisecond, an ID collision occurs and one message overwrites the other. Furthermore, predictable IDs can be targeted by attackers guessing sequence numbers in API calls.
+**Prevention:** Always use cryptographically secure random values (e.g., `crypto.randomBytes(4).toString('hex')`) when generating system-wide unique identifiers like notification IDs.
 
+## 2024-05-24 - Insecure predictability in broadcast notification IDs
+**Vulnerability:** The `broadcastMessage` function in `adminService` used `Date.now()` to generate `notificationId`s (`broadcast_${Date.now()}`).
+**Learning:** Using `Date.now()` generates highly predictable IDs. If two admins broadcast at the same millisecond, an ID collision occurs and one message overwrites the other. Furthermore, predictable IDs can be targeted by attackers guessing sequence numbers in API calls.
+**Prevention:** Always use cryptographically secure random values (e.g., `crypto.randomBytes(4).toString('hex')`) when generating system-wide unique identifiers like notification IDs.
 ## 2026-03-18 - Insecure random generation for member IDs
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+
+## 2024-05-24 - Insecure predictability in broadcast notification IDs
+**Vulnerability:** The `broadcastMessage` function in `adminService` used `Date.now()` to generate `notificationId`s (`broadcast_${Date.now()}`).
+**Learning:** Using `Date.now()` generates highly predictable IDs. If two admins broadcast at the same millisecond, an ID collision occurs and one message overwrites the other. Furthermore, predictable IDs can be targeted by attackers guessing sequence numbers in API calls.
+**Prevention:** Always use cryptographically secure random values (e.g., `crypto.randomBytes(4).toString('hex')`) when generating system-wide unique identifiers like notification IDs.
