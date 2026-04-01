@@ -71,9 +71,9 @@ const Sidebar = () => {
         className="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
       >
         {isOpen ? (
-          <ChevronLeft className="w-4 h-4 text-gray-600" />
+          <ChevronLeft className="w-4 h-4 text-gray-600" aria-hidden="true" />
         ) : (
-          <ChevronRight className="w-4 h-4 text-gray-600" />
+          <ChevronRight className="w-4 h-4 text-gray-600" aria-hidden="true" />
         )}
       </button>
 
@@ -108,7 +108,7 @@ const Sidebar = () => {
               {active && (
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-400 rounded-r-full"></div>
               )}
-              <Icon className={cn("w-5 h-5 flex-shrink-0", active && "font-bold")} />
+              <Icon className={cn("w-5 h-5 flex-shrink-0", active && "font-bold")} aria-hidden="true" />
               {isOpen && <span className={cn("font-bold truncate", active && "font-black")}>{item.label}</span>}
 
               {/* Badge */}
@@ -145,7 +145,7 @@ const Sidebar = () => {
               aria-label={t('sidebar.logout')}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200 font-medium"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-5 h-5" aria-hidden="true" />
               <span>{t('sidebar.logout')}</span>
             </button>
           </>
@@ -167,7 +167,7 @@ const Sidebar = () => {
               aria-label={t('sidebar.logout')}
               title={t('sidebar.logout')}
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-5 h-5" aria-hidden="true" />
             </button>
           </>
         )}
