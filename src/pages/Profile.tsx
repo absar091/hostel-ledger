@@ -52,6 +52,7 @@ const Profile = () => {
   const [showPhotoOptionsSheet, setShowPhotoOptionsSheet] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   // Edit form state
   const [editName, setEditName] = useState(user?.name || "");
@@ -73,12 +74,17 @@ const Profile = () => {
   };
 
   const handleSaveProfile = async () => {
-    const result = await updateUserProfile({ name: editName, phone: editPhone || null });
-    if (result.success) {
-      toast.success(t('profile.profile_updated'));
-      setShowEditSheet(false);
-    } else {
-      toast.error(result.error || t('common.error'));
+    setIsSavingProfile(true);
+    try {
+      const result = await updateUserProfile({ name: editName, phone: editPhone || null });
+      if (result.success) {
+        toast.success(t('profile.profile_updated'));
+        setShowEditSheet(false);
+      } else {
+        toast.error(result.error || t('common.error'));
+      }
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -556,9 +562,17 @@ const Profile = () => {
             <div className="flex-shrink-0 pt-4 border-t border-[#4a6850]/10">
               <Button
                 onClick={handleSaveProfile}
-                className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white font-black text-base shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] hover:from-[#3d5643] hover:to-[#2f4336] transition-all"
+                disabled={isSavingProfile || isUploadingPhoto}
+                className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white font-black text-base shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] hover:from-[#3d5643] hover:to-[#2f4336] transition-all disabled:opacity-50"
               >
-                {t('profile.save_changes')}
+                {isSavingProfile ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    {t('common.loading')}
+                  </div>
+                ) : (
+                  t('profile.save_changes')
+                )}
               </Button>
             </div>
           </SheetContent>
