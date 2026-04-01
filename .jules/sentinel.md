@@ -35,3 +35,7 @@
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+## YYYY-MM-DD - [Prevent Unauthorized Group Reports]
+**Vulnerability:** A user could report any group ID without verifying if they were a member of that group, bypassing access controls.
+**Learning:** The reporting route lacked a check to verify group membership before processing the report, leading to potential abuse.
+**Prevention:** Implemented an IDOR check via `userGroups/${uid}/${targetId}` before allowing users to report groups.

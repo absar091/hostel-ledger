@@ -64,6 +64,16 @@ router.post('/report', async (req, res) => {
       console.log('Report Validation Failed:', { targetId, targetType, reason, details }); return res.status(400).json({ error: 'Invalid report data.' });
     }
 
+    // 🛡️ Sentinel Security Fix: Prevent IDOR / Access Control Bypass
+    // If reporting a group, verify that the user is actually a member of the group
+    if (targetType === 'group') {
+      const db = admin.database();
+      const userGroupSnap = await db.ref(`userGroups/${uid}/${targetId}`).once('value');
+      if (!userGroupSnap.exists()) {
+        return res.status(403).json({ error: 'Forbidden: You must be a member of the group to report it.' });
+      }
+    }
+
     const reportRef = admin.database().ref('reports').push();
 
     await reportRef.set({
