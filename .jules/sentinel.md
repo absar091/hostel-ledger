@@ -35,3 +35,8 @@
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+
+## 2024-05-24 - Path Traversal / NoSQL Injection via RESTful URL Parameters
+**Vulnerability:** The `/api/budgets/group/:groupId` and `/api/budgets/personal/:userId` endpoints took identifiers directly from `req.params` and interpolated them into Firebase database paths without validation.
+**Learning:** It is easy to overlook validation for RESTful path parameters (`req.params`) compared to request body payloads. However, they are equally susceptible to path traversal and injection attacks if used directly in database path construction.
+**Prevention:** Always explicitly validate all client-provided input, including URL path parameters (e.g., using `isValidFirebaseId`), before utilizing them to access or modify database resources.
