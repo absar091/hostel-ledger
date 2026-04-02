@@ -66,7 +66,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
                     onClick={() => onTabChange(tab.id)}
                     className="touch-target w-16 h-16 -mt-8 rounded-[20px] bg-[#4B6B54] shadow-[0_8px_30px_rgba(75,107,84,0.4)] flex items-center justify-center border-4 border-white hover:bg-[#3D5643] active:scale-95 transition-all duration-200"
                   >
-                    <Icon className="w-7 h-7 text-white font-bold" />
+                    <Icon className="w-7 h-7 text-white font-bold" aria-hidden="true" />
                     <span className="sr-only">{tab.label}</span>
                   </button>
                 </TooltipTrigger>
@@ -93,7 +93,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
                       : "text-gray-400 hover:text-[#4a6850]/70 hover:bg-[#4a6850]/5",
                   )}
                 >
-                  <Icon className={cn("w-5 h-5", isActive && "font-bold")} />
+                  <Icon className={cn("w-5 h-5", isActive && "font-bold")} aria-hidden="true" />
                   <span
                     className={cn(
                       "text-[11px] leading-none",
