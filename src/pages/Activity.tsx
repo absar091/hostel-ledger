@@ -13,6 +13,7 @@ import {
 import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import MobileHeader from "@/components/MobileHeader";
 import AppContainer from "@/components/AppContainer";
 import PageGuide from "@/components/PageGuide";
@@ -224,14 +225,21 @@ const Activity = () => {
               className="pl-14 pr-12 h-14 bg-white rounded-3xl border-[#4a6850]/10 shadow-[0_8px_32px_rgba(74,104,80,0.06)] font-bold text-gray-900 placeholder:text-[#4a6850]/60 focus:border-[#4a6850]/30 focus:shadow-[0_12px_40px_rgba(74,104,80,0.1)]"
             />
             {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-5 top-1/2 -translate-y-1/2 p-1 rounded-full text-[#4a6850]/40 hover:text-[#4a6850]/60 hover:bg-[#4a6850]/5 transition-all"
-                aria-label="Clear search"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-5 top-1/2 -translate-y-1/2 p-1 rounded-full text-[#4a6850]/40 hover:text-[#4a6850]/60 hover:bg-[#4a6850]/5 transition-all"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Clear search</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
 
