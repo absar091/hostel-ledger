@@ -35,3 +35,8 @@
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+
+## 2024-05-24 - Missing Authorization on Group Budget Endpoints
+**Vulnerability:** The `/api/budgets/group/:groupId` endpoints (both GET and POST) did not verify if the authenticated user was a member of the group before allowing them to read or update the group budget.
+**Learning:** Endpoints dealing with group-scoped data must always explicitly verify membership to prevent Insecure Direct Object Reference (IDOR). Simply being authenticated is not enough.
+**Prevention:** Always verify the requesting user's membership by checking for the existence of the Firebase database path `userGroups/${req.user.uid}/${groupId}` before granting access to group resources.
