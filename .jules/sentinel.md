@@ -35,3 +35,8 @@
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+
+## 2024-05-24 - Unvalidated deviceToken leading to Path Manipulation in Device Trust Check
+**Vulnerability:** Client-provided `deviceToken` in `/api/2fa/check-trust` was used directly in Firebase Realtime Database path queries (`db.ref(\`users/${userId}/trustedDevices/${deviceToken}\`)`) without format validation.
+**Learning:** Any user-provided identifier used to construct a database path must be validated to prevent unauthorized access or modification of nested paths.
+**Prevention:** Always explicitly validate client-provided parameters using `isValidFirebaseId` before interpolating them into database paths.
