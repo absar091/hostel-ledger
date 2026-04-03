@@ -1,0 +1,3 @@
+1. **Add Tooltip to NotificationIcon**: In `src/components/NotificationIcon.tsx`, import `Tooltip`, `TooltipContent`, and `TooltipTrigger` from `@/components/ui/tooltip`. Wrap the `<Button>` component with these to display a tooltip with the text "Notifications" when the user hovers over the icon.
+2. **Add Tooltip to Settings Button**: In `src/components/DesktopHeader.tsx`, import `Tooltip`, `TooltipContent`, and `TooltipTrigger` from `@/components/ui/tooltip`. Wrap the Settings `<button>` with these to display a tooltip with the text "App Settings" and remove the native `title` attribute.
+3. **Verify Changes**: Run `pnpm lint` and `pnpm test` to ensure there are no build issues and tests pass.
