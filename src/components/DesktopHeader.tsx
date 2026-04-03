@@ -1,6 +1,7 @@
 import { Search, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import NotificationIcon from "./NotificationIcon";
 import Avatar from "@/components/Avatar";
 
@@ -32,14 +33,20 @@ const DesktopHeader = () => {
         <NotificationIcon />
 
         {/* Settings */}
-        <button
-          onClick={() => navigate("/settings")}
-          className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"
-          title="App Settings"
-          aria-label="App settings"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => navigate("/settings")}
+              className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"
+              aria-label="App settings"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>App settings</p>
+          </TooltipContent>
+        </Tooltip>
 
         {/* Profile */}
         <button
