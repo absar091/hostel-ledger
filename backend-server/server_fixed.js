@@ -747,6 +747,10 @@ app.post('/api/2fa/check-trust', detectFraud, authenticate, async (req, res) => 
       return res.status(400).json({ success: false, error: 'Device token is required' });
     }
 
+    if (!isValidFirebaseId(deviceToken)) {
+      return res.status(400).json({ success: false, error: 'Invalid device token format' });
+    }
+
     const deviceRef = admin.database().ref(`users/${userId}/trustedDevices/${deviceToken}`);
     const snapshot = await deviceRef.get();
 
