@@ -1,0 +1,3 @@
+## 2024-04-03 - Implement Radix Tooltips for Header Actions
+**Learning:** Replaced native `title` attributes with Radix UI `Tooltip` components on icon-only buttons (`NotificationIcon` and `DesktopHeader` settings button) to provide more consistent, stylable, and accessible tooltip behavior across the application. Wrapped existing `<button>` elements with `<TooltipTrigger asChild>` to ensure proper accessibility and event handling without breaking existing styles.
+**Action:** Always prefer design-system tooltips (e.g. Radix Tooltip) over native `title` attributes for primary icon-only actions to guarantee consistent visual presentation and accessibility. Ensure native `title` is removed when adding a custom tooltip to prevent double-tooltips.
