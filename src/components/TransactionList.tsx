@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { type Transaction, type Group } from "@/contexts/FirebaseDataContext";
 import { TransactionItem } from "./TransactionItem";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,11 @@ interface TransactionListProps {
   dateFormat?: "time" | "date";
 }
 
-export const TransactionList = ({
+// ⚡ Bolt Optimization: Wrap TransactionList in React.memo
+// Prevents unnecessary re-renders when parent components (like Dashboard) re-render due to unrelated state changes.
+// Requires that parent components pass referentially stable arrays for `transactions` and `groups` (e.g., via useMemo).
+// Expected impact: Eliminates O(n) re-renders of the transaction list UI elements when dashboard tab or modal state changes.
+export const TransactionList = memo(({
   title,
   transactions,
   groups,
@@ -63,4 +67,6 @@ export const TransactionList = ({
       </div>
     </div>
   );
-};
+});
+
+TransactionList.displayName = "TransactionList";
