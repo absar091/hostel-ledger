@@ -3,14 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import NotificationIcon from "./NotificationIcon";
 import Avatar from "@/components/Avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const DesktopHeader = () => {
   const navigate = useNavigate();
   const { user } = useFirebaseAuth();
 
   return (
-    <header className="hidden lg:flex sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-8 py-4 items-center justify-between">
-      {/* Search Bar */}
+    <TooltipProvider>
+      <header className="hidden lg:flex sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-8 py-4 items-center justify-between">
+        {/* Search Bar */}
       <div className="flex-1 max-w-xl">
         <div className="relative">
           <Search
@@ -32,14 +34,20 @@ const DesktopHeader = () => {
         <NotificationIcon />
 
         {/* Settings */}
-        <button
-          onClick={() => navigate("/settings")}
-          className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"
-          title="App Settings"
-          aria-label="App settings"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => navigate("/settings")}
+              className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"
+              aria-label="App settings"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="font-bold">
+            <p>App Settings</p>
+          </TooltipContent>
+        </Tooltip>
 
         {/* Profile */}
         <button
@@ -61,7 +69,8 @@ const DesktopHeader = () => {
           </div>
         </button>
       </div>
-    </header>
+      </header>
+    </TooltipProvider>
   );
 };
 
