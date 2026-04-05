@@ -1,0 +1,3 @@
+## 2024-04-05 - Radix Tooltips vs Native Title Attribute
+**Learning:** Native `title` attributes on interactive elements provide a poor UX (inconsistent styling, no animation, screen reader double-announcement issues). Replacing them with Radix UI `<Tooltip>` requires using `asChild` on the `<TooltipTrigger>` to prevent invalid HTML nesting (button inside button), and explicitly removing the native `title` attribute to avoid double tooltips.
+**Action:** Always replace native `title` attributes on icon-only buttons with Radix Tooltips using `asChild`, ensuring the native attribute is fully removed and wrapped in a `<TooltipProvider>`.
