@@ -35,3 +35,7 @@
 **Vulnerability:** Found `Math.random()` being used in `/api/join-group` inside `backend-server/server_fixed.js` to generate member IDs. `Math.random()` is not cryptographically secure.
 **Learning:** Functions meant to generate sensitive material such as verification codes, tokens, passwords and IDs should never rely on insecure random number generators.
 **Prevention:** Always use `crypto.randomBytes(4).toString('hex')` (or similar) for generating random values intended for security purposes.
+## 2024-05-25 - Path Traversal and IDOR in Budget API
+**Vulnerability:** The `/api/budgets/group/:groupId` endpoints used `req.params.groupId` directly in Firebase Realtime Database queries without format validation or authorization checks, leading to NoSQL injection/path traversal and Insecure Direct Object Reference (IDOR).
+**Learning:** RESTful path parameters must always be strictly validated and implicitly verified against an authenticated user's authorization (like group membership) before being used to access database paths.
+**Prevention:** Use `isValidFirebaseId` on path parameters and verify the requesting user's authorization by checking `userGroups/${req.user.uid}/${groupId}` to prevent IDOR and path manipulation.
