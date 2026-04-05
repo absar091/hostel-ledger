@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import NotificationIcon from "./NotificationIcon";
 import Avatar from "@/components/Avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const DesktopHeader = () => {
   const navigate = useNavigate();
@@ -27,40 +28,55 @@ const DesktopHeader = () => {
       </div>
 
       {/* Right Section */}
-      <div className="flex items-center gap-4 ml-6">
-        {/* Notifications */}
-        <NotificationIcon />
+      <TooltipProvider>
+        <div className="flex items-center gap-4 ml-6">
+          {/* Notifications */}
+          <NotificationIcon />
 
-        {/* Settings */}
-        <button
-          onClick={() => navigate("/settings")}
-          className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"
-          title="App Settings"
-          aria-label="App settings"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
+          {/* Settings */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => navigate("/settings")}
+                className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"
+                aria-label="App settings"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>App Settings</p>
+            </TooltipContent>
+          </Tooltip>
 
-        {/* Profile */}
-        <button
-          onClick={() => navigate("/profile")}
-          className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-gray-50 transition-all"
-          aria-label="View profile"
-        >
-          <div className="rounded-full ring-2 ring-white shadow-sm overflow-hidden">
-            <Avatar
-              name={user?.name || "User"}
-              photoURL={user?.photoURL}
-              size="md"
-              className="w-10 h-10"
-            />
-          </div>
-          <div className="text-left">
-            <p className="text-sm font-black text-gray-900">{user?.name || "User"}</p>
-            <p className="text-xs text-gray-500">View Profile</p>
-          </div>
-        </button>
-      </div>
+          {/* Profile */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => navigate("/profile")}
+                className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-gray-50 transition-all"
+                aria-label="View profile"
+              >
+                <div className="rounded-full ring-2 ring-white shadow-sm overflow-hidden">
+                  <Avatar
+                    name={user?.name || "User"}
+                    photoURL={user?.photoURL}
+                    size="md"
+                    className="w-10 h-10"
+                  />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-black text-gray-900">{user?.name || "User"}</p>
+                  <p className="text-xs text-gray-500">View Profile</p>
+                </div>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>View Profile</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
     </header>
   );
 };
