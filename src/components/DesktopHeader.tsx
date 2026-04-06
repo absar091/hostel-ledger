@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import NotificationIcon from "./NotificationIcon";
 import Avatar from "@/components/Avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const DesktopHeader = () => {
   const navigate = useNavigate();
@@ -32,14 +33,22 @@ const DesktopHeader = () => {
         <NotificationIcon />
 
         {/* Settings */}
-        <button
-          onClick={() => navigate("/settings")}
-          className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"
-          title="App Settings"
-          aria-label="App settings"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => navigate("/settings")}
+                className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"
+                aria-label="App settings"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>App Settings</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {/* Profile */}
         <button
