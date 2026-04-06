@@ -3,13 +3,22 @@ import { useNavigate } from "react-router-dom";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import NotificationIcon from "./NotificationIcon";
 import Avatar from "@/components/Avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 
 const DesktopHeader = () => {
   const navigate = useNavigate();
   const { user } = useFirebaseAuth();
+  const { t } = useTranslation();
 
   return (
-    <header className="hidden lg:flex sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-8 py-4 items-center justify-between">
+    <TooltipProvider>
+      <header className="hidden lg:flex sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-8 py-4 items-center justify-between">
       {/* Search Bar */}
       <div className="flex-1 max-w-xl">
         <div className="relative">
@@ -32,14 +41,20 @@ const DesktopHeader = () => {
         <NotificationIcon />
 
         {/* Settings */}
-        <button
-          onClick={() => navigate("/settings")}
-          className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all"
-          title="App Settings"
-          aria-label="App settings"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => navigate("/settings")}
+              className="p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]"
+              aria-label={t("header.settings_tooltip", "App Settings")}
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t("header.settings_tooltip", "App Settings")}</p>
+          </TooltipContent>
+        </Tooltip>
 
         {/* Profile */}
         <button
@@ -62,6 +77,7 @@ const DesktopHeader = () => {
         </button>
       </div>
     </header>
+    </TooltipProvider>
   );
 };
 
