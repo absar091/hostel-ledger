@@ -1,0 +1,3 @@
+## 2025-05-24 - Missing ARIA Labels on Icon Buttons in Modal Sheets
+**Learning:** Discovered a pattern where icon-only action buttons (like "copy link", "search", and "close") within complex interactive sheets (e.g., `GroupSettingsSheet`) frequently lack `aria-label` attributes. This renders them completely inaccessible to screen reader users who cannot infer their function from context.
+**Action:** Always ensure that any `<Button size="icon">` or generic `variant="ghost"` button that only contains a `lucide-react` icon includes an explicit `aria-label` describing its action, especially in modal dialogs where context is paramount.
