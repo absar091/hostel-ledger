@@ -19,6 +19,12 @@ vi.mock('@/contexts/FirebaseAuthContext', () => ({
   }),
 }));
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, defaultValue?: string) => defaultValue || key,
+  }),
+}));
+
 vi.mock('../NotificationIcon', () => ({
   default: () => <button aria-label="Notifications">Bell</button>,
 }));
