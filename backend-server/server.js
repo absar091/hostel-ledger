@@ -2959,59 +2959,108 @@ app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (r
       }
     }
 
-    // 1. Get Group Data & User Data in parallel
-    const [groupSnap, userSnap] = await Promise.all([
+    // ⚡ Bolt Performance Optimization: Batched fetching of all related user data upfront
+    const initialInvolvedIds = new Set([...finalPayers.map(p => p.id), ...participants, currentUserId]);
+
+    // 1. Get Group Data, Group Budget, and initial Users in parallel
+    const initialPromises = [
       db.ref(`groups/${groupId}`).get(),
-      db.ref(`users/${currentUserId}`).get()
-    ]);
+      db.ref(`budgets/${groupId}`).get()
+    ];
+
+    const idToInitialUserIndex = {};
+    Array.from(initialInvolvedIds).forEach((id, index) => {
+      idToInitialUserIndex[id] = initialPromises.length;
+      initialPromises.push(db.ref(`users/${id}`).get());
+    });
+
+    const initialResults = await Promise.all(initialPromises);
+    const groupSnap = initialResults[0];
+    const groupBudgetSnap = initialResults[1];
+
+    const userSnap = initialResults[idToInitialUserIndex[currentUserId]];
 
     if (!groupSnap.exists()) {
       return res.status(404).json({ success: false, error: 'Group not found' });
     }
 
     const group = groupSnap.val();
-    const user = userSnap.val();
+    const user = userSnap?.val() || {};
 
     // 2. Verify current user is in the group
     let membersArray = normalizeMembers(group.members);
     const member = membersArray.find(m => m.userId === currentUserId || m.id === currentUserId);
 
+    // Now that we have membersArray, we can resolve proper storageKeys and fetch any missing user profiles or personal budgets in a second batch
+    const involvedMemberIds = new Set([...finalPayers.map(p => p.id), ...participants]);
+
+    const getStorageKey = (memberId) => {
+      const m = membersArray.find(mem => mem.id === memberId);
+      return (m && m.userId) ? m.userId : memberId;
+    };
+
+    const storageKeysToFetch = new Set();
+    Array.from(involvedMemberIds).forEach(id => storageKeysToFetch.add(getStorageKey(id)));
+    membersArray.forEach(m => {
+      if (m.userId && !m.email) storageKeysToFetch.add(m.userId);
+    });
+
+    const secondaryPromises = [];
+    const keyToUserIndex = {};
+    const keyToBudgetIndex = {};
+
+    Array.from(storageKeysToFetch).forEach(key => {
+      // Avoid re-fetching if we already fetched it in initial batch
+      if (idToInitialUserIndex[key]) {
+        keyToUserIndex[key] = -1; // Flag indicating it's in initialResults
+      } else {
+        keyToUserIndex[key] = secondaryPromises.length;
+        secondaryPromises.push(db.ref(`users/${key}`).get());
+      }
+      keyToBudgetIndex[key] = secondaryPromises.length;
+      secondaryPromises.push(db.ref(`personalBudgets/${key}`).get());
+    });
+
+    const secondaryResults = await Promise.all(secondaryPromises);
+
+    const getUserData = (key) => {
+      if (keyToUserIndex[key] === -1) {
+        return initialResults[idToInitialUserIndex[key]]?.val() || null;
+      } else if (keyToUserIndex[key] !== undefined) {
+        return secondaryResults[keyToUserIndex[key]]?.val() || null;
+      }
+      return null;
+    };
+
+    // Make groupBudgetSnap and getBudgetData available in closure
+    req.prefetchedBudgets = { groupBudgetSnap, secondaryResults, keyToBudgetIndex };
+
     // CRITICAL FIX: Hydrate members with emails from 'users' node
     const emailUpdates = {};
     const isMembersArray = Array.isArray(group.members);
 
-    try {
-      const memberHydrationPromises = membersArray.map(async (m, index) => {
-        if (m.userId && !m.email) {
-          try {
-            const userSnap = await db.ref(`users/${m.userId}`).get();
-            if (userSnap.exists()) {
-              const userData = userSnap.val();
-              const email = userData.email;
-
-              if (email) {
-                if (isMembersArray) {
-                  emailUpdates[`groups/${groupId}/members/${index}/email`] = email;
-                } else {
-                  const memberKey = Object.keys(group.members).find(k => {
-                    const mem = group.members[k];
-                    return (mem.id && mem.id === m.id) || k === m.id;
-                  });
-                  if (memberKey) {
-                    emailUpdates[`groups/${groupId}/members/${memberKey}/email`] = email;
-                  }
-                }
-                return { ...m, email };
-              }
+    membersArray = membersArray.map((m, index) => {
+      if (m.userId && !m.email) {
+        const userData = getUserData(m.userId);
+        if (userData && userData.email) {
+          const email = userData.email;
+          if (isMembersArray) {
+            emailUpdates[`groups/${groupId}/members/${index}/email`] = email;
+          } else {
+            const memberKey = Object.keys(group.members).find(k => {
+              const mem = group.members[k];
+              return (mem.id && mem.id === m.id) || k === m.id;
+            });
+            if (memberKey) {
+              emailUpdates[`groups/${groupId}/members/${memberKey}/email`] = email;
             }
-          } catch (err) {
-            logger.error('⚠️ Failed to hydrate email for user %s: %s', m.userId, err.message);
           }
+          return { ...m, email };
         }
-        return m;
-      });
-      membersArray = await Promise.all(memberHydrationPromises);
-    } catch (hydrateError) { logger.error('❌ Hydration failed: %O', hydrateError); }
+      }
+      return m;
+    });
+
     if (!member) {
       return res.status(403).json({ success: false, error: 'You are not a member of this group' });
     }
@@ -3041,26 +3090,13 @@ app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (r
     // Use new Multi-Payer Settlement Logic
     const debts = calculateMultiPayerSettlements(formattedSplits, formattedPayers);
 
-    // Fetch existing settlements for all involved users
-    const getStorageKey = (memberId) => {
-      const m = membersArray.find(mem => mem.id === memberId);
-      return (m && m.userId) ? m.userId : memberId;
-    };
-
-    const involvedMemberIds = new Set([...finalPayers.map(p => p.id), ...participants]);
+    // Populate settlementsMap directly from pre-fetched user data
     const settlementsMap = {};
-
-    const fetchPromises = Array.from(involvedMemberIds).map(async (memberId) => {
+    Array.from(involvedMemberIds).forEach(memberId => {
       const storageKey = getStorageKey(memberId);
-      const snap = await db.ref(`users/${storageKey}/settlements/${groupId}`).get();
-      if (snap.exists()) {
-        settlementsMap[storageKey] = snap.val();
-      } else {
-        settlementsMap[storageKey] = {};
-      }
+      const userData = getUserData(storageKey);
+      settlementsMap[storageKey] = (userData && userData.settlements && userData.settlements[groupId]) ? userData.settlements[groupId] : {};
     });
-
-    await Promise.all(fetchPromises);
 
     // 5. Build multi-path update object
     const updates = {};
@@ -3195,8 +3231,8 @@ app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (r
     // --- BUDGET TRACKING & POLICY ENFORCEMENT ---
     try {
       // 1. Group Budget
-      const groupBudgetSnap = await db.ref(`budgets/${groupId}`).get();
-      if (groupBudgetSnap.exists()) {
+      const groupBudgetSnap = req.prefetchedBudgets.groupBudgetSnap;
+      if (groupBudgetSnap && groupBudgetSnap.exists()) {
         const groupBudget = groupBudgetSnap.val();
         const budgetAmount = groupBudget.amount || groupBudget.limit || 0;
         
@@ -3254,9 +3290,12 @@ app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (r
         const participantMember = membersArray.find(m => m.id === s.participantId);
         if (participantMember && participantMember.userId) {
           const pUid = participantMember.userId;
-          const pBudgetSnap = await db.ref(`personalBudgets/${pUid}`).get();
+          let pBudgetSnap = null;
+          if (req.prefetchedBudgets && req.prefetchedBudgets.keyToBudgetIndex[pUid] !== undefined) {
+             pBudgetSnap = req.prefetchedBudgets.secondaryResults[req.prefetchedBudgets.keyToBudgetIndex[pUid]];
+          }
           
-          if (pBudgetSnap.exists()) {
+          if (pBudgetSnap && pBudgetSnap.exists()) {
             const pBudget = pBudgetSnap.val();
             const pAmount = pBudget.amount || pBudget.limit || 0;
 
