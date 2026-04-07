@@ -24,6 +24,7 @@ import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useTranslation } from "react-i18next";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const Activity = () => {
   const { t } = useTranslation();
@@ -35,6 +36,7 @@ const Activity = () => {
 
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("activity");
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [filterType, setFilterType] = useState<"all" | "expense" | "payment">("all");
   const [filterDate, setFilterDate] = useState<"all" | "today" | "week" | "month">("all");
   const [showActivityGuide, setShowActivityGuide] = useState(false);
@@ -89,16 +91,16 @@ const Activity = () => {
     }
 
     // Filter by search query
-    if (searchQuery) {
+    if (debouncedSearchQuery) {
       filtered = filtered.filter(t =>
-        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.note?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.place?.toLowerCase().includes(searchQuery.toLowerCase())
+        t.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        t.note?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        t.place?.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
       );
     }
 
     return filtered;
-  }, [allTransactions, filterType, filterDate, searchQuery]);
+  }, [allTransactions, filterType, filterDate, debouncedSearchQuery]);
 
   const groupMap = useMemo(() => {
     return Object.fromEntries(groups.map(g => [g.id, g]));
