@@ -4,6 +4,7 @@ import { type Transaction } from "@/contexts/FirebaseDataContext";
 import { cn } from "@/lib/utils";
 import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { useTranslation } from "react-i18next";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -162,16 +163,24 @@ export const TransactionItem = memo(({
         </div>
 
         {transaction.type === "expense" && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowChat(true);
-            }}
-            className="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90"
-            title={t('chat.discuss')}
-          >
-            <MessageSquareText className="w-4 h-4 lg:w-4.5 lg:h-4.5" />
-          </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowChat(true);
+                  }}
+                  className="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90"
+                >
+                  <MessageSquareText className="w-4 h-4 lg:w-4.5 lg:h-4.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t('chat.discuss')}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </div>
 
