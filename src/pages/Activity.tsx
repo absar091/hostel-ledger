@@ -19,6 +19,12 @@ import PageGuide from "@/components/PageGuide";
 import TransactionDetailModal from "@/components/TransactionDetailModal";
 import ExpenseThreadSheet from "@/components/ExpenseThreadSheet";
 import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
@@ -180,7 +186,7 @@ const Activity = () => {
   };
 
   return (
-    <>
+    <TooltipProvider>
       <Sidebar />
 
       <AppContainer className="bg-white pb-24">
@@ -372,17 +378,24 @@ const Activity = () => {
                       </div>
 
                       {transaction.type === 'expense' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setChatTransaction(transaction);
-                            setShowChat(true);
-                          }}
-                          className="w-10 h-10 rounded-full bg-[#4a6850]/5 flex items-center justify-center text-[#4a6850]/40 hover:text-primary hover:bg-primary/10 transition-all active:scale-90 ml-2"
-                          title={t('chat.discuss')}
-                        >
-                          <MessageSquareText className="w-5 h-5" />
-                        </button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setChatTransaction(transaction);
+                                setShowChat(true);
+                              }}
+                              className="w-10 h-10 rounded-full bg-[#4a6850]/5 flex items-center justify-center text-[#4a6850]/40 hover:text-primary hover:bg-primary/10 transition-all active:scale-90 ml-2"
+                              aria-label={t('chat.discuss')}
+                            >
+                              <MessageSquareText className="w-5 h-5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{t('chat.discuss')}</p>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                   </button>
@@ -442,7 +455,7 @@ const Activity = () => {
 
         <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
       </AppContainer>
-    </>
+    </TooltipProvider>
   );
 };
 
