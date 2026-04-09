@@ -18,6 +18,7 @@ import {
     ImageIcon
 } from "@/lib/icons";
 import Avatar from "./Avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChatMessage {
     id: string;
@@ -490,26 +491,46 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                             accept="image/*"
                             className="hidden"
                         />
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isUploading || !!attachedImage}
-                            className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
-                        >
-                            {isUploading ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                                <ImageIcon className="w-5 h-5" />
-                            )}
-                        </button>
-                        <button
-                            onClick={() => setShowTxnHint(!showTxnHint)}
-                            className={cn(
-                                "p-2.5 rounded-xl transition-all shrink-0",
-                                showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
-                            )}
-                        >
-                            <Info className="w-5 h-5" />
-                        </button>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        aria-label={t("chat.attach_image", "Attach image")}
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={isUploading || !!attachedImage}
+                                        className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
+                                    >
+                                        {isUploading ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : (
+                                            <ImageIcon className="w-5 h-5" />
+                                        )}
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{t("chat.attach_image", "Attach image")}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        aria-label={t("chat.transaction_hint", "Transaction hint")}
+                                        onClick={() => setShowTxnHint(!showTxnHint)}
+                                        className={cn(
+                                            "p-2.5 rounded-xl transition-all shrink-0",
+                                            showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
+                                        )}
+                                    >
+                                        <Info className="w-5 h-5" />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{t("chat.transaction_hint", "Transaction hint")}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                     </div>
                     <input
                         ref={inputRef}
