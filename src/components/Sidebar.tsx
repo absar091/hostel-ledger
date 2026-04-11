@@ -6,6 +6,12 @@ import { useSidebar } from "@/contexts/SidebarContext";
 import { useInvitations } from "@/hooks/useInvitations";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import Logo from "./Logo";
 
 const Sidebar = () => {
@@ -41,6 +47,7 @@ const Sidebar = () => {
   };
 
   return (
+    <TooltipProvider>
     <aside className={cn(
       "hidden lg:flex lg:flex-col fixed left-0 top-0 h-screen bg-white border-r border-gray-200 z-40 transition-all duration-300",
       isOpen ? "w-64" : "w-20"
@@ -91,36 +98,43 @@ const Sidebar = () => {
           const active = isActive(item.path);
 
           return (
-            <button
-              key={item.id}
-              onClick={() => navigate(item.path)}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative",
-                active
-                  ? "bg-[#1B4332] text-white shadow-lg"
-                  : "text-gray-600 hover:bg-gray-100",
-                !isOpen && "justify-center"
-              )}
-              title={!isOpen ? item.label : undefined}
-            >
-              {/* Active indicator bar */}
-              {active && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-400 rounded-r-full"></div>
-              )}
-              <Icon className={cn("w-5 h-5 flex-shrink-0", active && "font-bold")} />
-              {isOpen && <span className={cn("font-bold truncate", active && "font-black")}>{item.label}</span>}
+            <Tooltip key={item.id}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => navigate(item.path)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative",
+                    active
+                      ? "bg-[#1B4332] text-white shadow-lg"
+                      : "text-gray-600 hover:bg-gray-100",
+                    !isOpen && "justify-center"
+                  )}
+                >
+                  {/* Active indicator bar */}
+                  {active && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-400 rounded-r-full"></div>
+                  )}
+                  <Icon className={cn("w-5 h-5 flex-shrink-0", active && "font-bold")} />
+                  {isOpen && <span className={cn("font-bold truncate", active && "font-black")}>{item.label}</span>}
 
-              {/* Badge */}
-              {item.badge > 0 && (
-                <div className={cn(
-                  "bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white",
-                  isOpen ? "ml-auto px-1.5 h-5 min-w-[20px]" : "absolute -top-1 -right-1 w-4 h-4"
-                )}>
-                  {item.badge}
-                </div>
+                  {/* Badge */}
+                  {item.badge > 0 && (
+                    <div className={cn(
+                      "bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white",
+                      isOpen ? "ml-auto px-1.5 h-5 min-w-[20px]" : "absolute -top-1 -right-1 w-4 h-4"
+                    )}>
+                      {item.badge}
+                    </div>
+                  )}
+                </button>
+              </TooltipTrigger>
+              {!isOpen && (
+                <TooltipContent side="right">
+                  <p>{item.label}</p>
+                </TooltipContent>
               )}
-            </button>
+            </Tooltip>
           );
         })}
       </nav>
@@ -173,6 +187,7 @@ const Sidebar = () => {
         )}
       </div>
     </aside>
+    </TooltipProvider>
   );
 };
 
