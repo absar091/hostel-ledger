@@ -86,6 +86,7 @@ const BottomNav = ({ activeTab, onTabChange }: BottomNavProps) => {
                 <button
                   onClick={() => onTabChange(tab.id)}
                   aria-current={isActive ? "page" : undefined}
+                  aria-label={tab.label}
                   className={cn(
                     "touch-target relative flex flex-col items-center gap-1.5 py-2 px-2 rounded-2xl transition-all duration-200",
                     isActive
