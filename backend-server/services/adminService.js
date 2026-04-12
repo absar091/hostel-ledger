@@ -290,20 +290,26 @@ class AdminService {
       const groupIds = Object.keys(snapshot.val());
       const groups = [];
 
-      for (const groupId of groupIds) {
+      // ⚡ Bolt: Replace sequential loop with Promise.all for concurrent fetching to fix N+1 query latency
+      const groupPromises = groupIds.map(async (groupId) => {
         const groupSnap = await admin.database().ref(`groups/${groupId}`).once('value');
         if (groupSnap.exists()) {
           const data = groupSnap.val();
-          groups.push({
+          return {
             id: groupId,
             name: data.name,
             emoji: data.emoji,
             memberCount: Object.keys(data.members || {}).length,
             createdAt: data.createdAt,
             isPersonal: data.isPersonal || false
-          });
+          };
         }
-      }
+        return null;
+      });
+
+      const groupResults = await Promise.all(groupPromises);
+      groups.push(...groupResults.filter(g => g !== null));
+
       return groups;
     } catch (error) {
       console.error(`Error fetching user groups for ${uid}:`, error);
