@@ -3268,52 +3268,60 @@ app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (r
 
       // 2. Personal Budgets for Participants
       // Each participant's spent increases by their share
-      for (const s of splits) {
+      // OPTIMIZATION: Fetch all personal budgets concurrently instead of sequentially
+      const validParticipants = splits.map(s => {
         const participantMember = membersArray.find(m => m.id === s.participantId);
-        if (participantMember && participantMember.userId) {
-          const pUid = participantMember.userId;
-          const pBudgetSnap = await db.ref(`personalBudgets/${pUid}`).get();
-          
-          if (pBudgetSnap.exists()) {
-            const pBudget = pBudgetSnap.val();
-            const pAmount = pBudget.amount || pBudget.limit || 0;
+        return { split: s, participantMember };
+      }).filter(p => p.participantMember && p.participantMember.userId);
 
-            if (pAmount > 0) {
-              const newPSpent = (pBudget.spent || 0) + s.amount;
-              
-              // Enforce Lock Policy (for recorder only to avoid blocking whole group for one person's personal budget)
-              if (pUid === currentUserId && pBudget.policies?.lockAt100 && newPSpent > pAmount) {
-                return res.status(403).json({ 
-                  success: false, 
-                  error: 'Personal Budget Exceeded', 
-                  message: `This expense exceeds your personal budget limit.` 
-                });
-              }
+      const budgetSnaps = await Promise.all(
+        validParticipants.map(p => db.ref(`personalBudgets/${p.participantMember.userId}`).get())
+      );
 
-              updates[`personalBudgets/${pUid}/spent`] = admin.database.ServerValue.increment(s.amount);
-              
-              // Personal Alert (80%)
-              const pAlertThreshold = pAmount * 0.8;
-              if (pBudget.policies?.alertAt80 && newPSpent >= pAlertThreshold && (pBudget.spent || 0) < pAlertThreshold) {
-                const pRemaining = Math.max(0, pAmount - newPSpent);
-                sendOneSignalNotificationInternal({ 
-                  userIds: [pUid], 
-                  title: '📉 Personal Budget Alert', 
-                  body: `You have spent 80% of your personal budget (${newPSpent}/${pAmount}). Remaining: ${pRemaining}.`,
-                  data: { type: 'personal_budget_alert' }
-                }).catch(err => logger.error('Personal alert notification failed:', err));
+      for (let i = 0; i < validParticipants.length; i++) {
+        const { split: s, participantMember } = validParticipants[i];
+        const pUid = participantMember.userId;
+        const pBudgetSnap = budgetSnaps[i];
 
-                if (req.user && req.user.email) {
-                  emailService.sendBudgetAlert({
-                    email: req.user.email,
-                    name: req.user.name || req.user.email.split('@')[0],
-                    type: 'Personal',
-                    amount: pAmount,
-                    spent: newPSpent,
-                    remaining: pRemaining,
-                    groupName: null
-                  }).catch(err => logger.error('Personal budget email alert failed:', err));
-                }
+        if (pBudgetSnap.exists()) {
+          const pBudget = pBudgetSnap.val();
+          const pAmount = pBudget.amount || pBudget.limit || 0;
+
+          if (pAmount > 0) {
+            const newPSpent = (pBudget.spent || 0) + s.amount;
+
+            // Enforce Lock Policy (for recorder only to avoid blocking whole group for one person's personal budget)
+            if (pUid === currentUserId && pBudget.policies?.lockAt100 && newPSpent > pAmount) {
+              return res.status(403).json({
+                success: false,
+                error: 'Personal Budget Exceeded',
+                message: `This expense exceeds your personal budget limit.`
+              });
+            }
+
+            updates[`personalBudgets/${pUid}/spent`] = admin.database.ServerValue.increment(s.amount);
+
+            // Personal Alert (80%)
+            const pAlertThreshold = pAmount * 0.8;
+            if (pBudget.policies?.alertAt80 && newPSpent >= pAlertThreshold && (pBudget.spent || 0) < pAlertThreshold) {
+              const pRemaining = Math.max(0, pAmount - newPSpent);
+              sendOneSignalNotificationInternal({
+                userIds: [pUid],
+                title: '📉 Personal Budget Alert',
+                body: `You have spent 80% of your personal budget (${newPSpent}/${pAmount}). Remaining: ${pRemaining}.`,
+                data: { type: 'personal_budget_alert' }
+              }).catch(err => logger.error('Personal alert notification failed:', err));
+
+              if (req.user && req.user.email) {
+                emailService.sendBudgetAlert({
+                  email: req.user.email,
+                  name: req.user.name || req.user.email.split('@')[0],
+                  type: 'Personal',
+                  amount: pAmount,
+                  spent: newPSpent,
+                  remaining: pRemaining,
+                  groupName: null
+                }).catch(err => logger.error('Personal budget email alert failed:', err));
               }
             }
           }
