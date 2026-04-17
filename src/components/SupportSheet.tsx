@@ -82,6 +82,7 @@ export function SupportSheet({ isOpen, onClose }: SupportSheetProps) {
               <p className="text-2xl font-black font-mono text-[#4a6850] bg-[#4a6850]/10 px-6 py-3 rounded-2xl border border-[#4a6850]/10">{ticketId}</p>
               <p className="text-xs font-bold text-gray-500 max-w-sm mt-4 leading-relaxed">We've also sent you an email confirmation. You will receive a notification when an admin replies.</p>
               <button 
+                aria-label="Close support ticket confirmation"
                 className="mt-8 w-full max-w-xs h-12 bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white rounded-2xl font-black shadow-lg hover:shadow-xl active:scale-95 transition-all"
                 onClick={handleClose}
               >
