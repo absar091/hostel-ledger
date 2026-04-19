@@ -6,6 +6,7 @@ import { useSidebar } from "@/contexts/SidebarContext";
 import { useInvitations } from "@/hooks/useInvitations";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import Logo from "./Logo";
 
 const Sidebar = () => {
@@ -86,6 +87,7 @@ const Sidebar = () => {
           </div>
         )}
 
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {navItems.map((item: any) => {
           const Icon = item.icon;
           const active = isActive(item.path);
