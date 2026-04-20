@@ -1,0 +1,3 @@
+## 2024-05-20 - N+1 Query in Add Expense Budget Tracking
+**Learning:** Found an N+1 query loop in `backend-server/server.js` (`/api/add-expense`) where the server loops through each split participant and sequentially fetches their personal budget `await db.ref(\`personalBudgets/\${pUid}\`).get()`. For large groups splitting an expense, this sequential database read adds significant, blocking latency to the request.
+**Action:** Replaced the sequential `for` loop with a concurrent fetch using `Promise.all()` to resolve all `personalBudgets` reads in parallel before processing the budget rules and generating updates.
