@@ -1582,10 +1582,12 @@ app.get('/api/ai/insights', generalLimiter, authenticate, async (req, res) => {
     const groupNames = {};
     if (userGroupsSnap.exists()) {
       const groupIds = Object.keys(userGroupsSnap.val());
-      for (const gid of groupIds) {
-        const gSnap = await admin.database().ref(`groups/${gid}/name`).get();
-        if (gSnap.exists()) groupNames[gid] = gSnap.val();
-      }
+      const gSnaps = await Promise.all(
+        groupIds.map(gid => admin.database().ref(`groups/${gid}/name`).get())
+      );
+      groupIds.forEach((gid, index) => {
+        if (gSnaps[index].exists()) groupNames[gid] = gSnaps[index].val();
+      });
     }
 
     const context = {
@@ -3268,14 +3270,30 @@ app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (r
 
       // 2. Personal Budgets for Participants
       // Each participant's spent increases by their share
+      // OPTIMIZATION: Fetch all participant budgets in parallel to avoid N+1 query latency
+      const participantUids = splits
+        .map(s => membersArray.find(m => m.id === s.participantId))
+        .filter(m => m && m.userId)
+        .map(m => m.userId);
+
+      const pBudgetSnaps = await Promise.all(
+        participantUids.map(uid => db.ref(`personalBudgets/${uid}`).get())
+      );
+
+      const pBudgetsMap = {};
+      participantUids.forEach((uid, i) => {
+        if (pBudgetSnaps[i].exists()) {
+          pBudgetsMap[uid] = pBudgetSnaps[i].val();
+        }
+      });
+
       for (const s of splits) {
         const participantMember = membersArray.find(m => m.id === s.participantId);
         if (participantMember && participantMember.userId) {
           const pUid = participantMember.userId;
-          const pBudgetSnap = await db.ref(`personalBudgets/${pUid}`).get();
+          const pBudget = pBudgetsMap[pUid];
           
-          if (pBudgetSnap.exists()) {
-            const pBudget = pBudgetSnap.val();
+          if (pBudget) {
             const pAmount = pBudget.amount || pBudget.limit || 0;
 
             if (pAmount > 0) {
@@ -3698,12 +3716,20 @@ app.post('/api/record-payment', generalLimiter, authenticate, detectFraud, async
             // We need to check all real members' settlements against this temp member
             let hasOutstandingDebt = false;
 
-            for (const member of freshMembers) {
-              if (member.id === tempMember.id) continue;
+            // OPTIMIZATION: Fetch all settlements in parallel
+            const relevantMembers = freshMembers.filter(m => m.id !== tempMember.id);
+            const settlementPromises = relevantMembers.map(member => {
               const storageKey = member.userId || member.id;
+              return db.ref(`users/${storageKey}/settlements/${groupId}/${tempMember.id}`).get();
+            });
 
-              // Check this member's settlement with the temp member
-              const settlementSnap = await db.ref(`users/${storageKey}/settlements/${groupId}/${tempMember.id}`).get();
+            const settlementSnaps = await Promise.all(settlementPromises);
+
+            for (let i = 0; i < relevantMembers.length; i++) {
+              const member = relevantMembers[i];
+              const storageKey = member.userId || member.id;
+              const settlementSnap = settlementSnaps[i];
+
               if (settlementSnap.exists()) {
                 const settlement = settlementSnap.val();
                 const netBalance = (settlement.toReceive || 0) - (settlement.toPay || 0);
