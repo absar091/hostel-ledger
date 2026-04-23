@@ -1582,9 +1582,13 @@ app.get('/api/ai/insights', generalLimiter, authenticate, async (req, res) => {
     const groupNames = {};
     if (userGroupsSnap.exists()) {
       const groupIds = Object.keys(userGroupsSnap.val());
-      for (const gid of groupIds) {
-        const gSnap = await admin.database().ref(`groups/${gid}/name`).get();
-        if (gSnap.exists()) groupNames[gid] = gSnap.val();
+      const promises = [];
+      for (let i = 0; i < groupIds.length; i++) {
+        promises.push(admin.database().ref(`groups/${groupIds[i]}/name`).get());
+      }
+      const groupSnaps = await Promise.all(promises);
+      for (let i = 0; i < groupIds.length; i++) {
+        if (groupSnaps[i].exists()) groupNames[groupIds[i]] = groupSnaps[i].val();
       }
     }
 
