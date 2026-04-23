@@ -1571,9 +1571,16 @@ app.get('/api/ai/insights', generalLimiter, authenticate, async (req, res) => {
     const groupNames = {};
     if (userGroupsSnap.exists()) {
       const groupIds = Object.keys(userGroupsSnap.val());
-      for (const gid of groupIds) {
-        const gSnap = await admin.database().ref(`groups/${gid}/name`).get();
-        if (gSnap.exists()) groupNames[gid] = gSnap.val();
+
+      // ⚡ Bolt: Fetch group names concurrently using Promise.all to avoid N+1 query latency
+      const groupSnaps = await Promise.all(
+        groupIds.map(gid => admin.database().ref(`groups/${gid}/name`).get())
+      );
+
+      for (let i = 0; i < groupIds.length; i++) {
+        if (groupSnaps[i].exists()) {
+          groupNames[groupIds[i]] = groupSnaps[i].val();
+        }
       }
     }
 
