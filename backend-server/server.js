@@ -1577,14 +1577,21 @@ app.get('/api/ai/insights', generalLimiter, authenticate, async (req, res) => {
       });
     }
 
-    // Fetch user's groups names
+    // Fetch user's groups names concurrently
     const userGroupsSnap = await admin.database().ref(`userGroups/${userId}`).get();
     const groupNames = {};
     if (userGroupsSnap.exists()) {
       const groupIds = Object.keys(userGroupsSnap.val());
-      for (const gid of groupIds) {
-        const gSnap = await admin.database().ref(`groups/${gid}/name`).get();
-        if (gSnap.exists()) groupNames[gid] = gSnap.val();
+
+      // ⚡ Bolt: Fetch group names concurrently rather than sequentially
+      const groupSnaps = await Promise.all(
+        groupIds.map(gid => admin.database().ref(`groups/${gid}/name`).get())
+      );
+
+      for (let i = 0; i < groupIds.length; i++) {
+        if (groupSnaps[i].exists()) {
+          groupNames[groupIds[i]] = groupSnaps[i].val();
+        }
       }
     }
 
@@ -3698,14 +3705,18 @@ app.post('/api/record-payment', generalLimiter, authenticate, detectFraud, async
             // We need to check all real members' settlements against this temp member
             let hasOutstandingDebt = false;
 
-            for (const member of freshMembers) {
-              if (member.id === tempMember.id) continue;
-              const storageKey = member.userId || member.id;
+            // ⚡ Bolt: Fetch all members' settlements concurrently
+            const membersToCheck = freshMembers.filter(m => m.id !== tempMember.id);
+            const settlementSnaps = await Promise.all(
+              membersToCheck.map(member => {
+                const storageKey = member.userId || member.id;
+                return db.ref(`users/${storageKey}/settlements/${groupId}/${tempMember.id}`).get();
+              })
+            );
 
-              // Check this member's settlement with the temp member
-              const settlementSnap = await db.ref(`users/${storageKey}/settlements/${groupId}/${tempMember.id}`).get();
-              if (settlementSnap.exists()) {
-                const settlement = settlementSnap.val();
+            for (let i = 0; i < membersToCheck.length; i++) {
+              if (settlementSnaps[i].exists()) {
+                const settlement = settlementSnaps[i].val();
                 const netBalance = (settlement.toReceive || 0) - (settlement.toPay || 0);
                 if (Math.abs(netBalance) > 0.01) {
                   hasOutstandingDebt = true;
