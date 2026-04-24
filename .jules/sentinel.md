@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2024-05-23 - Reverse Tabnabbing via Missing noopener
+**Vulnerability:** Missing `rel="noopener noreferrer"` attributes on `target="_blank"` anchor tags in component and page files.
+**Learning:** React/JSX doesn't automatically inject `rel="noopener noreferrer"` when using `target="_blank"`. This leaves external links vulnerable to reverse tabnabbing, where the newly opened window gains a reference to the `window.opener` object, potentially allowing it to redirect the parent page to a malicious site.
+**Prevention:** Always pair `target="_blank"` with `rel="noopener noreferrer"` in JSX. Consider adding an ESLint rule (`react/jsx-no-target-blank`) to catch these automatically during development.
