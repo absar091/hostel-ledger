@@ -440,7 +440,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                                     A preview card will automatically appear!
                                 </p>
                             </div>
-                            <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5">
+                            <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5" aria-label={t('chat.dismiss_hint', 'Dismiss hint')}>
                                 <X className="w-3 h-3" />
                             </button>
                         </div>
@@ -475,6 +475,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         <button 
                             onClick={() => setAttachedImage(null)}
                             className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                            aria-label={t('chat.remove_image', 'Remove image')}
                         >
                             <X className="w-3 h-3" />
                         </button>
@@ -528,6 +529,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         onClick={handleSend}
                         disabled={(!inputText.trim() && !attachedImage) || isSending}
                         className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
+                        aria-label={t('chat.send_message', 'Send message')}
                     >
                         {isSending ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
