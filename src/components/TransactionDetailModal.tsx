@@ -467,7 +467,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                     className="relative w-24 h-24 rounded-xl overflow-hidden shadow-md flex-shrink-0 cursor-pointer group"
                                                     onClick={() => {
                                                         const url = `https://www.google.com/maps/search/?api=1&query=${transaction.location?.lat},${transaction.location?.lng}`;
-                                                        window.open(url, '_blank');
+                                                        window.open(url, '_blank', 'noopener,noreferrer');
                                                     }}
                                                 >
                                                     <img
@@ -491,7 +491,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                     <button
                                                         onClick={() => {
                                                             const url = `https://www.google.com/maps/search/?api=1&query=${transaction.location?.lat},${transaction.location?.lng}`;
-                                                            window.open(url, '_blank');
+                                                            window.open(url, '_blank', 'noopener,noreferrer');
                                                         }}
                                                         className="inline-flex items-center gap-1.5 text-xs text-blue-600 font-black uppercase tracking-wider hover:underline w-fit"
                                                     >
