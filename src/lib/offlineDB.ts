@@ -214,10 +214,8 @@ export const cacheGroups = async (groups: any[]): Promise<void> => {
   // Clear existing groups
   await tx.store.clear();
 
-  // Add all groups
-  for (const group of groups) {
-    await tx.store.put(group);
-  }
+  // Add all groups concurrently
+  await Promise.all(groups.map(group => tx.store.put(group)));
 
   await tx.done;
   console.log('✅ Cached', groups.length, 'groups to IndexedDB');
@@ -241,10 +239,8 @@ export const cacheTransactions = async (transactions: any[]): Promise<void> => {
   // Clear existing transactions
   await tx.store.clear();
 
-  // Add all transactions
-  for (const transaction of transactions) {
-    await tx.store.put(transaction);
-  }
+  // Add all transactions concurrently
+  await Promise.all(transactions.map(transaction => tx.store.put(transaction)));
 
   await tx.done;
   console.log('✅ Cached', transactions.length, 'transactions to IndexedDB');
