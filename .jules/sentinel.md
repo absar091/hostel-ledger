@@ -22,10 +22,12 @@
 **Vulnerability:** The `createToken` and `verifyToken` functions in `src/lib/jwt.ts` used a hardcoded fallback string (`'hostel-ledger-super-secret-key-2024-change-in-production'`) if the `VITE_JWT_SECRET` environment variable was not defined.
 **Learning:** Hardcoded fallback keys compromise the security of any cryptographic operations that rely on them. If an environment variable containing a secret is missing, it is safer to fail securely (e.g., by throwing an error) rather than using a predictable, publicly known fallback key.
 **Prevention:** Remove hardcoded fallback secrets. Explicitly check for the presence of required environment variables containing secrets and throw an error if they are missing.
+
 ## 2026-03-16 - Predictable Ticket IDs in Support
 **Vulnerability:** Support tickets were generated using `Date.now().toString().slice(-8)`, making ticket IDs predictable and susceptible to enumeration or guessing.
 **Learning:** Relying on timestamps or simple concatenation for IDs is insecure. It creates predictability that attackers can use to brute force or enumerate resources.
 **Prevention:** Always use cryptographically secure methods like `globalThis.crypto.getRandomValues` or `crypto.randomUUID()` to generate IDs, tokens, or ticket numbers.
+
 ## 2026-03-17 - Path Traversal / NoSQL Injection in AI Parse Expense Endpoints
 **Vulnerability:** The `/api/ai/parse-expense` and `/api/ai/parse-expense-audio` endpoints accepted a `groupId` directly from the request body and interpolated it into a Firebase Realtime Database path (`db.ref(\`groups/${groupId}\`)`) without prior validation. This allowed potential path traversal or NoSQL injection attacks to bypass authorization and extract arbitrary paths via AI.
 **Learning:** Even AI-assisted endpoints or those that seem non-destructive can expose data if user-provided identifiers used to look up context are not strictly validated.
@@ -40,3 +42,9 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+
+>>
+## 2024-05-28 - NoSQL Injection in Transaction Preview Endpoint
+**Vulnerability:** The `/api/get-transaction-preview` endpoint accepted a `transactionId` directly from the request body and interpolated it into a Firebase Realtime Database path (`db.ref(\`transactions/${transactionId}\`)`) without any format validation. This exposed the endpoint to NoSQL Injection / Path Traversal attacks.
+**Learning:** ID validation is essential for every database lookup query, even when the endpoint seems simple (e.g., getting a preview).
+**Prevention:** Always validate IDs explicitly with `isValidFirebaseId()` before utilizing them in database paths.
