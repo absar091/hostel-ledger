@@ -1366,6 +1366,10 @@ app.post('/api/ai/parse-expense', detectFraud, generalLimiter, authenticate, asy
       return res.status(400).json({ success: false, error: 'Text is required' });
     }
 
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
     // Get group members for context
     const groupSnap = await admin.database().ref(`groups/${groupId}`).get();
     if (!groupSnap.exists()) {
@@ -1445,6 +1449,10 @@ app.post('/api/ai/parse-expense-audio', detectFraud, generalLimiter, authenticat
     const { audioData, mimeType, groupId } = req.body;
     if (!audioData || !mimeType) {
       return res.status(400).json({ success: false, error: 'Audio data and mimeType are required' });
+    }
+
+    if (!isValidFirebaseId(groupId)) {
+      return res.status(400).json({ success: false, error: 'Invalid group ID format' });
     }
 
     // Get group members for context
