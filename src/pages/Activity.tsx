@@ -90,10 +90,11 @@ const Activity = () => {
 
     // Filter by search query
     if (searchQuery) {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(t =>
-        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.note?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.place?.toLowerCase().includes(searchQuery.toLowerCase())
+        t.title.toLowerCase().includes(query) ||
+        t.note?.toLowerCase().includes(query) ||
+        t.place?.toLowerCase().includes(query)
       );
     }
 
