@@ -51,7 +51,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
 
   const handleWhatsAppShare = () => {
     const whatsappText = encodeURIComponent(`${shareText}\n\n${shareUrl}`);
-    window.open(`https://wa.me/?text=${whatsappText}`, '_blank');
+    window.open(`https://wa.me/?text=${whatsappText}`, '_blank', 'noopener,noreferrer');
     setShowShareMenu(false);
     toast.success("Opening WhatsApp... 📱");
   };
@@ -59,21 +59,21 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
   const handleTelegramShare = () => {
     const telegramText = encodeURIComponent(shareText);
     const telegramUrl = encodeURIComponent(shareUrl);
-    window.open(`https://t.me/share/url?url=${telegramUrl}&text=${telegramText}`, '_blank');
+    window.open(`https://t.me/share/url?url=${telegramUrl}&text=${telegramText}`, '_blank', 'noopener,noreferrer');
     setShowShareMenu(false);
     toast.success("Opening Telegram... 📱");
   };
 
   const handleFacebookShare = () => {
     const facebookUrl = encodeURIComponent(shareUrl);
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${facebookUrl}`, '_blank');
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${facebookUrl}`, '_blank', 'noopener,noreferrer');
     setShowShareMenu(false);
     toast.success("Opening Facebook... 📘");
   };
 
   const handleTwitterShare = () => {
     const twitterText = encodeURIComponent(`${shareText} ${shareUrl}`);
-    window.open(`https://twitter.com/intent/tweet?text=${twitterText}`, '_blank');
+    window.open(`https://twitter.com/intent/tweet?text=${twitterText}`, '_blank', 'noopener,noreferrer');
     setShowShareMenu(false);
     toast.success("Opening Twitter... 🐦");
   };
