@@ -11,8 +11,8 @@ test('verify copy id feedback', async ({ page }) => {
   // Wait for the modal to appear
   await expect(page.getByText('txn_1234567890')).toBeVisible();
 
-  // Find the Copy ID button (using the title attribute which is initially "Copy ID")
-  const copyButton = page.locator("button[title='Copy ID']");
+  // Find the Copy Reference button (using the title attribute which is initially "Copy Reference")
+  const copyButton = page.locator("button[title='Copy Reference']");
 
   // Click the copy button
   await copyButton.click();
