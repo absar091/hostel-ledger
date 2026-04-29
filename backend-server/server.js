@@ -4274,6 +4274,9 @@ app.post('/api/delete-group', detectFraud, authenticate, async (req, res) => {
     // 1. Delete the group itself
     updates[`groups/${groupId}`] = null;
 
+    // 1.5 Delete the group transactions
+    updates[`transactions/${groupId}`] = null;
+
     // 2. Remove from all members' userGroups
     for (const member of members) {
       const memberUserId = member.userId || member.id;
