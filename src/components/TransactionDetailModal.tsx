@@ -225,8 +225,9 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             <button
                                 onClick={handleShareAsImage}
                                 disabled={isGenerating}
-                                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+                                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                                 title="Share as Image"
+                                aria-label="Share as Image"
                             >
                                 {isGenerating ? (
                                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -236,7 +237,8 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             </button>
                             <button
                                 onClick={onClose}
-                                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+                                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
+                                aria-label="Close transaction details"
                             >
                                 <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
                             </button>
@@ -264,11 +266,12 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                         </div>
                                         <button
                                             onClick={handleCopyId}
-                                            className={`p-2 rounded-full transition-all ${isCopied
+                                            className={`p-2 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 ${isCopied
                                                 ? "bg-emerald-100 text-emerald-600 scale-110"
                                                 : "bg-white text-slate-400 hover:text-emerald-600 shadow-sm border border-slate-100 group-hover:border-emerald-200"
                                                 }`}
                                             title={isCopied ? "Copied!" : "Copy Reference"}
+                                            aria-label={isCopied ? "Copied!" : "Copy Reference"}
                                         >
                                             {isCopied ? (
                                                 <Check className="w-3.5 h-3.5" />
@@ -491,9 +494,9 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                     <button
                                                         onClick={() => {
                                                             const url = `https://www.google.com/maps/search/?api=1&query=${transaction.location?.lat},${transaction.location?.lng}`;
-                                                            window.open(url, '_blank');
+                                                            window.open(url, '_blank', 'noopener,noreferrer');
                                                         }}
-                                                        className="inline-flex items-center gap-1.5 text-xs text-blue-600 font-black uppercase tracking-wider hover:underline w-fit"
+                                                        className="inline-flex items-center gap-1.5 text-xs text-blue-600 font-black uppercase tracking-wider hover:underline w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
                                                     >
                                                         View on Maps <ArrowUpRight className="w-3 h-3" />
                                                     </button>
