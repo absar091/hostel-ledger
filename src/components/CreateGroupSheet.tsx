@@ -6,6 +6,7 @@ import { X, Plus, Users, ChevronDown, ChevronUp, Phone, CreditCard, ChevronRight
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Avatar from "./Avatar";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { toast } from "sonner";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
@@ -430,54 +431,70 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
 
                   {/* INVITED EMAILS (New Users) */}
                   {invitedEmails.map(email => (
-                    <div
-                      key={email}
-                      className="flex items-center gap-3 p-3 bg-purple-50/50 border border-purple-100 rounded-2xl animate-fade-in"
-                      title="This person will receive an email invitation to join Hostel Ledger and this group."
-                    >
-                      <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center text-sm font-bold text-purple-600">
-                        @
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="font-black text-sm text-gray-900 block truncate">{email}</span>
-                        <span className="text-[10px] text-purple-600 font-bold flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span> {t('sheets.create_group.email_invite')} • {t('sheets.create_group.new_user')}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleRemoveEmailInvite(email)}
-                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
-                        aria-label={`Remove ${email}`}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <TooltipProvider key={email}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            className="flex items-center gap-3 p-3 bg-purple-50/50 border border-purple-100 rounded-2xl animate-fade-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+                            tabIndex={0}
+                          >
+                            <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center text-sm font-bold text-purple-600">
+                              @
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span className="font-black text-sm text-gray-900 block truncate">{email}</span>
+                              <span className="text-[10px] text-purple-600 font-bold flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span> {t('sheets.create_group.email_invite')} • {t('sheets.create_group.new_user')}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveEmailInvite(email)}
+                              className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                              aria-label={`Remove ${email}`}
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800 max-w-xs text-xs">
+                          This person will receive an email invitation to join Hostel Ledger and this group.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   ))}
 
                   {/* INVITED USERS (Existing App Users) */}
                   {invitedUsernames.map(username => (
-                    <div
-                      key={username}
-                      className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl animate-fade-in"
-                      title="This user already has a Hostel Ledger account. They'll receive an in-app invitation and email notification."
-                    >
-                      <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-600">
-                        {username.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1">
-                        <span className="font-black text-sm text-gray-900 block">@{username}</span>
-                        <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> {t('sheets.create_group.app_user')} • {t('sheets.create_group.invite_sent')}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleRemoveInvite(username)}
-                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
-                        aria-label={`Remove ${username}`}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <TooltipProvider key={username}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl animate-fade-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                            tabIndex={0}
+                          >
+                            <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-600">
+                              {username.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1">
+                              <span className="font-black text-sm text-gray-900 block">@{username}</span>
+                              <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> {t('sheets.create_group.app_user')} • {t('sheets.create_group.invite_sent')}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveInvite(username)}
+                              className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                              aria-label={`Remove ${username}`}
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800 max-w-xs text-xs">
+                          This user already has a Hostel Ledger account. They'll receive an in-app invitation and email notification.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   ))}
 
                   {/* MANUAL MEMBERS */}
