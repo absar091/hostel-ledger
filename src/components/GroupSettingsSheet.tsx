@@ -8,6 +8,12 @@ import { UserPlus, Trash2, AlertTriangle, X, ShieldAlert, Copy, Link, LogOut, Se
 import { getValidUserDetails } from "@/lib/api";
 import { ReportSheet } from "./ReportSheet";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -139,6 +145,7 @@ const GroupSettingsSheet = ({
   };
 
   return (
+    <TooltipProvider>
     <>
       <Sheet open={open} onOpenChange={onClose}>
         <SheetContent side="bottom" className="h-[90vh] rounded-t-[32px] flex flex-col bg-white border-t border-[#4a6850]/10 z-[100] px-0">
@@ -217,14 +224,22 @@ const GroupSettingsSheet = ({
                   <p className="text-[10px] font-bold text-[#4a6850]/30">{Array.isArray(group.members) ? group.members.length : 0} People in Group</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleCopyGroupInvite}
-                    className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90"
-                  >
-                    <Link className="w-4 h-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleCopyGroupInvite}
+                        aria-label="Copy Group Invite Link"
+                        className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90"
+                      >
+                        <Link className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Copy Group Invite Link</p>
+                    </TooltipContent>
+                  </Tooltip>
                   <Button
                     onClick={() => setShowAddMember(true)}
                     className="h-10 px-4 bg-[#4a6850] hover:bg-[#3d5643] text-white font-black rounded-2xl shadow-sm transition-all active:scale-95 flex items-center gap-2 text-[11px] uppercase tracking-wider"
@@ -579,6 +594,7 @@ const GroupSettingsSheet = ({
         targetType="group"
       />
     </>
+    </TooltipProvider>
   );
 };
 
