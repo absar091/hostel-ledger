@@ -361,26 +361,28 @@ const AdminDashboard = () => {
 
   if (!isAdmin) return null;
 
+  const query = searchQuery.toLowerCase();
+
   const filteredUsers = users.filter(u => 
-    u.displayName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.uid.toLowerCase().includes(searchQuery.toLowerCase())
+    u.displayName.toLowerCase().includes(query) ||
+    u.email.toLowerCase().includes(query) ||
+    u.uid.toLowerCase().includes(query)
   );
 
   const filteredGroups = groups.filter(g => 
-    g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    g.id.toLowerCase().includes(searchQuery.toLowerCase())
+    g.name.toLowerCase().includes(query) ||
+    g.id.toLowerCase().includes(query)
   );
 
   const filteredTickets = tickets.filter(t => 
     (statusFilter === 'all' || t.status === statusFilter) &&
-    (t.subject.toLowerCase().includes(searchQuery.toLowerCase()) || 
-     t.ticketNumber.toLowerCase().includes(searchQuery.toLowerCase()))
+    (t.subject.toLowerCase().includes(query) ||
+     t.ticketNumber.toLowerCase().includes(query))
   );
 
   const filteredReports = reports.filter(r => 
-    r.reporterName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    r.reporterName?.toLowerCase().includes(query) ||
+    r.description?.toLowerCase().includes(query)
   );
 
   return (
