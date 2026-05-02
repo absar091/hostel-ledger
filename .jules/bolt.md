@@ -1,0 +1,3 @@
+## 2024-05-02 - Avoid inline Intl.DateTimeFormat and toLocaleTimeString inside React render
+**Learning:** Native `Intl.DateTimeFormat` (and its wrapper `toLocaleTimeString`) creates a new formatter instance every time it is called. When used inline within a React component that renders often or within a loop (like `TransactionItem` in a list of transactions), this instantiation is incredibly slow and becomes a significant performance bottleneck (e.g. ~2900ms vs ~16ms for 10k items).
+**Action:** Always extract `Intl.DateTimeFormat` into a module-level singleton constant outside of the component to cache the formatter.
