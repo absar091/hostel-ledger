@@ -1,0 +1,3 @@
+## 2024-05-04 - Accessible Tooltips
+**Learning:** Native title attributes on interactive elements (like buttons) present significant accessibility issues, providing poor contrast, lacking keyboard focus predictability, and rendering inconsistently across screen readers. They also appear sluggishly, degrading UX.
+**Action:** Replaced native title attributes with Radix UI Tooltip components. On icon-only buttons, I explicitly added aria-label attributes (which screen readers read robustly) while relying on the custom TooltipContent for visual indication, ensuring both robust semantics and premium UI.
