@@ -76,11 +76,15 @@ const SystemMessage = memo(({ message, formatAmount }: { message: ChatMessage; f
     );
 });
 
+// Pre-instantiate DateTimeFormat for performance to avoid recreating it on every ChatBubble render
+// Expected impact: Eliminates Intl.DateTimeFormat instantiation overhead, reducing render time per message
+const timeFormatter = new Intl.DateTimeFormat([], {
+    hour: "2-digit",
+    minute: "2-digit",
+});
+
 const ChatBubble = memo(({ message, isOwn }: { message: ChatMessage; isOwn: boolean }) => {
-    const time = new Date(message.timestamp).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+    const time = timeFormatter.format(new Date(message.timestamp));
 
     return (
         <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-2 group`}>
