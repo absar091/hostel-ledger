@@ -1,0 +1,3 @@
+## 2026-05-04 - Replaced native titles with accessible Radix Tooltips
+**Learning:** Native `title` attributes on custom buttons can cause inconsistent visual styling across browsers, and standard Radix Tooltips provide better accessibility and customization while maintaining ARIA structure. However, conditional mounting of Tooltips can cause React reconciliation issues.
+**Action:** When conditionally showing tooltips (like hiding them when a sidebar expands), conditionally render only the `<TooltipContent>` instead of unmounting the `<Tooltip>` or `<TooltipTrigger>` wrappers. Also, explicitly remove native `title` attributes and retain `aria-label` for icon-only buttons to preserve accessible names.
