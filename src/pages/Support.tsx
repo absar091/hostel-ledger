@@ -32,6 +32,11 @@ import DesktopHeader from "@/components/DesktopHeader";
 import MobileHeader from "@/components/MobileHeader";
 import Sidebar from "@/components/Sidebar";
 
+const timeFormatter = new Intl.DateTimeFormat(undefined, {
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
 interface Message {
   id: string;
   text: string;
@@ -644,10 +649,7 @@ const Support = () => {
                               msg.sender === "user" ? "text-white" : "text-[#4a6850]/60"
                             )}
                           >
-                            {new Date(msg.timestamp).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {timeFormatter.format(new Date(msg.timestamp))}
                           </p>
                         </div>
                       </div>
