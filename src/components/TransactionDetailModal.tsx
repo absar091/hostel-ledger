@@ -6,6 +6,10 @@ import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
+// Pre-instantiate formatters for better performance
+const timeFormatter = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+const dateFormatter = new Intl.DateTimeFormat();
+
 interface TransactionDetailModalProps {
     transaction: any;
     onClose: () => void;
@@ -195,7 +199,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
 
     // Format date for receipt
     const receiptDate = transaction.date +
-        (transaction.timestamp ? ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}` : '');
+        (transaction.timestamp ? ` • ${timeFormatter.format(new Date(transaction.timestamp))}` : '');
 
     return (
         <>
@@ -305,8 +309,8 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                     </div>
                                 )}
                                 <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">
-                                    {transaction.date || (transaction.timestamp ? new Date(transaction.timestamp).toLocaleDateString() : 'Unknown Date')}
-                                    {transaction.timestamp && ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
+                                    {transaction.date || (transaction.timestamp ? dateFormatter.format(new Date(transaction.timestamp)) : 'Unknown Date')}
+                                    {transaction.timestamp && ` • ${timeFormatter.format(new Date(transaction.timestamp))}`}
                                 </div>
                             </div>
 
