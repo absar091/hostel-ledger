@@ -10,6 +10,7 @@ import { uploadToCloudinary } from "@/lib/cloudinary";
 import { toast } from "sonner";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useTranslation } from "react-i18next";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const EMOJI_OPTIONS = [
   "🏠", "🍽️", "✈️", "🎉", "🛒", "☕", "🎬", "🏋️",
@@ -249,8 +250,9 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
   const hasPaymentInfo = jazzCash || easypaisa || bankName || raastId;
 
   return (
-    <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
+    <TooltipProvider>
+      <Sheet open={open} onOpenChange={handleClose}>
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
         <SheetHeader className="flex-shrink-0 mb-4 pt-2">
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
 
@@ -430,12 +432,13 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
 
                   {/* INVITED EMAILS (New Users) */}
                   {invitedEmails.map(email => (
-                    <div
-                      key={email}
-                      className="flex items-center gap-3 p-3 bg-purple-50/50 border border-purple-100 rounded-2xl animate-fade-in"
-                      title="This person will receive an email invitation to join Hostel Ledger and this group."
-                    >
-                      <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center text-sm font-bold text-purple-600">
+                    <Tooltip key={email}>
+                      <TooltipTrigger asChild>
+                        <div
+                          tabIndex={0}
+                          className="flex items-center gap-3 p-3 bg-purple-50/50 border border-purple-100 rounded-2xl animate-fade-in"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center text-sm font-bold text-purple-600">
                         @
                       </div>
                       <div className="flex-1 min-w-0">
@@ -447,21 +450,27 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                       <button
                         onClick={() => handleRemoveEmailInvite(email)}
                         className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
-                        aria-label={`Remove ${email}`}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
+                            aria-label={`Remove ${email}`}
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>This person will receive an email invitation to join Hostel Ledger and this group.</p>
+                      </TooltipContent>
+                    </Tooltip>
                   ))}
 
                   {/* INVITED USERS (Existing App Users) */}
                   {invitedUsernames.map(username => (
-                    <div
-                      key={username}
-                      className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl animate-fade-in"
-                      title="This user already has a Hostel Ledger account. They'll receive an in-app invitation and email notification."
-                    >
-                      <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-600">
+                    <Tooltip key={username}>
+                      <TooltipTrigger asChild>
+                        <div
+                          tabIndex={0}
+                          className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl animate-fade-in"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-600">
                         {username.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1">
@@ -472,12 +481,17 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                       </div>
                       <button
                         onClick={() => handleRemoveInvite(username)}
-                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
-                        aria-label={`Remove ${username}`}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
+                            className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                            aria-label={`Remove ${username}`}
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>This user already has a Hostel Ledger account. They'll receive an in-app invitation and email notification.</p>
+                      </TooltipContent>
+                    </Tooltip>
                   ))}
 
                   {/* MANUAL MEMBERS */}
@@ -620,8 +634,9 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
             )}
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+        </SheetContent>
+      </Sheet>
+    </TooltipProvider>
   );
 };
 
