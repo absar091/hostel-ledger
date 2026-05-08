@@ -440,7 +440,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                                     A preview card will automatically appear!
                                 </p>
                             </div>
-                            <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5">
+                            <button onClick={() => setShowTxnHint(false)} aria-label={t("chat.close_hint") || "Close hint"} className="text-gray-400 hover:text-gray-600 mt-0.5">
                                 <X className="w-3 h-3" />
                             </button>
                         </div>
@@ -451,6 +451,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                     <div className="mb-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200 relative animate-in slide-in-from-bottom-2">
                         <button 
                             onClick={() => setReferencedTxn(null)}
+                            aria-label={t("chat.remove_reference") || "Remove referenced transaction"}
                             className="absolute top-2 right-2 p-1 hover:bg-emerald-100 rounded-full"
                         >
                             <X className="w-4 h-4 text-emerald-600" />
@@ -474,6 +475,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         />
                         <button 
                             onClick={() => setAttachedImage(null)}
+                            aria-label={t("chat.remove_image") || "Remove attached image"}
                             className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
                         >
                             <X className="w-3 h-3" />
@@ -493,6 +495,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading || !!attachedImage}
+                            aria-label={t("chat.attach_image") || "Attach image"}
                             className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
                         >
                             {isUploading ? (
@@ -503,6 +506,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         </button>
                         <button
                             onClick={() => setShowTxnHint(!showTxnHint)}
+                            aria-label={t("chat.toggle_hint") || "Toggle transaction hint"}
                             className={cn(
                                 "p-2.5 rounded-xl transition-all shrink-0",
                                 showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
@@ -527,6 +531,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                     <button
                         onClick={handleSend}
                         disabled={(!inputText.trim() && !attachedImage) || isSending}
+                        aria-label={t("chat.send_message") || "Send message"}
                         className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
                     >
                         {isSending ? (
