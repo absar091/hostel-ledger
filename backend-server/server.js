@@ -854,6 +854,11 @@ app.post('/api/2fa/complete-reset', detectFraud, generalLimiter, async (req, res
       return res.status(400).json({ success: false, error: 'Missing parameters' });
     }
 
+    // Validate uid to prevent NoSQL injection and path traversal
+    if (!isValidFirebaseId(uid)) {
+      return res.status(400).json({ success: false, error: 'Invalid user ID format' });
+    }
+
     const secretRef = admin.database().ref(`userSecrets/${uid}/resetToken`);
     const snapshot = await secretRef.get();
 
