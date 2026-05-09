@@ -6,6 +6,13 @@ import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+// Pre-instantiate Intl.DateTimeFormat for significant performance boost in lists
+const TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
 interface TransactionItemProps {
   transaction: Transaction;
   groupName?: string;
@@ -68,13 +75,9 @@ export const TransactionItem = memo(({
   const dateDisplay =
     dateFormat === "date"
       ? transaction.date
-      : new Date(
-        transaction.timestamp || transaction.date
-      ).toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
+      : TIME_FORMATTER.format(
+          new Date(transaction.timestamp || transaction.date)
+        );
 
   const ariaLabel = `${transaction.title}${groupName ? ` in ${groupName}` : ""}, ${typeLabel} ${formatAmount(displayAmount)} on ${dateDisplay}`;
 
