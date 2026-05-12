@@ -76,11 +76,14 @@ const SystemMessage = memo(({ message, formatAmount }: { message: ChatMessage; f
     );
 });
 
+// Bolt: Pre-instantiate Intl.DateTimeFormat to avoid instantiation overhead per chat bubble
+const chatTimeFormatter = new Intl.DateTimeFormat([], {
+    hour: "2-digit",
+    minute: "2-digit",
+});
+
 const ChatBubble = memo(({ message, isOwn }: { message: ChatMessage; isOwn: boolean }) => {
-    const time = new Date(message.timestamp).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+    const time = chatTimeFormatter.format(new Date(message.timestamp));
 
     return (
         <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-2 group`}>
