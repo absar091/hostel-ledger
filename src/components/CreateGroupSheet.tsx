@@ -585,7 +585,8 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
               </div>
 
               <p className="text-[10px] text-center text-gray-500 mt-2 px-4 leading-tight">
-                By creating a group, you agree to our <a href="/group-terms" target="_blank" className="font-bold text-[#4a6850] underline">Group Creation Terms</a> and <a href="/group-privacy" target="_blank" className="font-bold text-[#4a6850] underline">Group Privacy Policy</a>.
+                {/* Security Fix: Added rel="noopener noreferrer" to prevent reverse tabnabbing */}
+                By creating a group, you agree to our <a href="/group-terms" target="_blank" rel="noopener noreferrer" className="font-bold text-[#4a6850] underline">Group Creation Terms</a> and <a href="/group-privacy" target="_blank" rel="noopener noreferrer" className="font-bold text-[#4a6850] underline">Group Privacy Policy</a>.
               </p>
             </div>
           )}
