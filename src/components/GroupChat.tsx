@@ -76,11 +76,17 @@ const SystemMessage = memo(({ message, formatAmount }: { message: ChatMessage; f
     );
 });
 
+// Optimization: Pre-instantiate Intl.DateTimeFormat to avoid expensive recreation during render loops
+const CHAT_TIME_FORMATTER = new Intl.DateTimeFormat([], {
+    hour: "2-digit",
+    minute: "2-digit",
+});
+
 const ChatBubble = memo(({ message, isOwn }: { message: ChatMessage; isOwn: boolean }) => {
-    const time = new Date(message.timestamp).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+    const parsedDate = new Date(message.timestamp);
+    const time = Number.isNaN(parsedDate.getTime())
+        ? "Unknown time"
+        : CHAT_TIME_FORMATTER.format(parsedDate);
 
     return (
         <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-2 group`}>
