@@ -15,6 +15,13 @@ interface TransactionItemProps {
   dateFormat?: "time" | "date";
 }
 
+// Optimization: Pre-instantiate Intl.DateTimeFormat to avoid expensive recreation during render loops
+const TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
 // Memoized to prevent re-renders when parent list updates but item data hasn't changed
 export const TransactionItem = memo(({
   transaction,
@@ -65,16 +72,13 @@ export const TransactionItem = memo(({
         ? "Sent"
         : "Received";
 
-  const dateDisplay =
-    dateFormat === "date"
+  const dateDisplay = (() => {
+    if (dateFormat === "date") return transaction.date;
+    const parsedDate = new Date(transaction.timestamp || transaction.date);
+    return Number.isNaN(parsedDate.getTime())
       ? transaction.date
-      : new Date(
-        transaction.timestamp || transaction.date
-      ).toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
+      : TIME_FORMATTER.format(parsedDate);
+  })();
 
   const ariaLabel = `${transaction.title}${groupName ? ` in ${groupName}` : ""}, ${typeLabel} ${formatAmount(displayAmount)} on ${dateDisplay}`;
 
