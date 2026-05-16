@@ -6,6 +6,13 @@ import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+// ⚡ Bolt: Cache Intl.DateTimeFormat to prevent expensive instantiation on every render
+const timeFormatter = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
 interface TransactionItemProps {
   transaction: Transaction;
   groupName?: string;
@@ -65,16 +72,14 @@ export const TransactionItem = memo(({
         ? "Sent"
         : "Received";
 
+  // Only parse date if we need to format the time
+  const parsedDate = dateFormat !== "date" ? new Date(transaction.timestamp || transaction.date) : null;
   const dateDisplay =
     dateFormat === "date"
       ? transaction.date
-      : new Date(
-        transaction.timestamp || transaction.date
-      ).toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
+      : parsedDate && !Number.isNaN(parsedDate.getTime())
+        ? timeFormatter.format(parsedDate)
+        : "Unknown Date";
 
   const ariaLabel = `${transaction.title}${groupName ? ` in ${groupName}` : ""}, ${typeLabel} ${formatAmount(displayAmount)} on ${dateDisplay}`;
 
