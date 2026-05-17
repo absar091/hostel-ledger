@@ -494,6 +494,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading || !!attachedImage}
                             className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
+                            aria-label={t("chat.attach_image") || "Attach image"}
                         >
                             {isUploading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -507,6 +508,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                                 "p-2.5 rounded-xl transition-all shrink-0",
                                 showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
                             )}
+                            aria-label={t("chat.show_hint") || "Show hints"}
                         >
                             <Info className="w-5 h-5" />
                         </button>
@@ -528,6 +530,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         onClick={handleSend}
                         disabled={(!inputText.trim() && !attachedImage) || isSending}
                         className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
+                        aria-label={t("chat.send_message") || "Send message"}
                     >
                         {isSending ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
