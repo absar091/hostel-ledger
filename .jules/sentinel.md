@@ -40,3 +40,8 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+
+## 2024-05-25 - Authorization Bypass in Group Creation
+**Vulnerability:** The Realtime Database rules (`database.rules.json`) contain an authorization vulnerability where group creation validation lacks a check to ensure `newData.child('createdBy').val() === auth.uid`, allowing users to create groups on behalf of any UID.
+**Learning:** When users create new entities in a database, the associated owner or creator ID must be explicitly validated against the authenticated user's ID to prevent impersonation or unauthorized data creation.
+**Prevention:** Always validate that fields representing ownership or creation attribution match the `auth.uid` during the `.validate` phase in Firebase rules.

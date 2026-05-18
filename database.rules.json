@@ -19,7 +19,7 @@
       "$groupId": {
         ".read": "auth != null && (root.child('userGroups').child(auth.uid).child($groupId).exists() || data.child('createdBy').val() === auth.uid)",
         ".write": "auth != null && (root.child('userGroups').child(auth.uid).child($groupId).exists() || data.child('createdBy').val() === auth.uid || !data.exists())",
-        ".validate": "newData.hasChildren(['name', 'emoji', 'members', 'createdBy', 'createdAt'])"
+        ".validate": "newData.hasChildren(['name', 'emoji', 'members', 'createdBy', 'createdAt']) && (!newData.exists() || newData.child('createdBy').val() === auth.uid || (data.exists() && newData.child('createdBy').val() === data.child('createdBy').val()))"
       }
     },
     "userGroups": {
