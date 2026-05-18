@@ -1,0 +1,3 @@
+## 2024-05-18 - Replacing toLocaleTimeString with cached Intl.DateTimeFormat in React Components
+**Learning:** In a codebase frequently rendering large lists of transactions, invoking native 'toLocaleString'/'toLocaleTimeString' on Date objects inside map functions causes unnecessary repeated instantiation of the locale format engine, which is slow.
+**Action:** Always pre-instantiate and cache an 'Intl.DateTimeFormat' instance outside the component when formatting dates inside React lists, and explicitly guard against Invalid Date input with 'Number.isNaN(date.getTime())' since 'Intl.DateTimeFormat.format()' throws a runtime exception on invalid dates unlike string methods.
