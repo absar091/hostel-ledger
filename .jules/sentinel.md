@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2024-05-15 - [CRITICAL] Fix insecure JWT signature generation
+**Vulnerability:** The JWT implementation in `src/lib/jwt.ts` used base64 encoding concatenation (`btoa(JWT_SECRET + tokenData)`) for signature generation instead of a proper cryptographic hash, which is trivial to reverse or forge.
+**Learning:** Relying on basic encoding methods (like base64) for data integrity is insecure; token authentication always requires cryptographic hashing (e.g., HMAC).
+**Prevention:** Always employ standard, well-tested security libraries and established cryptographic algorithms (e.g., HMAC-SHA256) rather than inventing custom authentication logic.

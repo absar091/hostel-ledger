@@ -17,8 +17,11 @@ if (!JWT_SECRET) {
   throw new Error('VITE_JWT_SECRET environment variable is not defined');
 }
 
-// Simple base64 encoding/decoding for demo purposes
-// In production, use proper JWT with signing
+import hmacSHA256 from 'crypto-js/hmac-sha256';
+import Base64Url from 'crypto-js/enc-base64url';
+import encUtf8 from 'crypto-js/enc-utf8';
+
+// SECURITY: Use cryptographically secure HMAC SHA-256 instead of simple Base64 concatenation for token signatures
 export const createToken = (payload: Omit<TokenPayload, 'iat' | 'exp'>, expiresInMinutes: number = 60): string => {
   const now = Math.floor(Date.now() / 1000);
   const fullPayload: TokenPayload = {
@@ -27,11 +30,10 @@ export const createToken = (payload: Omit<TokenPayload, 'iat' | 'exp'>, expiresI
     exp: now + (expiresInMinutes * 60)
   };
   
-  // In production, use proper JWT signing with a secret key
-  // For now, we'll use a simple encoding with the secret
-  const tokenData = JSON.stringify(fullPayload);
-  const signature = btoa(JWT_SECRET + tokenData).slice(0, 32);
-  return btoa(tokenData) + '.' + signature;
+  // SECURITY: Properly encode token payload to prevent tampering
+  const tokenData = Base64Url.stringify(encUtf8.parse(JSON.stringify(fullPayload)));
+  const signature = Base64Url.stringify(hmacSHA256(tokenData, JWT_SECRET));
+  return tokenData + '.' + signature;
 };
 
 export const verifyToken = (token: string): { valid: boolean; payload?: TokenPayload; error?: string } => {
@@ -41,13 +43,15 @@ export const verifyToken = (token: string): { valid: boolean; payload?: TokenPay
       return { valid: false, error: 'Invalid token format' };
     }
 
-    // Verify signature
-    const expectedSignature = btoa(JWT_SECRET + atob(tokenData)).slice(0, 32);
+    // SECURITY: Use cryptographic signature verification to prevent spoofing
+    const expectedSignature = Base64Url.stringify(hmacSHA256(tokenData, JWT_SECRET));
     if (signature !== expectedSignature) {
       return { valid: false, error: 'Invalid token signature' };
     }
 
-    const payload: TokenPayload = JSON.parse(atob(tokenData));
+    // Parse decoded base64url string
+    const decodedStr = Base64Url.parse(tokenData).toString(encUtf8);
+    const payload: TokenPayload = JSON.parse(decodedStr);
     const now = Math.floor(Date.now() / 1000);
     
     if (payload.exp < now) {
