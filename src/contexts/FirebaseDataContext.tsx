@@ -650,6 +650,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         return memberObj;
       });
 
+      // 🛡️ Sentinel: Enforce createdBy matches authenticated user's UID to prevent authorization bypass and unauthorized data creation.
       const newGroup: Partial<Group> = {
         id: groupId,
         name: data.name.trim().substring(0, 50),
