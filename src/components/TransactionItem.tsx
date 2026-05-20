@@ -1,7 +1,7 @@
 import { memo, useState } from "react";
 import { ArrowUpRight, ArrowDownLeft, CreditCard, MessageSquareText, MapPin } from "@/lib/icons";
 import { type Transaction } from "@/contexts/FirebaseDataContext";
-import { cn } from "@/lib/utils";
+import { cn, timeFormatter, formatTimeSafely } from "@/lib/utils";
 import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -68,13 +68,7 @@ export const TransactionItem = memo(({
   const dateDisplay =
     dateFormat === "date"
       ? transaction.date
-      : new Date(
-        transaction.timestamp || transaction.date
-      ).toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
+      : formatTimeSafely(transaction.timestamp || transaction.date, timeFormatter);
 
   const ariaLabel = `${transaction.title}${groupName ? ` in ${groupName}` : ""}, ${typeLabel} ${formatAmount(displayAmount)} on ${dateDisplay}`;
 

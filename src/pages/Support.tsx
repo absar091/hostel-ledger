@@ -26,7 +26,7 @@ import { ref, push, set, update, onValue, off, serverTimestamp } from "firebase/
 import { database } from "@/lib/firebase";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, shortTimeFormatter, formatTimeSafely } from "@/lib/utils";
 import AppContainer from "@/components/AppContainer";
 import DesktopHeader from "@/components/DesktopHeader";
 import MobileHeader from "@/components/MobileHeader";
@@ -644,10 +644,7 @@ const Support = () => {
                               msg.sender === "user" ? "text-white" : "text-[#4a6850]/60"
                             )}
                           >
-                            {new Date(msg.timestamp).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {formatTimeSafely(msg.timestamp, shortTimeFormatter)}
                           </p>
                         </div>
                       </div>
