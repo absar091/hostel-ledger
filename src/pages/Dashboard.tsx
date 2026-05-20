@@ -846,7 +846,10 @@ const Dashboard = () => {
                     )}
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center hover:bg-[#EAF5EF] transition-colors">
+                        <button
+                          aria-label={t('dashboard.net_balance_info') || 'Net balance information'}
+                          className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center hover:bg-[#EAF5EF] transition-colors"
+                        >
                           <Info className="w-3 h-3 text-gray-400" />
                         </button>
                       </TooltipTrigger>
