@@ -43,6 +43,11 @@ interface GroupChatProps {
     fullHeight?: boolean;
 }
 
+const timeFormatter = new Intl.DateTimeFormat([], {
+    hour: "2-digit",
+    minute: "2-digit",
+});
+
 const SystemMessage = memo(({ message, formatAmount }: { message: ChatMessage; formatAmount: (n: number) => string }) => {
     const { t } = useTranslation();
 
@@ -77,10 +82,8 @@ const SystemMessage = memo(({ message, formatAmount }: { message: ChatMessage; f
 });
 
 const ChatBubble = memo(({ message, isOwn }: { message: ChatMessage; isOwn: boolean }) => {
-    const time = new Date(message.timestamp).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+    const parsedDate = new Date(message.timestamp);
+    const time = !Number.isNaN(parsedDate.getTime()) ? timeFormatter.format(parsedDate) : "Unknown Time";
 
     return (
         <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-2 group`}>
