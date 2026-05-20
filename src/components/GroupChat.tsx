@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
-import { cn } from "@/lib/utils";
+import { cn, shortTimeFormatter, formatTimeSafely } from "@/lib/utils";
 import { ref, onValue, query, limitToLast, orderByChild, off } from "firebase/database";
 import { database } from "@/lib/firebase";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
@@ -77,10 +77,7 @@ const SystemMessage = memo(({ message, formatAmount }: { message: ChatMessage; f
 });
 
 const ChatBubble = memo(({ message, isOwn }: { message: ChatMessage; isOwn: boolean }) => {
-    const time = new Date(message.timestamp).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+    const time = formatTimeSafely(message.timestamp, shortTimeFormatter);
 
     return (
         <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-2 group`}>
