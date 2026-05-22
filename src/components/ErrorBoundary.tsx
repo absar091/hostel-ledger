@@ -51,9 +51,9 @@ class ErrorBoundary extends Component<Props, State> {
         },
       });
 
+      // 🛡️ Security: Prevent stack trace leakage in logs
       console.log('Production error logged:', {
         error: error.message,
-        stack: error.stack,
         componentStack: errorInfo.componentStack,
         isOffline: !navigator.onLine
       });
@@ -193,8 +193,8 @@ class ErrorBoundary extends Component<Props, State> {
                   Error Details (Development Only)
                 </summary>
                 <pre className="mt-3 text-xs bg-gray-100 p-4 rounded-xl overflow-auto max-h-40 text-gray-800 border border-gray-200">
-                  {error.toString()}
-                  {this.state.errorInfo?.componentStack}
+                  {/* 🛡️ Security: Prevent stack trace leakage in UI */}
+                  {error.message}
                 </pre>
               </details>
             )}

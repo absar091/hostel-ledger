@@ -69,9 +69,7 @@ class Logger {
       if (entry.level === LogLevel.ERROR) {
         // Create an error object from the message to capture stack trace if available in context
         const error = new Error(entry.message);
-        if (entry.context && entry.context.stack) {
-          error.stack = entry.context.stack;
-        }
+        // 🛡️ Security: Prevent stack trace leakage in logs
         Sentry.captureException(error, { extra });
       } else if (entry.level === LogLevel.WARN) {
         Sentry.captureMessage(entry.message, {
@@ -123,7 +121,7 @@ class Logger {
 
   logError(error: Error, context?: any) {
     this.error(`Error: ${error.message}`, {
-      stack: error.stack,
+      // 🛡️ Security: Prevent stack trace leakage in logs
       name: error.name,
       ...context,
     });

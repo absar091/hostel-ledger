@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2024-05-25 - Information Leakage via Error Stack Traces
+**Vulnerability:** The application was logging raw error stack traces to external logging services (Sentry) and displaying them in the UI during development mode.
+**Learning:** Stack traces contain deep structural information about the application's code organization, dependencies, and file paths. Exposing them can aid an attacker in mapping the attack surface and crafting targeted exploits.
+**Prevention:** Always strip stack traces before logging to external services or displaying them in the UI, even in development. Fail securely by only logging or displaying generic error messages.
