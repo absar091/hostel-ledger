@@ -5,6 +5,8 @@ import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 
 interface TransactionDetailModalProps {
     transaction: any;
@@ -15,6 +17,7 @@ interface TransactionDetailModalProps {
 
 const TransactionDetailModal = ({ transaction, onClose, groups, user }: TransactionDetailModalProps) => {
     const { formatAmount } = useCurrency();
+    const { t } = useTranslation();
     const receiptRef = useRef<HTMLDivElement>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
@@ -198,6 +201,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
         (transaction.timestamp ? ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}` : '');
 
     return (
+        <TooltipProvider>
         <>
             <div className={`fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 ${showChat ? 'hidden' : ''}`}>
                 <div className="bg-white w-full max-w-md max-h-[90vh] overflow-hidden rounded-3xl shadow-[0_25px_70px_rgba(74,104,80,0.3)] border border-[#4a6850]/10 mx-auto">
@@ -222,24 +226,39 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                         </div>
                         <div className="flex items-center gap-2 lg:gap-3 ml-3 lg:ml-4">
                             {/* Share as Image button */}
-                            <button
-                                onClick={handleShareAsImage}
-                                disabled={isGenerating}
-                                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
-                                title="Share as Image"
-                            >
-                                {isGenerating ? (
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                    <Image className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" />
-                                )}
-                            </button>
-                            <button
-                                onClick={onClose}
-                                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
-                            >
-                                <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
-                            </button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        onClick={handleShareAsImage}
+                                        disabled={isGenerating}
+                                        className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+                                        aria-label={t("transactions.share_as_image") || "Share as Image"}
+                                    >
+                                        {isGenerating ? (
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        ) : (
+                                            <Image className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" />
+                                        )}
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{t("transactions.share_as_image") || "Share as Image"}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        onClick={onClose}
+                                        className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+                                        aria-label={t("common.close") || "Close"}
+                                    >
+                                        <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{t("common.close") || "Close"}</p>
+                                </TooltipContent>
+                            </Tooltip>
                         </div>
                     </div>
 
@@ -262,20 +281,27 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                 {transaction.groupId}/{transaction.id}
                                             </span>
                                         </div>
-                                        <button
-                                            onClick={handleCopyId}
-                                            className={`p-2 rounded-full transition-all ${isCopied
-                                                ? "bg-emerald-100 text-emerald-600 scale-110"
-                                                : "bg-white text-slate-400 hover:text-emerald-600 shadow-sm border border-slate-100 group-hover:border-emerald-200"
-                                                }`}
-                                            title={isCopied ? "Copied!" : "Copy Reference"}
-                                        >
-                                            {isCopied ? (
-                                                <Check className="w-3.5 h-3.5" />
-                                            ) : (
-                                                <Copy className="w-3.5 h-3.5" />
-                                            )}
-                                        </button>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <button
+                                                    onClick={handleCopyId}
+                                                    className={`p-2 rounded-full transition-all ${isCopied
+                                                        ? "bg-emerald-100 text-emerald-600 scale-110"
+                                                        : "bg-white text-slate-400 hover:text-emerald-600 shadow-sm border border-slate-100 group-hover:border-emerald-200"
+                                                        }`}
+                                                    aria-label={isCopied ? (t("common.copied") || "Copied!") : (t("transactions.copy_reference") || "Copy Reference")}
+                                                >
+                                                    {isCopied ? (
+                                                        <Check className="w-3.5 h-3.5" />
+                                                    ) : (
+                                                        <Copy className="w-3.5 h-3.5" />
+                                                    )}
+                                                </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>{isCopied ? (t("common.copied") || "Copied!") : (t("transactions.copy_reference") || "Copy Reference")}</p>
+                                            </TooltipContent>
+                                        </Tooltip>
                                     </div>
                                 </div>
 
@@ -903,6 +929,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                 </div>
             </div>
         </>
+        </TooltipProvider>
     );
 };
 
