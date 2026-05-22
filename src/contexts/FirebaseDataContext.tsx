@@ -4,6 +4,7 @@ import { database } from "@/lib/firebase";
 import { useFirebaseAuth, PaymentDetails } from "./FirebaseAuthContext";
 import { TransactionManager, retryOperation } from "@/lib/transaction";
 import { callSecureApi, sendInvitation, sendExternalInvitation, joinGroup as apiJoinGroup } from "@/lib/api";
+import { formatDate } from "@/lib/formatDate";
 
 // Utility functions - defined locally to avoid import issues
 const sanitizeString = (input: string): string => {
@@ -477,7 +478,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                     ...data,
                     participants: normalizedParticipants,
                     payers: normalizedPayers,
-                    date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : (data.date || "Unknown Date")
+                    date: data.createdAt ? formatDate(data.createdAt, data.date || "Unknown Date") : (data.date || "Unknown Date")
                   };
                 }
 
@@ -495,7 +496,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                   return {
                     id,
                     ...data,
-                    date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : (data.date || "Unknown Date")
+                    date: data.createdAt ? formatDate(data.createdAt, data.date || "Unknown Date") : (data.date || "Unknown Date")
                   };
                 }
 
@@ -524,7 +525,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
                       type: data.type || "expense",
                       title: data.title || "Transaction",
                       amount: data.amount || 0,
-                      date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "Unknown Date",
+                      date: data.createdAt ? formatDate(data.createdAt, "Unknown Date") : "Unknown Date",
                       createdAt: data.createdAt || new Date().toISOString(),
                       timestamp: data.timestamp || Date.now(),
                       paidBy: data.paidBy || "",
