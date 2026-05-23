@@ -1,0 +1,3 @@
+## 2024-11-18 - Replacing chained array methods and nested loops in React useMemo
+**Learning:** Chaining `.filter().reduce()` or nesting `.map()` and `.filter()` over large collections inside React components leads to severe O(N*M) time complexity and redundant intermediate array allocation, slowing down rendering noticeably on heavy transaction views.
+**Action:** Always refactor chained array methods into a single `for...of` loop or single-pass `.reduce()`, and replace nested lookups with O(1) hash maps (dictionaries) before mapping, especially when computing stats from a main data collection.

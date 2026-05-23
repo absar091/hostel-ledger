@@ -106,20 +106,31 @@ const GroupDetail = () => {
   // consistent hook count across renders (React Rules of Hooks)
   const personalStats = useMemo(() => {
     if (!group?.isPersonal) return null;
-    const totalSpentValue = transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
+    let count = 0;
+    const totalSpentValue = transactions.reduce((sum, t) => {
+      if (t.type === 'expense') {
+        count++;
+        return sum + (t.amount || 0);
+      }
+      return sum;
+    }, 0);
     return {
       totalSpent: totalSpentValue,
-      count: transactions.filter(t => t.type === 'expense').length
+      count
     };
   }, [group, transactions]);
 
-  const totalSpent = useMemo(() => transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0), [transactions]);
-
-  const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
+  const { totalSpent, expenseCount } = useMemo(() => {
+    let count = 0;
+    const sum = transactions.reduce((s, t) => {
+      if (t.type === "expense") {
+        count++;
+        return s + (t.amount || 0);
+      }
+      return s;
+    }, 0);
+    return { totalSpent: sum, expenseCount: count };
+  }, [transactions]);
 
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
@@ -464,15 +475,17 @@ const GroupDetail = () => {
   // personalStats, totalSpent, and expenseCount are defined before early returns above
 
   // Find the member who has paid the most in expenses (actual top contributor)
-  const memberExpenseContributions = group.members.map((member: { id: any; }) => {
-    const totalPaid = transactions
-      .filter(t => t.type === "expense" && t.paidBy === member.id)
-      .reduce((sum, t) => sum + t.amount, 0);
-    return {
-      ...member,
-      totalPaid
-    };
-  });
+  const paidByMember = transactions.reduce((acc: Record<string, number>, t) => {
+    if (t.type === "expense" && t.paidBy) {
+      acc[t.paidBy] = (acc[t.paidBy] || 0) + (t.amount || 0);
+    }
+    return acc;
+  }, {});
+
+  const memberExpenseContributions = group.members.map((member: { id: any; }) => ({
+    ...member,
+    totalPaid: paidByMember[member.id] || 0
+  }));
 
   const topSpender = memberExpenseContributions.length > 0
     ? memberExpenseContributions.reduce((prev: { totalPaid: number; }, curr: { totalPaid: number; }) => {
