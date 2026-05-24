@@ -1,0 +1,3 @@
+## 2024-05-24 - Cache Intl.NumberFormat instead of using toLocaleString
+**Learning:** Number.prototype.toLocaleString instantiates a new Intl.NumberFormat internally on every single call. In a React application with lists rendering multiple currency amounts, this is a significant bottleneck. When replacing native string date/number methods with Intl module singletons, always validate the input explicitly because Intl.NumberFormat.prototype.format() immediately throws on Invalid Number/Date.
+**Action:** Always create a singleton or cache the Intl.NumberFormat instance based on locale and options, and use its `.format()` method instead. Validate input before formatting.

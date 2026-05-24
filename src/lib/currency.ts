@@ -35,24 +35,47 @@ export const getCurrency = (code: string): Currency => {
 };
 
 /**
+ * Cache for Intl.NumberFormat instances to significantly improve formatting performance.
+ * toLocaleString instantiates a new Intl.NumberFormat every time, which is slow in loops/lists.
+ */
+const formattersCache = new Map<string, Intl.NumberFormat>();
+
+const getFormatter = (locale: string, decimals: number): Intl.NumberFormat => {
+    const key = `${locale}-${decimals}`;
+    if (formattersCache.has(key)) {
+        return formattersCache.get(key)!;
+    }
+    const formatter = new Intl.NumberFormat(locale, decimals > 0 ? {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+    } : {});
+    formattersCache.set(key, formatter);
+    return formatter;
+};
+
+/**
  * Format an amount with the given currency.
  * Examples: formatCurrency(500, 'PKR') => "Rs 500"
  *           formatCurrency(500, 'USD') => "$500.00"
  */
 export const formatCurrency = (amount: number, currencyCode: string = DEFAULT_CURRENCY): string => {
     const currency = getCurrency(currencyCode);
-    const absAmount = Math.abs(amount);
 
-    // Format the number
-    const formatted = currency.decimals > 0
-        ? absAmount.toLocaleString(currency.locale, {
-            minimumFractionDigits: currency.decimals,
-            maximumFractionDigits: currency.decimals,
-        })
-        : absAmount.toLocaleString(currency.locale);
+    // Safety check: if amount is not a valid number (e.g. undefined/null coerced, or NaN)
+    // Intl.NumberFormat.format throws on NaN/undefined if passed directly in strict mode or causes unexpected behavior.
+    // However, JS Number() coercion or Number.isNaN check is safe.
+    const safeAmount = Number(amount);
+    if (Number.isNaN(safeAmount)) {
+        return '';
+    }
+    const absAmount = Math.abs(safeAmount);
+
+    // Format the number using cached Intl.NumberFormat
+    const formatter = getFormatter(currency.locale, currency.decimals);
+    const formatted = formatter.format(absAmount);
 
     // Apply sign
-    const sign = amount < 0 ? '-' : '';
+    const sign = safeAmount < 0 ? '-' : '';
 
     // Position symbol
     if (currency.position === 'suffix') {
