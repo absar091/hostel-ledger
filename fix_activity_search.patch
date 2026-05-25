@@ -1,0 +1,16 @@
+--- src/pages/Activity.tsx
++++ src/pages/Activity.tsx
+@@ -91,10 +91,11 @@
+
+     // Filter by search query
+     if (searchQuery) {
++      const lowerQuery = searchQuery.toLowerCase();
+       filtered = filtered.filter(t =>
+-        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+-        t.note?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+-        t.place?.toLowerCase().includes(searchQuery.toLowerCase())
++        t.title.toLowerCase().includes(lowerQuery) ||
++        t.note?.toLowerCase().includes(lowerQuery) ||
++        t.place?.toLowerCase().includes(lowerQuery)
+       );
+     }
