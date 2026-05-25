@@ -1,0 +1,38 @@
+--- src/pages/AdminDashboard.tsx
++++ src/pages/AdminDashboard.tsx
+@@ -361,25 +361,27 @@
+
+   if (!isAdmin) return null;
+
++  const lowerQuery = searchQuery.toLowerCase();
++
+   const filteredUsers = users.filter(u =>
+-    u.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+-    u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+-    u.uid.toLowerCase().includes(searchQuery.toLowerCase())
++    u.displayName.toLowerCase().includes(lowerQuery) ||
++    u.email.toLowerCase().includes(lowerQuery) ||
++    u.uid.toLowerCase().includes(lowerQuery)
+   );
+
+   const filteredGroups = groups.filter(g =>
+-    g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+-    g.id.toLowerCase().includes(searchQuery.toLowerCase())
++    g.name.toLowerCase().includes(lowerQuery) ||
++    g.id.toLowerCase().includes(lowerQuery)
+   );
+
+   const filteredTickets = tickets.filter(t =>
+     (statusFilter === 'all' || t.status === statusFilter) &&
+-    (t.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+-     t.ticketNumber.toLowerCase().includes(searchQuery.toLowerCase()))
++    (t.subject.toLowerCase().includes(lowerQuery) ||
++     t.ticketNumber.toLowerCase().includes(lowerQuery))
+   );
+
+   const filteredReports = reports.filter(r =>
+-    r.reporterName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+-    r.description?.toLowerCase().includes(searchQuery.toLowerCase())
++    r.reporterName?.toLowerCase().includes(lowerQuery) ||
++    r.description?.toLowerCase().includes(lowerQuery)
+   );
