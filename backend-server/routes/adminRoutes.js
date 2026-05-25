@@ -17,7 +17,9 @@ router.get('/users/:identifier', async (req, res) => {
     if (error.message.includes('not found')) {
       return res.status(404).json({ error: 'User not found' });
     }
-    res.status(500).json({ error: 'Failed to retrieve user details: ' + error.message });
+    console.error('Failed to retrieve user details:', error.message);
+    // 🛡️ Sentinel: Prevent information leakage by returning generic error messages
+    res.status(500).json({ error: 'Failed to retrieve user details' });
   }
 });
 
@@ -59,7 +61,9 @@ router.post('/users/:uid/password', async (req, res) => {
     const result = await adminService.updateUserPassword(uid, newPassword);
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update password: ' + error.message });
+    console.error('Failed to update password:', error.message);
+    // 🛡️ Sentinel: Prevent information leakage by returning generic error messages
+    res.status(500).json({ error: 'Failed to update password' });
   }
 });
 
@@ -76,7 +80,9 @@ router.delete('/users/:uid', async (req, res) => {
     const result = await adminService.deleteUser(uid);
     res.json(result);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete user: ' + error.message });
+    console.error('Failed to delete user:', error.message);
+    // 🛡️ Sentinel: Prevent information leakage by returning generic error messages
+    res.status(500).json({ error: 'Failed to delete user' });
   }
 });
 
