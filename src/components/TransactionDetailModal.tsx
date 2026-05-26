@@ -5,6 +5,7 @@ import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatTimeSafe } from "@/lib/dateFormatter";
 
 interface TransactionDetailModalProps {
     transaction: any;
@@ -195,7 +196,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
 
     // Format date for receipt
     const receiptDate = transaction.date +
-        (transaction.timestamp ? ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}` : '');
+        (transaction.timestamp ? ` • ${formatTimeSafe(transaction.timestamp)}` : '');
 
     return (
         <>
@@ -306,7 +307,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 )}
                                 <div className="text-xs lg:text-sm text-[#4a6850]/80 font-medium">
                                     {transaction.date || (transaction.timestamp ? new Date(transaction.timestamp).toLocaleDateString() : 'Unknown Date')}
-                                    {transaction.timestamp && ` • ${new Date(transaction.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`}
+                                    {transaction.timestamp && ` • ${formatTimeSafe(transaction.timestamp)}`}
                                 </div>
                             </div>
 
