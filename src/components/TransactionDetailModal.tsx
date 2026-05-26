@@ -5,6 +5,7 @@ import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useTranslation } from "react-i18next";
 
 interface TransactionDetailModalProps {
     transaction: any;
@@ -14,6 +15,7 @@ interface TransactionDetailModalProps {
 }
 
 const TransactionDetailModal = ({ transaction, onClose, groups, user }: TransactionDetailModalProps) => {
+    const { t } = useTranslation();
     const { formatAmount } = useCurrency();
     const receiptRef = useRef<HTMLDivElement>(null);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -236,6 +238,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             </button>
                             <button
                                 onClick={onClose}
+                                aria-label={t('transaction.close', 'Close transaction details')}
                                 className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
                             >
                                 <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />

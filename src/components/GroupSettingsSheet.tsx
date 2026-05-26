@@ -7,6 +7,7 @@ import Avatar from "./Avatar";
 import { UserPlus, Trash2, AlertTriangle, X, ShieldAlert, Copy, Link, LogOut, Search, Loader2, CheckCircle2 } from "lucide-react";
 import { getValidUserDetails } from "@/lib/api";
 import { ReportSheet } from "./ReportSheet";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,6 +63,7 @@ const GroupSettingsSheet = ({
   onLeaveGroup,
   isOwner = false,
 }: GroupSettingsSheetProps) => {
+  const { t } = useTranslation();
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState("");
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
@@ -221,6 +223,7 @@ const GroupSettingsSheet = ({
                     variant="ghost"
                     size="icon"
                     onClick={handleCopyGroupInvite}
+                    aria-label={t('group.copyInvite', 'Copy group invite link')}
                     className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90"
                   >
                     <Link className="w-4 h-4" />
