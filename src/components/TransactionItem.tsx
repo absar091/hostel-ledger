@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatTimeSafe } from "@/lib/dateFormatter";
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -68,13 +69,7 @@ export const TransactionItem = memo(({
   const dateDisplay =
     dateFormat === "date"
       ? transaction.date
-      : new Date(
-        transaction.timestamp || transaction.date
-      ).toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
+      : formatTimeSafe(transaction.timestamp || transaction.date);
 
   const ariaLabel = `${transaction.title}${groupName ? ` in ${groupName}` : ""}, ${typeLabel} ${formatAmount(displayAmount)} on ${dateDisplay}`;
 
