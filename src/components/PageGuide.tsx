@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { X, Info } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface PageGuideProps {
   title: string;
@@ -11,6 +12,7 @@ interface PageGuideProps {
 }
 
 const PageGuide = ({ title, description, tips = [], emoji = "💡", show, onClose }: PageGuideProps) => {
+  const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -41,6 +43,7 @@ const PageGuide = ({ title, description, tips = [], emoji = "💡", show, onClos
               </h3>
               <button
                 onClick={handleClose}
+                aria-label={t('guide.close', 'Close guide')}
                 className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
               >
                 <X className="w-4 h-4" />

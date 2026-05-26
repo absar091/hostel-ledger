@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { X, ArrowRight, ArrowLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface OnboardingStep {
   id: string;
@@ -17,6 +18,7 @@ interface OnboardingTourProps {
 }
 
 const OnboardingTour = ({ open, onClose, steps }: OnboardingTourProps) => {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -66,6 +68,7 @@ const OnboardingTour = ({ open, onClose, steps }: OnboardingTourProps) => {
           </div>
           <button
             onClick={handleSkip}
+            aria-label={t('tour.skip', 'Skip tour')}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="w-5 h-5" />
