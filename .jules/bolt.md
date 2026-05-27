@@ -1,0 +1,3 @@
+## 2024-05-14 - Cache Intl.DateTimeFormat in list components
+**Learning:** Instantiating `Intl.DateTimeFormat` on every render via `toLocaleTimeString` creates significant overhead in list items (up to 100x slower). However, unlike `toLocaleTimeString` which handles invalid dates gracefully, `Intl.DateTimeFormat.prototype.format()` throws a runtime error if passed an invalid date object.
+**Action:** Always declare a cached module-level `Intl.DateTimeFormat` singleton for formatting in list components, and explicitly validate the `Date` object (e.g., `!Number.isNaN(d.getTime())`) before calling `.format()`.
