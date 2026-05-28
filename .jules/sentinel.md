@@ -40,3 +40,8 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+
+## 2024-05-25 - NoSQL Injection in Report Endpoint
+**Vulnerability:** The `/api/user/report` endpoint did not validate the `targetId` before using it in the database operations.
+**Learning:** Missing validation of IDs provided in the request body can expose endpoints to NoSQL injection and path traversal attacks even in reporting or logging operations.
+**Prevention:** Always use strict ID validation (e.g., `isValidFirebaseId`) for all identifiers received from clients.
