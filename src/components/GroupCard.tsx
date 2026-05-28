@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ChevronRight, Users } from "lucide-react";
 import {
   Tooltip,
@@ -13,7 +14,7 @@ interface GroupCardProps {
   onClick: () => void;
 }
 
-const GroupCard = ({ name, balance, memberCount, emoji = "👥", onClick }: GroupCardProps) => {
+const GroupCard = memo(({ name, balance, memberCount, emoji = "👥", onClick }: GroupCardProps) => {
   const isPositive = balance >= 0;
   
   return (
@@ -52,6 +53,8 @@ const GroupCard = ({ name, balance, memberCount, emoji = "👥", onClick }: Grou
       </TooltipContent>
     </Tooltip>
   );
-};
+});
+
+GroupCard.displayName = "GroupCard";
 
 export default GroupCard;
