@@ -12,6 +12,12 @@
         "settlements": {
           ".write": false
         },
+        "role": {
+          ".validate": "(!data.exists() && newData.val() === 'user') || newData.val() === data.val() || root.child('users').child(auth.uid).child('role').val() === 'superadmin' || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        },
+        "accountStatus": {
+          ".validate": "(!data.exists() && newData.val() === 'active') || newData.val() === data.val() || root.child('users').child(auth.uid).child('role').val() === 'superadmin' || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        },
         ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt']) && newData.child('uid').val() === $uid"
       }
     },
