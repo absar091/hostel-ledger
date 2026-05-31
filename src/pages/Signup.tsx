@@ -515,7 +515,7 @@ const Signup = () => {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4a6850]/60 hover:text-[#4a6850] transition-colors"
-                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
                   aria-pressed={showConfirmPassword}
                 >
                   {showConfirmPassword ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
