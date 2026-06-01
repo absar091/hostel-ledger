@@ -440,7 +440,12 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                                     A preview card will automatically appear!
                                 </p>
                             </div>
-                            <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5">
+                            <button
+                                onClick={() => setShowTxnHint(false)}
+                                className="text-gray-400 hover:text-gray-600 mt-0.5"
+                                aria-label={t("chat.close_hint", "Close hint")}
+                                title={t("chat.close_hint", "Close hint")}
+                            >
                                 <X className="w-3 h-3" />
                             </button>
                         </div>
@@ -452,6 +457,8 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         <button 
                             onClick={() => setReferencedTxn(null)}
                             className="absolute top-2 right-2 p-1 hover:bg-emerald-100 rounded-full"
+                            aria-label={t("chat.close_preview", "Close preview")}
+                            title={t("chat.close_preview", "Close preview")}
                         >
                             <X className="w-4 h-4 text-emerald-600" />
                         </button>
@@ -475,6 +482,8 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         <button 
                             onClick={() => setAttachedImage(null)}
                             className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                            aria-label={t("chat.remove_image", "Remove attached image")}
+                            title={t("chat.remove_image", "Remove attached image")}
                         >
                             <X className="w-3 h-3" />
                         </button>
@@ -494,6 +503,8 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading || !!attachedImage}
                             className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
+                            aria-label={t("chat.attach_image", "Attach an image")}
+                            title={t("chat.attach_image", "Attach an image")}
                         >
                             {isUploading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -507,6 +518,8 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                                 "p-2.5 rounded-xl transition-all shrink-0",
                                 showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
                             )}
+                            aria-label={t("chat.toggle_hint", "Toggle transaction hint")}
+                            title={t("chat.toggle_hint", "Toggle transaction hint")}
                         >
                             <Info className="w-5 h-5" />
                         </button>
@@ -528,6 +541,8 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         onClick={handleSend}
                         disabled={(!inputText.trim() && !attachedImage) || isSending}
                         className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
+                        aria-label={t("chat.send_message", "Send message")}
+                        title={t("chat.send_message", "Send message")}
                     >
                         {isSending ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
