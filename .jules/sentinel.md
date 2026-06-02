@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2025-06-02 - Restrict Global Read Access on Usernames Node
+**Vulnerability:** The Firebase Realtime Database rules allowed unauthenticated, global `.read` access to the root `usernames` node. This permitted anyone to download the entire list of registered usernames and their associated UIDs, leading to severe information disclosure and enabling user enumeration/scraping.
+**Learning:** Placing `.read` rules at the root of a collection exposes all child nodes. Firebase rules cascade downwards, but they cannot restrict access granted at a higher level.
+**Prevention:** Apply `.read` rules at the most granular child node level possible (e.g., `$username`) to allow specific lookups without exposing the entire collection.
