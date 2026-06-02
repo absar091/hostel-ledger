@@ -92,8 +92,9 @@
       }
     },
     "usernames": {
-      ".read": true,
+      ".read": false,
       "$username": {
+        ".read": true,
         ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid)",
         ".validate": "newData.hasChildren(['uid', 'createdAt']) && newData.child('uid').isString()"
       }
