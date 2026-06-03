@@ -220,6 +220,8 @@ const GroupSettingsSheet = ({
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Copy group invite link"
+                    title="Copy group invite link"
                     onClick={handleCopyGroupInvite}
                     className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90"
                   >
@@ -257,6 +259,8 @@ const GroupSettingsSheet = ({
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label="Search for member"
+                        title="Search for member"
                         onClick={handleSearch}
                         disabled={isSearching || !newMemberName.trim()}
                         className="absolute right-1 top-1 h-9 w-9 text-[#4a6850] hover:bg-[#4a6850]/10 rounded-lg"
@@ -271,6 +275,8 @@ const GroupSettingsSheet = ({
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Cancel adding member"
+                      title="Cancel adding member"
                       onClick={() => {
                         setShowAddMember(false);
                         setNewMemberName("");
