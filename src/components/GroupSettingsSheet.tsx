@@ -221,6 +221,8 @@ const GroupSettingsSheet = ({
                     variant="ghost"
                     size="icon"
                     onClick={handleCopyGroupInvite}
+                    aria-label="Copy group invite link"
+                    title="Copy group invite link"
                     className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90"
                   >
                     <Link className="w-4 h-4" />
@@ -259,6 +261,8 @@ const GroupSettingsSheet = ({
                         size="icon"
                         onClick={handleSearch}
                         disabled={isSearching || !newMemberName.trim()}
+                        aria-label="Search members"
+                        title="Search members"
                         className="absolute right-1 top-1 h-9 w-9 text-[#4a6850] hover:bg-[#4a6850]/10 rounded-lg"
                       >
                         {isSearching ? (
@@ -277,6 +281,8 @@ const GroupSettingsSheet = ({
                         setSearchResult(null);
                         setSearchError(false);
                       }}
+                      aria-label="Close search"
+                      title="Close search"
                       className="h-11 w-11 rounded-xl hover:bg-gray-100 shadow-sm hover:shadow-md transition-all flex-shrink-0 bg-white"
                     >
                       <X className="w-4 h-4" />
