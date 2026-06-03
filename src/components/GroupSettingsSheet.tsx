@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,6 +64,7 @@ const GroupSettingsSheet = ({
   onLeaveGroup,
   isOwner = false,
 }: GroupSettingsSheetProps) => {
+  const { t } = useTranslation();
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState("");
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
@@ -217,14 +220,22 @@ const GroupSettingsSheet = ({
                   <p className="text-[10px] font-bold text-[#4a6850]/30">{Array.isArray(group.members) ? group.members.length : 0} People in Group</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleCopyGroupInvite}
-                    className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90"
-                  >
-                    <Link className="w-4 h-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleCopyGroupInvite}
+                        aria-label={t("copy_invite_link", "Copy invite link")}
+                        className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90"
+                      >
+                        <Link className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t("copy_invite_link", "Copy invite link")}</p>
+                    </TooltipContent>
+                  </Tooltip>
                   <Button
                     onClick={() => setShowAddMember(true)}
                     className="h-10 px-4 bg-[#4a6850] hover:bg-[#3d5643] text-white font-black rounded-2xl shadow-sm transition-all active:scale-95 flex items-center gap-2 text-[11px] uppercase tracking-wider"
@@ -254,33 +265,49 @@ const GroupSettingsSheet = ({
                         className="h-11 rounded-xl border-[#4a6850]/10 shadow-sm font-bold text-gray-900 placeholder:text-[#4a6850]/30 focus:border-[#4a6850]/40 bg-white focus:ring-0 pr-10"
                         autoFocus
                       />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleSearch}
-                        disabled={isSearching || !newMemberName.trim()}
-                        className="absolute right-1 top-1 h-9 w-9 text-[#4a6850] hover:bg-[#4a6850]/10 rounded-lg"
-                      >
-                        {isSearching ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Search className="w-4 h-4" />
-                        )}
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleSearch}
+                            disabled={isSearching || !newMemberName.trim()}
+                            aria-label={t("search_member", "Search for a member")}
+                            className="absolute right-1 top-1 h-9 w-9 text-[#4a6850] hover:bg-[#4a6850]/10 rounded-lg"
+                          >
+                            {isSearching ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Search className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{t("search_member", "Search for a member")}</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setShowAddMember(false);
-                        setNewMemberName("");
-                        setSearchResult(null);
-                        setSearchError(false);
-                      }}
-                      className="h-11 w-11 rounded-xl hover:bg-gray-100 shadow-sm hover:shadow-md transition-all flex-shrink-0 bg-white"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setShowAddMember(false);
+                            setNewMemberName("");
+                            setSearchResult(null);
+                            setSearchError(false);
+                          }}
+                          aria-label={t("cancel_search", "Cancel search")}
+                          className="h-11 w-11 rounded-xl hover:bg-gray-100 shadow-sm hover:shadow-md transition-all flex-shrink-0 bg-white"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t("cancel_search", "Cancel search")}</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
 
                   {/* Search Result */}
