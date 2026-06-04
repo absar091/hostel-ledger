@@ -872,6 +872,8 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                           />
                           <button
                             onClick={handleToggleListen}
+                            title={isListening ? t('common.stop_recording', 'Stop recording') : t('common.start_recording', 'Start recording')}
+                            aria-label={isListening ? t('common.stop_recording', 'Stop recording') : t('common.start_recording', 'Start recording')}
                             className={cn(
                               "absolute right-4 bottom-4 w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md active:scale-90",
                               isListening
