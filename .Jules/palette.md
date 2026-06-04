@@ -1,0 +1,3 @@
+## 2024-06-04 - Replace native title attributes with Tooltips for sidebars
+**Learning:** Using native HTML `title` attributes on icon-only buttons in collapsed sidebars creates inconsistent styling and delays that hurt the polished feel of the application. Also, relying solely on `title` attributes can cause "double-tooltip" effects if custom tooltips are added later without removing the native attribute.
+**Action:** When working on navigation sidebars or global icon-only actions, conditionally wrap elements with Radix UI `<Tooltip>` components instead of using the `title` attribute, ensuring that the target element has its `title` attribute explicitly removed to prevent native browser tooltips from overlapping with the custom UI tooltips.
