@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2024-06-04 - Fix Privilege Escalation in Firebase Rules
+**Vulnerability:** Firebase database rules allowed any user to set arbitrary values (like 'admin' or 'superadmin') for their `role` and `accountStatus` during initial account creation or updates, leading to privilege escalation.
+**Learning:** Checking `!data.exists()` in Firebase `.validate` rules allows a user to insert any initial value. It does not enforce a default.
+**Prevention:** Explicitly validate the exact value being written upon creation (e.g., `newData.val() === 'user'`) AND allow legitimate updates that preserve existing values (e.g., `newData.val() === data.val()`) directly on the specific child node.
