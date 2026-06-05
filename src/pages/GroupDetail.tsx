@@ -91,7 +91,9 @@ const GroupDetail = () => {
     ).filter((m: { id: any; }) => m && m.id) // Filter out any null/undefined members
   } : null;
 
-  const transactions = id ? getTransactionsByGroup(id) : [];
+  // PERFORMANCE OPTIMIZATION: Memoize transaction lookup to prevent downstream useMemo
+  // recalculations on every single render cycle when unrelated state changes.
+  const transactions = useMemo(() => id ? getTransactionsByGroup(id) : [], [id, getTransactionsByGroup]);
   const settlements = id ? getSettlements(id) : {};
   const { invitations } = useInvitations();
   const favoriteGroups = getFavoriteGroups();
