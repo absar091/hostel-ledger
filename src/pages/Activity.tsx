@@ -70,21 +70,24 @@ const Activity = () => {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-      filtered = filtered.filter(t => {
-        const transactionDate = new Date(t.createdAt);
+      // ⚡ Bolt: Pre-calculate threshold time outside of the loop
+      let thresholdTime = 0;
+      if (filterDate === "today") {
+        thresholdTime = today.getTime();
+      } else if (filterDate === "week") {
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        thresholdTime = weekAgo.getTime();
+      } else if (filterDate === "month") {
+        const monthAgo = new Date(today);
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        thresholdTime = monthAgo.getTime();
+      }
 
-        if (filterDate === "today") {
-          return transactionDate >= today;
-        } else if (filterDate === "week") {
-          const weekAgo = new Date(today);
-          weekAgo.setDate(weekAgo.getDate() - 7);
-          return transactionDate >= weekAgo;
-        } else if (filterDate === "month") {
-          const monthAgo = new Date(today);
-          monthAgo.setMonth(monthAgo.getMonth() - 1);
-          return transactionDate >= monthAgo;
-        }
-        return true;
+      filtered = filtered.filter(t => {
+        // Use fast primitive integer comparison
+        const txTime = typeof t.createdAt === 'number' ? t.createdAt : new Date(t.createdAt).getTime();
+        return txTime >= thresholdTime;
       });
     }
 

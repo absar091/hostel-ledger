@@ -1,0 +1,3 @@
+## 2024-06-05 - Date Instantiation in O(N) Array Operations
+**Learning:** Instantiating `new Date()` and manipulating it inside `useMemo` filter/map callbacks (O(N) operations) creates severe performance bottlenecks, especially when filtering long transaction lists. Benchmarks showed that hoisting date calculations outside the loops and comparing raw timestamps (integers) speeds up these functions by over 10x.
+**Action:** Always pre-calculate threshold dates and primitive timestamps outside of array iteration loops. Use `.getTime()` for integer comparisons instead of creating Date objects or invoking Date methods per item.
