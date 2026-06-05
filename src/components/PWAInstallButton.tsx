@@ -214,6 +214,8 @@ const PWAInstallButton = () => {
                 size="sm"
                 onClick={() => setShowInstructions(false)}
                 className="h-6 w-6 p-0"
+                aria-label="Close instructions"
+                title="Close instructions"
               >
                 <X className="w-4 h-4" />
               </Button>
