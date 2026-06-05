@@ -324,23 +324,25 @@ const Dashboard = () => {
   const { todayTransactions, yesterdayTransactions, olderTransactions } = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayTime = today.getTime();
 
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayTime = yesterday.getTime();
 
     const todayTransactions: Transaction[] = [];
     const yesterdayTransactions: Transaction[] = [];
     const olderTransactions: Transaction[] = [];
 
     allTransactions.forEach((transaction) => {
-      const transactionDate = new Date(
-        transaction.timestamp || transaction.date,
-      );
-      transactionDate.setHours(0, 0, 0, 0);
+      // Normalize to start of day, keeping O(1) outside loop but fast Date parsing
+      const txDateObj = new Date(transaction.timestamp || transaction.date);
+      txDateObj.setHours(0, 0, 0, 0);
+      const normalizedTxTime = txDateObj.getTime();
 
-      if (transactionDate.getTime() === today.getTime()) {
+      if (normalizedTxTime === todayTime) {
         todayTransactions.push(transaction);
-      } else if (transactionDate.getTime() === yesterday.getTime()) {
+      } else if (normalizedTxTime === yesterdayTime) {
         yesterdayTransactions.push(transaction);
       } else {
         olderTransactions.push(transaction);
