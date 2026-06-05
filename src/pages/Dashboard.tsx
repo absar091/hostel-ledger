@@ -751,6 +751,8 @@ const Dashboard = () => {
                       </div>
                       <button 
                         onClick={() => setShowPersonalBudgetSheet(true)}
+                        aria-label={t('dashboard.refresh_budget', 'Refresh Personal Budget')}
+                        title={t('dashboard.refresh_budget', 'Refresh Personal Budget')}
                         className="w-8 h-8 rounded-full bg-white/[0.08] flex items-center justify-center border border-white/[0.05] hover:bg-white/[0.15] transition-colors active:scale-95"
                       >
                         <RefreshCw className="w-3.5 h-3.5 text-white/40" />
@@ -846,7 +848,7 @@ const Dashboard = () => {
                     )}
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center hover:bg-[#EAF5EF] transition-colors">
+                        <button aria-label={t('dashboard.net_balance_info', 'Net Balance Information')} className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center hover:bg-[#EAF5EF] transition-colors">
                           <Info className="w-3 h-3 text-gray-400" />
                         </button>
                       </TooltipTrigger>
