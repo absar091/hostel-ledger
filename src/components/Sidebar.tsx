@@ -6,6 +6,12 @@ import { useSidebar } from "@/contexts/SidebarContext";
 import { useInvitations } from "@/hooks/useInvitations";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import React from "react";
 import Logo from "./Logo";
 
 const Sidebar = () => {
@@ -90,11 +96,11 @@ const Sidebar = () => {
           const Icon = item.icon;
           const active = isActive(item.path);
 
-          return (
+          const buttonContent = (
             <button
-              key={item.id}
               onClick={() => navigate(item.path)}
               aria-current={active ? "page" : undefined}
+              aria-label={!isOpen ? item.label : undefined}
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative",
                 active
@@ -102,7 +108,6 @@ const Sidebar = () => {
                   : "text-gray-600 hover:bg-gray-100",
                 !isOpen && "justify-center"
               )}
-              title={!isOpen ? item.label : undefined}
             >
               {/* Active indicator bar */}
               {active && (
@@ -122,6 +127,21 @@ const Sidebar = () => {
               )}
             </button>
           );
+
+          if (!isOpen) {
+            return (
+              <Tooltip key={item.id}>
+                <TooltipTrigger asChild>
+                  {buttonContent}
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>{item.label}</p>
+                </TooltipContent>
+              </Tooltip>
+            );
+          }
+
+          return <React.Fragment key={item.id}>{buttonContent}</React.Fragment>;
         })}
       </nav>
 
