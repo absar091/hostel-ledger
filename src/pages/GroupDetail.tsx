@@ -121,6 +121,14 @@ const GroupDetail = () => {
 
   const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
 
+  const memberMap = useMemo(() => {
+    const map = new Map<string, any>();
+    if (group?.members) {
+      group.members.forEach((m: any) => map.set(m.id, m));
+    }
+    return map;
+  }, [group?.members]);
+
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
     if (!group || !selectedMember) return [];
@@ -617,7 +625,7 @@ const GroupDetail = () => {
                         name: (() => {
                           if (p.id === user?.uid) return t('group.you_label');
                           if (p.id === group.createdBy) return t('group.owner');
-                          const member = group.members.find(m => m.id === p.id);
+                          const member = memberMap.get(p.id);
                           return member?.name || p.name;
                         })()
                       })) : undefined}
@@ -626,7 +634,7 @@ const GroupDetail = () => {
                           // Use consistent naming logic
                           if (item.paidBy === user?.uid) return t('group.you_label');
                           if (item.paidBy === group.createdBy) return t('group.owner');
-                          const member = group.members.find((m: { id: any; }) => m.id === item.paidBy);
+                          const member = memberMap.get(item.paidBy);
                           return member?.name || item.paidByName;
                         })()
                       ) : undefined}
@@ -635,7 +643,7 @@ const GroupDetail = () => {
                         name: (() => {
                           if (p.id === user?.uid) return t('group.you_label'); // Your share
                           if (p.id === group.createdBy) return t('group.owner'); // Owner's share
-                          const member = group.members.find((m: { id: any; }) => m.id === p.id); // Valid member name
+                          const member = memberMap.get(p.id); // Valid member name
                           return member?.name || p.name;
                         })()
                       })) : undefined}
