@@ -1944,7 +1944,7 @@ app.use('/api', (req, res, next) => {
 });
 
 // Send Temporary Member Alert Endpoint (Secure - No raw HTML)
-app.post('/api/send-temp-member-alert', emailLimiter, async (req, res) => {
+app.post('/api/send-temp-member-alert', emailLimiter, authenticate, async (req, res) => {
   try {
     const { to, memberName, groupName, expiryDate } = req.body;
 
@@ -2087,7 +2087,7 @@ app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
 });
 
 // Welcome email endpoint
-app.post('/api/send-welcome', emailLimiter, async (req, res) => {
+app.post('/api/send-welcome', emailLimiter, authenticate, async (req, res) => {
   try {
     const { email, name } = req.body;
     if (!email || !name) {
@@ -3934,7 +3934,7 @@ app.post('/api/cleanup-temp-members', generalLimiter, adminAuth, async (req, res
 // INVITATION SYSTEM ENDPOINTS
 // ============================================
 
-app.post('/api/send-invitation', detectFraud, generalLimiter, async (req, res) => {
+app.post('/api/send-invitation', detectFraud, generalLimiter, authenticate, async (req, res) => {
   try {
     const { groupId, inviteeUsername } = req.body;
     const senderUid = req.user.uid;
@@ -4135,7 +4135,7 @@ app.post('/api/send-invitation', detectFraud, generalLimiter, async (req, res) =
 
 
 // Send External Invitation (to email)
-app.post('/api/send-external-invitation', strictEmailLimiter, async (req, res) => {
+app.post('/api/send-external-invitation', strictEmailLimiter, authenticate, async (req, res) => {
   try {
     const { email, groupId } = req.body;
     const senderUid = req.user.uid;
