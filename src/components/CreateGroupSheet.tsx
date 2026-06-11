@@ -10,6 +10,8 @@ import { uploadToCloudinary } from "@/lib/cloudinary";
 import { toast } from "sonner";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useTranslation } from "react-i18next";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 const EMOJI_OPTIONS = [
   "🏠", "🍽️", "✈️", "🎉", "🛒", "☕", "🎬", "🏋️",
@@ -430,11 +432,12 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
 
                   {/* INVITED EMAILS (New Users) */}
                   {invitedEmails.map(email => (
-                    <div
-                      key={email}
-                      className="flex items-center gap-3 p-3 bg-purple-50/50 border border-purple-100 rounded-2xl animate-fade-in"
-                      title="This person will receive an email invitation to join Hostel Ledger and this group."
-                    >
+                    <Tooltip key={email}>
+                      <TooltipTrigger asChild>
+                        <div
+                          className="flex items-center gap-3 p-3 bg-purple-50/50 border border-purple-100 rounded-2xl animate-fade-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+                          tabIndex={0}
+                        >
                       <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center text-sm font-bold text-purple-600">
                         @
                       </div>
@@ -446,21 +449,27 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                       </div>
                       <button
                         onClick={() => handleRemoveEmailInvite(email)}
-                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                         aria-label={`Remove ${email}`}
                       >
                         <X className="w-4 h-4" />
                       </button>
-                    </div>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="font-medium max-w-[200px] text-center">
+                        This person will receive an email invitation to join Hostel Ledger and this group.
+                      </TooltipContent>
+                    </Tooltip>
                   ))}
 
                   {/* INVITED USERS (Existing App Users) */}
                   {invitedUsernames.map(username => (
-                    <div
-                      key={username}
-                      className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl animate-fade-in"
-                      title="This user already has a Hostel Ledger account. They'll receive an in-app invitation and email notification."
-                    >
+                    <Tooltip key={username}>
+                      <TooltipTrigger asChild>
+                        <div
+                          className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl animate-fade-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                          tabIndex={0}
+                        >
                       <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-600">
                         {username.charAt(0).toUpperCase()}
                       </div>
@@ -472,12 +481,17 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                       </div>
                       <button
                         onClick={() => handleRemoveInvite(username)}
-                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                         aria-label={`Remove ${username}`}
                       >
                         <X className="w-4 h-4" />
                       </button>
-                    </div>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="font-medium max-w-[200px] text-center">
+                        This user already has a Hostel Ledger account. They'll receive an in-app invitation and email notification.
+                      </TooltipContent>
+                    </Tooltip>
                   ))}
 
                   {/* MANUAL MEMBERS */}
