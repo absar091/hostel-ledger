@@ -5,7 +5,11 @@
         ".read": "auth != null && (auth.uid === $userId || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'superadmin')",
         ".write": "auth != null && auth.uid === $userId",
         "role": {
-          ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'superadmin'"
+          ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'superadmin'",
+          ".validate": "(!data.exists() && newData.val() === 'user') || (data.exists() && newData.val() === data.val()) || (auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'superadmin'))"
+        },
+        "accountStatus": {
+          ".validate": "(!data.exists() && newData.val() === 'active') || (data.exists() && newData.val() === data.val()) || (auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'superadmin'))"
         }
       }
     },
@@ -40,7 +44,9 @@
         ".read": "auth != null && (data.child('userId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'superadmin')",
         ".write": "auth != null && (data.child('userId').val() === auth.uid || !data.exists() || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'superadmin')",
         "messages": {
-          ".indexOn": ["timestamp"],
+          ".indexOn": [
+            "timestamp"
+          ],
           "$messageId": {
             ".read": "auth != null",
             ".write": "auth != null"
