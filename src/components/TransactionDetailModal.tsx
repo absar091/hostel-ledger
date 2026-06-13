@@ -225,6 +225,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             <button
                                 onClick={handleShareAsImage}
                                 disabled={isGenerating}
+                                aria-label="Share receipt as image"
                                 className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
                                 title="Share as Image"
                             >
@@ -236,6 +237,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             </button>
                             <button
                                 onClick={onClose}
+                                aria-label="Close transaction details"
                                 className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
                             >
                                 <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
@@ -264,6 +266,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                         </div>
                                         <button
                                             onClick={handleCopyId}
+                                            aria-label={isCopied ? "Copied reference" : "Copy Reference"}
                                             className={`p-2 rounded-full transition-all ${isCopied
                                                 ? "bg-emerald-100 text-emerald-600 scale-110"
                                                 : "bg-white text-slate-400 hover:text-emerald-600 shadow-sm border border-slate-100 group-hover:border-emerald-200"
@@ -493,6 +496,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                             const url = `https://www.google.com/maps/search/?api=1&query=${transaction.location?.lat},${transaction.location?.lng}`;
                                                             window.open(url, '_blank');
                                                         }}
+                                                        aria-label="View location on Google Maps"
                                                         className="inline-flex items-center gap-1.5 text-xs text-blue-600 font-black uppercase tracking-wider hover:underline w-fit"
                                                     >
                                                         View on Maps <ArrowUpRight className="w-3 h-3" />
@@ -517,6 +521,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                         e.stopPropagation();
                                         setShowChat(true);
                                     }}
+                                    aria-label="Discuss this expense"
                                     className="w-full flex items-center justify-between p-4 lg:p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl lg:rounded-3xl border border-blue-200 shadow-lg group hover:from-blue-100 hover:to-blue-200 transition-all active:scale-[0.98]"
                                 >
                                     <div className="flex items-center gap-3 lg:gap-4">
@@ -594,6 +599,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                     <div className="p-6 border-t border-[#4a6850]/10 bg-white flex-shrink-0">
                         <button
                             onClick={onClose}
+                            aria-label="Close transaction details"
                             className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all"
                         >
                             Close
