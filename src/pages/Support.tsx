@@ -453,6 +453,7 @@ const Support = () => {
         <div className="hidden lg:flex items-center gap-4 mb-8 p-6 pb-0">
           <button
             onClick={() => navigate(-1)}
+            aria-label="Go back"
             className="w-11 h-11 rounded-2xl bg-white border border-[#4a6850]/10 flex items-center justify-center shadow-sm hover:bg-[#4a6850]/5 transition-all active:scale-95"
           >
             <ArrowLeft className="w-5 h-5 text-[#4a6850]" />
@@ -487,6 +488,7 @@ const Support = () => {
                       <p className="text-sm font-black text-[#4a6850] tabular-nums">{currentTicket.ticketNumber}</p>
                       <button
                         onClick={copyTicketNumber}
+                        aria-label="Copy ticket number"
                         className="p-1 hover:bg-[#4a6850]/10 rounded-md transition-colors active:scale-90"
                       >
                         {copiedTicket ? (
@@ -688,7 +690,7 @@ const Support = () => {
                           Type <span className="font-mono bg-gray-100 px-1 rounded text-emerald-700">GROUP/ID</span> to auto-generate a preview card for your transactions.
                         </p>
                       </div>
-                      <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 shrink-0">
+                      <button onClick={() => setShowTxnHint(false)} aria-label="Dismiss hint" className="text-gray-400 hover:text-gray-600 shrink-0">
                         <X className="w-3 h-3" />
                       </button>
                     </div>
@@ -700,6 +702,7 @@ const Support = () => {
                   <div className="mb-2 p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 relative animate-in slide-in-from-bottom-2">
                     <button 
                       onClick={() => setReferencedTxn(null)}
+                      aria-label="Remove transaction reference"
                       className="absolute top-1.5 right-1.5 p-1 hover:bg-emerald-100 rounded-full"
                     >
                       <X className="w-3.5 h-3.5 text-emerald-600" />
@@ -725,6 +728,7 @@ const Support = () => {
                     />
                     <button 
                       onClick={() => setAttachedImage(null)}
+                      aria-label="Remove attached image"
                       className="absolute -top-1.5 -right-1.5 p-1 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600 transition-colors"
                     >
                       <X className="w-2.5 h-2.5" />
@@ -743,6 +747,7 @@ const Support = () => {
                   <div className="flex shrink-0">
                     <button
                       onClick={() => fileInputRef.current?.click()}
+                      aria-label="Attach image"
                       disabled={isUploading || !!attachedImage}
                       className="w-10 h-10 flex items-center justify-center text-[#4a6850]/40 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 active:scale-90"
                     >
@@ -769,6 +774,7 @@ const Support = () => {
                   </div>
                   <button
                     onClick={sendMessage}
+                    aria-label="Send message"
                     disabled={(!message.trim() && !attachedImage) || isSending}
                     className="w-10 h-10 bg-[#4a6850] text-white rounded-xl shadow-md disabled:opacity-50 flex items-center justify-center active:scale-90 transition-all shrink-0"
                   >
