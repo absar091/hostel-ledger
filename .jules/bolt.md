@@ -1,0 +1,3 @@
+## 2024-06-15 - React Context Memoization
+**Learning:** When memoizing a Context Provider's value object using `useMemo`, any updater functions passed into the context must be wrapped in `useCallback`. Using the functional state update form (e.g., `setIsOpen(prev => !prev)`) is critical here, as it removes the state variable (`isOpen`) from the `useCallback` dependency array, maximizing reference stability and preventing unnecessary re-renders for consumers.
+**Action:** Always wrap context updater functions in `useCallback` with functional state updates before memoizing the context value object with `useMemo`.
