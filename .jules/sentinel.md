@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2025-05-23 - Privilege Escalation via Missing Firebase Validate Rules
+**Vulnerability:** Any user could update their `role` or `accountStatus` in the `/users/$uid` node to gain administrative privileges or evade account restrictions.
+**Learning:** In Firebase Realtime Database, a user having `.write` access to a parent node (`/users/$uid`) overrides any read/write restrictions on child nodes.
+**Prevention:** To restrict write access to specific child nodes when parent write access exists, use `.validate` rules on the child fields, as they cannot be bypassed by parent `.write` permissions.
