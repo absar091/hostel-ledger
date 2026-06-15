@@ -12,7 +12,13 @@
         "settlements": {
           ".write": false
         },
-        ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt']) && newData.child('uid').val() === $uid"
+        ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt', 'role', 'accountStatus']) && newData.child('uid').val() === $uid",
+        "role": {
+          ".validate": "(!data.exists() && newData.val() === 'user') || data.val() === newData.val()"
+        },
+        "accountStatus": {
+          ".validate": "(!data.exists() && newData.val() === 'active') || data.val() === newData.val()"
+        }
       }
     },
     "groups": {
