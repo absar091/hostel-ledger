@@ -236,6 +236,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             </button>
                             <button
                                 onClick={onClose}
+                                aria-label="Close"
                                 className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
                             >
                                 <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
@@ -264,6 +265,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                         </div>
                                         <button
                                             onClick={handleCopyId}
+                                            aria-label={isCopied ? "Copied!" : "Copy Reference"}
                                             className={`p-2 rounded-full transition-all ${isCopied
                                                 ? "bg-emerald-100 text-emerald-600 scale-110"
                                                 : "bg-white text-slate-400 hover:text-emerald-600 shadow-sm border border-slate-100 group-hover:border-emerald-200"
