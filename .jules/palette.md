@@ -1,3 +1,7 @@
 ## 2025-04-06 - Replacing Native Title Attributes with Radix Tooltips
 **Learning:** Native `title` attributes on interactive elements provide a delayed, inconsistently styled, and poorly accessible tooltip experience. When integrating Radix UI tooltips, it's critical to explicitly remove the native `title` attribute to prevent a "double-tooltip" effect where both the custom and native tooltips appear simultaneously, confusing users and screen readers. Additionally, tooltips must be globally wrapped in `<TooltipProvider>` to prevent application crashes due to missing context.
 **Action:** Always replace native `title` attributes on icon-only buttons with Radix `<Tooltip>` components, ensuring the native attribute is removed. Use `<TooltipTrigger asChild>` to prevent invalid HTML nesting, and wrap the component tree with `<TooltipProvider>`. Utilize `useTranslation` for the tooltip and `aria-label` content.
+
+## 2024-05-18 - Transaction Modal Keyboard Accessibility
+**Learning:** Icon-only buttons within dense floating UI elements like modals frequently lack keyboard focus indicators. The Tailwind pattern `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-X focus-visible:ring-Y` needs to be consistently applied to ensure keyboard users can track modal state.
+**Action:** Always pair `hover:bg-*` styles on modal close/action buttons with their corresponding `focus-visible:ring-*` equivalents when styling action elements to preserve accessibility.
