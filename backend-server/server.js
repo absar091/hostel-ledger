@@ -2380,7 +2380,7 @@ app.post('/api/check-email-exists', strictEmailCheckLimiter, async (req, res) =>
 
 // Subscribe to push notifications (OneSignal handles this automatically)
 // This endpoint is kept for backward compatibility but is no longer needed
-app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
+app.post('/api/push-subscribe', generalLimiter, authenticate, async (req, res) => {
   try {
     console.log('ℹ️ Push subscribe endpoint called (OneSignal handles subscriptions automatically)');
 
@@ -2399,7 +2399,7 @@ app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
 });
 
 // Send push notification to a specific user using OneSignal REST API
-app.post('/api/push-notify', generalLimiter, async (req, res) => {
+app.post('/api/push-notify', generalLimiter, authenticate, async (req, res) => {
   try {
     let { userId, title, body, icon, badge, tag, data } = req.body;
 
@@ -2618,7 +2618,7 @@ const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, b
 };
 
 // Send push notification to multiple users using OneSignal REST API
-app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
+app.post('/api/push-notify-multiple', generalLimiter, authenticate, async (req, res) => {
   try {
     let { userIds, title, body, icon, badge, data } = req.body;
 
