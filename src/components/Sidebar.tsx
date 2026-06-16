@@ -6,6 +6,7 @@ import { useSidebar } from "@/contexts/SidebarContext";
 import { useInvitations } from "@/hooks/useInvitations";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import Logo from "./Logo";
 
 const Sidebar = () => {
@@ -90,7 +91,7 @@ const Sidebar = () => {
           const Icon = item.icon;
           const active = isActive(item.path);
 
-          return (
+          const buttonContent = (
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
@@ -102,7 +103,7 @@ const Sidebar = () => {
                   : "text-gray-600 hover:bg-gray-100",
                 !isOpen && "justify-center"
               )}
-              title={!isOpen ? item.label : undefined}
+              aria-label={item.label}
             >
               {/* Active indicator bar */}
               {active && (
@@ -122,6 +123,17 @@ const Sidebar = () => {
               )}
             </button>
           );
+
+          return !isOpen ? (
+            <Tooltip key={item.id}>
+              <TooltipTrigger asChild>
+                {buttonContent}
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-[#4a6850] text-white border-[#3d5643] font-bold z-[100]">
+                <p>{item.label}</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : buttonContent;
         })}
       </nav>
 
@@ -151,24 +163,37 @@ const Sidebar = () => {
           </>
         ) : (
           <>
-            <button
-              onClick={() => navigate("/profile")}
-              className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center mx-auto mb-3"
-              aria-label={user?.name || "Profile"}
-              title={user?.name || "Profile"}
-            >
-              <span className="text-lg font-black text-white">
-                {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-              </span>
-            </button>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200"
-              aria-label={t('sidebar.logout')}
-              title={t('sidebar.logout')}
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => navigate("/profile")}
+                  className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center mx-auto mb-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]"
+                  aria-label={user?.name || "Profile"}
+                >
+                  <span className="text-lg font-black text-white">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  </span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-[#4a6850] text-white border-[#3d5643] font-bold z-[100]">
+                <p>{user?.name || "Profile"}</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+                  aria-label={t('sidebar.logout')}
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-red-600 text-white border-red-700 font-bold z-[100]">
+                <p>{t('sidebar.logout')}</p>
+              </TooltipContent>
+            </Tooltip>
           </>
         )}
       </div>
