@@ -40,3 +40,8 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+
+## 2026-03-19 - Low Entropy Ticket IDs
+**Vulnerability:** Support tickets used low entropy ticket IDs by generating 3 bytes of randomness (`crypto.randomBytes(3)`), which makes them susceptible to enumeration and predictability.
+**Learning:** Using short random sequences for identifiers increases the risk of IDOR or guessing attacks.
+**Prevention:** Appropriately increase the byte length of cryptographically secure methods (e.g. `crypto.randomBytes(8)`) for generating random values intended for security identifiers.
