@@ -5,12 +5,13 @@ const authenticate = require('../middleware/auth');
 const crypto = require('crypto');
 // We need an email service to send ticket confirmation
 const emailService = require('../services/emailService');
+const { isValidFirebaseId } = require('../utils/validation');
 
 router.use(authenticate);
 
-// Generate a nice-looking 6 character alphanumeric ticket ID
+// Generate a nice-looking 16 character alphanumeric ticket ID
 function generateTicketId() {
-  return 'TKT-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+  return 'TKT-' + crypto.randomBytes(8).toString('hex').toUpperCase();
 }
 
 // User submitting a support ticket
@@ -62,6 +63,10 @@ router.post('/report', async (req, res) => {
 
     if (!['user', 'group'].includes(targetType) || !targetId || !reason) {
       console.log('Report Validation Failed:', { targetId, targetType, reason, details }); return res.status(400).json({ error: 'Invalid report data.' });
+    }
+
+    if (!isValidFirebaseId(targetId)) {
+      return res.status(400).json({ error: 'Invalid target ID format' });
     }
 
     const reportRef = admin.database().ref('reports').push();
