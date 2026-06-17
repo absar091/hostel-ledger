@@ -87,7 +87,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
             <button
               onClick={handleNativeShare}
               aria-label="Share App"
-              className={`w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors ${className}`}
+              className={`w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 transition-colors ${className}`}
             >
               <Share2 className="w-5 h-5 text-gray-700" />
             </button>
@@ -151,7 +151,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
                 <button
                   onClick={() => setShowShareMenu(false)}
                   aria-label="Close share menu"
-                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 flex items-center justify-center transition-colors"
                 >
                   <span className="text-gray-600 text-lg" aria-hidden="true">×</span>
                 </button>

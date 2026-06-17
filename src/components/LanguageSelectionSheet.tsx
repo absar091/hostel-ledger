@@ -64,7 +64,7 @@ const LanguageSelectionSheet = ({ open, onClose, selectedLanguage, onSelect }: L
                                     onClose();
                                 }}
                                 className={cn(
-                                    "w-full flex items-center justify-between p-4 rounded-2xl transition-all active:scale-[0.98]",
+                                    "w-full flex items-center justify-between p-4 rounded-2xl transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]",
                                     selectedLanguage === language.code
                                         ? "bg-[#4a6850]/10 border-2 border-[#4a6850]"
                                         : "bg-white border-2 border-transparent hover:bg-gray-50"
