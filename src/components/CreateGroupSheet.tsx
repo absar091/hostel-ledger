@@ -446,7 +446,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                       </div>
                       <button
                         onClick={() => handleRemoveEmailInvite(email)}
-                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 flex items-center justify-center text-red-500 transition-colors"
                         aria-label={`Remove ${email}`}
                       >
                         <X className="w-4 h-4" />
@@ -472,7 +472,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                       </div>
                       <button
                         onClick={() => handleRemoveInvite(username)}
-                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 flex items-center justify-center text-red-500 transition-colors"
                         aria-label={`Remove ${username}`}
                       >
                         <X className="w-4 h-4" />
@@ -490,7 +490,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                       </div>
                       <button
                         onClick={() => handleRemoveMember(member.name)}
-                        className="w-8 h-8 rounded-full bg-gray-200 hover:bg-red-100 hover:text-red-500 flex items-center justify-center text-gray-500 transition-colors"
+                        className="w-8 h-8 rounded-full bg-gray-200 hover:bg-red-100 hover:text-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 flex items-center justify-center text-gray-500 transition-colors"
                         aria-label={`Remove ${member.name}`}
                       >
                         <X className="w-4 h-4" />
