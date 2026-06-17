@@ -59,7 +59,7 @@ const DesktopHeader = () => {
         {/* Profile */}
         <button
           onClick={() => navigate("/profile")}
-          className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-gray-50 transition-all"
+          className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-gray-50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]"
           aria-label="View profile"
         >
           <div className="rounded-full ring-2 ring-white shadow-sm overflow-hidden">
