@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import {
   User,
   signInWithEmailAndPassword,
@@ -964,7 +964,10 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Settlement management functions with group awareness
-  const getSettlements = (groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
+  // ⚡ Bolt Performance Optimization:
+  // Wrapped `getSettlements` in `useCallback` to prevent unnecessary invalidation of downstream `useMemo` hooks (e.g., `groupSettlementsMap` in Groups.tsx).
+  // Expected impact: Reduces redundant computations when FirebaseAuthContext re-renders due to unrelated state changes.
+  const getSettlements = useCallback((groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
     if (!user?.settlements) return {};
 
     if (groupId) {
@@ -986,7 +989,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       return aggregated;
     }
-  };
+  }, [user?.settlements]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getTotalToReceive = (groupId?: string): number => {
     const settlements = getSettlements(groupId);
