@@ -1,3 +1,7 @@
 ## 2025-04-06 - Replacing Native Title Attributes with Radix Tooltips
 **Learning:** Native `title` attributes on interactive elements provide a delayed, inconsistently styled, and poorly accessible tooltip experience. When integrating Radix UI tooltips, it's critical to explicitly remove the native `title` attribute to prevent a "double-tooltip" effect where both the custom and native tooltips appear simultaneously, confusing users and screen readers. Additionally, tooltips must be globally wrapped in `<TooltipProvider>` to prevent application crashes due to missing context.
 **Action:** Always replace native `title` attributes on icon-only buttons with Radix `<Tooltip>` components, ensuring the native attribute is removed. Use `<TooltipTrigger asChild>` to prevent invalid HTML nesting, and wrap the component tree with `<TooltipProvider>`. Utilize `useTranslation` for the tooltip and `aria-label` content.
+
+## 2024-06-18 - Improve Keyboard Accessibility in Sidebar
+**Learning:** Adding `focus-visible` states to complex layout components like the Sidebar navigation requires careful attention to stacking context (`z-index`). Without `focus-visible:z-10` on the navigation items, the focus ring can be clipped by adjacent elements with higher or equal z-indexes within the flex container.
+**Action:** When adding `focus-visible:ring-*` to tightly packed lists or navigation menus, consistently pair it with `focus-visible:z-10` to ensure the focus outline remains fully visible and unbroken.
