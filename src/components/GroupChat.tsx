@@ -493,7 +493,9 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading || !!attachedImage}
-                            className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
+                            className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]/30"
+                            aria-label={t("chat.upload_image", "Upload image")}
+                            title={t("chat.upload_image", "Upload image")}
                         >
                             {isUploading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -504,9 +506,11 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         <button
                             onClick={() => setShowTxnHint(!showTxnHint)}
                             className={cn(
-                                "p-2.5 rounded-xl transition-all shrink-0",
+                                "p-2.5 rounded-xl transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]/30",
                                 showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
                             )}
+                            aria-label={t("chat.toggle_hint", "Toggle transaction hint")}
+                            title={t("chat.toggle_hint", "Toggle transaction hint")}
                         >
                             <Info className="w-5 h-5" />
                         </button>
@@ -527,7 +531,9 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                     <button
                         onClick={handleSend}
                         disabled={(!inputText.trim() && !attachedImage) || isSending}
-                        className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
+                        className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]/30"
+                        aria-label={t("chat.send_message", "Send message")}
+                        title={t("chat.send_message", "Send message")}
                     >
                         {isSending ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
