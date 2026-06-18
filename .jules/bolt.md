@@ -1,0 +1,3 @@
+## 2024-05-17 - React Context Value Optimization
+**Learning:** In massive React Context providers like `FirebaseAuthContext` that return un-memoized functions and state variables, wrapping the entire `value` object in `useMemo` can be error-prone and cause stale closures if dependencies are omitted.
+**Action:** Instead of memoizing the entire `value` object in one go, selectively wrap heavily requested and calculated functions (like `getSettlements`, `getTotalToReceive`, `getTotalToPay`, `getSettlementDelta`) using `useCallback` to prevent unnecessary component re-renders when context state updates.
