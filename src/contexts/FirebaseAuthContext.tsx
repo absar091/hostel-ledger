@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import {
   User,
   signInWithEmailAndPassword,
@@ -964,7 +964,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Settlement management functions with group awareness
-  const getSettlements = (groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
+  // ⚡ Bolt: Memoize heavy settlement calculation to prevent child re-renders
+  const getSettlements = useCallback((groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
     if (!user?.settlements) return {};
 
     if (groupId) {
@@ -986,9 +987,10 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       return aggregated;
     }
-  };
+  }, [user?.settlements]);
 
-  const getTotalToReceive = (groupId?: string): number => {
+  // ⚡ Bolt: Memoize derived calculation
+  const getTotalToReceive = useCallback((groupId?: string): number => {
     const settlements = getSettlements(groupId);
     if (!settlements || Object.keys(settlements).length === 0) return 0;
 
@@ -996,9 +998,10 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       const amount = settlement?.toReceive || 0;
       return sum + (isNaN(amount) ? 0 : amount);
     }, 0);
-  };
+  }, [getSettlements]);
 
-  const getTotalToPay = (groupId?: string): number => {
+  // ⚡ Bolt: Memoize derived calculation
+  const getTotalToPay = useCallback((groupId?: string): number => {
     const settlements = getSettlements(groupId);
     if (!settlements || Object.keys(settlements).length === 0) return 0;
 
@@ -1006,15 +1009,16 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       const amount = settlement?.toPay || 0;
       return sum + (isNaN(amount) ? 0 : amount);
     }, 0);
-  };
+  }, [getSettlements]);
 
-  const getSettlementDelta = (groupId?: string): number => {
+  // ⚡ Bolt: Memoize derived calculation
+  const getSettlementDelta = useCallback((groupId?: string): number => {
     const toReceive = getTotalToReceive(groupId);
     const toPay = getTotalToPay(groupId);
 
     if (isNaN(toReceive) || isNaN(toPay)) return 0;
     return toReceive - toPay;
-  };
+  }, [getTotalToReceive, getTotalToPay]);
 
 
 
