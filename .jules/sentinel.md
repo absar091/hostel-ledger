@@ -40,3 +40,11 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2024-06-18 - Missing Explicit Authentication Middleware
+**Vulnerability:** Several API endpoints that access `req.user` lacked explicit `authenticate` middleware in their route definitions, causing potential authentication bypasses.
+**Learning:** Explicitly declaring authentication middleware on each individual endpoint definition ensures that the endpoint is always protected regardless of its position in the routing file or any global middleware misconfigurations.
+**Prevention:** Always explicitly pass the `authenticate` middleware in the route definition (`app.post('/api/route', authenticate, ...)`) for endpoints that require user authentication or access `req.user`.
+## 2024-06-18 - Missing Explicit Authentication Middleware on Invitation Endpoints
+**Vulnerability:** The `/api/send-invitation` and `/api/send-external-invitation` endpoints accessed `req.user.uid` but lacked the `authenticate` middleware in their route definitions, causing potential authentication bypasses or 500 errors.
+**Learning:** Explicitly declaring authentication middleware on each individual endpoint definition ensures that the endpoint is always protected.
+**Prevention:** Always explicitly pass the `authenticate` middleware in the route definition (`app.post('/api/route', authenticate, ...)`) for endpoints that require user authentication.
