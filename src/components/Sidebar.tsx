@@ -7,6 +7,7 @@ import { useInvitations } from "@/hooks/useInvitations";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import Logo from "./Logo";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Sidebar = () => {
   const { t } = useTranslation();
@@ -41,7 +42,8 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className={cn(
+    <TooltipProvider>
+      <aside className={cn(
       "hidden lg:flex lg:flex-col fixed left-0 top-0 h-screen bg-white border-r border-gray-200 z-40 transition-all duration-300",
       isOpen ? "w-64" : "w-20"
     )}>
@@ -68,7 +70,7 @@ const Sidebar = () => {
       <button
         onClick={toggleSidebar}
         aria-label={isOpen ? t('sidebar.collapse') : t('sidebar.expand')}
-        className="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
+        className="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]"
       >
         {isOpen ? (
           <ChevronLeft className="w-4 h-4 text-gray-600" />
@@ -90,19 +92,17 @@ const Sidebar = () => {
           const Icon = item.icon;
           const active = isActive(item.path);
 
-          return (
+          const buttonElement = (
             <button
-              key={item.id}
               onClick={() => navigate(item.path)}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative",
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-1",
                 active
                   ? "bg-[#1B4332] text-white shadow-lg"
                   : "text-gray-600 hover:bg-gray-100",
                 !isOpen && "justify-center"
               )}
-              title={!isOpen ? item.label : undefined}
             >
               {/* Active indicator bar */}
               {active && (
@@ -121,6 +121,19 @@ const Sidebar = () => {
                 </div>
               )}
             </button>
+          );
+
+          return isOpen ? (
+            <div key={item.id}>{buttonElement}</div>
+          ) : (
+            <Tooltip key={item.id}>
+              <TooltipTrigger asChild>
+                {buttonElement}
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>{item.label}</p>
+              </TooltipContent>
+            </Tooltip>
           );
         })}
       </nav>
@@ -151,28 +164,41 @@ const Sidebar = () => {
           </>
         ) : (
           <>
-            <button
-              onClick={() => navigate("/profile")}
-              className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center mx-auto mb-3"
-              aria-label={user?.name || "Profile"}
-              title={user?.name || "Profile"}
-            >
-              <span className="text-lg font-black text-white">
-                {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-              </span>
-            </button>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200"
-              aria-label={t('sidebar.logout')}
-              title={t('sidebar.logout')}
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => navigate("/profile")}
+                  className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center mx-auto mb-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-1"
+                  aria-label={user?.name || "Profile"}
+                >
+                  <span className="text-lg font-black text-white">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  </span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>{user?.name || "Profile"}</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1"
+                  aria-label={t('sidebar.logout')}
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-red-50 text-red-600 border-red-100 font-medium">
+                <p>{t('sidebar.logout')}</p>
+              </TooltipContent>
+            </Tooltip>
           </>
         )}
       </div>
-    </aside>
+      </aside>
+    </TooltipProvider>
   );
 };
 
