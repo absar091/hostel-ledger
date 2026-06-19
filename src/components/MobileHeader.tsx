@@ -62,7 +62,7 @@ const MobileHeader = ({ title, showBackButton = false, rightContent }: MobileHea
 
       <button
         onClick={() => navigate("/profile")}
-        className="relative group w-10 h-10 rounded-full border border-gray-200 p-0.5 object-contain"
+        className="relative group w-10 h-10 rounded-full border border-gray-200 p-0.5 object-contain focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-1"
         aria-label="View profile"
       >
         <div className="w-full h-full rounded-full overflow-hidden">
@@ -83,7 +83,7 @@ const MobileHeader = ({ title, showBackButton = false, rightContent }: MobileHea
           {showBackButton ? (
             <button
               onClick={() => navigate(-1)}
-              className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center active:scale-95 transition-all text-gray-700 hover:bg-gray-100 border border-gray-100"
+              className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center active:scale-95 transition-all text-gray-700 hover:bg-gray-100 border border-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]"
               aria-label="Go back"
             >
               <ArrowLeft className="w-5 h-5" />
