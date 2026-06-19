@@ -8,9 +8,10 @@ const emailService = require('../services/emailService');
 
 router.use(authenticate);
 
-// Generate a nice-looking 6 character alphanumeric ticket ID
+// Generate a nice-looking 16 character alphanumeric ticket ID
+// 🛡️ Sentinel Security Fix: Increased entropy from 3 bytes (6 chars) to 8 bytes (16 chars) to prevent ticket ID guessing and enumeration vulnerabilities.
 function generateTicketId() {
-  return 'TKT-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+  return 'TKT-' + crypto.randomBytes(8).toString('hex').toUpperCase();
 }
 
 // User submitting a support ticket
