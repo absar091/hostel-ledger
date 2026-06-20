@@ -440,7 +440,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                                     A preview card will automatically appear!
                                 </p>
                             </div>
-                            <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5">
+                            <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5" aria-label="Close transaction hint" title="Close transaction hint">
                                 <X className="w-3 h-3" />
                             </button>
                         </div>
@@ -452,6 +452,8 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         <button 
                             onClick={() => setReferencedTxn(null)}
                             className="absolute top-2 right-2 p-1 hover:bg-emerald-100 rounded-full"
+                            aria-label="Remove referenced transaction"
+                            title="Remove referenced transaction"
                         >
                             <X className="w-4 h-4 text-emerald-600" />
                         </button>
@@ -475,6 +477,8 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         <button 
                             onClick={() => setAttachedImage(null)}
                             className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                            aria-label="Remove attached image"
+                            title="Remove attached image"
                         >
                             <X className="w-3 h-3" />
                         </button>
