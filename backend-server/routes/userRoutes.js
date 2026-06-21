@@ -8,9 +8,9 @@ const emailService = require('../services/emailService');
 
 router.use(authenticate);
 
-// Generate a nice-looking 6 character alphanumeric ticket ID
+// Generate a secure alphanumeric ticket ID
 function generateTicketId() {
-  return 'TKT-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+  return 'TKT-' + crypto.randomBytes(8).toString('hex').toUpperCase();
 }
 
 // User submitting a support ticket

@@ -40,3 +40,8 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+
+## 2026-03-24 - Safely Increasing ID Entropy
+**Vulnerability:** Support tickets generated their IDs using `crypto.randomBytes(3)`, yielding a short 6-character hex string that is predictable.
+**Learning:** When increasing the entropy of security identifiers to mitigate guessing vulnerabilities, drastically altering their format (e.g., changing from a short hex string to a full UUID) can introduce unintended side effects in data storage or the UI.
+**Prevention:** Rather than a full refactor to UUIDs, safely increase the byte length of the existing cryptographically secure generation method (e.g., increasing `crypto.randomBytes(3)` to `crypto.randomBytes(8)`) to securely boost entropy without breaking format expectations.
