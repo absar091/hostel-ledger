@@ -209,7 +209,8 @@ const Profile = () => {
                 <button
                   onClick={handlePhotoClick}
                   disabled={isUploadingPhoto}
-                  className="relative group cursor-pointer flex-shrink-0"
+                  className="relative group cursor-pointer flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 rounded-full"
+                  aria-label="Change profile photo"
                 >
                   <div className="relative">
                     <div className="ring-[3px] ring-[#4a6850]/20 rounded-full shadow-lg">
