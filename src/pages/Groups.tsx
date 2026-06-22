@@ -13,6 +13,7 @@ import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { useTranslation } from "react-i18next";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const Groups = () => {
   const { t } = useTranslation();
@@ -24,6 +25,7 @@ const Groups = () => {
   const [activeTab, setActiveTab] = useState<"home" | "groups" | "add" | "activity" | "profile">("groups");
   const [showGroupsGuide, setShowGroupsGuide] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [showSettlement, setShowSettlement] = useState(false);
   const [selectedSettlement, setSelectedSettlement] = useState<{ groupId: string; memberId: string; memberName: string; isTemporary?: boolean } | null>(null);
   const [activeFilter, setActiveFilter] = useState<"all" | "unsettled" | "favorites">("all");
@@ -74,8 +76,8 @@ const Groups = () => {
     let filtered = groups;
 
     // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter(group => {
         // Search in group name
         if (group.name.toLowerCase().includes(query)) return true;
@@ -113,7 +115,7 @@ const Groups = () => {
     });
 
     return filtered;
-  }, [groups, searchQuery, activeFilter, groupSettlementsMap, favoriteGroups]);
+  }, [groups, debouncedSearchQuery, activeFilter, groupSettlementsMap, favoriteGroups]);
 
   // Ensure member details are loaded for groups with settlements
   useEffect(() => {
