@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Home, Users, Clock, Settings, LogOut, ChevronLeft, ChevronRight, Mail } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -26,12 +27,13 @@ const Sidebar = () => {
     }
   };
 
-  const navItems = [
+  // ⚡ Bolt: Memoize navItems to prevent array recreation on every render, stabilizing reference for map
+  const navItems = useMemo(() => [
     { id: "dashboard", icon: Home, label: "Home", path: "/", badge: pendingInvites },
     { id: "groups", icon: Users, label: "Groups", path: "/groups" },
     { id: "activity", icon: Clock, label: "History", path: "/activity" },
     { id: "settings", icon: Settings, label: "Me", path: "/settings" },
-  ];
+  ], [pendingInvites]);
 
   const isActive = (path: string) => {
     if (path === "/") {
