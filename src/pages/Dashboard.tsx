@@ -751,7 +751,8 @@ const Dashboard = () => {
                       </div>
                       <button 
                         onClick={() => setShowPersonalBudgetSheet(true)}
-                        className="w-8 h-8 rounded-full bg-white/[0.08] flex items-center justify-center border border-white/[0.05] hover:bg-white/[0.15] transition-colors active:scale-95"
+                        className="w-8 h-8 rounded-full bg-white/[0.08] flex items-center justify-center border border-white/[0.05] hover:bg-white/[0.15] transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1 focus-visible:ring-offset-[#4B6B54]"
+                        aria-label="Edit personal budget"
                       >
                         <RefreshCw className="w-3.5 h-3.5 text-white/40" />
                       </button>
@@ -846,7 +847,7 @@ const Dashboard = () => {
                     )}
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center hover:bg-[#EAF5EF] transition-colors">
+                        <button className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center hover:bg-[#EAF5EF] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4B6B54] focus-visible:ring-offset-1" aria-label="View settlement details">
                           <Info className="w-3 h-3 text-gray-400" />
                         </button>
                       </TooltipTrigger>
