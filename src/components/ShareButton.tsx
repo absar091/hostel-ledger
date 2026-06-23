@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Share2, Copy, Check, MessageCircle, Send } from "@/lib/icons";
 import { toast } from "sonner";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 interface ShareButtonProps {
   className?: string;
@@ -142,19 +142,27 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
 
       {/* Share Menu Modal */}
       {showShareMenu && (
+        <TooltipProvider>
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-end justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
             {/* Header */}
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-gray-900">Share Hostel Ledger</h3>
-                <button
-                  onClick={() => setShowShareMenu(false)}
-                  aria-label="Close share menu"
-                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-                >
-                  <span className="text-gray-600 text-lg" aria-hidden="true">×</span>
-                </button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setShowShareMenu(false)}
+                      aria-label="Close share menu"
+                      className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 flex items-center justify-center transition-colors"
+                    >
+                      <span className="text-gray-600 text-lg" aria-hidden="true">×</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="z-[110]">
+                    <p>Close share menu</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <p className="text-sm text-gray-500 mt-2">
                 Choose how you'd like to share this amazing expense splitting app!
@@ -234,6 +242,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
             </div>
           </div>
         </div>
+        </TooltipProvider>
       )}
     </div>
   );
