@@ -1,0 +1,3 @@
+## 2025-02-12 - Prevented FirebaseAuthContext unnecessary re-renders
+**Learning:** In a large context provider like `FirebaseAuthContext` that passes down dozens of functions and state objects, omitting `useMemo` on the `value` object means *every* consumer of `FirebaseAuthContext` re-renders every time the Provider itself renders, even if the user data hasn't changed.
+**Action:** When working with context providers that provide a large surface area of functions and states, always wrap the provider `value` object in `useMemo`, and ensure all dependencies (especially returned functions) are wrapped in `useCallback` to truly stabilize the reference.
