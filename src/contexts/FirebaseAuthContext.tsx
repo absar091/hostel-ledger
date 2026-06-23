@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode , useCallback, useMemo} from "react";
 import {
   User,
   signInWithEmailAndPassword,
@@ -964,7 +964,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Settlement management functions with group awareness
-  const getSettlements = (groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
+  const getSettlements = useCallback((groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
     if (!user?.settlements) return {};
 
     if (groupId) {
@@ -986,9 +986,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       return aggregated;
     }
-  };
+  }, [user?.settlements]);
 
-  const getTotalToReceive = (groupId?: string): number => {
+  const getTotalToReceive = useCallback((groupId?: string): number => {
     const settlements = getSettlements(groupId);
     if (!settlements || Object.keys(settlements).length === 0) return 0;
 
@@ -996,9 +996,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       const amount = settlement?.toReceive || 0;
       return sum + (isNaN(amount) ? 0 : amount);
     }, 0);
-  };
+  }, [getSettlements]);
 
-  const getTotalToPay = (groupId?: string): number => {
+  const getTotalToPay = useCallback((groupId?: string): number => {
     const settlements = getSettlements(groupId);
     if (!settlements || Object.keys(settlements).length === 0) return 0;
 
@@ -1006,15 +1006,15 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       const amount = settlement?.toPay || 0;
       return sum + (isNaN(amount) ? 0 : amount);
     }, 0);
-  };
+  }, [getSettlements]);
 
-  const getSettlementDelta = (groupId?: string): number => {
+  const getSettlementDelta = useCallback((groupId?: string): number => {
     const toReceive = getTotalToReceive(groupId);
     const toPay = getTotalToPay(groupId);
 
     if (isNaN(toReceive) || isNaN(toPay)) return 0;
     return toReceive - toPay;
-  };
+  }, [getTotalToReceive, getTotalToPay]);
 
 
 
@@ -1289,44 +1289,83 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const value = useMemo(() => ({
+    user,
+    firebaseUser,
+    isLoading,
+    login,
+    signup,
+    logout,
+    updateUserPassword,
+    resetPassword,
+    sendPasswordResetEmail: sendPasswordResetEmailFirebase,
+    confirmPasswordReset: confirmPasswordResetFirebase,
+    checkEmailExists,
+    checkUsernameAvailable,
+    markEmailAsVerified,
+    updateUserProfile,
+    uploadProfilePicture,
+    removeProfilePicture,
+    getSettlements,
+    getTotalToReceive,
+    getTotalToPay,
+    getSettlementDelta,
+    markPaymentReceived,
+    markDebtPaid,
+    getIndividualDebts,
+    addIndividualDebt,
+    settleIndividualDebt,
+    settleNetAmount,
+    toggleFavoriteGroup,
+    getFavoriteGroups,
+    createGroup,
+    deleteAccount,
+    is2FAVerified,
+    verify2FA,
+    setup2FA,
+    confirm2FASetup,
+    disable2FA
+  }), [
+    user,
+    firebaseUser,
+    isLoading,
+    is2FAVerified,
+    getSettlements,
+    getTotalToReceive,
+    getTotalToPay,
+    getSettlementDelta,
+    login,
+    signup,
+    logout,
+    updateUserPassword,
+    resetPassword,
+    sendPasswordResetEmailFirebase,
+    confirmPasswordResetFirebase,
+    checkEmailExists,
+    checkUsernameAvailable,
+    markEmailAsVerified,
+    updateUserProfile,
+    uploadProfilePicture,
+    removeProfilePicture,
+    markPaymentReceived,
+    markDebtPaid,
+    getIndividualDebts,
+    addIndividualDebt,
+    settleIndividualDebt,
+    settleNetAmount,
+    toggleFavoriteGroup,
+    getFavoriteGroups,
+    createGroup,
+    deleteAccount,
+    verify2FA,
+    setup2FA,
+    confirm2FASetup,
+    disable2FA,
+  ]);
+
   return (
-    <FirebaseAuthContext.Provider value={{
-      user,
-      firebaseUser,
-      isLoading,
-      login,
-      signup,
-      logout,
-      updateUserPassword,
-      resetPassword,
-      sendPasswordResetEmail: sendPasswordResetEmailFirebase,
-      confirmPasswordReset: confirmPasswordResetFirebase,
-      checkEmailExists,
-      checkUsernameAvailable,
-      markEmailAsVerified,
-      updateUserProfile,
-      uploadProfilePicture,
-      removeProfilePicture,
-      getSettlements,
-      getTotalToReceive,
-      getTotalToPay,
-      getSettlementDelta,
-      markPaymentReceived,
-      markDebtPaid,
-      getIndividualDebts,
-      addIndividualDebt,
-      settleIndividualDebt,
-      settleNetAmount,
-      toggleFavoriteGroup,
-      getFavoriteGroups,
-      createGroup,
-      deleteAccount,
-      is2FAVerified,
-      verify2FA,
-      setup2FA,
-      confirm2FASetup,
-      disable2FA
-    }}>
+    <FirebaseAuthContext.Provider value={value}>
       {children}
     </FirebaseAuthContext.Provider>
   );
