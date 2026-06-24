@@ -11,6 +11,12 @@ router.use(verifyAdmin);
 router.get('/users/:identifier', async (req, res) => {
   try {
     const { identifier } = req.params;
+
+    // Prevent NoSQL injection/path traversal
+    if (!identifier.includes('@') && !isValidFirebaseId(identifier)) {
+      return res.status(400).json({ error: 'Invalid user ID format' });
+    }
+
     const userData = await adminService.getUserByEmailOrUid(identifier);
     res.json(userData);
   } catch (error) {
