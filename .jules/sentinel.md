@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2024-06-03 - Unvalidated deviceToken leading to NoSQL injection and path manipulation
+**Vulnerability:** Client-provided `deviceToken` in `/api/2fa/check-trust` endpoint was used directly in a Firebase Realtime Database path query (`db.ref(\`users/${userId}/trustedDevices/${deviceToken}\`)`) without format validation.
+**Learning:** Unvalidated tokens used in database paths can lead to path traversal and unauthorized data access.
+**Prevention:** Always explicitly validate client-generated or client-provided tokens using strict regular expressions or validation functions before utilizing them in database paths or queries.
