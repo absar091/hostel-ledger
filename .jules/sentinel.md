@@ -40,3 +40,8 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+
+## 2024-05-18 - Missing Explicit Authentication Middleware on API Endpoints
+**Vulnerability:** Endpoints `/api/send-invitation` and `/api/send-external-invitation` accessed `req.user.uid` without explicitly having the `authenticate` middleware in their route definition, relying on a global middleware setup that could be bypassed or not applied to all routes depending on route order.
+**Learning:** In Express, relying solely on global middleware (`app.use('/api', authenticate)`) can be risky if routes are defined before the global middleware or if there's complex routing logic. If an endpoint expects `req.user`, it should explicitly define the middleware to guarantee safety and fail securely.
+**Prevention:** Always explicitly include `authenticate` middleware on any endpoint definition that requires user authentication and accesses `req.user` properties.
