@@ -5,6 +5,7 @@ import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TransactionDetailModalProps {
     transaction: any;
@@ -222,24 +223,43 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                         </div>
                         <div className="flex items-center gap-2 lg:gap-3 ml-3 lg:ml-4">
                             {/* Share as Image button */}
-                            <button
-                                onClick={handleShareAsImage}
-                                disabled={isGenerating}
-                                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
-                                title="Share as Image"
-                            >
-                                {isGenerating ? (
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                    <Image className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" />
-                                )}
-                            </button>
-                            <button
-                                onClick={onClose}
-                                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
-                            >
-                                <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
-                            </button>
+                            <TooltipProvider delayDuration={300}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button
+                                            onClick={handleShareAsImage}
+                                            disabled={isGenerating}
+                                            aria-label="Share as Image"
+                                            className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                                        >
+                                            {isGenerating ? (
+                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <Image className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" />
+                                            )}
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="z-[110]">
+                                        <p>Share as Image</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider delayDuration={300}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button
+                                            onClick={onClose}
+                                            aria-label="Close"
+                                            className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
+                                        >
+                                            <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="z-[110]">
+                                        <p>Close</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                     </div>
 
