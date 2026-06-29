@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo } from "react";
 import {
   User,
   signInWithEmailAndPassword,
@@ -1289,8 +1289,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  return (
-    <FirebaseAuthContext.Provider value={{
+  const value = useMemo(() => ({
       user,
       firebaseUser,
       isLoading,
@@ -1326,7 +1325,16 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       setup2FA,
       confirm2FASetup,
       disable2FA
-    }}>
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [
+      user,
+      firebaseUser,
+      isLoading,
+      is2FAVerified
+  ]);
+
+  return (
+    <FirebaseAuthContext.Provider value={value}>
       {children}
     </FirebaseAuthContext.Provider>
   );
