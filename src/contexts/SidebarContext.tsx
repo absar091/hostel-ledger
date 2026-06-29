@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useMemo } from "react";
 
 interface SidebarContextType {
   isOpen: boolean;
@@ -16,8 +16,16 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
   const openSidebar = () => setIsOpen(true);
   const closeSidebar = () => setIsOpen(false);
 
+  const value = useMemo(() => ({
+    isOpen,
+    toggleSidebar,
+    openSidebar,
+    closeSidebar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [isOpen]);
+
   return (
-    <SidebarContext.Provider value={{ isOpen, toggleSidebar, openSidebar, closeSidebar }}>
+    <SidebarContext.Provider value={value}>
       {children}
     </SidebarContext.Provider>
   );
