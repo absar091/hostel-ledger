@@ -78,16 +78,24 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
 
     if (allMembers.length === 0) return [];
 
-    // Filter out "You" and "Invited" user-types (who haven't joined yet)
-    const filteredMembers = allMembers.filter((m) => !m.isCurrentUser && (m as any).type !== 'invited');
+    // Get settlement data once
+    const groupSettlements = getSettlements(selectedGroup);
+
+    // Filter out "You" and "Invited" user-types, and map them to include owe amounts to avoid multiple lookups
+    const membersWithOweAmt = allMembers.reduce((acc, m) => {
+      if (!m.isCurrentUser && (m as any).type !== 'invited') {
+        acc.push({
+          member: m,
+          oweAmt: groupSettlements[m.id]?.toReceive || 0
+        });
+      }
+      return acc;
+    }, [] as { member: Member; oweAmt: number }[]);
 
     // Sort by amount they owe (toReceive) descending
-    const groupSettlements = getSettlements(selectedGroup);
-    return [...filteredMembers].sort((a, b) => {
-      const oweA = groupSettlements[a.id]?.toReceive || 0;
-      const oweB = groupSettlements[b.id]?.toReceive || 0;
-      return oweB - oweA;
-    });
+    return membersWithOweAmt
+      .sort((a, b) => b.oweAmt - a.oweAmt)
+      .map(item => item.member);
   }, [groups, selectedGroup, getSettlements, fullGroupData]);
 
   // Get settlement data for selected group
