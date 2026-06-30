@@ -48,6 +48,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  TooltipProvider,
 } from "@/components/ui/tooltip";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import {
@@ -749,12 +750,22 @@ const Dashboard = () => {
                           <p className="text-[13px] font-bold text-white/70 capitalize leading-tight">{user.personalBudget.period} Limit</p>
                         </div>
                       </div>
-                      <button 
-                        onClick={() => setShowPersonalBudgetSheet(true)}
-                        className="w-8 h-8 rounded-full bg-white/[0.08] flex items-center justify-center border border-white/[0.05] hover:bg-white/[0.15] transition-colors active:scale-95"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5 text-white/40" />
-                      </button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => setShowPersonalBudgetSheet(true)}
+                              aria-label="Manage budget limit"
+                              className="w-8 h-8 rounded-full bg-white/[0.08] flex items-center justify-center border border-white/[0.05] hover:bg-white/[0.15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 transition-colors active:scale-95"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5 text-white/40" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Manage budget limit</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
 
                     {/* Spent amount — responsive */}
@@ -844,16 +855,21 @@ const Dashboard = () => {
                         {dayToDay.isFirstDay ? "NEW" : `${dayToDay.change > 0 && dayToDay.change < 1 ? dayToDay.change.toFixed(1) : Math.round(dayToDay.change)}%`}
                       </div>
                     )}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center hover:bg-[#EAF5EF] transition-colors">
-                          <Info className="w-3 h-3 text-gray-400" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Net balance: {settlementDelta > 0 ? "People owe you" : settlementDelta < 0 ? "You owe others" : "All settled up"}</p>
-                      </TooltipContent>
-                    </Tooltip>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            aria-label="View net balance details"
+                            className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center hover:bg-[#EAF5EF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4B6B54]/50 transition-colors"
+                          >
+                            <Info className="w-3 h-3 text-gray-400" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Net balance: {settlementDelta > 0 ? "People owe you" : settlementDelta < 0 ? "You owe others" : "All settled up"}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </div>
               </div>
