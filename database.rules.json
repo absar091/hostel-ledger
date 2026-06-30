@@ -7,10 +7,16 @@
         ".read": "auth != null",
         ".write": "$uid === auth.uid && auth != null",
         "walletBalance": {
-          ".write": false
+          ".validate": "newData.val() === data.val()"
         },
         "settlements": {
-          ".write": false
+          ".validate": "newData.val() === data.val()"
+        },
+        "role": {
+          ".validate": "newData.val() === data.val()"
+        },
+        "accountStatus": {
+          ".validate": "newData.val() === data.val()"
         },
         ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt']) && newData.child('uid').val() === $uid"
       }
