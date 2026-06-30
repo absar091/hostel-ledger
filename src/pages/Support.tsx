@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+
 import {
   MessageCircle,
   Send,
@@ -451,12 +453,22 @@ const Support = () => {
       <main className="flex-1 w-full max-w-4xl mx-auto flex flex-col lg:p-6 pb-0 overflow-hidden">
         {/* Modern Header - Hidden on mobile if redundant with MobileHeader */}
         <div className="hidden lg:flex items-center gap-4 mb-8 p-6 pb-0">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-11 h-11 rounded-2xl bg-white border border-[#4a6850]/10 flex items-center justify-center shadow-sm hover:bg-[#4a6850]/5 transition-all active:scale-95"
-          >
-            <ArrowLeft className="w-5 h-5 text-[#4a6850]" />
-          </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => navigate(-1)}
+                  aria-label="Go back"
+                  className="w-11 h-11 rounded-2xl bg-white border border-[#4a6850]/10 flex items-center justify-center shadow-sm hover:bg-[#4a6850]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]/50 transition-all active:scale-95"
+                >
+                  <ArrowLeft className="w-5 h-5 text-[#4a6850]" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Go back</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <div className="flex-1">
             <h1 className="text-2xl font-black text-[#4a6850] tracking-tight">Support Center</h1>
             <p className="text-[10px] text-[#4a6850]/50 font-black uppercase tracking-widest">How can we help you?</p>
@@ -485,16 +497,26 @@ const Support = () => {
                     </span>
                     <div className="flex items-center gap-1.5 ml-1">
                       <p className="text-sm font-black text-[#4a6850] tabular-nums">{currentTicket.ticketNumber}</p>
-                      <button
-                        onClick={copyTicketNumber}
-                        className="p-1 hover:bg-[#4a6850]/10 rounded-md transition-colors active:scale-90"
-                      >
-                        {copiedTicket ? (
-                          <Check className="w-3 h-3 text-[#4a6850]" />
-                        ) : (
-                          <Copy className="w-3 h-3 text-[#4a6850]" />
-                        )}
-                      </button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={copyTicketNumber}
+                              aria-label={copiedTicket ? "Copied" : "Copy ticket number"}
+                              className="p-1 hover:bg-[#4a6850]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]/50 rounded-md transition-colors active:scale-90"
+                            >
+                              {copiedTicket ? (
+                                <Check className="w-3 h-3 text-[#4a6850]" />
+                              ) : (
+                                <Copy className="w-3 h-3 text-[#4a6850]" />
+                              )}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{copiedTicket ? "Copied!" : "Copy ticket number"}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </div>
                   
