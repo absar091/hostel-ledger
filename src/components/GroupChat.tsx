@@ -18,6 +18,7 @@ import {
     ImageIcon
 } from "@/lib/icons";
 import Avatar from "./Avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChatMessage {
     id: string;
@@ -440,21 +441,44 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                                     A preview card will automatically appear!
                                 </p>
                             </div>
-                            <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5">
-                                <X className="w-3 h-3" />
-                            </button>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button
+                                            onClick={() => setShowTxnHint(false)}
+                                            className="text-gray-400 hover:text-gray-600 mt-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded"
+                                            aria-label="Dismiss hint"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="z-[110]">
+                                        <p>Dismiss hint</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                     </div>
                 )}
                 {/* Transaction Preview */}
                 {referencedTxn && (
                     <div className="mb-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200 relative animate-in slide-in-from-bottom-2">
-                        <button 
-                            onClick={() => setReferencedTxn(null)}
-                            className="absolute top-2 right-2 p-1 hover:bg-emerald-100 rounded-full"
-                        >
-                            <X className="w-4 h-4 text-emerald-600" />
-                        </button>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        onClick={() => setReferencedTxn(null)}
+                                        className="absolute top-2 right-2 p-1 hover:bg-emerald-100 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                                        aria-label="Remove referenced transaction"
+                                    >
+                                        <X className="w-4 h-4 text-emerald-600" />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent className="z-[110]">
+                                    <p>Remove referenced transaction</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                         <div className="flex items-center gap-2 mb-1">
                             <FileText className="w-4 h-4 text-emerald-600" />
                             <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider">Referencing Transaction</span>
@@ -472,12 +496,22 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                             alt="Preview" 
                             className="w-20 h-20 object-cover rounded-xl border border-[#4a6850]/10"
                         />
-                        <button 
-                            onClick={() => setAttachedImage(null)}
-                            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
-                        >
-                            <X className="w-3 h-3" />
-                        </button>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        onClick={() => setAttachedImage(null)}
+                                        className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                                        aria-label="Remove image"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent className="z-[110]">
+                                    <p>Remove image</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                     </div>
                 )}
 
