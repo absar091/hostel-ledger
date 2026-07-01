@@ -15,6 +15,8 @@ import Sidebar from "@/components/Sidebar";
 import DesktopHeader from "@/components/DesktopHeader";
 import MobileHeader from "@/components/MobileHeader";
 import AppContainer from "@/components/AppContainer";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 import PageGuide from "@/components/PageGuide";
 import TransactionDetailModal from "@/components/TransactionDetailModal";
 import ExpenseThreadSheet from "@/components/ExpenseThreadSheet";
@@ -372,17 +374,26 @@ const Activity = () => {
                       </div>
 
                       {transaction.type === 'expense' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setChatTransaction(transaction);
-                            setShowChat(true);
-                          }}
-                          className="w-10 h-10 rounded-full bg-[#4a6850]/5 flex items-center justify-center text-[#4a6850]/40 hover:text-primary hover:bg-primary/10 transition-all active:scale-90 ml-2"
-                          title={t('chat.discuss')}
-                        >
-                          <MessageSquareText className="w-5 h-5" />
-                        </button>
+                        <TooltipProvider>
+                          <Tooltip delayDuration={300}>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setChatTransaction(transaction);
+                                  setShowChat(true);
+                                }}
+                                className="w-10 h-10 rounded-full bg-[#4a6850]/5 flex items-center justify-center text-[#4a6850]/40 hover:text-primary hover:bg-primary/10 transition-all active:scale-90 ml-2 outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2"
+                                aria-label={t('chat.discuss')}
+                              >
+                                <MessageSquareText className="w-5 h-5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="font-medium z-[110]">
+                              {t('chat.discuss')}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       )}
                     </div>
                   </button>
