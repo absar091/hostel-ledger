@@ -1,0 +1,3 @@
+## 2024-07-01 - Avoid conditional hooks during array operations optimizations
+**Learning:** When optimizing React render performance by wrapping computationally heavy inline array operations (`map`, `filter`, `reduce`) with `useMemo`, you must move early return clauses (such as loading checks) below all `useMemo` hooks to avoid `react-hooks/rules-of-hooks` ESLint violations, which enforces that React Hooks must be called in the exact same order in every component render.
+**Action:** When adding `useMemo` to top-level variables derived from props or context, identify and move any pre-existing early returns that precede them to the bottom of the component logic block before rendering the UI.
