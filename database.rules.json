@@ -12,6 +12,12 @@
         "settlements": {
           ".write": false
         },
+        "role": {
+          ".validate": "(!data.exists() && newData.val() === 'user') || newData.val() === data.val()"
+        },
+        "accountStatus": {
+          ".validate": "(!data.exists() && newData.val() === 'active') || newData.val() === data.val()"
+        },
         ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt']) && newData.child('uid').val() === $uid"
       }
     },
