@@ -357,14 +357,21 @@ const Dashboard = () => {
 
   const pendingPaymentCounts = useMemo(() => {
     const settlementsByGroup = user?.settlements || {};
-    const entries = Object.values(settlementsByGroup).flatMap(
-      (groupSettlements) => Object.values(groupSettlements || {}),
-    );
+    let toPayCount = 0;
+    let toReceiveCount = 0;
 
-    const toPayCount = entries.filter((item) => (item?.toPay || 0) > 0).length;
-    const toReceiveCount = entries.filter(
-      (item) => (item?.toReceive || 0) > 0,
-    ).length;
+    for (const groupId in settlementsByGroup) {
+      const groupSettlements = settlementsByGroup[groupId];
+      if (!groupSettlements) continue;
+
+      for (const memberId in groupSettlements) {
+        const item = groupSettlements[memberId];
+        if (item) {
+          if ((item.toPay || 0) > 0) toPayCount++;
+          if ((item.toReceive || 0) > 0) toReceiveCount++;
+        }
+      }
+    }
 
     return {
       total: toPayCount + toReceiveCount,
