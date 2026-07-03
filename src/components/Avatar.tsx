@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, memo } from "react";
 
 interface AvatarProps {
   name: string;
@@ -83,4 +83,4 @@ const Avatar = ({ name, photoURL, size = "md", className }: AvatarProps) => {
   );
 };
 
-export default Avatar;
+export default memo(Avatar);
