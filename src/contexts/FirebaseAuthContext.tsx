@@ -988,7 +988,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const getTotalToReceive = (groupId?: string): number => {
+  const getTotalToReceive = useCallback((groupId?: string): number => {
     const settlements = getSettlements(groupId);
     if (!settlements || Object.keys(settlements).length === 0) return 0;
 
@@ -996,9 +996,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       const amount = settlement?.toReceive || 0;
       return sum + (isNaN(amount) ? 0 : amount);
     }, 0);
-  };
+  }, [getSettlements]);
 
-  const getTotalToPay = (groupId?: string): number => {
+  const getTotalToPay = useCallback((groupId?: string): number => {
     const settlements = getSettlements(groupId);
     if (!settlements || Object.keys(settlements).length === 0) return 0;
 
@@ -1006,15 +1006,15 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       const amount = settlement?.toPay || 0;
       return sum + (isNaN(amount) ? 0 : amount);
     }, 0);
-  };
+  }, [getSettlements]);
 
-  const getSettlementDelta = (groupId?: string): number => {
+  const getSettlementDelta = useCallback((groupId?: string): number => {
     const toReceive = getTotalToReceive(groupId);
     const toPay = getTotalToPay(groupId);
 
     if (isNaN(toReceive) || isNaN(toPay)) return 0;
     return toReceive - toPay;
-  };
+  }, [getTotalToReceive, getTotalToPay]);
 
 
 
