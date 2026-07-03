@@ -1,3 +1,7 @@
-## 2025-04-06 - Replacing Native Title Attributes with Radix Tooltips
-**Learning:** Native `title` attributes on interactive elements provide a delayed, inconsistently styled, and poorly accessible tooltip experience. When integrating Radix UI tooltips, it's critical to explicitly remove the native `title` attribute to prevent a "double-tooltip" effect where both the custom and native tooltips appear simultaneously, confusing users and screen readers. Additionally, tooltips must be globally wrapped in `<TooltipProvider>` to prevent application crashes due to missing context.
-**Action:** Always replace native `title` attributes on icon-only buttons with Radix `<Tooltip>` components, ensuring the native attribute is removed. Use `<TooltipTrigger asChild>` to prevent invalid HTML nesting, and wrap the component tree with `<TooltipProvider>`. Utilize `useTranslation` for the tooltip and `aria-label` content.
+## 2024-07-03 - Added Tooltips to TransactionDetailModal
+**Learning:** Found several icon-only buttons (Share as Image, Close, Copy Reference) in `TransactionDetailModal` that were using native `title` attributes instead of consistent Radix UI tooltips, causing accessibility issues and a lack of visual cohesion.
+**Action:** Replaced native `title` attributes with Radix UI `<Tooltip>` components and ensured proper ARIA labels.
+
+## 2024-07-03 - Radix Tooltip Accessibility Context
+**Learning:** When removing native `title` attributes in favor of Radix UI tooltips, the underlying element (like `<button>`) still requires an explicit `aria-label` to maintain screen reader support, as the Radix Tooltip Content is often rendered in a portal and may not be inherently associated for all screen readers without proper aria linking, especially when replacing standard OS-level title tooltips.
+**Action:** Always ensure that any element wrapped in a `<TooltipTrigger>` has an `aria-label` that exactly mirrors the intended text of the tooltip content to prevent accessibility regressions.
