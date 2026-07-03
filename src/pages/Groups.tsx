@@ -29,13 +29,45 @@ const Groups = () => {
   const [activeFilter, setActiveFilter] = useState<"all" | "unsettled" | "favorites">("all");
   const favoriteGroups = getFavoriteGroups();
 
-  // Pre-calculate all group settlements
-  const groupSettlementsMap = useMemo(() => {
-    const settlementsMap: Record<string, any> = {};
+  // Pre-calculate all group settlements and their aggregates to prevent redundant calculations across renders, filters, and effects
+  const groupSettlementsData = useMemo(() => {
+    const data: Record<string, {
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+      settlements: any;
+      toReceive: number;
+      toPay: number;
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+      memberToSettle: { memberId: string; settlement: any };
+    }> = {};
+
     groups.forEach((group) => {
-      settlementsMap[group.id] = getSettlements(group.id);
+      const groupSettlements = getSettlements(group.id) || {};
+      let toReceive = 0;
+      let toPay = 0;
+
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+      Object.values(groupSettlements).forEach((settlement: any) => {
+        toReceive += settlement.toReceive || 0;
+        toPay += settlement.toPay || 0;
+      });
+
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+      const memberToSettle = Object.entries(groupSettlements).reduce((max, [memberId, settlement]: [string, any]) => {
+        const totalAmount = (settlement.toReceive || 0) + (settlement.toPay || 0);
+        const maxAmount = (max.settlement?.toReceive || 0) + (max.settlement?.toPay || 0);
+        return totalAmount > maxAmount ? { memberId, settlement } : max;
+      }, { memberId: '',
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+        settlement: null as any });
+
+      data[group.id] = {
+        settlements: groupSettlements,
+        toReceive,
+        toPay,
+        memberToSettle
+      };
     });
-    return settlementsMap;
+    return data;
   }, [groups, getSettlements]);
 
   useEffect(() => {
@@ -90,16 +122,8 @@ const Groups = () => {
     // Apply category filter
     if (activeFilter === "unsettled") {
       filtered = filtered.filter(group => {
-        const groupSettlements = groupSettlementsMap[group.id] || {};
-        let toReceive = 0;
-        let toPay = 0;
-
-        Object.values(groupSettlements).forEach((settlement: any) => {
-          toReceive += settlement.toReceive || 0;
-          toPay += settlement.toPay || 0;
-        });
-
-        return toReceive > 0 || toPay > 0;
+        const data = groupSettlementsData[group.id];
+        return data && (data.toReceive > 0 || data.toPay > 0);
       });
     } else if (activeFilter === "favorites") {
       filtered = filtered.filter(group => favoriteGroups.includes(group.id));
@@ -113,19 +137,14 @@ const Groups = () => {
     });
 
     return filtered;
-  }, [groups, searchQuery, activeFilter, groupSettlementsMap, favoriteGroups]);
+  }, [groups, searchQuery, activeFilter, groupSettlementsData, favoriteGroups]);
 
   // Ensure member details are loaded for groups with settlements
   useEffect(() => {
     filteredGroups.forEach(group => {
-      const groupSettlements = groupSettlementsMap[group.id] || {};
-
-      // Calculate member to settle with logic (same as render)
-      const memberToSettle = Object.entries(groupSettlements).reduce((max, [memberId, settlement]: [string, any]) => {
-        const totalAmount = (settlement.toReceive || 0) + (settlement.toPay || 0);
-        const maxAmount = (max.settlement?.toReceive || 0) + (max.settlement?.toPay || 0);
-        return totalAmount > maxAmount ? { memberId, settlement } : max;
-      }, { memberId: '', settlement: null as any });
+      const data = groupSettlementsData[group.id];
+      if (!data) return;
+      const memberToSettle = data.memberToSettle;
 
       // If we have a member to settle but they aren't in the loaded members list
       if (memberToSettle.memberId) {
@@ -136,9 +155,10 @@ const Groups = () => {
         }
       }
     });
-  }, [filteredGroups, groupSettlementsMap, fetchGroupDetail]);
+  }, [filteredGroups, groupSettlementsData, fetchGroupDetail]);
 
   // Get gradient colors for group cards
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const getGroupGradient = (group: any, index: number) => {
     if (group.isPersonal) {
       return "from-[#4a6850] to-[#2f4336]"; // Stronger green for personal
@@ -243,25 +263,12 @@ const Groups = () => {
         <div className="flex-1 overflow-y-auto p-4 lg:p-8 pt-4 pb-24 lg:pb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
             {filteredGroups.map((group, index) => {
-              const groupSettlements = groupSettlementsMap[group.id] || {};
-              let toReceive = 0;
-              let toPay = 0;
-
-              Object.values(groupSettlements).forEach((settlement: any) => {
-                toReceive += settlement.toReceive || 0;
-                toPay += settlement.toPay || 0;
-              });
+              const data = groupSettlementsData[group.id] || { toReceive: 0, toPay: 0, memberToSettle: { memberId: '', settlement: null } };
+              const { toReceive, toPay, memberToSettle } = data;
 
               const hasReceivable = toReceive > 0;
               const hasPayable = toPay > 0;
               const isSettled = toReceive === 0 && toPay === 0;
-
-              // Find the member to settle with (the one with the highest amount)
-              const memberToSettle = Object.entries(groupSettlements).reduce((max, [memberId, settlement]: [string, any]) => {
-                const totalAmount = (settlement.toReceive || 0) + (settlement.toPay || 0);
-                const maxAmount = (max.settlement?.toReceive || 0) + (max.settlement?.toPay || 0);
-                return totalAmount > maxAmount ? { memberId, settlement } : max;
-              }, { memberId: '', settlement: null as any });
 
               const memberObj = group.members.find(m => m.id === memberToSettle.memberId);
               // Use translated fallback string instead of hardcoded english
