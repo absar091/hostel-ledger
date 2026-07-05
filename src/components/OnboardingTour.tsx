@@ -64,7 +64,7 @@ const OnboardingTour = ({ open, onClose, steps }: OnboardingTourProps) => {
               Step {currentStep + 1} of {steps.length}
             </span>
           </div>
-          <button
+          <button aria-label="Close"
             onClick={handleSkip}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >

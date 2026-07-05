@@ -878,6 +878,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                                 ? "bg-red-500 text-white animate-pulse"
                                 : "bg-white text-[#4a6850] hover:bg-gray-100 border border-gray-200"
                             )}
+                            aria-label={isListening ? "Stop recording" : "Start recording"}
                           >
                             {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                           </button>
