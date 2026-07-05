@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2024-07-05 - Removed unsafe-eval from CSP
+**Vulnerability:** The Content Security Policy (CSP) header included the 'unsafe-eval' directive in its script-src, which allows execution of strings as code (e.g., eval(), setTimeout(string)).
+**Learning:** This directive was likely added as a temporary workaround during development but left in production, exposing the application to Cross-Site Scripting (XSS) risks.
+**Prevention:** Avoid relying on 'unsafe-eval' for application logic. Use secure alternatives and ensure CSP headers are strict and regularly reviewed for unnecessary permissions.
