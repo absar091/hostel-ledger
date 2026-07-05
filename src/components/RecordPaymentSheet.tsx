@@ -459,6 +459,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                       </div>
                       <button
                         onClick={() => setAmount(selectedMemberData.settlement.toReceive.toString())}
+                        aria-label={t('common.quick_fill') + ' ' + t('common.full_amount')}
                         className="w-full bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white px-4 py-2 rounded-xl transition-all font-black shadow-md hover:shadow-lg text-sm"
                       >
                         {t('common.full_amount')}: {formatAmount(selectedMemberData.settlement.toReceive)}
