@@ -7,7 +7,7 @@ export const sanitizeInput = (input: string): string => {
   if (typeof input !== 'string') return '';
   
   return input
-    .replace(/[<>\"'&]/g, (match) => {
+    .replace(/[<>"'&]/g, (match) => {
       const escapeMap: { [key: string]: string } = {
         '<': '&lt;',
         '>': '&gt;',
@@ -199,7 +199,7 @@ export const validateCSRFToken = (token: string, expectedToken: string): boolean
 export const getCSPHeader = (): string => {
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://*.firebaseio.com https://*.googleapis.com",
+    "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://*.firebaseio.com https://*.googleapis.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
