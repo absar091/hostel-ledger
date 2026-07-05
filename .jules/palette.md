@@ -1,3 +1,7 @@
 ## 2025-04-06 - Replacing Native Title Attributes with Radix Tooltips
 **Learning:** Native `title` attributes on interactive elements provide a delayed, inconsistently styled, and poorly accessible tooltip experience. When integrating Radix UI tooltips, it's critical to explicitly remove the native `title` attribute to prevent a "double-tooltip" effect where both the custom and native tooltips appear simultaneously, confusing users and screen readers. Additionally, tooltips must be globally wrapped in `<TooltipProvider>` to prevent application crashes due to missing context.
 **Action:** Always replace native `title` attributes on icon-only buttons with Radix `<Tooltip>` components, ensuring the native attribute is removed. Use `<TooltipTrigger asChild>` to prevent invalid HTML nesting, and wrap the component tree with `<TooltipProvider>`. Utilize `useTranslation` for the tooltip and `aria-label` content.
+
+## 2024-07-05 - Added Tooltips to Sidebar Icon-only Buttons
+**Learning:** In a collapsible sidebar, elements often transition from text+icon to icon-only depending on the state. Using `aria-label` is crucial, but users without screen readers might still be confused by icon-only buttons if they don't have tooltips. I added Radix UI Tooltips to the toggle button, profile button, and logout button, and mapped nav items, providing text descriptions on hover/focus when the sidebar is collapsed.
+**Action:** Always pair `aria-label` with a visual Tooltip for icon-only buttons to ensure both screen reader users and sighted users understand the action.
