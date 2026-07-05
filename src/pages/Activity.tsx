@@ -100,8 +100,12 @@ const Activity = () => {
     return filtered;
   }, [allTransactions, filterType, filterDate, searchQuery]);
 
+  // Optimized: Single pass reduction to create group map, avoiding intermediate array allocation from map() + fromEntries()
   const groupMap = useMemo(() => {
-    return Object.fromEntries(groups.map(g => [g.id, g]));
+    return groups.reduce((acc, group) => {
+      acc[group.id] = group;
+      return acc;
+    }, {} as Record<string, typeof groups[0]>);
   }, [groups]);
 
   // Calculate statistics
