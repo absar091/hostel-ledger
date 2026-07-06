@@ -6,13 +6,7 @@
       "$uid": {
         ".read": "auth != null",
         ".write": "$uid === auth.uid && auth != null",
-        "walletBalance": {
-          ".write": false
-        },
-        "settlements": {
-          ".write": false
-        },
-        ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt']) && newData.child('uid').val() === $uid"
+        ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt']) && newData.child('uid').val() === $uid && (!newData.hasChild('role') || (newData.child('role').val() === 'user' && !data.exists()) || newData.child('role').val() === data.child('role').val()) && (!newData.hasChild('walletBalance') || newData.child('walletBalance').val() === data.child('walletBalance').val()) && (!newData.hasChild('settlements') || newData.child('settlements').val() === data.child('settlements').val())"
       }
     },
     "groups": {
