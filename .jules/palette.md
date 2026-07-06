@@ -1,3 +1,7 @@
 ## 2025-04-06 - Replacing Native Title Attributes with Radix Tooltips
 **Learning:** Native `title` attributes on interactive elements provide a delayed, inconsistently styled, and poorly accessible tooltip experience. When integrating Radix UI tooltips, it's critical to explicitly remove the native `title` attribute to prevent a "double-tooltip" effect where both the custom and native tooltips appear simultaneously, confusing users and screen readers. Additionally, tooltips must be globally wrapped in `<TooltipProvider>` to prevent application crashes due to missing context.
 **Action:** Always replace native `title` attributes on icon-only buttons with Radix `<Tooltip>` components, ensuring the native attribute is removed. Use `<TooltipTrigger asChild>` to prevent invalid HTML nesting, and wrap the component tree with `<TooltipProvider>`. Utilize `useTranslation` for the tooltip and `aria-label` content.
+
+## 2024-07-06 - Replacing Native Titles with Radix Tooltips in Lists
+**Learning:** When replacing native `title` attributes on mapped items with custom Radix UI Tooltips, the React `key` prop must be moved from the inner `<button>` (now a trigger) to the outer `<Tooltip>` wrapper to avoid list key warnings. Also, the native `title` should be removed completely to avoid a double-tooltip effect, replacing its accessible role with `aria-label` directly on the button trigger.
+**Action:** Always migrate the `key` prop to the outermost new element in a `.map()` iteration and explicitly swap `title` for `aria-label` when integrating custom UI tooltips.
