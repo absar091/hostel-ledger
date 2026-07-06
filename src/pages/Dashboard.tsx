@@ -279,6 +279,10 @@ const Dashboard = () => {
   // Get all transactions including wallet transactions
   const allTransactions = getAllTransactions();
 
+  const recentTransactions = useMemo(() => {
+    return allTransactions.slice(0, 5);
+  }, [allTransactions]);
+
   // Calculate time since last transaction
   const lastTransactionTime = useMemo(() => {
     if (allTransactions.length === 0) return t('dashboard.no_tx_yet');
@@ -320,35 +324,6 @@ const Dashboard = () => {
     ];
   }, [groups.length, allTransactions.length, offline, pendingCount]);
 
-  // Group transactions by date (Today, Yesterday, Older)
-  const { todayTransactions, yesterdayTransactions, olderTransactions } = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    const todayTransactions: Transaction[] = [];
-    const yesterdayTransactions: Transaction[] = [];
-    const olderTransactions: Transaction[] = [];
-
-    allTransactions.forEach((transaction) => {
-      const transactionDate = new Date(
-        transaction.timestamp || transaction.date,
-      );
-      transactionDate.setHours(0, 0, 0, 0);
-
-      if (transactionDate.getTime() === today.getTime()) {
-        todayTransactions.push(transaction);
-      } else if (transactionDate.getTime() === yesterday.getTime()) {
-        yesterdayTransactions.push(transaction);
-      } else {
-        olderTransactions.push(transaction);
-      }
-    });
-
-    return { todayTransactions, yesterdayTransactions, olderTransactions };
-  }, [allTransactions]);
 
   // Calculate totals using new settlement system
   const settlementDelta = getSettlementDelta();
@@ -1016,7 +991,7 @@ const Dashboard = () => {
               {allTransactions.length > 0 ? (
                 <div className="p-1">
                   <TransactionList
-                    transactions={allTransactions.slice(0, 5)}
+                    transactions={recentTransactions}
                     groups={groups}
                     userId={user?.uid}
                     onSelectTransaction={setSelectedTransaction}
