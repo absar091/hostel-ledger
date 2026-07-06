@@ -1,0 +1,3 @@
+## 2024-07-06 - Unused Array Allocations in React Dashboard
+**Learning:** The Dashboard component was allocating three separate arrays (`todayTransactions`, `yesterdayTransactions`, `olderTransactions`) on every render by iterating through `allTransactions`, but these were completely unused in the UI. In addition, `Activity.tsx` used `Object.fromEntries(groups.map(...))` to create a lookup map, which iterates twice (once to map to an array of tuples, once to build the object).
+**Action:** Always verify if computed data (like grouped or partitioned arrays) is actually consumed in the render output. Remove unused derivations to save CPU and memory. Use `.reduce()` instead of `.map()` chained with `Object.fromEntries()` for O(1) lookups.
