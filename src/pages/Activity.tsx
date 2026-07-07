@@ -101,7 +101,10 @@ const Activity = () => {
   }, [allTransactions, filterType, filterDate, searchQuery]);
 
   const groupMap = useMemo(() => {
-    return Object.fromEntries(groups.map(g => [g.id, g]));
+    return groups.reduce((acc, g) => {
+      acc[g.id] = g;
+      return acc;
+    }, {} as Record<string, typeof groups[0]>);
   }, [groups]);
 
   // Calculate statistics
