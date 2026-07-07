@@ -12,14 +12,14 @@ test('verify copy id feedback', async ({ page }) => {
   await expect(page.getByText('txn_1234567890')).toBeVisible();
 
   // Find the Copy ID button (using the title attribute which is initially "Copy ID")
-  const copyButton = page.locator("button[title='Copy ID']");
+  const copyButton = page.getByRole("button", { name: "Copy Reference" });
 
   // Click the copy button
   await copyButton.click();
 
   // Wait for the feedback state (icon change and title update)
   // The button's title should change to "Copied!"
-  const copiedButton = page.locator("button[title='Copied!']");
+  const copiedButton = page.getByRole("button", { name: "Copied!" });
   await expect(copiedButton).toBeVisible();
 
   // Optional: Verify the icon changed (checking for the check icon SVG or class if possible,
@@ -27,5 +27,5 @@ test('verify copy id feedback', async ({ page }) => {
 
   // Wait for the feedback to revert
   // We can use a timeout in expect or wait explicitly, but here we wait for the original button to reappear
-  await expect(copyButton).toBeVisible({ timeout: 5000 });
+  await expect(page.getByRole("button", { name: "Copy Reference" })).toBeVisible({ timeout: 5000 });
 });
