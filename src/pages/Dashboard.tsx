@@ -350,6 +350,12 @@ const Dashboard = () => {
     return { todayTransactions, yesterdayTransactions, olderTransactions };
   }, [allTransactions]);
 
+
+  // Memoize recent transactions to prevent breaking TransactionItem/TransactionList memoization
+  const recentTransactions = useMemo(() => {
+    return allTransactions.slice(0, 5);
+  }, [allTransactions]);
+
   // Calculate totals using new settlement system
   const settlementDelta = getSettlementDelta();
   const totalToReceive = getTotalToReceive();
@@ -1016,7 +1022,7 @@ const Dashboard = () => {
               {allTransactions.length > 0 ? (
                 <div className="p-1">
                   <TransactionList
-                    transactions={allTransactions.slice(0, 5)}
+                    transactions={recentTransactions}
                     groups={groups}
                     userId={user?.uid}
                     onSelectTransaction={setSelectedTransaction}
