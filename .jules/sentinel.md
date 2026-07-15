@@ -40,3 +40,8 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+
+## 2024-07-15 - Write-Once Privilege Escalation in User Creation
+**Vulnerability:** In `database.rules.json`, the `users/$uid` node lacked strict validation for `role` and `accountStatus` fields upon creation. A malicious user could potentially create their own profile with `role: "admin"` during initial signup because the rule `.write: "$uid === auth.uid"` allowed it without field-level restrictions.
+**Learning:** `.write` rules grant full access to create the entire object structure. To restrict specific fields during object creation, explicitly strict `.validate` rules must be used that enforce both existence checks and expected default values.
+**Prevention:** Always use `.validate: "(!data.exists() && newData.val() === 'expected_default') || newData.val() === data.val()"` to prevent privilege escalation when creating objects.
