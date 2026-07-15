@@ -7,12 +7,15 @@
         ".read": "auth != null",
         ".write": "$uid === auth.uid && auth != null",
         "walletBalance": {
-          ".write": false
+          ".validate": "!newData.exists() || (data.exists() && newData.val() === data.val())"
         },
         "settlements": {
-          ".write": false
+          ".validate": "!newData.exists() || (data.exists() && newData.val() === data.val())"
         },
-        ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt']) && newData.child('uid').val() === $uid"
+        ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt']) && newData.child('uid').val() === $uid",
+        "role": {
+          ".validate": "(!data.exists() && newData.val() === 'user') || (data.exists() && newData.val() === data.val())"
+        }
       }
     },
     "groups": {
