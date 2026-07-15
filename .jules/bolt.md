@@ -1,0 +1,3 @@
+## 2024-07-15 - React.memo Pitfall with Inline Array Slicing
+**Learning:** Passing an inline array derivation like `transactions={allTransactions.slice(0, 5)}` defeats `React.memo` on the child component because `.slice()` creates a new array reference on every render. Additionally, `Object.fromEntries(array.map(...))` creates unnecessary intermediate arrays; `.reduce()` is more memory efficient for O(1) lookups.
+**Action:** Always wrap array derivations (like `.slice()` or `.filter()`) in `useMemo` when passing them to memoized list components, and prefer `.reduce()` for building lookup maps.
