@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useInvitations } from "@/hooks/useInvitations";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import Logo from "./Logo";
@@ -86,24 +87,26 @@ const Sidebar = () => {
           </div>
         )}
 
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {navItems.map((item: any) => {
           const Icon = item.icon;
           const active = isActive(item.path);
 
           return (
-            <button
-              key={item.id}
-              onClick={() => navigate(item.path)}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative",
-                active
-                  ? "bg-[#1B4332] text-white shadow-lg"
-                  : "text-gray-600 hover:bg-gray-100",
-                !isOpen && "justify-center"
-              )}
-              title={!isOpen ? item.label : undefined}
-            >
+            <Tooltip key={item.id} delayDuration={0}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => navigate(item.path)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]",
+                    active
+                      ? "bg-[#1B4332] text-white shadow-lg"
+                      : "text-gray-600 hover:bg-gray-100",
+                    !isOpen && "justify-center"
+                  )}
+                  aria-label={!isOpen ? item.label : undefined}
+                >
               {/* Active indicator bar */}
               {active && (
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-400 rounded-r-full"></div>
@@ -120,7 +123,14 @@ const Sidebar = () => {
                   {item.badge}
                 </div>
               )}
-            </button>
+                </button>
+              </TooltipTrigger>
+              {!isOpen && (
+                <TooltipContent side="right">
+                  <p>{item.label}</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
           );
         })}
       </nav>
