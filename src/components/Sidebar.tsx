@@ -67,7 +67,7 @@ const Sidebar = () => {
       {/* Toggle Button */}
       <button
         onClick={toggleSidebar}
-        aria-label={isOpen ? t('sidebar.collapse') : t('sidebar.expand')}
+        aria-label={isOpen ? t('sidebar.collapse', 'Collapse sidebar') : t('sidebar.expand', 'Expand sidebar')}
         className="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
       >
         {isOpen ? (
@@ -154,8 +154,8 @@ const Sidebar = () => {
             <button
               onClick={() => navigate("/profile")}
               className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center mx-auto mb-3"
-              aria-label={user?.name || "Profile"}
-              title={user?.name || "Profile"}
+              aria-label={user?.name ? `${user.name} Profile` : "Profile"}
+              title={user?.name ? `${user.name} Profile` : "Profile"}
             >
               <span className="text-lg font-black text-white">
                 {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
