@@ -1,0 +1,3 @@
+## 2024-05-18 - Defeating Memoization in React with Inline Array Operations
+**Learning:** In a React application, if a child component is memoized (or relies on prop stability), passing an inline array operation like `transactions={allTransactions.slice(0, 5)}` defeats the memoization completely. `slice` creates a new array reference on every render, causing the child to re-render even if `allTransactions` hasn't changed.
+**Action:** When a parent passes a subset of a list to a child component, wrap the slicing or mapping operation in a `useMemo` hook to preserve referential equality and enable `React.memo` to work properly. Also, don't forget to memoize the child component using `React.memo`.
