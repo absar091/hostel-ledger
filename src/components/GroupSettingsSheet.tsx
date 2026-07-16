@@ -221,7 +221,8 @@ const GroupSettingsSheet = ({
                     variant="ghost"
                     size="icon"
                     onClick={handleCopyGroupInvite}
-                    className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90"
+                    aria-label="Copy group invite link"
+                    className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]"
                   >
                     <Link className="w-4 h-4" />
                   </Button>
@@ -259,7 +260,8 @@ const GroupSettingsSheet = ({
                         size="icon"
                         onClick={handleSearch}
                         disabled={isSearching || !newMemberName.trim()}
-                        className="absolute right-1 top-1 h-9 w-9 text-[#4a6850] hover:bg-[#4a6850]/10 rounded-lg"
+                        aria-label="Search for user"
+                        className="absolute right-1 top-1 h-9 w-9 text-[#4a6850] hover:bg-[#4a6850]/10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]"
                       >
                         {isSearching ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -277,7 +279,8 @@ const GroupSettingsSheet = ({
                         setSearchResult(null);
                         setSearchError(false);
                       }}
-                      className="h-11 w-11 rounded-xl hover:bg-gray-100 shadow-sm hover:shadow-md transition-all flex-shrink-0 bg-white"
+                      aria-label="Close add member view"
+                      className="h-11 w-11 rounded-xl hover:bg-gray-100 shadow-sm hover:shadow-md transition-all flex-shrink-0 bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]"
                     >
                       <X className="w-4 h-4" />
                     </Button>
