@@ -95,8 +95,9 @@ const Sidebar = () => {
               key={item.id}
               onClick={() => navigate(item.path)}
               aria-current={active ? "page" : undefined}
+              aria-label={t(item.label)}
               className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative",
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]/50",
                 active
                   ? "bg-[#1B4332] text-white shadow-lg"
                   : "text-gray-600 hover:bg-gray-100",

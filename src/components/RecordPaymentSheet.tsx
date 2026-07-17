@@ -264,6 +264,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 <button
                   key={group.id}
                   onClick={() => setSelectedGroup(group.id)}
+                  aria-label={`Select group ${group.name}`}
                   aria-pressed={selectedGroup === group.id}
                   className={cn(
                     "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
@@ -328,6 +329,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                       <button
                         key={member.id}
                         onClick={() => setFromMember(member.id)}
+                        aria-label={`Select member ${member.name}`}
                         disabled={!owesYou}
                         aria-pressed={fromMember === member.id}
                         className={cn(
@@ -459,6 +461,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                       </div>
                       <button
                         onClick={() => setAmount(selectedMemberData.settlement.toReceive.toString())}
+
                         className="w-full bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white px-4 py-2 rounded-xl transition-all font-black shadow-md hover:shadow-lg text-sm"
                       >
                         {t('common.full_amount')}: {formatAmount(selectedMemberData.settlement.toReceive)}
@@ -503,6 +506,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => setMethod("cash")}
+                    aria-label="Select cash payment method"
                     aria-pressed={method === "cash"}
                     className={cn(
                       "flex items-center justify-center gap-2 p-3 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
@@ -523,6 +527,7 @@ const RecordPaymentSheet = ({ open, onClose, groups, onSubmit }: RecordPaymentSh
 
                   <button
                     onClick={() => setMethod("online")}
+                    aria-label="Select online payment method"
                     aria-pressed={method === "online"}
                     className={cn(
                       "flex items-center justify-center gap-2 p-3 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",

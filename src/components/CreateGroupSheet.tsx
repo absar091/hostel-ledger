@@ -597,6 +597,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
               <Button
                 variant="secondary"
                 onClick={() => setCurrentStep(currentStep - 1)}
+
                 className="flex-1 h-14 rounded-2xl bg-gray-100 hover:bg-gray-200 font-black text-sm text-gray-600"
               >
                 {t('common.back')}
@@ -606,6 +607,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
               <Button
                 onClick={() => setCurrentStep(currentStep + 1)}
                 disabled={currentStep === 1 && !canProceedToStep2}
+
                 className="flex-1 h-14 rounded-2xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white font-black disabled:opacity-50 text-base shadow-lg shadow-[#4a6850]/20"
               >
                 {t('common.continue')} <ChevronRight className="w-5 h-5 ml-1.5" />
@@ -613,6 +615,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
             ) : (
               <Button
                 onClick={handleSubmit}
+
                 className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white font-black text-lg shadow-xl shadow-[#4a6850]/30 hover:scale-[1.02] transition-transform"
               >
                 {t('sheets.create_group.submit_btn')}

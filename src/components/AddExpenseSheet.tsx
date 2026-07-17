@@ -807,6 +807,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                   <button
                     key={group.id}
                     onClick={() => setSelectedGroup(group.id)}
+                    aria-label={`Select group ${group.name}`}
                     className={cn(
                       "w-full flex items-center gap-3 p-4 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95",
                       selectedGroup === group.id
@@ -848,6 +849,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                 <div className="max-w-sm mx-auto px-4">
                   <button
                     onClick={() => setShowAiInput(!showAiInput)}
+                    aria-label={showAiInput ? "Close AI Input" : "Open AI Input"}
                     className={cn(
                       "w-full mb-8 flex items-center justify-center gap-2 py-4 rounded-3xl font-black text-sm transition-all shadow-md active:scale-95 border-2",
                       showAiInput
@@ -872,6 +874,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                           />
                           <button
                             onClick={handleToggleListen}
+                            aria-label={isListening ? "Stop recording" : "Start recording"}
                             className={cn(
                               "absolute right-4 bottom-4 w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md active:scale-90",
                               isListening
@@ -964,14 +967,18 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                 {/* Mode Toggle */}
                 <div className="bg-gray-100 p-1 rounded-xl flex mb-4">
                   <button
-                    className={cn("flex-1 py-2 rounded-lg text-sm font-bold transition-all", payerMode === 'single' ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700")}
+                    className={cn("flex-1 py-2 rounded-lg text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", payerMode === 'single' ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700")}
                     onClick={() => setPayerMode('single')}
+                    aria-pressed={payerMode === 'single'}
+
                   >
                     Single Payer
                   </button>
                   <button
-                    className={cn("flex-1 py-2 rounded-lg text-sm font-bold transition-all", payerMode === 'multiple' ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700")}
+                    className={cn("flex-1 py-2 rounded-lg text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500", payerMode === 'multiple' ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700")}
                     onClick={() => setPayerMode('multiple')}
+                    aria-pressed={payerMode === 'multiple'}
+
                   >
                     Multiple Payers
                   </button>
