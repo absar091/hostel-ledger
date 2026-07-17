@@ -40,6 +40,7 @@ const PageGuide = ({ title, description, tips = [], emoji = "💡", show, onClos
                 {title}
               </h3>
               <button
+                aria-label="Close guide"
                 onClick={handleClose}
                 className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
               >

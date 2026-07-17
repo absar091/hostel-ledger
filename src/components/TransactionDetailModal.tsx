@@ -235,6 +235,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                 )}
                             </button>
                             <button
+                                aria-label="Close"
                                 onClick={onClose}
                                 className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
                             >
