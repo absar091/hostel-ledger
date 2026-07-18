@@ -40,3 +40,8 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+
+## 2024-07-18 - Missing noopener noreferrer on target="_blank" links
+**Vulnerability:** External links opening in new tabs (`target="_blank"`) without `rel="noopener noreferrer"` were found in `src/components/CreateGroupSheet.tsx` and `src/pages/CreateGroup.tsx`. This exposes the application to Reverse Tabnabbing, where the newly opened page can manipulate the `window.opener` object of the original page.
+**Learning:** Even static or internal links opening in a new tab should include these attributes to adhere strictly to security best practices and prevent potential exploitation if those pages are ever compromised or if user-supplied URLs are used.
+**Prevention:** Always add `rel="noopener noreferrer"` to any `<a>` tag that utilizes `target="_blank"`.
