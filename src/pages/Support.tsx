@@ -399,7 +399,7 @@ const Support = () => {
     const text = currentTicket
       ? `Hi, I need help with ticket ${currentTicket.ticketNumber}`
       : "Hi, I need help with Hostel Ledger";
-    window.open(`https://wa.me/${SUPPORT_WHATSAPP.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(text)}`, "_blank");
+    window.open(`https://wa.me/${SUPPORT_WHATSAPP.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
   };
 
   const openEmail = () => {

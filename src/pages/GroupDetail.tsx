@@ -427,7 +427,7 @@ const GroupDetail = () => {
 
       if (response && response.downloadUrl) {
         // Direct download if URL is provided (legacy/JSON wrapper)
-        window.open(response.downloadUrl, '_blank');
+        window.open(response.downloadUrl, '_blank', 'noopener,noreferrer');
         toast.success(`Report exported as ${format.toUpperCase()}`);
       } else if (response && response.fileContent) {
         // Handle direct file content if provided as a string (legacy)
