@@ -278,6 +278,8 @@ const Dashboard = () => {
 
   // Get all transactions including wallet transactions
   const allTransactions = getAllTransactions();
+  // Memoize recent transactions to prevent slice array allocation on every render
+  const recentTransactions = useMemo(() => allTransactions.slice(0, 5), [allTransactions]);
 
   // Calculate time since last transaction
   const lastTransactionTime = useMemo(() => {
@@ -1016,7 +1018,7 @@ const Dashboard = () => {
               {allTransactions.length > 0 ? (
                 <div className="p-1">
                   <TransactionList
-                    transactions={allTransactions.slice(0, 5)}
+                    transactions={recentTransactions}
                     groups={groups}
                     userId={user?.uid}
                     onSelectTransaction={setSelectedTransaction}
