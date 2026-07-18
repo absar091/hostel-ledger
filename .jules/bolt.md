@@ -1,0 +1,3 @@
+## 2026-07-18 - Inline Array Derivations Defeating React.memo
+**Learning:** Passing an inline array derivation as a prop (e.g., `transactions={allTransactions.slice(0, 5)}`) completely defeats memoization optimizations like `React.memo` on child components. The `.slice()` operation creates a new array reference on every single render cycle, forcing the child component to re-render regardless of whether its actual data has changed.
+**Action:** When working with memoized list components, always wrap derived arrays (using `.slice()`, `.map()`, `.filter()`, etc.) in a `useMemo` hook before passing them as props to ensure referential stability and preserve performance optimizations.
