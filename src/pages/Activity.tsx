@@ -19,7 +19,7 @@ import PageGuide from "@/components/PageGuide";
 import TransactionDetailModal from "@/components/TransactionDetailModal";
 import ExpenseThreadSheet from "@/components/ExpenseThreadSheet";
 import { Input } from "@/components/ui/input";
-import { useFirebaseData } from "@/contexts/FirebaseDataContext";
+import { useFirebaseData, type Group } from "@/contexts/FirebaseDataContext";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -101,7 +101,11 @@ const Activity = () => {
   }, [allTransactions, filterType, filterDate, searchQuery]);
 
   const groupMap = useMemo(() => {
-    return Object.fromEntries(groups.map(g => [g.id, g]));
+    // ⚡ Bolt: O(1) single-pass reduce is faster than chaining .map() and Object.fromEntries()
+    return groups.reduce((acc, group) => {
+      acc[group.id] = group;
+      return acc;
+    }, {} as Record<string, Group>);
   }, [groups]);
 
   // Calculate statistics
