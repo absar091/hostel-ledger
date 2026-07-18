@@ -429,6 +429,7 @@ const Security = () => {
                  <p className="text-xs text-gray-500">Or enter this code manually:</p>
                  <button
                     onClick={() => copyToClipboard(secret)}
+                    aria-label="Copy 2FA secret"
                     className="flex items-center justify-center gap-2 bg-gray-100 py-2 px-4 rounded-lg w-full font-mono text-sm hover:bg-gray-200 transition-colors"
                  >
                     {secret}
