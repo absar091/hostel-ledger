@@ -1017,7 +1017,7 @@ const AdminDashboard = () => {
                                        </div>
                                     </div>
                                  </div>
-                                 <button onClick={() => setSelectedTicket(null)} className="lg:hidden p-3 rounded-2xl bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"><X className="w-6 h-6" /></button>
+                                 <button onClick={() => setSelectedTicket(null)} aria-label="Close ticket details" className="lg:hidden p-3 rounded-2xl bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"><X className="w-6 h-6" /></button>
                               </div> 
                               <div className="flex-1 overflow-y-auto p-10 bg-gray-50/30 space-y-8 custom-scrollbar">
                                  {selectedTicket.messages && Object.entries(selectedTicket.messages).map(([id, msg]: [string, any]) => (

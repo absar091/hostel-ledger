@@ -688,7 +688,7 @@ const Support = () => {
                           Type <span className="font-mono bg-gray-100 px-1 rounded text-emerald-700">GROUP/ID</span> to auto-generate a preview card for your transactions.
                         </p>
                       </div>
-                      <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 shrink-0">
+                      <button onClick={() => setShowTxnHint(false)} aria-label="Close referencing hint" className="text-gray-400 hover:text-gray-600 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded">
                         <X className="w-3 h-3" />
                       </button>
                     </div>
