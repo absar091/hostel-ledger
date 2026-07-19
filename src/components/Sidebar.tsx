@@ -68,7 +68,7 @@ const Sidebar = () => {
       <button
         onClick={toggleSidebar}
         aria-label={isOpen ? t('sidebar.collapse') : t('sidebar.expand')}
-        className="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
+        className="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B4332] focus-visible:ring-offset-2"
       >
         {isOpen ? (
           <ChevronLeft className="w-4 h-4 text-gray-600" />
@@ -95,14 +95,15 @@ const Sidebar = () => {
               key={item.id}
               onClick={() => navigate(item.path)}
               aria-current={active ? "page" : undefined}
+              title={!isOpen ? item.label : undefined}
               className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative",
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B4332] focus-visible:ring-inset",
                 active
                   ? "bg-[#1B4332] text-white shadow-lg"
                   : "text-gray-600 hover:bg-gray-100",
                 !isOpen && "justify-center"
               )}
-              title={!isOpen ? item.label : undefined}
+
             >
               {/* Active indicator bar */}
               {active && (
@@ -143,7 +144,7 @@ const Sidebar = () => {
             <button
               onClick={handleLogout}
               aria-label={t('sidebar.logout')}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200 font-medium"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-inset"
             >
               <LogOut className="w-5 h-5" />
               <span>{t('sidebar.logout')}</span>
@@ -153,7 +154,7 @@ const Sidebar = () => {
           <>
             <button
               onClick={() => navigate("/profile")}
-              className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center mx-auto mb-3"
+              className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center mx-auto mb-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B4332] focus-visible:ring-offset-2"
               aria-label={user?.name || "Profile"}
               title={user?.name || "Profile"}
             >
@@ -163,7 +164,7 @@ const Sidebar = () => {
             </button>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200"
+              className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-inset"
               aria-label={t('sidebar.logout')}
               title={t('sidebar.logout')}
             >
