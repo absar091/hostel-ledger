@@ -41,7 +41,8 @@ const PageGuide = ({ title, description, tips = [], emoji = "💡", show, onClos
               </h3>
               <button
                 onClick={handleClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+                className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-sm"
+                aria-label="Close guide"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -66,7 +67,7 @@ const PageGuide = ({ title, description, tips = [], emoji = "💡", show, onClos
         
         <button
           onClick={handleClose}
-          className="w-full mt-3 py-2 text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+          className="w-full mt-3 py-2 text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-lg"
         >
           Got it!
         </button>

@@ -66,7 +66,8 @@ const OnboardingTour = ({ open, onClose, steps }: OnboardingTourProps) => {
           </div>
           <button
             onClick={handleSkip}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 rounded-sm"
+            aria-label="Skip tour"
           >
             <X className="w-5 h-5" />
           </button>
@@ -109,7 +110,7 @@ const OnboardingTour = ({ open, onClose, steps }: OnboardingTourProps) => {
             {currentStep > 0 && (
               <button
                 onClick={handlePrevious}
-                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-2xl transition-all duration-200"
+                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-2xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Previous
@@ -118,7 +119,7 @@ const OnboardingTour = ({ open, onClose, steps }: OnboardingTourProps) => {
             
             <button
               onClick={handleNext}
-              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold rounded-2xl transition-all duration-200"
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold rounded-2xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
             >
               {currentStep === steps.length - 1 ? 'Get Started' : 'Next'}
               {currentStep < steps.length - 1 && <ArrowRight className="w-4 h-4" />}
@@ -128,7 +129,7 @@ const OnboardingTour = ({ open, onClose, steps }: OnboardingTourProps) => {
           {currentStep < steps.length - 1 && (
             <button
               onClick={handleSkip}
-              className="w-full mt-3 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              className="w-full mt-3 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 rounded-sm"
             >
               Skip Tour
             </button>
