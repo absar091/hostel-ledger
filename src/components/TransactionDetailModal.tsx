@@ -225,7 +225,8 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             <button
                                 onClick={handleShareAsImage}
                                 disabled={isGenerating}
-                                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+                                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                                aria-label="Share as Image"
                                 title="Share as Image"
                             >
                                 {isGenerating ? (
@@ -236,7 +237,8 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             </button>
                             <button
                                 onClick={onClose}
-                                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+                                className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500"
+                                aria-label="Close"
                             >
                                 <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
                             </button>
@@ -264,10 +266,11 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                         </div>
                                         <button
                                             onClick={handleCopyId}
-                                            className={`p-2 rounded-full transition-all ${isCopied
+                                            className={`p-2 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${isCopied
                                                 ? "bg-emerald-100 text-emerald-600 scale-110"
                                                 : "bg-white text-slate-400 hover:text-emerald-600 shadow-sm border border-slate-100 group-hover:border-emerald-200"
                                                 }`}
+                                            aria-label="Copy Transaction ID"
                                             title={isCopied ? "Copied!" : "Copy Reference"}
                                         >
                                             {isCopied ? (
