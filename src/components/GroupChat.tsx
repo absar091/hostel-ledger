@@ -440,7 +440,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                                     A preview card will automatically appear!
                                 </p>
                             </div>
-                            <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5">
+                            <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]/50 rounded-full" aria-label="Dismiss hint">
                                 <X className="w-3 h-3" />
                             </button>
                         </div>
@@ -451,7 +451,8 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                     <div className="mb-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200 relative animate-in slide-in-from-bottom-2">
                         <button 
                             onClick={() => setReferencedTxn(null)}
-                            className="absolute top-2 right-2 p-1 hover:bg-emerald-100 rounded-full"
+                            className="absolute top-2 right-2 p-1 hover:bg-emerald-100 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                            aria-label="Remove referenced transaction"
                         >
                             <X className="w-4 h-4 text-emerald-600" />
                         </button>
@@ -474,7 +475,8 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         />
                         <button 
                             onClick={() => setAttachedImage(null)}
-                            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2"
+                            aria-label="Remove attached image"
                         >
                             <X className="w-3 h-3" />
                         </button>
@@ -493,7 +495,8 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading || !!attachedImage}
-                            className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
+                            className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]/50"
+                            aria-label="Attach image"
                         >
                             {isUploading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -504,9 +507,10 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         <button
                             onClick={() => setShowTxnHint(!showTxnHint)}
                             className={cn(
-                                "p-2.5 rounded-xl transition-all shrink-0",
+                                "p-2.5 rounded-xl transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]/50",
                                 showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
                             )}
+                            aria-label="Toggle referencing hint"
                         >
                             <Info className="w-5 h-5" />
                         </button>
@@ -527,7 +531,8 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                     <button
                         onClick={handleSend}
                         disabled={(!inputText.trim() && !attachedImage) || isSending}
-                        className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
+                        className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2"
+                        aria-label="Send message"
                     >
                         {isSending ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
