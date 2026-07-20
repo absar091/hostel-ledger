@@ -1,0 +1,3 @@
+## 2024-05-18 - [Optimize Dashboard rendering by memoizing recent transactions]
+**Learning:** In the `Dashboard.tsx` component, `allTransactions.slice(0, 5)` was being passed directly into the `TransactionList` component. The `slice` method creates a new array reference on every render, which defeated the purpose of `React.memo` entirely and caused `TransactionList` (and its children) to re-render unnecessarily on every parent re-render.
+**Action:** When passing derived arrays as props to child components, especially memoized ones like `TransactionList`, always ensure the derivation (e.g. `slice`, `filter`, `map`) is wrapped in a `useMemo` hook to preserve referential equality across renders, unless the parent component itself is guaranteed not to re-render often.
