@@ -1410,9 +1410,11 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const getAllTransactions = (): Transaction[] => {
+
+  const getAllTransactions = useCallback((): Transaction[] => {
     return transactions;
-  };
+  }, [transactions]);
+
 
   const checkAccountDeletionEligibility = async (): Promise<{ eligible: boolean; reason?: string }> => {
     if (isLoading) return { eligible: false, reason: "Please wait for data to load..." };
