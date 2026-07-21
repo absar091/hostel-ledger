@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, Plus, Users, ChevronDown, ChevronUp, Phone, CreditCard, ChevronRight, Image as ImageIcon, Loader2 } from "lucide-react";
@@ -249,7 +250,8 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
   const hasPaymentInfo = jazzCash || easypaisa || bankName || raastId;
 
   return (
-    <Sheet open={open} onOpenChange={handleClose}>
+    <TooltipProvider>
+      <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
         <SheetHeader className="flex-shrink-0 mb-4 pt-2">
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
@@ -622,6 +624,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
         </div>
       </SheetContent>
     </Sheet>
+    </TooltipProvider>
   );
 };
 
