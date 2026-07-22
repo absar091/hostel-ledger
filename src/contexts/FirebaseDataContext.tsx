@@ -1394,11 +1394,11 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user?.uid]);
 
-  const getTransactionsByGroup = (groupId: string): Transaction[] => {
+  const getTransactionsByGroup = useCallback((groupId: string): Transaction[] => {
     return transactions.filter((t) => t.groupId === groupId);
-  };
+  }, [transactions]);
 
-  const getTransactionsByMember = (groupId: string, memberId: string): Transaction[] => {
+  const getTransactionsByMember = useCallback((groupId: string, memberId: string): Transaction[] => {
     return transactions.filter((t) => {
       if (t.groupId !== groupId) return false;
 
@@ -1408,7 +1408,7 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         return t.from === memberId || t.to === memberId;
       }
     });
-  };
+  }, [transactions]);
 
   const getAllTransactions = (): Transaction[] => {
     return transactions;

@@ -83,15 +83,15 @@ const GroupDetail = () => {
   const rawGroup = fullGroup || partialGroup;
 
   // Defensive: Ensure members is always an array (Firebase may return object)
-  const group = rawGroup ? {
+  const group = useMemo(() => rawGroup ? {
     ...rawGroup,
     members: (Array.isArray(rawGroup.members)
       ? rawGroup.members
       : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
     ).filter((m: { id: any; }) => m && m.id) // Filter out any null/undefined members
-  } : null;
+  } : null, [rawGroup]);
 
-  const transactions = id ? getTransactionsByGroup(id) : [];
+  const transactions = useMemo(() => id ? getTransactionsByGroup(id) : [], [id, getTransactionsByGroup]);
   const settlements = id ? getSettlements(id) : {};
   const { invitations } = useInvitations();
   const favoriteGroups = getFavoriteGroups();
@@ -118,6 +118,47 @@ const GroupDetail = () => {
   const totalSpent = useMemo(() => transactions
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0), [transactions]);
+
+
+
+  // Memoize mapped transactions to prevent expensive array derivations (.map/.find)
+  // from running on every render for every transaction, preventing TimelineItem re-renders
+  const mappedTransactions = useMemo(() => {
+    if (!group) return [];
+
+    return transactions.map((item) => ({
+      ...item,
+      mappedPayers: item.type === "expense" && item.payers ? item.payers.map(p => ({
+        ...p,
+        name: (() => {
+          if (p.id === user?.uid) return t('group.you_label');
+          if (p.id === group.createdBy) return t('group.owner');
+          const member = group.members.find((m: { id: any; }) => m.id === p.id);
+          return member?.name || p.name;
+        })()
+      })) : undefined,
+      mappedPaidBy: item.type === "expense" ? (
+        (() => {
+          if (item.paidBy === user?.uid) return t('group.you_label');
+          if (item.paidBy === group.createdBy) return t('group.owner');
+          const member = group.members.find((m: { id: any; }) => m.id === item.paidBy);
+          return member?.name || item.paidByName;
+        })()
+      ) : undefined,
+      mappedParticipants: item.type === "expense" ? item.participants?.filter(p => p && p.id).map(p => ({
+        ...p,
+        name: (() => {
+          if (p.id === user?.uid) return t('group.you_label'); // Your share
+          if (p.id === group.createdBy) return t('group.owner'); // Owner's share
+          const member = group.members.find((m: { id: any; }) => m.id === p.id); // Valid member name
+          return member?.name || p.name;
+        })()
+      })) : undefined,
+      mappedUserRole: item.type === "payment" ? (item.from === user?.uid || item.paidBy === user?.uid ? 'payer' : 'receiver') : undefined,
+      isPayerOwner: item.paidBy === group.createdBy
+    }));
+  }, [transactions, group, user?.uid, t]);
+
 
   const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
 
@@ -599,7 +640,7 @@ const GroupDetail = () => {
           <div className="space-y-3 animate-fade-in">
             {transactions.length > 0 ? (
               <div className="space-y-3">
-                {transactions.map((item, index) => (
+                {mappedTransactions.map((item, index) => (
                   <div
                     key={item.id}
                     className="animate-slide-up bg-white rounded-[32px] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 overflow-hidden hover:shadow-[0_25px_80px_rgba(74,104,80,0.12)] transition-all"
@@ -612,38 +653,14 @@ const GroupDetail = () => {
                       date={item.date}
                       id={item.id}
                       groupId={group.id}
-                      payers={item.type === "expense" && item.payers ? item.payers.map(p => ({
-                        ...p,
-                        name: (() => {
-                          if (p.id === user?.uid) return t('group.you_label');
-                          if (p.id === group.createdBy) return t('group.owner');
-                          const member = group.members.find(m => m.id === p.id);
-                          return member?.name || p.name;
-                        })()
-                      })) : undefined}
-                      paidBy={item.type === "expense" ? (
-                        (() => {
-                          // Use consistent naming logic
-                          if (item.paidBy === user?.uid) return t('group.you_label');
-                          if (item.paidBy === group.createdBy) return t('group.owner');
-                          const member = group.members.find((m: { id: any; }) => m.id === item.paidBy);
-                          return member?.name || item.paidByName;
-                        })()
-                      ) : undefined}
-                      participants={item.type === "expense" ? item.participants?.filter(p => p && p.id).map(p => ({
-                        ...p,
-                        name: (() => {
-                          if (p.id === user?.uid) return t('group.you_label'); // Your share
-                          if (p.id === group.createdBy) return t('group.owner'); // Owner's share
-                          const member = group.members.find((m: { id: any; }) => m.id === p.id); // Valid member name
-                          return member?.name || p.name;
-                        })()
-                      })) : undefined}
+                      payers={item.mappedPayers}
+                      paidBy={item.mappedPaidBy}
+                      participants={item.mappedParticipants}
                       from={item.type === "payment" ? item.fromName : undefined}
                       to={item.type === "payment" ? item.toName : undefined}
                       method={item.type === "payment" ? item.method : undefined}
-                      userRole={item.type === "payment" ? (item.from === user?.uid || item.paidBy === user?.uid ? 'payer' : 'receiver') : undefined}
-                      isPayerOwner={item.paidBy === group.createdBy}
+                      userRole={item.mappedUserRole}
+                      isPayerOwner={item.isPayerOwner}
                     />
                   </div>
                 ))}

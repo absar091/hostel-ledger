@@ -1,0 +1,3 @@
+## 2024-07-22 - Prevent unnecessary TimelineItem re-renders via prop mapping memoization
+**Learning:** The `TimelineItem` components in `GroupDetail` were re-rendering unnecessarily because expensive array derivations (e.g. `.map()` and `.find()`) were being passed directly as props in the render loop. Although `TimelineItem` was wrapped in `React.memo`, passing inline arrays and mapping results as props created new object references on every render, defeating the memoization.
+**Action:** When mapping over items to render memoized components in React, always memoize the derived arrays or properties beforehand using `useMemo` so that the child components receive stable prop references and can correctly skip re-rendering.
