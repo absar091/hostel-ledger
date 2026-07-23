@@ -43,13 +43,15 @@ const AuthDebug = () => {
         <div className="space-x-2">
           <button 
             onClick={testFirebaseConnection}
-            className="text-blue-500 underline text-xs"
+            className="text-blue-500 underline text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+            aria-label="Test Firebase Connection"
           >
             Test Firebase
           </button>
           <button 
             onClick={testLogin}
-            className="text-red-500 underline text-xs"
+            className="text-red-500 underline text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
+            aria-label="Test Auth Login"
           >
             Test Auth
           </button>
