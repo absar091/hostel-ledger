@@ -279,6 +279,9 @@ const Dashboard = () => {
   // Get all transactions including wallet transactions
   const allTransactions = getAllTransactions();
 
+  // Memoize top 5 transactions to prevent inline slice creation on every render
+  const recentTransactions = useMemo(() => allTransactions.slice(0, 5), [allTransactions]);
+
   // Calculate time since last transaction
   const lastTransactionTime = useMemo(() => {
     if (allTransactions.length === 0) return t('dashboard.no_tx_yet');
@@ -361,15 +364,17 @@ const Dashboard = () => {
       (groupSettlements) => Object.values(groupSettlements || {}),
     );
 
-    const toPayCount = entries.filter((item) => (item?.toPay || 0) > 0).length;
-    const toReceiveCount = entries.filter(
-      (item) => (item?.toReceive || 0) > 0,
-    ).length;
+    // O(n) reduction instead of multiple O(n) filters
+    const counts = entries.reduce((acc, item) => {
+      if ((item?.toPay || 0) > 0) acc.toPayCount++;
+      if ((item?.toReceive || 0) > 0) acc.toReceiveCount++;
+      return acc;
+    }, { toPayCount: 0, toReceiveCount: 0 });
 
     return {
-      total: toPayCount + toReceiveCount,
-      toPayCount,
-      toReceiveCount,
+      total: counts.toPayCount + counts.toReceiveCount,
+      toPayCount: counts.toPayCount,
+      toReceiveCount: counts.toReceiveCount,
     };
   }, [user?.settlements]);
 
@@ -1016,7 +1021,7 @@ const Dashboard = () => {
               {allTransactions.length > 0 ? (
                 <div className="p-1">
                   <TransactionList
-                    transactions={allTransactions.slice(0, 5)}
+                    transactions={recentTransactions}
                     groups={groups}
                     userId={user?.uid}
                     onSelectTransaction={setSelectedTransaction}
