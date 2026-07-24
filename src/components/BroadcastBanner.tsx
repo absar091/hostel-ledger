@@ -42,7 +42,7 @@ export default function BroadcastBanner() {
       <button
         type="button"
         onClick={handleDismiss}
-        className="p-1.5 hover:bg-blue-700 rounded-lg transition-colors flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        className="p-1.5 hover:bg-blue-700 rounded-lg transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         aria-label="Dismiss broadcast message"
       >
         <X className="w-5 h-5" />

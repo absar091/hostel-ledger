@@ -379,9 +379,10 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                 {hasMore && messages.length > 0 && (
                     <div className="flex justify-center mb-3">
                         <button
+                            aria-label="Load older messages"
                             onClick={loadOlderMessages}
                             disabled={isLoadingOlder}
-                            className="flex items-center gap-1.5 text-xs font-bold text-[#4a6850]/70 bg-white/80 px-4 py-2 rounded-full shadow-sm border border-[#4a6850]/10 hover:bg-white transition-all disabled:opacity-50"
+                            className="flex items-center gap-1.5 text-xs font-bold text-[#4a6850]/70 bg-white/80 px-4 py-2 rounded-full shadow-sm border border-[#4a6850]/10 hover:bg-white transition-all disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]"
                         >
                             {isLoadingOlder ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -440,7 +441,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                                     A preview card will automatically appear!
                                 </p>
                             </div>
-                            <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5">
+                            <button aria-label="Dismiss hint" onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 rounded-sm">
                                 <X className="w-3 h-3" />
                             </button>
                         </div>
@@ -450,8 +451,9 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                 {referencedTxn && (
                     <div className="mb-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200 relative animate-in slide-in-from-bottom-2">
                         <button 
+                            aria-label="Clear transaction reference"
                             onClick={() => setReferencedTxn(null)}
-                            className="absolute top-2 right-2 p-1 hover:bg-emerald-100 rounded-full"
+                            className="absolute top-2 right-2 p-1 hover:bg-emerald-100 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
                         >
                             <X className="w-4 h-4 text-emerald-600" />
                         </button>
@@ -473,8 +475,9 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                             className="w-20 h-20 object-cover rounded-xl border border-[#4a6850]/10"
                         />
                         <button 
+                            aria-label="Remove attached image"
                             onClick={() => setAttachedImage(null)}
-                            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2"
                         >
                             <X className="w-3 h-3" />
                         </button>
@@ -491,9 +494,10 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                             className="hidden"
                         />
                         <button
+                            aria-label="Upload image"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading || !!attachedImage}
-                            className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
+                            className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]"
                         >
                             {isUploading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -502,9 +506,10 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                             )}
                         </button>
                         <button
+                            aria-label={showTxnHint ? "Hide transaction reference hint" : "Show transaction reference hint"}
                             onClick={() => setShowTxnHint(!showTxnHint)}
                             className={cn(
-                                "p-2.5 rounded-xl transition-all shrink-0",
+                                "p-2.5 rounded-xl transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850]",
                                 showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
                             )}
                         >
@@ -525,9 +530,10 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         className="flex-1 bg-[#f0f4f1] border border-[#4a6850]/10 rounded-2xl px-4 py-3.5 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4a6850]/30 focus:border-[#4a6850]/30 transition-all min-w-0"
                     />
                     <button
+                        aria-label="Send message"
                         onClick={handleSend}
                         disabled={(!inputText.trim() && !attachedImage) || isSending}
-                        className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
+                        className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2"
                     >
                         {isSending ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
