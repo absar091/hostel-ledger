@@ -1017,7 +1017,7 @@ const AdminDashboard = () => {
                                        </div>
                                     </div>
                                  </div>
-                                 <button onClick={() => setSelectedTicket(null)} className="lg:hidden p-3 rounded-2xl bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"><X className="w-6 h-6" /></button>
+                                 <button aria-label="Close" onClick={() => setSelectedTicket(null)} className="lg:hidden p-3 rounded-2xl bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"><X className="w-6 h-6" /></button>
                               </div> 
                               <div className="flex-1 overflow-y-auto p-10 bg-gray-50/30 space-y-8 custom-scrollbar">
                                  {selectedTicket.messages && Object.entries(selectedTicket.messages).map(([id, msg]: [string, any]) => (
@@ -1263,7 +1263,7 @@ const AdminDashboard = () => {
                        <p className="text-sm text-gray-500 font-medium">{selectedUser.email}</p>
                     </div>
                  </div>
-                 <button onClick={() => setSelectedUser(null)} className="p-2 rounded-full hover:bg-gray-100 text-gray-400">
+                 <button aria-label="Close" onClick={() => setSelectedUser(null)} className="p-2 rounded-full hover:bg-gray-100 text-gray-400">
                     <X className="w-6 h-6" />
                  </button>
               </div>
@@ -1348,7 +1348,7 @@ const AdminDashboard = () => {
                        <p className="text-xs text-gray-400 font-mono italic">Operational Sector ID: {detailedGroup.id}</p>
                     </div>
                  </div>
-                 <button onClick={() => setDetailedGroup(null)} className="p-2 rounded-full hover:bg-white text-gray-400 shadow-sm">
+                 <button aria-label="Close" onClick={() => setDetailedGroup(null)} className="p-2 rounded-full hover:bg-white text-gray-400 shadow-sm">
                     <X className="w-6 h-6" />
                  </button>
               </div>
@@ -1429,7 +1429,7 @@ const AdminDashboard = () => {
                        <p className="text-xs text-red-600 font-bold uppercase tracking-widest">{selectedReport.type}</p>
                     </div>
                  </div>
-                 <button onClick={() => setSelectedReport(null)} className="p-2 rounded-full hover:bg-white text-gray-400 shadow-sm">
+                 <button aria-label="Close" onClick={() => setSelectedReport(null)} className="p-2 rounded-full hover:bg-white text-gray-400 shadow-sm">
                     <X className="w-6 h-6" />
                  </button>
               </div>
