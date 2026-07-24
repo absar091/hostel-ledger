@@ -688,7 +688,7 @@ const Support = () => {
                           Type <span className="font-mono bg-gray-100 px-1 rounded text-emerald-700">GROUP/ID</span> to auto-generate a preview card for your transactions.
                         </p>
                       </div>
-                      <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 shrink-0">
+                      <button aria-label="Close" onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 shrink-0">
                         <X className="w-3 h-3" />
                       </button>
                     </div>
@@ -699,7 +699,7 @@ const Support = () => {
                 {referencedTxn && (
                   <div className="mb-2 p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 relative animate-in slide-in-from-bottom-2">
                     <button 
-                      onClick={() => setReferencedTxn(null)}
+                      aria-label="Close" onClick={() => setReferencedTxn(null)}
                       className="absolute top-1.5 right-1.5 p-1 hover:bg-emerald-100 rounded-full"
                     >
                       <X className="w-3.5 h-3.5 text-emerald-600" />
@@ -724,7 +724,7 @@ const Support = () => {
                       className="w-16 h-16 object-cover rounded-xl border border-gray-200"
                     />
                     <button 
-                      onClick={() => setAttachedImage(null)}
+                      aria-label="Close" onClick={() => setAttachedImage(null)}
                       className="absolute -top-1.5 -right-1.5 p-1 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600 transition-colors"
                     >
                       <X className="w-2.5 h-2.5" />
