@@ -7,12 +7,18 @@
         ".read": "auth != null",
         ".write": "$uid === auth.uid && auth != null",
         "walletBalance": {
-          ".write": false
+          ".validate": "!newData.exists() || data.val() == newData.val() || root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'superadmin'"
         },
         "settlements": {
-          ".write": false
+          ".validate": "!newData.exists() || data.val() == newData.val() || root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'superadmin'"
         },
-        ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt']) && newData.child('uid').val() === $uid"
+        ".validate": "newData.hasChildren(['uid', 'email', 'name', 'createdAt']) && newData.child('uid').val() === $uid",
+        "role": {
+          ".validate": "!newData.exists() || data.val() == newData.val() || (!data.exists() && newData.val() == 'user') || root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'superadmin'"
+        },
+        "accountStatus": {
+          ".validate": "!newData.exists() || data.val() == newData.val() || (!data.exists() && newData.val() == 'active') || root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('users').child(auth.uid).child('role').val() == 'superadmin'"
+        }
       }
     },
     "groups": {
