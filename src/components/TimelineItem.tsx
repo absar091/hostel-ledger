@@ -2,7 +2,6 @@ import { memo, useState } from "react";
 import Avatar from "./Avatar";
 import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car, Wallet, Plus, Users, MessageSquareText } from "lucide-react";
 import ExpenseThreadSheet from "./ExpenseThreadSheet";
-import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Participant {
   name: string;
@@ -11,6 +10,7 @@ interface Participant {
 }
 
 interface TimelineItemProps {
+  formatAmount: (amount: number) => string;
   type: "expense" | "payment" | "wallet_add" | "wallet_deduct";
   title: string;
   amount: number;
@@ -38,6 +38,7 @@ const categoryIcons = {
 };
 
 const TimelineItemBase = ({
+  formatAmount,
   type,
   title,
   amount,
@@ -55,7 +56,6 @@ const TimelineItemBase = ({
   groupId,
   id,
 }: TimelineItemProps) => {
-  const { formatAmount } = useCurrency();
   const [showChat, setShowChat] = useState(false);
   const Icon = type === "payment" ? HandCoins :
     type === "wallet_add" ? Plus :
