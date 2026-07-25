@@ -644,6 +644,7 @@ const GroupDetail = () => {
                       method={item.type === "payment" ? item.method : undefined}
                       userRole={item.type === "payment" ? (item.from === user?.uid || item.paidBy === user?.uid ? 'payer' : 'receiver') : undefined}
                       isPayerOwner={item.paidBy === group.createdBy}
+                      formatAmount={formatAmount}
                     />
                   </div>
                 ))}
