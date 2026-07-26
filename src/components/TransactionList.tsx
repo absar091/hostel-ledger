@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { type Transaction, type Group } from "@/contexts/FirebaseDataContext";
 import { TransactionItem } from "./TransactionItem";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,8 @@ interface TransactionListProps {
   dateFormat?: "time" | "date";
 }
 
-export const TransactionList = ({
+// ⚡ Bolt Performance Optimization: Wrapped in React.memo to prevent re-renders when parent Dashboard updates but props remain the same.
+export const TransactionList = memo(({
   title,
   transactions,
   groups,
@@ -63,4 +64,4 @@ export const TransactionList = ({
       </div>
     </div>
   );
-};
+});
