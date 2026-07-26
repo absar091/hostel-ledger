@@ -2,7 +2,6 @@ import { memo, useState } from "react";
 import Avatar from "./Avatar";
 import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car, Wallet, Plus, Users, MessageSquareText } from "lucide-react";
 import ExpenseThreadSheet from "./ExpenseThreadSheet";
-import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Participant {
   name: string;
@@ -27,6 +26,7 @@ interface TimelineItemProps {
   onClick?: () => void;
   groupId?: string; // Phase 2
   id?: string; // Phase 2: Transaction ID
+  formatAmount: (amount: number) => string;
 }
 
 const categoryIcons = {
@@ -54,8 +54,8 @@ const TimelineItemBase = ({
   onClick,
   groupId,
   id,
+  formatAmount,
 }: TimelineItemProps) => {
-  const { formatAmount } = useCurrency();
   const [showChat, setShowChat] = useState(false);
   const Icon = type === "payment" ? HandCoins :
     type === "wallet_add" ? Plus :
@@ -297,6 +297,7 @@ const arePropsEqual = (prevProps: TimelineItemProps, nextProps: TimelineItemProp
     prevProps.method !== nextProps.method ||
     prevProps.category !== nextProps.category ||
     prevProps.userRole !== nextProps.userRole ||
+    prevProps.formatAmount !== nextProps.formatAmount ||
     prevProps.onClick !== nextProps.onClick
   ) {
     return false;
