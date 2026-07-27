@@ -102,6 +102,43 @@ const GroupDetail = () => {
     return total + (settlement.toReceive || 0);
   }, 0);
 
+  const memoizedTransactions = useMemo(() => {
+    return transactions.map(item => ({
+      ...item,
+      payers: item.type === "expense" && item.payers ? item.payers.map(p => ({
+        ...p,
+        name: (() => {
+          if (p.id === user?.uid) return t('group.you_label');
+          if (p.id === group?.createdBy) return t('group.owner');
+          const member = group?.members?.find((m: any) => m.id === p.id);
+          return member?.name || p.name;
+        })()
+      })) : undefined,
+      paidBy: item.type === "expense" ? (
+        (() => {
+          if (item.paidBy === user?.uid) return t('group.you_label');
+          if (item.paidBy === group?.createdBy) return t('group.owner');
+          const member = group?.members?.find((m: any) => m.id === item.paidBy);
+          return member?.name || item.paidByName;
+        })()
+      ) : undefined,
+      participants: item.type === "expense" ? item.participants?.filter(p => p && p.id).map(p => ({
+        ...p,
+        name: (() => {
+          if (p.id === user?.uid) return t('group.you_label');
+          if (p.id === group?.createdBy) return t('group.owner');
+          const member = group?.members?.find((m: any) => m.id === p.id);
+          return member?.name || p.name;
+        })()
+      })) : undefined,
+      fromName: item.type === "payment" ? item.fromName : undefined,
+      toName: item.type === "payment" ? item.toName : undefined,
+      method: item.type === "payment" ? item.method : undefined,
+      userRole: item.type === "payment" ? (item.from === user?.uid || item.paidBy === user?.uid ? 'payer' : 'receiver') : undefined,
+      isPayerOwner: item.paidBy === group?.createdBy
+    }));
+  }, [transactions, user?.uid, group?.createdBy, group?.members, t]);
+
   // NOTE: These useMemo hooks MUST be before the early returns below to maintain
   // consistent hook count across renders (React Rules of Hooks)
   const personalStats = useMemo(() => {
@@ -599,7 +636,7 @@ const GroupDetail = () => {
           <div className="space-y-3 animate-fade-in">
             {transactions.length > 0 ? (
               <div className="space-y-3">
-                {transactions.map((item, index) => (
+                {memoizedTransactions.map((item, index) => (
                   <div
                     key={item.id}
                     className="animate-slide-up bg-white rounded-[32px] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 overflow-hidden hover:shadow-[0_25px_80px_rgba(74,104,80,0.12)] transition-all"
@@ -612,38 +649,14 @@ const GroupDetail = () => {
                       date={item.date}
                       id={item.id}
                       groupId={group.id}
-                      payers={item.type === "expense" && item.payers ? item.payers.map(p => ({
-                        ...p,
-                        name: (() => {
-                          if (p.id === user?.uid) return t('group.you_label');
-                          if (p.id === group.createdBy) return t('group.owner');
-                          const member = group.members.find(m => m.id === p.id);
-                          return member?.name || p.name;
-                        })()
-                      })) : undefined}
-                      paidBy={item.type === "expense" ? (
-                        (() => {
-                          // Use consistent naming logic
-                          if (item.paidBy === user?.uid) return t('group.you_label');
-                          if (item.paidBy === group.createdBy) return t('group.owner');
-                          const member = group.members.find((m: { id: any; }) => m.id === item.paidBy);
-                          return member?.name || item.paidByName;
-                        })()
-                      ) : undefined}
-                      participants={item.type === "expense" ? item.participants?.filter(p => p && p.id).map(p => ({
-                        ...p,
-                        name: (() => {
-                          if (p.id === user?.uid) return t('group.you_label'); // Your share
-                          if (p.id === group.createdBy) return t('group.owner'); // Owner's share
-                          const member = group.members.find((m: { id: any; }) => m.id === p.id); // Valid member name
-                          return member?.name || p.name;
-                        })()
-                      })) : undefined}
-                      from={item.type === "payment" ? item.fromName : undefined}
-                      to={item.type === "payment" ? item.toName : undefined}
-                      method={item.type === "payment" ? item.method : undefined}
-                      userRole={item.type === "payment" ? (item.from === user?.uid || item.paidBy === user?.uid ? 'payer' : 'receiver') : undefined}
-                      isPayerOwner={item.paidBy === group.createdBy}
+                      payers={item.payers}
+                      paidBy={item.paidBy}
+                      participants={item.participants}
+                      from={item.fromName}
+                      to={item.toName}
+                      method={item.method}
+                      userRole={item.userRole}
+                      isPayerOwner={item.isPayerOwner}
                     />
                   </div>
                 ))}
