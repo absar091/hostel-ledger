@@ -21,7 +21,8 @@ const GroupCard = ({ name, balance, memberCount, emoji = "👥", onClick }: Grou
       <TooltipTrigger asChild>
           <button
             onClick={onClick}
-            className="w-full bg-card rounded-xl p-4 shadow-card hover:shadow-card-hover transition-all duration-200 flex items-center gap-4 group"
+            aria-label={`${name} group with ${memberCount} members. ${isPositive ? "You'll receive" : "You owe"} Rs ${Math.abs(balance).toLocaleString()}`}
+            className="w-full bg-card rounded-xl p-4 shadow-card hover:shadow-card-hover transition-all duration-200 flex items-center gap-4 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-2xl shrink-0">
               {emoji}
