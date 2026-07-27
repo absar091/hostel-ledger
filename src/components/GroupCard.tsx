@@ -15,13 +15,16 @@ interface GroupCardProps {
 
 const GroupCard = ({ name, balance, memberCount, emoji = "👥", onClick }: GroupCardProps) => {
   const isPositive = balance >= 0;
+  const balanceText = balance === 0 ? "Settled up" : `${isPositive ? "You'll receive" : "You owe"} Rs ${Math.abs(balance).toLocaleString()}`;
+  const ariaLabel = `${name} group with ${memberCount} members. ${balanceText}.`;
   
   return (
     <Tooltip>
       <TooltipTrigger asChild>
           <button
             onClick={onClick}
-            className="w-full bg-card rounded-xl p-4 shadow-card hover:shadow-card-hover transition-all duration-200 flex items-center gap-4 group"
+            aria-label={ariaLabel}
+            className="w-full bg-card rounded-xl p-4 shadow-card hover:shadow-card-hover transition-all duration-200 flex items-center gap-4 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-2xl shrink-0">
               {emoji}
