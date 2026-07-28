@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2024-06-03 - IDOR in AI Expense Parsing Endpoints
+**Vulnerability:** The `/api/ai/parse-expense` and `/api/ai/parse-expense-audio` endpoints processed group data without verifying if the requesting user was a member of the group, leading to an Insecure Direct Object Reference (IDOR) vulnerability.
+**Learning:** Endpoints dealing with group data must explicitly verify group membership even when performing seemingly read-only or AI-assisted parsing tasks to prevent unauthorized data exposure.
+**Prevention:** Always verify user membership against `userGroups/${req.user.uid}/${groupId}` before querying group-scoped data.
