@@ -606,6 +606,7 @@ const GroupDetail = () => {
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
                     <TimelineItem
+                      formatAmount={formatAmount}
                       type={item.type}
                       title={item.title}
                       amount={item.amount}
