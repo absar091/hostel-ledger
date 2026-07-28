@@ -1374,6 +1374,11 @@ app.post('/api/ai/parse-expense', detectFraud, generalLimiter, authenticate, asy
       return res.status(400).json({ success: false, error: 'Invalid group ID format' });
     }
 
+    const userGroupSnap = await admin.database().ref(`userGroups/${req.user.uid}/${groupId}`).once('value');
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ success: false, error: 'You do not have access to this group' });
+    }
+
     // Get group members for context
     const groupSnap = await admin.database().ref(`groups/${groupId}`).get();
     if (!groupSnap.exists()) {
@@ -1456,6 +1461,11 @@ app.post('/api/ai/parse-expense-audio', detectFraud, generalLimiter, authenticat
     }
     if (!groupId || !isValidFirebaseId(groupId)) {
       return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
+    const userGroupSnap = await admin.database().ref(`userGroups/${req.user.uid}/${groupId}`).once('value');
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ success: false, error: 'You do not have access to this group' });
     }
 
     // Get group members for context
