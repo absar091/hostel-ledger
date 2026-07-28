@@ -1,0 +1,3 @@
+## 2025-02-28 - useMemo for Derived Context Data
+**Learning:** Extracting large arrays or objects from context via selector functions (like `getTransactionsByGroup(id)`) inside a component body causes the arrays/objects to be re-created on every render, even if the underlying context data hasn't changed. This breaks downstream memoization and causes `exhaustive-deps` warnings when used as dependencies in other `useMemo` hooks.
+**Action:** Always wrap derived data from context functions in `useMemo` (e.g., `const transactions = useMemo(() => getTransactionsByGroup(id), [id, getTransactionsByGroup])`) to maintain stable references and avoid unnecessary re-calculations.
