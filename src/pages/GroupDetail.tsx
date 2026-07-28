@@ -91,16 +91,16 @@ const GroupDetail = () => {
     ).filter((m: { id: any; }) => m && m.id) // Filter out any null/undefined members
   } : null;
 
-  const transactions = id ? getTransactionsByGroup(id) : [];
-  const settlements = id ? getSettlements(id) : {};
+  const transactions = useMemo(() => id ? getTransactionsByGroup(id) : [], [id, getTransactionsByGroup]);
+  const settlements = useMemo(() => id ? getSettlements(id) : {}, [id, getSettlements]);
   const { invitations } = useInvitations();
   const favoriteGroups = getFavoriteGroups();
   const isFavorite = id && favoriteGroups.includes(id);
 
   // Calculate total amount to receive in this group
-  const groupTotalToReceive = Object.values(settlements).reduce((total, settlement) => {
+  const groupTotalToReceive = useMemo(() => Object.values(settlements).reduce((total, settlement) => {
     return total + (settlement.toReceive || 0);
-  }, 0);
+  }, 0), [settlements]);
 
   // NOTE: These useMemo hooks MUST be before the early returns below to maintain
   // consistent hook count across renders (React Rules of Hooks)
