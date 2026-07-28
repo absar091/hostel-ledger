@@ -2,7 +2,6 @@ import { memo, useState } from "react";
 import Avatar from "./Avatar";
 import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car, Wallet, Plus, Users, MessageSquareText } from "lucide-react";
 import ExpenseThreadSheet from "./ExpenseThreadSheet";
-import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Participant {
   name: string;
@@ -11,6 +10,7 @@ interface Participant {
 }
 
 interface TimelineItemProps {
+  formatAmount: (amount: number) => string;
   type: "expense" | "payment" | "wallet_add" | "wallet_deduct";
   title: string;
   amount: number;
@@ -54,8 +54,11 @@ const TimelineItemBase = ({
   onClick,
   groupId,
   id,
+  formatAmount,
 }: TimelineItemProps) => {
-  const { formatAmount } = useCurrency();
+  // ⚡ Bolt Performance Optimization: formatAmount is passed as a prop from parent
+  // instead of consuming useCurrency context here. This changes context subscriptions
+  // from O(N) to O(1) in large transaction lists, significantly improving render speed.
   const [showChat, setShowChat] = useState(false);
   const Icon = type === "payment" ? HandCoins :
     type === "wallet_add" ? Plus :
