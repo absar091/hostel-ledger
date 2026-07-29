@@ -605,6 +605,7 @@ const GroupDetail = () => {
                     className="animate-slide-up bg-white rounded-[32px] shadow-[0_20px_60px_rgba(74,104,80,0.08)] border border-[#4a6850]/10 overflow-hidden hover:shadow-[0_25px_80px_rgba(74,104,80,0.12)] transition-all"
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
+                    {/* ⚡ Bolt Optimization: Pass formatAmount from parent to avoid O(N) context subscriptions in list items */}
                     <TimelineItem
                       type={item.type}
                       title={item.title}
@@ -643,6 +644,7 @@ const GroupDetail = () => {
                       to={item.type === "payment" ? item.toName : undefined}
                       method={item.type === "payment" ? item.method : undefined}
                       userRole={item.type === "payment" ? (item.from === user?.uid || item.paidBy === user?.uid ? 'payer' : 'receiver') : undefined}
+                        formatAmount={formatAmount}
                       isPayerOwner={item.paidBy === group.createdBy}
                     />
                   </div>
