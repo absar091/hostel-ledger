@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode , useCallback} from 'react';
 import { useAuth, PaymentDetails } from "./AuthContext";
 
 export interface GroupMember {
@@ -435,9 +435,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     return groups.find((g) => g.id === groupId);
   };
 
-  const getTransactionsByGroup = (groupId: string): Transaction[] => {
+  // ⚡ Bolt Optimization: Wrap context derivation functions in useCallback to provide stable references
+  // to consuming components, enabling effective use of useMemo downstream.
+  const getTransactionsByGroup = useCallback((groupId: string): Transaction[] => {
     return transactions.filter((t) => t.groupId === groupId);
-  };
+  }, [transactions]);
 
   const getTransactionsByMember = (groupId: string, memberId: string): Transaction[] => {
     return transactions.filter((t) => {
