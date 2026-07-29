@@ -1394,9 +1394,11 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user?.uid]);
 
-  const getTransactionsByGroup = (groupId: string): Transaction[] => {
+  // ⚡ Bolt Optimization: Wrap context derivation functions in useCallback to provide stable references
+  // to consuming components, enabling effective use of useMemo downstream.
+  const getTransactionsByGroup = useCallback((groupId: string): Transaction[] => {
     return transactions.filter((t) => t.groupId === groupId);
-  };
+  }, [transactions]);
 
   const getTransactionsByMember = (groupId: string, memberId: string): Transaction[] => {
     return transactions.filter((t) => {

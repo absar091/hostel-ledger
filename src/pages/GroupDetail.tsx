@@ -91,8 +91,11 @@ const GroupDetail = () => {
     ).filter((m: { id: any; }) => m && m.id) // Filter out any null/undefined members
   } : null;
 
-  const transactions = id ? getTransactionsByGroup(id) : [];
-  const settlements = id ? getSettlements(id) : {};
+  // ⚡ Bolt Optimization: Memoize the derived arrays from context to maintain stable references across renders,
+  // preventing O(N) unnecessary re-renders of all TimelineItem components when unrelated state in GroupDetail changes.
+  const transactions = useMemo(() => id ? getTransactionsByGroup(id) : [], [id, getTransactionsByGroup]);
+  // ⚡ Bolt Optimization: Memoize the derived settlements object for stable references across renders.
+  const settlements = useMemo(() => id ? getSettlements(id) : {}, [id, getSettlements]);
   const { invitations } = useInvitations();
   const favoriteGroups = getFavoriteGroups();
   const isFavorite = id && favoriteGroups.includes(id);

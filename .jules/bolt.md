@@ -1,0 +1,3 @@
+## 2024-07-29 - Memoizing derived arrays and callbacks
+**Learning:** In React list components (like `GroupDetail`), passing inline array/object derivations (e.g. `getTransactionsByGroup()`) causes child elements wrapped in `React.memo` (like `TimelineItem`) to completely re-render on every state change because the array/object references break.
+**Action:** Always wrap context derivation functions like `getTransactionsByGroup` and `getSettlements` with `useCallback` in the provider. Then, wrap derived variables returned from those functions with `useMemo` in the consuming component (`GroupDetail`).

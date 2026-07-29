@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode , useCallback} from 'react';
 import {
   User,
   signInWithEmailAndPassword,
@@ -964,7 +964,9 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Settlement management functions with group awareness
-  const getSettlements = (groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
+  // ⚡ Bolt Optimization: Wrap context derivation functions in useCallback to provide stable references
+  // to consuming components, enabling effective use of useMemo downstream.
+  const getSettlements = useCallback((groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
     if (!user?.settlements) return {};
 
     if (groupId) {
@@ -986,7 +988,7 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
 
       return aggregated;
     }
-  };
+  }, [user?.settlements]);
 
   const getTotalToReceive = (groupId?: string): number => {
     const settlements = getSettlements(groupId);
