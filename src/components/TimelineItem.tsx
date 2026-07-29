@@ -2,7 +2,6 @@ import { memo, useState } from "react";
 import Avatar from "./Avatar";
 import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car, Wallet, Plus, Users, MessageSquareText } from "lucide-react";
 import ExpenseThreadSheet from "./ExpenseThreadSheet";
-import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Participant {
   name: string;
@@ -11,6 +10,8 @@ interface Participant {
 }
 
 interface TimelineItemProps {
+  // ⚡ Bolt Optimization: Accept formatAmount as prop instead of consuming context directly to avoid O(N) context subscriptions in lists
+  formatAmount: (amount: number) => string;
   type: "expense" | "payment" | "wallet_add" | "wallet_deduct";
   title: string;
   amount: number;
@@ -54,8 +55,8 @@ const TimelineItemBase = ({
   onClick,
   groupId,
   id,
+  formatAmount,
 }: TimelineItemProps) => {
-  const { formatAmount } = useCurrency();
   const [showChat, setShowChat] = useState(false);
   const Icon = type === "payment" ? HandCoins :
     type === "wallet_add" ? Plus :
