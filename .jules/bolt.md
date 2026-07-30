@@ -1,0 +1,3 @@
+## 2024-05-15 - React.memo broken by inline derivations in list maps
+**Learning:** In React list rendering (e.g., `transactions.map`), passing inline derivations like `item.payers.map(...)` as props to list item components completely breaks `React.memo()`. This is because a new object/array reference is created on every render, forcing all children to re-render even if the underlying data hasn't changed.
+**Action:** Always extract complex prop derivations in lists to a parent-level `useMemo` hook that transforms the entire array before mapping, ensuring stable references are passed down to memoized child components.

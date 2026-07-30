@@ -31,6 +31,8 @@ import GroupChat from "@/components/GroupChat";
 import { FileText, FileSpreadsheet, Download, Target, AlertTriangle } from "lucide-react";
 import { callSecureApi } from "@/lib/api";
 
+const EMPTY_ARRAY: any[] = [];
+
 const GroupDetail = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -91,7 +93,44 @@ const GroupDetail = () => {
     ).filter((m: { id: any; }) => m && m.id) // Filter out any null/undefined members
   } : null;
 
-  const transactions = id ? getTransactionsByGroup(id) : [];
+  const rawTransactions = id ? getTransactionsByGroup(id) : EMPTY_ARRAY;
+
+  // OPTIMIZATION: Memoize the derived transaction list to prevent expensive inline array/object
+  // creations (like map/filter for payers and participants) on every render. This ensures
+  // TimelineItem's React.memo can effectively bail out of unnecessary re-renders.
+  const transactions = useMemo(() => {
+    return rawTransactions.map(item => ({
+      ...item,
+      formattedPayers: item.type === "expense" && item.payers ? item.payers.map(p => ({
+        ...p,
+        name: (() => {
+          if (p.id === user?.uid) return t('group.you_label');
+          if (p.id === group?.createdBy) return t('group.owner');
+          const member = group?.members?.find(m => m.id === p.id);
+          return member?.name || p.name;
+        })()
+      })) : undefined,
+      formattedPaidBy: item.type === "expense" ? (
+        (() => {
+          if (item.paidBy === user?.uid) return t('group.you_label');
+          if (item.paidBy === group?.createdBy) return t('group.owner');
+          const member = group?.members?.find((m: { id: any; }) => m.id === item.paidBy);
+          return member?.name || item.paidByName;
+        })()
+      ) : undefined,
+      formattedParticipants: item.type === "expense" ? item.participants?.filter(p => p && p.id).map(p => ({
+        ...p,
+        name: (() => {
+          if (p.id === user?.uid) return t('group.you_label');
+          if (p.id === group?.createdBy) return t('group.owner');
+          const member = group?.members?.find((m: { id: any; }) => m.id === p.id);
+          return member?.name || p.name;
+        })()
+      })) : undefined,
+      computedUserRole: item.type === "payment" ? (item.from === user?.uid || item.paidBy === user?.uid ? 'payer' : 'receiver') : undefined,
+      computedIsPayerOwner: item.paidBy === group?.createdBy
+    }));
+  }, [rawTransactions, user?.uid, group?.createdBy, group?.members, t]);
   const settlements = id ? getSettlements(id) : {};
   const { invitations } = useInvitations();
   const favoriteGroups = getFavoriteGroups();
@@ -612,38 +651,14 @@ const GroupDetail = () => {
                       date={item.date}
                       id={item.id}
                       groupId={group.id}
-                      payers={item.type === "expense" && item.payers ? item.payers.map(p => ({
-                        ...p,
-                        name: (() => {
-                          if (p.id === user?.uid) return t('group.you_label');
-                          if (p.id === group.createdBy) return t('group.owner');
-                          const member = group.members.find(m => m.id === p.id);
-                          return member?.name || p.name;
-                        })()
-                      })) : undefined}
-                      paidBy={item.type === "expense" ? (
-                        (() => {
-                          // Use consistent naming logic
-                          if (item.paidBy === user?.uid) return t('group.you_label');
-                          if (item.paidBy === group.createdBy) return t('group.owner');
-                          const member = group.members.find((m: { id: any; }) => m.id === item.paidBy);
-                          return member?.name || item.paidByName;
-                        })()
-                      ) : undefined}
-                      participants={item.type === "expense" ? item.participants?.filter(p => p && p.id).map(p => ({
-                        ...p,
-                        name: (() => {
-                          if (p.id === user?.uid) return t('group.you_label'); // Your share
-                          if (p.id === group.createdBy) return t('group.owner'); // Owner's share
-                          const member = group.members.find((m: { id: any; }) => m.id === p.id); // Valid member name
-                          return member?.name || p.name;
-                        })()
-                      })) : undefined}
+                      payers={item.formattedPayers}
+                      paidBy={item.formattedPaidBy}
+                      participants={item.formattedParticipants}
                       from={item.type === "payment" ? item.fromName : undefined}
                       to={item.type === "payment" ? item.toName : undefined}
                       method={item.type === "payment" ? item.method : undefined}
-                      userRole={item.type === "payment" ? (item.from === user?.uid || item.paidBy === user?.uid ? 'payer' : 'receiver') : undefined}
-                      isPayerOwner={item.paidBy === group.createdBy}
+                      userRole={item.computedUserRole}
+                      isPayerOwner={item.computedIsPayerOwner}
                     />
                   </div>
                 ))}
