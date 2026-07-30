@@ -10,6 +10,7 @@ import PageGuide from "@/components/PageGuide";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import Avatar from "@/components/Avatar";
 import { useTranslation } from "react-i18next";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import MobileHeader from "@/components/MobileHeader";
 import { callSecureApi } from "@/lib/api";
 import { toast } from "sonner";
@@ -211,18 +212,24 @@ const ToReceive = () => {
                 >
                   {/* Remind Button Overlay */}
                   <div className="absolute right-4 md:right-6 top-4 md:top-6 z-20">
-                    <button
-                      onClick={(e) => handleRemindClick(e, person)}
-                      disabled={remindingId === `${person.id}-${person.groupId}`}
-                      className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-[#4a6850]/5 flex items-center justify-center text-[#4a6850] hover:bg-[#4a6850] hover:text-white active:scale-90 transition-all duration-300 shadow-sm disabled:opacity-50 group/remind"
-                      title="Send Reminder"
-                    >
-                      {remindingId === `${person.id}-${person.groupId}` ? (
-                        <Loader2 className="w-5 h-5 md:w-6 md:h-6 animate-spin" />
-                      ) : (
-                        <Bell className="w-5 h-5 md:w-6 md:h-6 group-hover/remind:animate-bounce" />
-                      )}
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={(e) => handleRemindClick(e, person)}
+                          disabled={remindingId === `${person.id}-${person.groupId}`}
+                          className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-[#4a6850]/5 flex items-center justify-center text-[#4a6850] hover:bg-[#4a6850] hover:text-white active:scale-90 transition-all duration-300 shadow-sm disabled:opacity-50 group/remind focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                          {remindingId === `${person.id}-${person.groupId}` ? (
+                            <Loader2 className="w-5 h-5 md:w-6 md:h-6 animate-spin" />
+                          ) : (
+                            <Bell className="w-5 h-5 md:w-6 md:h-6 group-hover/remind:animate-bounce" />
+                          )}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Send Reminder</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
 
                   <div className="flex items-start gap-4">
