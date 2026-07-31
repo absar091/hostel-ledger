@@ -2,7 +2,7 @@ import { memo, useState } from "react";
 import Avatar from "./Avatar";
 import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car, Wallet, Plus, Users, MessageSquareText } from "lucide-react";
 import ExpenseThreadSheet from "./ExpenseThreadSheet";
-import { useCurrency } from "@/contexts/CurrencyContext";
+import { formatCurrency } from "@/lib/currency";
 
 interface Participant {
   name: string;
@@ -27,6 +27,8 @@ interface TimelineItemProps {
   onClick?: () => void;
   groupId?: string; // Phase 2
   id?: string; // Phase 2: Transaction ID
+  // Performance: Passed as prop to avoid O(N) context subscriptions breaking React.memo
+  currencyCode?: string;
 }
 
 const categoryIcons = {
@@ -54,8 +56,9 @@ const TimelineItemBase = ({
   onClick,
   groupId,
   id,
+  currencyCode,
 }: TimelineItemProps) => {
-  const { formatAmount } = useCurrency();
+  const formatAmount = (amt: number) => formatCurrency(amt, currencyCode);
   const [showChat, setShowChat] = useState(false);
   const Icon = type === "payment" ? HandCoins :
     type === "wallet_add" ? Plus :
@@ -297,6 +300,7 @@ const arePropsEqual = (prevProps: TimelineItemProps, nextProps: TimelineItemProp
     prevProps.method !== nextProps.method ||
     prevProps.category !== nextProps.category ||
     prevProps.userRole !== nextProps.userRole ||
+    prevProps.currencyCode !== nextProps.currencyCode ||
     prevProps.onClick !== nextProps.onClick
   ) {
     return false;
