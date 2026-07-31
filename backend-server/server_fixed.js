@@ -1374,6 +1374,12 @@ app.post('/api/ai/parse-expense', detectFraud, generalLimiter, authenticate, asy
 
     const groupData = groupSnap.val();
     const members = normalizeMembers(groupData.members);
+
+    const isMember = members.some(m => m.userId === req.user.uid || m.id === req.user.uid);
+    if (!isMember) {
+      return res.status(403).json({ success: false, error: 'You are not a member of this group' });
+    }
+
     const memberContext = members.map(m => `${m.name} (ID: ${m.id})`).join(', ');
 
     const prompt = `
@@ -1455,6 +1461,12 @@ app.post('/api/ai/parse-expense-audio', detectFraud, generalLimiter, authenticat
 
     const groupData = groupSnap.val();
     const members = normalizeMembers(groupData.members);
+
+    const isMember = members.some(m => m.userId === req.user.uid || m.id === req.user.uid);
+    if (!isMember) {
+      return res.status(403).json({ success: false, error: 'You are not a member of this group' });
+    }
+
     const memberContext = members.map(m => `${m.name} (ID: ${m.id})`).join(', ');
 
     const promptText = `
@@ -5089,6 +5101,12 @@ app.post('/api/reminders/send', detectFraud, generalLimiter, authenticate, async
     const group = groupSnap.val();
     const creditor = creditorSnap.val();
     const debtor = debtorSnap.val();
+
+    const members = normalizeMembers(group.members);
+    const isMember = members.some(m => m.userId === senderId || m.id === senderId);
+    if (!isMember) {
+       return res.status(403).json({ success: false, error: 'You are not a member of this group' });
+    }
 
     // Ensure amount is a number for toLocaleString
     const numericAmount = Number(amount) || 0;
