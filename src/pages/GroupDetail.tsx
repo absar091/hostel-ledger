@@ -611,6 +611,8 @@ const GroupDetail = () => {
                       amount={item.amount}
                       date={item.date}
                       id={item.id}
+                      // Performance: Passing primitive instead of consuming context in child to preserve React.memo
+                      currencyCode={currencyCode}
                       groupId={group.id}
                       payers={item.type === "expense" && item.payers ? item.payers.map(p => ({
                         ...p,
