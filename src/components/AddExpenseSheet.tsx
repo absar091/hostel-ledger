@@ -878,6 +878,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                                 ? "bg-red-500 text-white animate-pulse"
                                 : "bg-white text-[#4a6850] hover:bg-gray-100 border border-gray-200"
                             )}
+                            aria-label={isListening ? "Stop voice input" : "Start voice input"}
                           >
                             {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                           </button>
@@ -1257,6 +1258,7 @@ const AddExpenseSheet = ({ open, onClose, groups, onSubmit, onAddMember, initial
                               ? "bg-emerald-100 text-emerald-700 border border-emerald-200" 
                               : "bg-[#4a6850]/10 text-[#4a6850] border border-[#4a6850]/20 hover:bg-[#4a6850]/20"
                           )}
+                          aria-label={location ? "Update current location" : "Detect current location"}
                         >
                           {isDetectingLocation ? (
                             <Loader2 className="w-3 h-3 animate-spin" />

@@ -214,6 +214,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
                 <button
                   onClick={handleFacebookShare}
                   className="flex items-center justify-center gap-2 p-3 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
+                  aria-label="Share on Facebook"
                 >
                   <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-xs font-bold">f</span>
@@ -224,6 +225,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
                 <button
                   onClick={handleTwitterShare}
                   className="flex items-center justify-center gap-2 p-3 rounded-xl bg-sky-50 hover:bg-sky-100 transition-colors"
+                  aria-label="Share on Twitter"
                 >
                   <div className="w-6 h-6 bg-sky-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-xs font-bold">𝕏</span>
