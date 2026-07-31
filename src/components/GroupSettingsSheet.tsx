@@ -222,7 +222,7 @@ const GroupSettingsSheet = ({
                     size="icon"
                     onClick={handleCopyGroupInvite}
                     className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90"
-                  >
+                   aria-label="Copy group invite link">
                     <Link className="w-4 h-4" />
                   </Button>
                   <Button
@@ -260,7 +260,7 @@ const GroupSettingsSheet = ({
                         onClick={handleSearch}
                         disabled={isSearching || !newMemberName.trim()}
                         className="absolute right-1 top-1 h-9 w-9 text-[#4a6850] hover:bg-[#4a6850]/10 rounded-lg"
-                      >
+                       aria-label="Search users">
                         {isSearching ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
@@ -278,7 +278,7 @@ const GroupSettingsSheet = ({
                         setSearchError(false);
                       }}
                       className="h-11 w-11 rounded-xl hover:bg-gray-100 shadow-sm hover:shadow-md transition-all flex-shrink-0 bg-white"
-                    >
+                     aria-label="Close add member">
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
