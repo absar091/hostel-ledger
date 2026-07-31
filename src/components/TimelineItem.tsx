@@ -27,6 +27,9 @@ interface TimelineItemProps {
   onClick?: () => void;
   groupId?: string; // Phase 2
   id?: string; // Phase 2: Transaction ID
+  formattedAmount?: string;
+  formattedLentAmounts?: Record<string, string>;
+  formattedOweAmounts?: Record<string, string>;
 }
 
 const categoryIcons = {
@@ -54,8 +57,12 @@ const TimelineItemBase = ({
   onClick,
   groupId,
   id,
+  formattedAmount,
+  formattedLentAmounts,
+  formattedOweAmounts,
 }: TimelineItemProps) => {
   const { formatAmount } = useCurrency();
+  const displayAmount = formattedAmount !== undefined ? formattedAmount : displayAmount;
   const [showChat, setShowChat] = useState(false);
   const Icon = type === "payment" ? HandCoins :
     type === "wallet_add" ? Plus :
@@ -67,7 +74,7 @@ const TimelineItemBase = ({
     return (
       <button
         onClick={onClick}
-        aria-label={`View details for wallet addition: ${title}, ${formatAmount(amount)} added on ${date}`}
+        aria-label={`View details for wallet addition: ${title}, ${displayAmount} added on ${date}`}
         className="w-full bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 border border-[#4a6850]/20 rounded-3xl p-5 text-left hover:bg-gradient-to-br hover:from-[#4a6850]/10 hover:to-[#3d5643]/10 hover:border-[#4a6850]/30 transition-all shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 active:scale-[0.98]"
       >
         <div className="flex items-start gap-4">
@@ -81,7 +88,7 @@ const TimelineItemBase = ({
           </div>
 
           <div className="text-right shrink-0">
-            <div className="font-black text-[#4a6850] text-xl tracking-tight tabular-nums">+{formatAmount(amount)}</div>
+            <div className="font-black text-[#4a6850] text-xl tracking-tight tabular-nums">+{displayAmount}</div>
             <div className="text-xs text-[#4a6850]/60 font-bold">{date}</div>
           </div>
         </div>
@@ -93,7 +100,7 @@ const TimelineItemBase = ({
     return (
       <button
         onClick={onClick}
-        aria-label={`View details for wallet deduction: ${title}, ${formatAmount(amount)} deducted on ${date}`}
+        aria-label={`View details for wallet deduction: ${title}, ${displayAmount} deducted on ${date}`}
         className="w-full bg-gradient-to-br from-red-50 to-orange-50 border border-red-200/50 rounded-3xl p-5 text-left hover:bg-gradient-to-br hover:from-red-100/50 hover:to-orange-100/50 hover:border-red-300/50 transition-all shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 active:scale-[0.98]"
       >
         <div className="flex items-start gap-4">
@@ -107,7 +114,7 @@ const TimelineItemBase = ({
           </div>
 
           <div className="text-right shrink-0">
-            <div className="font-black text-red-600 text-xl tracking-tight tabular-nums">-{formatAmount(amount)}</div>
+            <div className="font-black text-red-600 text-xl tracking-tight tabular-nums">-{displayAmount}</div>
             <div className="text-xs text-red-500/60 font-bold">{date}</div>
           </div>
         </div>
@@ -120,7 +127,7 @@ const TimelineItemBase = ({
     return (
       <button
         onClick={onClick}
-        aria-label={`View details for payment ${isPayer ? 'sent to ' + to : 'received from ' + from}: ${formatAmount(amount)} on ${date}`}
+        aria-label={`View details for payment ${isPayer ? 'sent to ' + to : 'received from ' + from}: ${displayAmount} on ${date}`}
         className={`w-full rounded-3xl p-5 text-left transition-all shadow-lg hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 active:scale-[0.98] ${isPayer
           ? 'bg-gradient-to-br from-red-50 to-orange-50 border border-red-200/50 hover:from-red-100/50 hover:to-orange-100/50 hover:border-red-300/50'
           : 'bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/50 hover:from-emerald-100/50 hover:to-teal-100/50 hover:border-emerald-300/50'
@@ -148,7 +155,7 @@ const TimelineItemBase = ({
 
           <div className="text-right shrink-0">
             <div className={`font-black text-xl tracking-tight tabular-nums ${isPayer ? 'text-red-600' : 'text-emerald-600'}`}>
-              {isPayer ? '-' : '+'}{formatAmount(amount)}
+              {isPayer ? '-' : '+'}{displayAmount}
             </div>
             <div className={`text-xs font-bold ${isPayer ? 'text-red-500/60' : 'text-emerald-500/60'}`}>{date}</div>
           </div>
@@ -160,7 +167,7 @@ const TimelineItemBase = ({
   return (
     <button
       onClick={onClick}
-      aria-label={`View details for expense: ${title}, ${formatAmount(amount)} paid by ${payers && payers.length > 1 ? `${payers.length} people` : paidBy} on ${date}`}
+      aria-label={`View details for expense: ${title}, ${displayAmount} paid by ${payers && payers.length > 1 ? `${payers.length} people` : paidBy} on ${date}`}
       className="w-full bg-white border border-[#4a6850]/10 rounded-3xl p-5 shadow-lg text-left hover:shadow-xl hover:border-[#4a6850]/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:ring-offset-2 active:scale-[0.98]"
     >
       <div className="flex items-start gap-4">
@@ -230,11 +237,11 @@ const TimelineItemBase = ({
                       <span className="px-1 py-0.5 rounded-md bg-orange-100 text-orange-600 text-[8px] font-black uppercase tracking-wider">Temp</span>
                     )}
                     {netOwes < 0 ? (
-                      <span className="text-[#4a6850]/80 font-bold whitespace-nowrap">lent {formatAmount(Math.abs(netOwes))}</span>
+                      <span className="text-[#4a6850]/80 font-bold whitespace-nowrap">lent {(formattedLentAmounts?.[p.name] || formatAmount(Math.abs(netOwes)))}</span>
                     ) : netOwes === 0 && isPayer ? (
                       <span className="text-[#4a6850]/80 font-bold">settled</span>
                     ) : netOwes > 0 ? (
-                      <span className="text-red-600 font-bold whitespace-nowrap">owes {formatAmount(netOwes)}</span>
+                      <span className="text-red-600 font-bold whitespace-nowrap">owes {(formattedOweAmounts?.[p.name] || formatAmount(netOwes))}</span>
                     ) : (
                       <span className="text-[#4a6850]/80 font-bold">paid</span>
                     )}
@@ -247,7 +254,7 @@ const TimelineItemBase = ({
 
         <div className="text-right shrink-0 flex flex-col items-end gap-2">
           <div className="flex flex-col items-end">
-            <div className="font-black text-gray-900 text-xl tracking-tight tabular-nums">{formatAmount(amount)}</div>
+            <div className="font-black text-gray-900 text-xl tracking-tight tabular-nums">{displayAmount}</div>
             <div className="text-xs text-gray-500 font-bold">{date}</div>
           </div>
 
