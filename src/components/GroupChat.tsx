@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ref, onValue, query, limitToLast, orderByChild, off } from "firebase/database";
 import { database } from "@/lib/firebase";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
@@ -440,7 +441,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                                     A preview card will automatically appear!
                                 </p>
                             </div>
-                            <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5">
+                            <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5" aria-label="Close hint">
                                 <X className="w-3 h-3" />
                             </button>
                         </div>
@@ -452,6 +453,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         <button 
                             onClick={() => setReferencedTxn(null)}
                             className="absolute top-2 right-2 p-1 hover:bg-emerald-100 rounded-full"
+                            aria-label="Remove referenced transaction"
                         >
                             <X className="w-4 h-4 text-emerald-600" />
                         </button>
@@ -475,6 +477,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         <button 
                             onClick={() => setAttachedImage(null)}
                             className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                            aria-label="Remove attached image"
                         >
                             <X className="w-3 h-3" />
                         </button>
@@ -490,26 +493,46 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                             accept="image/*"
                             className="hidden"
                         />
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isUploading || !!attachedImage}
-                            className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
-                        >
-                            {isUploading ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                                <ImageIcon className="w-5 h-5" />
-                            )}
-                        </button>
-                        <button
-                            onClick={() => setShowTxnHint(!showTxnHint)}
-                            className={cn(
-                                "p-2.5 rounded-xl transition-all shrink-0",
-                                showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
-                            )}
-                        >
-                            <Info className="w-5 h-5" />
-                        </button>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={isUploading || !!attachedImage}
+                                        className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
+                                        aria-label="Attach image"
+                                    >
+                                        {isUploading ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : (
+                                            <ImageIcon className="w-5 h-5" />
+                                        )}
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Attach image</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        onClick={() => setShowTxnHint(!showTxnHint)}
+                                        className={cn(
+                                            "p-2.5 rounded-xl transition-all shrink-0",
+                                            showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
+                                        )}
+                                        aria-label="Show transaction hint"
+                                    >
+                                        <Info className="w-5 h-5" />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Formatting hints</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                     </div>
                     <input
                         ref={inputRef}
@@ -528,6 +551,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         onClick={handleSend}
                         disabled={(!inputText.trim() && !attachedImage) || isSending}
                         className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
+                        aria-label="Send message"
                     >
                         {isSending ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
