@@ -2,7 +2,6 @@ import { memo, useState } from "react";
 import Avatar from "./Avatar";
 import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car, Wallet, Plus, Users, MessageSquareText } from "lucide-react";
 import ExpenseThreadSheet from "./ExpenseThreadSheet";
-import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Participant {
   name: string;
@@ -27,6 +26,7 @@ interface TimelineItemProps {
   onClick?: () => void;
   groupId?: string; // Phase 2
   id?: string; // Phase 2: Transaction ID
+  formatAmount: (amount: number) => string; // Performance: passed from parent to avoid context subscription
 }
 
 const categoryIcons = {
@@ -54,8 +54,8 @@ const TimelineItemBase = ({
   onClick,
   groupId,
   id,
+  formatAmount,
 }: TimelineItemProps) => {
-  const { formatAmount } = useCurrency();
   const [showChat, setShowChat] = useState(false);
   const Icon = type === "payment" ? HandCoins :
     type === "wallet_add" ? Plus :
@@ -291,7 +291,8 @@ const arePropsEqual = (prevProps: TimelineItemProps, nextProps: TimelineItemProp
     prevProps.date !== nextProps.date ||
     prevProps.paidBy !== nextProps.paidBy ||
     (prevProps.payers?.length !== nextProps.payers?.length) ||
-    prevProps.isPayerOwner !== nextProps.isPayerOwner || // Check optimization
+    prevProps.isPayerOwner !== nextProps.isPayerOwner ||
+    prevProps.formatAmount !== nextProps.formatAmount || // Check optimization
     prevProps.from !== nextProps.from ||
     prevProps.to !== nextProps.to ||
     prevProps.method !== nextProps.method ||
