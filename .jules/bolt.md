@@ -1,0 +1,3 @@
+## 2024-08-01 - Avoid context subscriptions in mapped list items
+**Learning:** Using `useContext` directly inside a list item component (e.g., `TimelineItem`) defeats its `React.memo` and causes O(N) context subscriptions that drag down performance during parent re-renders. When refactoring these to use props instead, making those new props optional without providing a fallback context risks silently breaking other components that might render the item without passing the required props.
+**Action:** When extracting context consumption to a parent to optimize list rendering, always pass the required data down as strictly typed, required props (not optional) to force the compiler to flag any missed call sites, preventing runtime reference errors or undefined behavior.
