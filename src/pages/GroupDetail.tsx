@@ -31,6 +31,8 @@ import GroupChat from "@/components/GroupChat";
 import { FileText, FileSpreadsheet, Download, Target, AlertTriangle } from "lucide-react";
 import { callSecureApi } from "@/lib/api";
 
+const EMPTY_ARRAY: any[] = [];
+
 const GroupDetail = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -91,7 +93,7 @@ const GroupDetail = () => {
     ).filter((m: { id: any; }) => m && m.id) // Filter out any null/undefined members
   } : null;
 
-  const transactions = id ? getTransactionsByGroup(id) : [];
+  const transactions = id ? getTransactionsByGroup(id) : EMPTY_ARRAY;
   const settlements = id ? getSettlements(id) : {};
   const { invitations } = useInvitations();
   const favoriteGroups = getFavoriteGroups();
