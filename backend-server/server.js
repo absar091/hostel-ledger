@@ -1373,9 +1373,15 @@ app.post('/api/ai/parse-expense', detectFraud, generalLimiter, authenticate, asy
     if (!groupId || !isValidFirebaseId(groupId)) {
       return res.status(400).json({ success: false, error: 'Invalid group ID format' });
     }
-
     // Get group members for context
+    // 🛡️ Sentinel Security Fix: Verify group membership to prevent IDOR
+    const userGroupSnap = await admin.database().ref(`userGroups/${req.user.uid}/${groupId}`).once('value');
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ success: false, error: 'Forbidden: You are not a member of this group' });
+    }
+
     const groupSnap = await admin.database().ref(`groups/${groupId}`).get();
+
     if (!groupSnap.exists()) {
       return res.status(404).json({ success: false, error: 'Group not found' });
     }
@@ -1457,9 +1463,15 @@ app.post('/api/ai/parse-expense-audio', detectFraud, generalLimiter, authenticat
     if (!groupId || !isValidFirebaseId(groupId)) {
       return res.status(400).json({ success: false, error: 'Invalid group ID format' });
     }
-
     // Get group members for context
+    // 🛡️ Sentinel Security Fix: Verify group membership to prevent IDOR
+    const userGroupSnap = await admin.database().ref(`userGroups/${req.user.uid}/${groupId}`).once('value');
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ success: false, error: 'Forbidden: You are not a member of this group' });
+    }
+
     const groupSnap = await admin.database().ref(`groups/${groupId}`).get();
+
     if (!groupSnap.exists()) {
       return res.status(404).json({ success: false, error: 'Group not found' });
     }
@@ -2900,6 +2912,15 @@ app.post('/api/get-individual-debts', generalLimiter, authenticate, async (req, 
 app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (req, res) => {
   let { groupId, amount, paidBy, payers, participants, note, place, location } = req.body;
 
+  if (!groupId || !isValidFirebaseId(groupId)) {
+    return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+  }
+  // 🛡️ Sentinel Security Fix: Verify group membership to prevent IDOR
+  const userGroupSnap = await admin.database().ref(`userGroups/${req.user.uid}/${groupId}`).once('value');
+  if (!userGroupSnap.exists()) {
+    return res.status(403).json({ success: false, error: 'Forbidden: You are not a member of this group' });
+  }
+
   // Validate Lengths
   const noteError = validateNote(note);
   if (noteError) return res.status(400).json({ success: false, error: noteError });
@@ -3439,6 +3460,15 @@ app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (r
 // Record Payment endpoint (Secure)
 app.post('/api/record-payment', generalLimiter, authenticate, detectFraud, async (req, res) => {
   let { groupId, fromMember, toMember, amount, method, note } = req.body;
+
+  if (!groupId || !isValidFirebaseId(groupId)) {
+    return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+  }
+  // 🛡️ Sentinel Security Fix: Verify group membership to prevent IDOR
+  const userGroupSnap = await admin.database().ref(`userGroups/${req.user.uid}/${groupId}`).once('value');
+  if (!userGroupSnap.exists()) {
+    return res.status(403).json({ success: false, error: 'Forbidden: You are not a member of this group' });
+  }
 
   // Validate Lengths
   const noteError = validateNote(note);
@@ -5034,6 +5064,7 @@ app.post('/api/send-message', detectFraud, chatLimiter, authenticate, async (req
 app.post('/api/get-messages', generalLimiter, authenticate, async (req, res) => {
   try {
     const { groupId, expenseId, limit: msgLimit, beforeTimestamp } = req.body;
+
     const currentUserId = req.user.uid;
 
     if (!groupId) {
@@ -5042,6 +5073,12 @@ app.post('/api/get-messages', generalLimiter, authenticate, async (req, res) => 
 
     if (!isValidFirebaseId(groupId)) {
       return res.status(400).json({ success: false, error: 'Invalid group ID format' });
+    }
+
+    // 🛡️ Sentinel Security Fix: Verify group membership to prevent IDOR
+    const userGroupSnap = await admin.database().ref(`userGroups/${req.user.uid}/${groupId}`).once('value');
+    if (!userGroupSnap.exists()) {
+      return res.status(403).json({ success: false, error: 'Forbidden: You are not a member of this group' });
     }
 
     if (expenseId && !isValidFirebaseId(expenseId)) {
