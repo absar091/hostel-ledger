@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2026-03-24 - Information Exposure via Error Messages in Export Route
+**Vulnerability:** The `/api/export/group-report/:groupId` endpoint caught errors and returned `error.message` directly in the JSON response, potentially exposing sensitive stack traces or internal implementation details to the client.
+**Learning:** Exposing internal error messages or stack traces to end users is a medium-severity security risk that aids attackers in understanding the backend architecture.
+**Prevention:** Always catch and log detailed errors on the server side, but return a generic, sanitized error message to the client, unless the error is a known safe client-facing error (like 'Unauthorized access').

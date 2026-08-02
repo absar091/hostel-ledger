@@ -96,8 +96,9 @@ router.get('/group-report/:groupId', async (req, res) => {
     }
   } catch (error) {
     logger.error(`Export Error for Group ${groupId}:`, error);
+    // 🛡️ Sentinel Security Fix: Don't leak stack traces/internals
     res.status(error.message === 'Unauthorized access to group' ? 403 : 500)
-       .json({ error: error.message || 'Failed to export report' });
+       .json({ error: error.message === 'Unauthorized access to group' ? 'Unauthorized access' : 'Failed to export report' });
   }
 });
 
