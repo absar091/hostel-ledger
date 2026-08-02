@@ -2,7 +2,6 @@ import { memo, useState } from "react";
 import Avatar from "./Avatar";
 import { UtensilsCrossed, HandCoins, ShoppingBag, Coffee, Car, Wallet, Plus, Users, MessageSquareText } from "lucide-react";
 import ExpenseThreadSheet from "./ExpenseThreadSheet";
-import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Participant {
   name: string;
@@ -27,6 +26,9 @@ interface TimelineItemProps {
   onClick?: () => void;
   groupId?: string; // Phase 2
   id?: string; // Phase 2: Transaction ID
+  // ⚡ Bolt Optimization: Accept formatAmount as a prop rather than consuming useCurrency context internally.
+  // This prevents O(N) context subscriptions when rendering long lists of TimelineItems, significantly improving performance.
+  formatAmount: (amount: number) => string;
 }
 
 const categoryIcons = {
@@ -54,8 +56,8 @@ const TimelineItemBase = ({
   onClick,
   groupId,
   id,
+  formatAmount,
 }: TimelineItemProps) => {
-  const { formatAmount } = useCurrency();
   const [showChat, setShowChat] = useState(false);
   const Icon = type === "payment" ? HandCoins :
     type === "wallet_add" ? Plus :
@@ -292,6 +294,7 @@ const arePropsEqual = (prevProps: TimelineItemProps, nextProps: TimelineItemProp
     prevProps.paidBy !== nextProps.paidBy ||
     (prevProps.payers?.length !== nextProps.payers?.length) ||
     prevProps.isPayerOwner !== nextProps.isPayerOwner || // Check optimization
+    prevProps.formatAmount !== nextProps.formatAmount || // Added for new prop
     prevProps.from !== nextProps.from ||
     prevProps.to !== nextProps.to ||
     prevProps.method !== nextProps.method ||
