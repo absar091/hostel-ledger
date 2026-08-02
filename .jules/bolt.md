@@ -1,0 +1,3 @@
+## 2026-08-02 - Memoization Breakdown from Hoisted Context
+**Learning:** Extracting a context hook (like `useCurrency`) from a child component and passing the resulting value as a prop from the parent can inadvertently break child `React.memo` optimizations if the parent passes a new function reference (like `formatAmount`) on every render and the child's `arePropsEqual` function isn't explicitly updated to handle it.
+**Action:** Always verify `React.memo` custom equality functions (`arePropsEqual`) when changing a component's props to prevent massive performance regressions in list rendering.
