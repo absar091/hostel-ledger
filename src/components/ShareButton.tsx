@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Share2, Copy, Check, MessageCircle, Send } from "@/lib/icons";
 import { toast } from "sonner";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+
 
 interface ShareButtonProps {
   className?: string;
@@ -211,25 +212,45 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
               </button>
 
               <div className="grid grid-cols-2 gap-3 pt-2">
-                <button
-                  onClick={handleFacebookShare}
-                  className="flex items-center justify-center gap-2 p-3 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
-                >
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={handleFacebookShare}
+                        className="flex items-center justify-center gap-2 p-3 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors"
+                        aria-label="Share on Facebook"
+                      >
                   <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-xs font-bold">f</span>
                   </div>
-                  <span className="text-sm font-medium text-blue-700">Facebook</span>
-                </button>
+                    <span className="text-sm font-medium text-blue-700">Facebook</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Share on Facebook</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
 
-                <button
-                  onClick={handleTwitterShare}
-                  className="flex items-center justify-center gap-2 p-3 rounded-xl bg-sky-50 hover:bg-sky-100 transition-colors"
-                >
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={handleTwitterShare}
+                        className="flex items-center justify-center gap-2 p-3 rounded-xl bg-sky-50 hover:bg-sky-100 transition-colors"
+                        aria-label="Share on Twitter"
+                      >
                   <div className="w-6 h-6 bg-sky-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-xs font-bold">𝕏</span>
                   </div>
-                  <span className="text-sm font-medium text-sky-700">Twitter</span>
-                </button>
+                    <span className="text-sm font-medium text-sky-700">Twitter</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Share on Twitter</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           </div>
