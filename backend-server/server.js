@@ -5398,7 +5398,7 @@ const setupSupportListeners = () => {
 const { startWeeklyReportCron, startBudgetResetCron } = require('./services/cronService');
 
 // Initialize listeners
-if (admin.apps.length > 0) {
+if (admin.apps && admin.apps.length > 0) {
   setupSupportListeners();
   startWeeklyReportCron();
   startBudgetResetCron();
