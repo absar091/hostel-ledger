@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Plus, X, Upload, CheckCircle2, AlertTriangle, Mail, Copy, Link } from "lucide-react";
+import { ArrowLeft, Search, Plus, X, Upload, CheckCircle2, AlertTriangle, Mail, Copy, Link, Loader2 } from "lucide-react";
 import AppContainer from "@/components/AppContainer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -532,7 +532,12 @@ export default function CreateGroupPage() {
                                 disabled={!agreedToTerms || isCreating}
                                 className="w-full h-14 rounded-2xl bg-[#4a6850] text-lg font-bold shadow-xl shadow-green-900/10 hover:shadow-green-900/20 transform hover:-translate-y-1 transition-all disabled:opacity-50 disabled:transform-none"
                             >
-                                {isCreating ? "Creating..." : "Create Group 🚀"}
+                                {isCreating ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                        Creating...
+                                    </>
+                                ) : "Create Group 🚀"}
                             </Button>
                         </div>
                      )}
