@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Avatar from "@/components/Avatar";
-import { ArrowDownLeft, ArrowUpRight, CheckCircle, DollarSign, Edit3 } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, CheckCircle, DollarSign, Edit3, Loader2 } from "lucide-react";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -185,8 +185,17 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                         disabled={isProcessing || !hasReceivable}
                         className="w-full h-12 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all text-sm disabled:opacity-50"
                       >
-                        <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-                        <span className="truncate">Mark Full Amount Received</span>
+                        {isProcessing ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin flex-shrink-0" />
+                                <span className="truncate">Processing...</span>
+                            </>
+                        ) : (
+                            <>
+                                <CheckCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+                                <span className="truncate">Mark Full Amount Received</span>
+                            </>
+                        )}
                       </Button>
 
                       <Button
@@ -220,7 +229,11 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                           disabled={isProcessing || !customReceiveAmount}
                           className="flex-1 h-10 bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4336] text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all text-sm"
                         >
-                          <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+                          {isProcessing ? (
+                              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                          ) : (
+                              <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+                          )}
                           Mark Received
                         </Button>
 
@@ -272,8 +285,17 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                         disabled={isProcessing || !hasPayable}
                         className="w-full h-12 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all text-sm disabled:opacity-50"
                       >
-                        <DollarSign className="w-4 h-4 mr-2 flex-shrink-0" />
-                        <span className="truncate">Pay Full Amount</span>
+                        {isProcessing ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin flex-shrink-0" />
+                                <span className="truncate">Processing...</span>
+                            </>
+                        ) : (
+                            <>
+                                <DollarSign className="w-4 h-4 mr-2 flex-shrink-0" />
+                                <span className="truncate">Pay Full Amount</span>
+                            </>
+                        )}
                       </Button>
 
                       <Button
@@ -307,7 +329,11 @@ const MemberSettlementSheet = ({ open, onClose, member, groupId }: MemberSettlem
                           disabled={isProcessing || !customPayAmount}
                           className="flex-1 h-10 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-black rounded-2xl shadow-md hover:shadow-lg transition-all text-sm"
                         >
-                          <DollarSign className="w-3.5 h-3.5 mr-1.5" />
+                          {isProcessing ? (
+                              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                          ) : (
+                              <DollarSign className="w-3.5 h-3.5 mr-1.5" />
+                          )}
                           Mark Paid
                         </Button>
 
