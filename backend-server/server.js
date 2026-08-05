@@ -2399,7 +2399,7 @@ app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
 });
 
 // Send push notification to a specific user using OneSignal REST API
-app.post('/api/push-notify', generalLimiter, async (req, res) => {
+app.post('/api/push-notify', generalLimiter, authenticate, async (req, res) => {
   try {
     let { userId, title, body, icon, badge, tag, data } = req.body;
 
@@ -2618,7 +2618,7 @@ const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, b
 };
 
 // Send push notification to multiple users using OneSignal REST API
-app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
+app.post('/api/push-notify-multiple', generalLimiter, authenticate, async (req, res) => {
   try {
     let { userIds, title, body, icon, badge, data } = req.body;
 
