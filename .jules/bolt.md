@@ -1,0 +1,3 @@
+## 2024-05-18 - Unused O(N) filtering operation removed in Dashboard
+**Learning:** The Dashboard component was running an O(N) `useMemo` calculation on every change to `allTransactions` to group them by "Today", "Yesterday", and "Older" into `todayTransactions`, `yesterdayTransactions`, and `olderTransactions`. However, these arrays were completely unused in the render logic (the Dashboard delegates viewing all transactions to the `Activity` page, and only slices the top 5 `allTransactions`). This was wasted computation.
+**Action:** Always verify if computed data (like arrays mapped/filtered via `useMemo`) is actually consumed by the component's JSX or passed down to children.
