@@ -11,6 +11,7 @@ import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
+    TooltipProvider,
 } from "@/components/ui/tooltip";
 
 const LanguageSelector = () => {
@@ -22,6 +23,7 @@ const LanguageSelector = () => {
 
     return (
         <DropdownMenu>
+            <TooltipProvider delayDuration={0}>
             <Tooltip>
                 <TooltipTrigger asChild>
                     <DropdownMenuTrigger asChild>
@@ -39,6 +41,7 @@ const LanguageSelector = () => {
                     <p>Change language</p>
                 </TooltipContent>
             </Tooltip>
+            </TooltipProvider>
             <DropdownMenuContent align="end" className="w-32 rounded-xl shadow-lg border-[#4a6850]/10">
                 <DropdownMenuItem
                     onClick={() => changeLanguage("en")}

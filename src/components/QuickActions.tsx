@@ -4,6 +4,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  TooltipProvider,
 } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
 
@@ -17,6 +18,7 @@ const QuickActions = ({ onAddExpense, onReceivedMoney, onNewGroup }: QuickAction
   const { t } = useTranslation();
   return (
     <div className="grid grid-cols-3 gap-3 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+      <TooltipProvider delayDuration={0}>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -33,7 +35,9 @@ const QuickActions = ({ onAddExpense, onReceivedMoney, onNewGroup }: QuickAction
           <p>{t('quick_actions.add_expense_desc')}</p>
         </TooltipContent>
       </Tooltip>
+      </TooltipProvider>
 
+      <TooltipProvider delayDuration={0}>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -51,7 +55,9 @@ const QuickActions = ({ onAddExpense, onReceivedMoney, onNewGroup }: QuickAction
           <p>{t('quick_actions.received_desc')}</p>
         </TooltipContent>
       </Tooltip>
+      </TooltipProvider>
 
+      <TooltipProvider delayDuration={0}>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -69,6 +75,7 @@ const QuickActions = ({ onAddExpense, onReceivedMoney, onNewGroup }: QuickAction
           <p>{t('quick_actions.new_group_desc')}</p>
         </TooltipContent>
       </Tooltip>
+      </TooltipProvider>
     </div>
   );
 };
