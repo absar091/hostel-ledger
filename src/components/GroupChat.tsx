@@ -6,6 +6,8 @@ import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { callSecureApi } from "@/lib/api";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useTranslation } from "react-i18next";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
 import { 
     Send, 
     MessageCircle, 
@@ -490,8 +492,11 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                             accept="image/*"
                             className="hidden"
                         />
-                        <button
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span><button
                             onClick={() => fileInputRef.current?.click()}
+                            aria-label={t("chat.attach_image", "Attach Image")}
                             disabled={isUploading || !!attachedImage}
                             className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
                         >
@@ -500,9 +505,17 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                             ) : (
                                 <ImageIcon className="w-5 h-5" />
                             )}
-                        </button>
-                        <button
-                            onClick={() => setShowTxnHint(!showTxnHint)}
+                        </button></span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{t("chat.attach_image", "Attach Image")}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                onClick={() => setShowTxnHint(!showTxnHint)}
+                            aria-label={t("chat.referencing_tip", "Referencing Tip")}
                             className={cn(
                                 "p-2.5 rounded-xl transition-all shrink-0",
                                 showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
@@ -510,6 +523,11 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         >
                             <Info className="w-5 h-5" />
                         </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{t("chat.referencing_tip", "Referencing Tip")}</p>
+                            </TooltipContent>
+                        </Tooltip>
                     </div>
                     <input
                         ref={inputRef}
@@ -524,8 +542,11 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         maxLength={2000}
                         className="flex-1 bg-[#f0f4f1] border border-[#4a6850]/10 rounded-2xl px-4 py-3.5 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4a6850]/30 focus:border-[#4a6850]/30 transition-all min-w-0"
                     />
-                    <button
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <span><button
                         onClick={handleSend}
+                        aria-label={t("chat.send", "Send Message")}
                         disabled={(!inputText.trim() && !attachedImage) || isSending}
                         className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
                     >
@@ -534,7 +555,12 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         ) : (
                             <Send className="w-5 h-5" />
                         )}
-                    </button>
+                    </button></span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>{t("chat.send", "Send Message")}</p>
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
             </div>
         </div>
