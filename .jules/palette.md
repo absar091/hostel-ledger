@@ -1,3 +1,6 @@
 ## 2025-04-06 - Replacing Native Title Attributes with Radix Tooltips
 **Learning:** Native `title` attributes on interactive elements provide a delayed, inconsistently styled, and poorly accessible tooltip experience. When integrating Radix UI tooltips, it's critical to explicitly remove the native `title` attribute to prevent a "double-tooltip" effect where both the custom and native tooltips appear simultaneously, confusing users and screen readers. Additionally, tooltips must be globally wrapped in `<TooltipProvider>` to prevent application crashes due to missing context.
 **Action:** Always replace native `title` attributes on icon-only buttons with Radix `<Tooltip>` components, ensuring the native attribute is removed. Use `<TooltipTrigger asChild>` to prevent invalid HTML nesting, and wrap the component tree with `<TooltipProvider>`. Utilize `useTranslation` for the tooltip and `aria-label` content.
+## 2024-05-14 - Instant tooltips on interactive elements
+**Learning:** Default radix-ui tooltip hover delay (700ms) feels sluggish on frequently used, icon-only action buttons. Immediate visual feedback makes the UI feel significantly faster.
+**Action:** Wrap `<Tooltip>` elements on primary interaction points with `<TooltipProvider delayDuration={0}>` to provide instant feedback and improve perceived performance without needing global app restructuring.

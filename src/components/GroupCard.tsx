@@ -3,6 +3,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  TooltipProvider,
 } from "@/components/ui/tooltip";
 
 interface GroupCardProps {
@@ -17,6 +18,7 @@ const GroupCard = ({ name, balance, memberCount, emoji = "👥", onClick }: Grou
   const isPositive = balance >= 0;
   
   return (
+    <TooltipProvider delayDuration={0}>
     <Tooltip>
       <TooltipTrigger asChild>
           <button
@@ -51,6 +53,7 @@ const GroupCard = ({ name, balance, memberCount, emoji = "👥", onClick }: Grou
           <p>Tap to view group details, expenses, and member balances</p>
       </TooltipContent>
     </Tooltip>
+    </TooltipProvider>
   );
 };
 
