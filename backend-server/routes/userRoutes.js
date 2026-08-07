@@ -25,9 +25,13 @@ router.post('/support', async (req, res) => {
 
     const ticketId = generateTicketId();
 
+    // Security Fix: Prevent Open Relay by strictly using the authenticated user's email if possible
+    // Allow fallback to a valid user-provided email only if they are unauthenticated or missing email in token
+    const safeEmail = req.user?.email || email || 'unknown';
+
     const ticketData = {
       userId: uid,
-      email: email || req.user.email || 'unknown',
+      email: safeEmail,
       subject,
       message,
       status: 'open',
