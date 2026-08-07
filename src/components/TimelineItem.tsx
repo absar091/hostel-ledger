@@ -201,7 +201,7 @@ const TimelineItemBase = ({
             <div className="mt-3 flex flex-wrap gap-2">
               {participants.map((p) => {
                 // Multi-payer aware: check if this participant is ANY payer
-                const payerEntry = payers?.find((py: any) => (py.id && (p as any).id && py.id === (p as any).id) || py.name === p.name);
+                const payerEntry = payers?.find((py) => (('id' in py && 'id' in p && (py as {id?: string}).id === (p as {id?: string}).id)) || py.name === p.name);
                 const isPayer = payerEntry || p.name === paidBy;
                 const amountPaid = payerEntry ? (payerEntry.amount || 0) : ((p.name === paidBy) ? amount : 0);
                 const netOwes = Number(p.amount || 0) - Number(amountPaid); // positive = owes, negative = lent
@@ -290,16 +290,34 @@ const arePropsEqual = (prevProps: TimelineItemProps, nextProps: TimelineItemProp
     prevProps.amount !== nextProps.amount ||
     prevProps.date !== nextProps.date ||
     prevProps.paidBy !== nextProps.paidBy ||
-    (prevProps.payers?.length !== nextProps.payers?.length) ||
     prevProps.isPayerOwner !== nextProps.isPayerOwner || // Check optimization
     prevProps.from !== nextProps.from ||
     prevProps.to !== nextProps.to ||
     prevProps.method !== nextProps.method ||
     prevProps.category !== nextProps.category ||
     prevProps.userRole !== nextProps.userRole ||
-    prevProps.onClick !== nextProps.onClick
+    prevProps.onClick !== nextProps.onClick ||
+    prevProps.groupId !== nextProps.groupId ||
+    prevProps.id !== nextProps.id
   ) {
     return false;
+  }
+
+  // Compare payers array deeply
+  const prevPayers = prevProps.payers;
+  const nextPayers = nextProps.payers;
+
+  if (prevPayers !== nextPayers) {
+    if (!prevPayers || !nextPayers) return false;
+    if (prevPayers.length !== nextPayers.length) return false;
+    for (let i = 0; i < prevPayers.length; i++) {
+      if (
+        prevPayers[i].name !== nextPayers[i].name ||
+        prevPayers[i].amount !== nextPayers[i].amount
+      ) {
+        return false;
+      }
+    }
   }
 
   // 2. Compare participants array deeply
@@ -308,19 +326,20 @@ const arePropsEqual = (prevProps: TimelineItemProps, nextProps: TimelineItemProp
   const prevP = prevProps.participants;
   const nextP = nextProps.participants;
 
-  if (prevP === nextP) return true;
-  if (!prevP || !nextP) return false; // One is undefined/null but not both (checked above)
-  if (prevP.length !== nextP.length) return false;
+  if (prevP !== nextP) {
+    if (!prevP || !nextP) return false; // One is undefined/null but not both (checked above)
+    if (prevP.length !== nextP.length) return false;
 
-  for (let i = 0; i < prevP.length; i++) {
-    const p1 = prevP[i];
-    const p2 = nextP[i];
-    if (
-      p1.name !== p2.name ||
-      p1.amount !== p2.amount ||
-      p1.isTemporary !== p2.isTemporary
-    ) {
-      return false;
+    for (let i = 0; i < prevP.length; i++) {
+      const p1 = prevP[i];
+      const p2 = nextP[i];
+      if (
+        p1.name !== p2.name ||
+        p1.amount !== p2.amount ||
+        p1.isTemporary !== p2.isTemporary
+      ) {
+        return false;
+      }
     }
   }
 
