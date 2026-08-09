@@ -104,22 +104,26 @@ const GroupDetail = () => {
 
   // NOTE: These useMemo hooks MUST be before the early returns below to maintain
   // consistent hook count across renders (React Rules of Hooks)
+  const { totalSpent, expenseCount } = useMemo(() => {
+    let spent = 0;
+    let count = 0;
+    for (let i = 0; i < transactions.length; i++) {
+      const t = transactions[i];
+      if (t.type === 'expense') {
+        spent += t.amount || 0;
+        count++;
+      }
+    }
+    return { totalSpent: spent, expenseCount: count };
+  }, [transactions]);
+
   const personalStats = useMemo(() => {
     if (!group?.isPersonal) return null;
-    const totalSpentValue = transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
     return {
-      totalSpent: totalSpentValue,
-      count: transactions.filter(t => t.type === 'expense').length
+      totalSpent,
+      count: expenseCount
     };
-  }, [group, transactions]);
-
-  const totalSpent = useMemo(() => transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0), [transactions]);
-
-  const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
+  }, [group?.isPersonal, totalSpent, expenseCount]);
 
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
