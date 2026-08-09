@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2024-08-09 - Open Relay Vulnerability in Support Route
+**Vulnerability:** Support ticket endpoint accepted email in req.body for sending confirmation, creating an Open Relay / Spam Abuse risk.
+**Learning:** Never trust client-provided email inputs for automated sending on authenticated routes when a trusted context (req.user) exists.
+**Prevention:** Always use req.user.email from the validated session for automated email workflows instead of allowing override via req.body.
