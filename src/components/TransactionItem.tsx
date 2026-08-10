@@ -16,7 +16,68 @@ interface TransactionItemProps {
 }
 
 // Memoized to prevent re-renders when parent list updates but item data hasn't changed
+
+// Custom equality function to optimize re-renders
+const areTransactionPropsEqual = (prevProps: TransactionItemProps, nextProps: TransactionItemProps) => {
+  // Primitive checks
+  if (
+    prevProps.groupName !== nextProps.groupName ||
+    prevProps.userId !== nextProps.userId ||
+    prevProps.dateFormat !== nextProps.dateFormat ||
+    prevProps.onClick !== nextProps.onClick ||
+    prevProps.formatAmount !== nextProps.formatAmount
+  ) {
+    return false;
+  }
+
+  // Deep compare transaction object (frequently updated by Firebase)
+  const prevTx = prevProps.transaction;
+  const nextTx = nextProps.transaction;
+
+  if (prevTx === nextTx) return true;
+
+  if (
+    prevTx.id !== nextTx.id ||
+    prevTx.amount !== nextTx.amount ||
+    prevTx.title !== nextTx.title ||
+    prevTx.type !== nextTx.type ||
+    prevTx.paidBy !== nextTx.paidBy ||
+    prevTx.from !== nextTx.from ||
+    prevTx.to !== nextTx.to ||
+    prevTx.groupId !== nextTx.groupId ||
+    prevTx.date !== nextTx.date ||
+    prevTx.timestamp !== nextTx.timestamp ||
+    prevTx.location?.lat !== nextTx.location?.lat ||
+    prevTx.location?.lng !== nextTx.location?.lng
+  ) {
+    return false;
+  }
+
+  // Deep compare participants (array of objects)
+  const prevP = prevTx.participants;
+  const nextP = nextTx.participants;
+
+  if (prevP === nextP) return true;
+  if (!prevP || !nextP) return false;
+  if (prevP.length !== nextP.length) return false;
+
+  for (let i = 0; i < prevP.length; i++) {
+    const p1 = prevP[i];
+    const p2 = nextP[i];
+    if (
+      p1.id !== p2.id ||
+      p1.amount !== p2.amount ||
+      p1.isTemporary !== p2.isTemporary
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 export const TransactionItem = memo(({
+
   transaction,
   groupName,
   userId,
@@ -195,6 +256,7 @@ export const TransactionItem = memo(({
       />
     </button>
   );
-});
+}, areTransactionPropsEqual);
 
 TransactionItem.displayName = "TransactionItem";
+export { areTransactionPropsEqual };
