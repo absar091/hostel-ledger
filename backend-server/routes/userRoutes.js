@@ -27,7 +27,8 @@ router.post('/support', async (req, res) => {
 
     const ticketData = {
       userId: uid,
-      email: email || req.user.email || 'unknown',
+      // Security Fix: Prevent Open Relay/Spam abuse by ensuring confirmation emails are only sent to the authenticated user.
+      email: req.user.email || 'unknown',
       subject,
       message,
       status: 'open',
@@ -39,9 +40,9 @@ router.post('/support', async (req, res) => {
     await admin.database().ref(`supportTickets/${uid}/${ticketId}`).set(ticketData);
 
     // Send confirmation email asynchronously (fire and forget to not block UI)
-    if (emailService && emailService.isConfigured()) {
+    if (emailService && emailService.isConfigured() && req.user.email) {
        emailService.sendEmail(
-         ticketData.email,
+         req.user.email,
          `Support Ticket Received: ${ticketId}`,
          `Hello,\n\nWe have received your support request:\n\nSubject: ${subject}\n\nOur team will review this shortly.\n\nTicket ID: ${ticketId}`
        ).catch(err => console.error("Failed to send ticket email", err));
