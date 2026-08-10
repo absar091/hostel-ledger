@@ -1,0 +1,3 @@
+## 2024-05-18 - [Missing Deep Equality Checks for Complex Props]
+**Learning:** React.memo() relies on shallow equality checks by default. When components receive complex nested objects (like \`transaction\` which contains arrays of \`participants\`), \`React.memo\` will fail to prevent re-renders if those objects are recreated by the parent, even if the data inside hasn't changed.
+**Action:** When memoizing list items that take complex objects, always implement a custom \`arePropsEqual\` function that deep compares the specific fields needed for rendering, avoiding \`JSON.stringify\` for performance.
