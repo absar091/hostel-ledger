@@ -5,6 +5,7 @@ import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TransactionDetailModalProps {
     transaction: any;
@@ -262,20 +263,29 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                 {transaction.groupId}/{transaction.id}
                                             </span>
                                         </div>
-                                        <button
-                                            onClick={handleCopyId}
-                                            className={`p-2 rounded-full transition-all ${isCopied
-                                                ? "bg-emerald-100 text-emerald-600 scale-110"
-                                                : "bg-white text-slate-400 hover:text-emerald-600 shadow-sm border border-slate-100 group-hover:border-emerald-200"
-                                                }`}
-                                            title={isCopied ? "Copied!" : "Copy Reference"}
-                                        >
-                                            {isCopied ? (
-                                                <Check className="w-3.5 h-3.5" />
-                                            ) : (
-                                                <Copy className="w-3.5 h-3.5" />
-                                            )}
-                                        </button>
+                                        <TooltipProvider delayDuration={0}>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <button
+                                                        onClick={handleCopyId}
+                                                        className={`p-2 rounded-full transition-all ${isCopied
+                                                            ? "bg-emerald-100 text-emerald-600 scale-110"
+                                                            : "bg-white text-slate-400 hover:text-emerald-600 shadow-sm border border-slate-100 group-hover:border-emerald-200"
+                                                            }`}
+                                                        aria-label={isCopied ? "Copied!" : "Copy Reference"}
+                                                    >
+                                                        {isCopied ? (
+                                                            <Check className="w-3.5 h-3.5" />
+                                                        ) : (
+                                                            <Copy className="w-3.5 h-3.5" />
+                                                        )}
+                                                    </button>
+                                                </TooltipTrigger>
+                                                <TooltipContent className="bg-slate-900 text-white border-slate-800">
+                                                    {isCopied ? "Copied!" : "Copy Reference"}
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
                                     </div>
                                 </div>
 
