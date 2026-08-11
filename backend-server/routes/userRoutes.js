@@ -16,7 +16,7 @@ function generateTicketId() {
 // User submitting a support ticket
 router.post('/support', async (req, res) => {
   try {
-    const { subject, message, email } = req.body;
+    const { subject, message } = req.body;
     const uid = req.user.uid;
 
     if (!subject || !message) {
@@ -27,7 +27,8 @@ router.post('/support', async (req, res) => {
 
     const ticketData = {
       userId: uid,
-      email: email || req.user.email || 'unknown',
+      // Security Fix: Prevent Open Relay and spam abuse by relying solely on the authenticated user's email
+      email: req.user.email || 'unknown',
       subject,
       message,
       status: 'open',
