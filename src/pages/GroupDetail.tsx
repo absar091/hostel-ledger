@@ -83,15 +83,19 @@ const GroupDetail = () => {
   const rawGroup = fullGroup || partialGroup;
 
   // Defensive: Ensure members is always an array (Firebase may return object)
-  const group = rawGroup ? {
-    ...rawGroup,
-    members: (Array.isArray(rawGroup.members)
-      ? rawGroup.members
-      : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
-    ).filter((m: { id: any; }) => m && m.id) // Filter out any null/undefined members
-  } : null;
+  const group = useMemo(() => {
+    return rawGroup ? {
+      ...rawGroup,
+      members: (Array.isArray(rawGroup.members)
+        ? rawGroup.members
+        : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
+      ).filter((m: { id: any; }) => m && m.id) // Filter out any null/undefined members
+    } : null;
+  }, [rawGroup]);
 
-  const transactions = id ? getTransactionsByGroup(id) : [];
+  const transactions = useMemo(() => {
+    return id ? getTransactionsByGroup(id) : [];
+  }, [id, getTransactionsByGroup]);
   const settlements = id ? getSettlements(id) : {};
   const { invitations } = useInvitations();
   const favoriteGroups = getFavoriteGroups();
@@ -101,6 +105,26 @@ const GroupDetail = () => {
   const groupTotalToReceive = Object.values(settlements).reduce((total, settlement) => {
     return total + (settlement.toReceive || 0);
   }, 0);
+
+  // Find the member who has paid the most in expenses (actual top contributor)
+  const topSpender = useMemo(() => {
+    if (!group?.members) return null;
+    const memberExpenseContributions = group.members.map((member: { id: any; }) => {
+      const totalPaid = transactions
+        .filter((t) => t.type === "expense" && t.paidBy === member.id)
+        .reduce((sum, t) => sum + t.amount, 0);
+      return {
+        ...member,
+        totalPaid
+      };
+    });
+
+    return memberExpenseContributions.length > 0
+      ? memberExpenseContributions.reduce((prev: { totalPaid: number; }, curr: { totalPaid: number; }) => {
+          return curr.totalPaid > prev.totalPaid ? curr : prev;
+        })
+      : null;
+  }, [group, transactions]);
 
   // NOTE: These useMemo hooks MUST be before the early returns below to maintain
   // consistent hook count across renders (React Rules of Hooks)
@@ -463,22 +487,7 @@ const GroupDetail = () => {
 
   // personalStats, totalSpent, and expenseCount are defined before early returns above
 
-  // Find the member who has paid the most in expenses (actual top contributor)
-  const memberExpenseContributions = group.members.map((member: { id: any; }) => {
-    const totalPaid = transactions
-      .filter(t => t.type === "expense" && t.paidBy === member.id)
-      .reduce((sum, t) => sum + t.amount, 0);
-    return {
-      ...member,
-      totalPaid
-    };
-  });
 
-  const topSpender = memberExpenseContributions.length > 0
-    ? memberExpenseContributions.reduce((prev: { totalPaid: number; }, curr: { totalPaid: number; }) => {
-      return curr.totalPaid > prev.totalPaid ? curr : prev;
-    })
-    : null;
 
   return (
     <div className="min-h-screen bg-white pb-24">
