@@ -23,6 +23,17 @@ router.post('/support', async (req, res) => {
       return res.status(400).json({ error: 'Subject and message are required.' });
     }
 
+    // Security Fix: Prevent Open Relay Vulnerability by verifying the email against the authenticated user
+    const userEmail = req.user?.email;
+    if (email) {
+      if (typeof email !== 'string') {
+        return res.status(400).json({ error: 'Invalid email format.' });
+      }
+      if (!userEmail || userEmail.toLowerCase() !== email.toLowerCase()) {
+        return res.status(403).json({ error: 'Unauthorized: You can only submit support tickets for your own email address.' });
+      }
+    }
+
     const ticketId = generateTicketId();
 
     const ticketData = {
