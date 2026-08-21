@@ -27,7 +27,8 @@ router.post('/support', async (req, res) => {
 
     const ticketData = {
       userId: uid,
-      email: email || req.user.email || 'unknown',
+      // Security Fix: Prevent Open Relay/Spam abuse by strictly using the authenticated user's email
+      email: req.user.email || 'unknown',
       subject,
       message,
       status: 'open',
