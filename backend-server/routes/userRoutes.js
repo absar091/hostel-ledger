@@ -16,7 +16,7 @@ function generateTicketId() {
 // User submitting a support ticket
 router.post('/support', async (req, res) => {
   try {
-    const { subject, message, email } = req.body;
+    const { subject, message } = req.body;
     const uid = req.user.uid;
 
     if (!subject || !message) {
@@ -27,7 +27,8 @@ router.post('/support', async (req, res) => {
 
     const ticketData = {
       userId: uid,
-      email: email || req.user.email || 'unknown',
+      // Security Fix: Prevent Open Relay by strictly using authenticated user email
+      email: req.user.email || 'unknown',
       subject,
       message,
       status: 'open',
@@ -39,12 +40,12 @@ router.post('/support', async (req, res) => {
     await admin.database().ref(`supportTickets/${uid}/${ticketId}`).set(ticketData);
 
     // Send confirmation email asynchronously (fire and forget to not block UI)
-    if (emailService && emailService.isConfigured()) {
-       emailService.sendEmail(
-         ticketData.email,
-         `Support Ticket Received: ${ticketId}`,
-         `Hello,\n\nWe have received your support request:\n\nSubject: ${subject}\n\nOur team will review this shortly.\n\nTicket ID: ${ticketId}`
-       ).catch(err => console.error("Failed to send ticket email", err));
+    if (emailService && emailService.isConnectionVerified) {
+       emailService.sendEmailSafe({
+         to: ticketData.email,
+         subject: `Support Ticket Received: ${ticketId}`,
+         html: `<p>Hello,</p><p>We have received your support request:</p><p><strong>Subject:</strong> ${subject}</p><p>Our team will review this shortly.</p><p><strong>Ticket ID:</strong> ${ticketId}</p>`
+       }).catch(err => console.error("Failed to send ticket email", err));
     }
 
     res.json({ success: true, ticketId, message: 'Ticket submitted successfully.' });
