@@ -1,0 +1,3 @@
+## 2024-08-21 - Rules of Hooks and Early Returns
+**Learning:** In React components like GroupDetail.tsx, placing `useMemo` hooks after conditional early returns (e.g., `if (!group) return null;`) violates the Rules of Hooks and causes `react-hooks/rules-of-hooks` errors, because the number of hooks called on each render could vary.
+**Action:** When adding or moving `useMemo` or `useCallback` hooks to optimize expensive operations, ensure they are initialized at the top level of the component before any early returns. Add necessary null-checks (e.g., `group?.members`) within the hook itself to handle initial uninitialized states safely.
