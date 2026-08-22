@@ -185,14 +185,17 @@ export const TransactionItem = memo(({
         )}
       </div>
 
-      <ExpenseThreadSheet
-        isOpen={showChat}
-        onClose={() => setShowChat(false)}
-        groupId={transaction.groupId}
-        groupName={groupName || "Group"}
-        expenseId={transaction.id}
-        expenseTitle={transaction.title}
-      />
+      {/* Performance optimization: Conditionally mount complex Sheet/Chat components to prevent DOM bloat on long lists */}
+      {showChat && (
+        <ExpenseThreadSheet
+          isOpen={showChat}
+          onClose={() => setShowChat(false)}
+          groupId={transaction.groupId}
+          groupName={groupName || "Group"}
+          expenseId={transaction.id}
+          expenseTitle={transaction.title}
+        />
+      )}
     </button>
   );
 });
