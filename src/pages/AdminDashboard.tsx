@@ -45,6 +45,7 @@ import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import * as api from "@/lib/api";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // --- TYPES ---
 
@@ -780,30 +781,59 @@ const AdminDashboard = () => {
                                               <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
                                             ) : (
                                               <>
-                                                 <button 
-                                                   title="Protocol Breakdown"
-                                                   onClick={() => setSelectedUser(u)}
-                                                   className="w-10 h-10 rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-blue-600 hover:border-blue-100 hover:shadow-lg hover:shadow-blue-100 transition-all flex items-center justify-center"
-                                                 >
-                                                   <Info className="w-5 h-5" />
-                                                 </button>
-                                                 <button 
-                                                   title="Liquidate Wallet"
-                                                   onClick={() => handleResetUserWallet(u.uid)}
-                                                   className="w-10 h-10 rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-emerald-600 hover:border-emerald-100 hover:shadow-lg hover:shadow-emerald-100 transition-all flex items-center justify-center"
-                                                 >
-                                                   <RefreshCw className="w-5 h-5" />
-                                                 </button>
-                                                 <button 
-                                                   title={u.accountStatus === 'active' ? 'Revoke Access' : 'Authorize Access'}
-                                                   onClick={() => handleUpdateUserStatus(u.uid, u.accountStatus === 'active' ? 'banned' : 'active')}
-                                                   className={cn(
-                                                     "w-10 h-10 rounded-xl border transition-all flex items-center justify-center",
-                                                     u.accountStatus === 'active' ? "bg-white border-gray-100 text-gray-400 hover:text-red-600 hover:border-red-100 hover:shadow-lg hover:shadow-red-100" : "bg-white border-gray-100 text-gray-400 hover:text-emerald-600 hover:border-emerald-100 hover:shadow-lg hover:shadow-emerald-100"
-                                                   )}
-                                                 >
-                                                   {u.accountStatus === 'active' ? <Lock className="w-5 h-5" /> : <Shield className="w-5 h-5" />}
-                                                 </button>
+                                                 <TooltipProvider delayDuration={0}>
+                                                   <Tooltip>
+                                                     <TooltipTrigger asChild>
+                                                       <button
+                                                         aria-label="Protocol Breakdown"
+                                                         onClick={() => setSelectedUser(u)}
+                                                         className="w-10 h-10 rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-blue-600 hover:border-blue-100 hover:shadow-lg hover:shadow-blue-100 transition-all flex items-center justify-center"
+                                                       >
+                                                         <Info className="w-5 h-5" />
+                                                       </button>
+                                                     </TooltipTrigger>
+                                                     <TooltipContent side="top" className="font-bold">
+                                                       <p>Protocol Breakdown</p>
+                                                     </TooltipContent>
+                                                   </Tooltip>
+                                                 </TooltipProvider>
+
+                                                 <TooltipProvider delayDuration={0}>
+                                                   <Tooltip>
+                                                     <TooltipTrigger asChild>
+                                                       <button
+                                                         aria-label="Liquidate Wallet"
+                                                         onClick={() => handleResetUserWallet(u.uid)}
+                                                         className="w-10 h-10 rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-emerald-600 hover:border-emerald-100 hover:shadow-lg hover:shadow-emerald-100 transition-all flex items-center justify-center"
+                                                       >
+                                                         <RefreshCw className="w-5 h-5" />
+                                                       </button>
+                                                     </TooltipTrigger>
+                                                     <TooltipContent side="top" className="font-bold">
+                                                       <p>Liquidate Wallet</p>
+                                                     </TooltipContent>
+                                                   </Tooltip>
+                                                 </TooltipProvider>
+
+                                                 <TooltipProvider delayDuration={0}>
+                                                   <Tooltip>
+                                                     <TooltipTrigger asChild>
+                                                       <button
+                                                         aria-label={u.accountStatus === 'active' ? 'Revoke Access' : 'Authorize Access'}
+                                                         onClick={() => handleUpdateUserStatus(u.uid, u.accountStatus === 'active' ? 'banned' : 'active')}
+                                                         className={cn(
+                                                           "w-10 h-10 rounded-xl border transition-all flex items-center justify-center",
+                                                           u.accountStatus === 'active' ? "bg-white border-gray-100 text-gray-400 hover:text-red-600 hover:border-red-100 hover:shadow-lg hover:shadow-red-100" : "bg-white border-gray-100 text-gray-400 hover:text-emerald-600 hover:border-emerald-100 hover:shadow-lg hover:shadow-emerald-100"
+                                                         )}
+                                                       >
+                                                         {u.accountStatus === 'active' ? <Lock className="w-5 h-5" /> : <Shield className="w-5 h-5" />}
+                                                       </button>
+                                                     </TooltipTrigger>
+                                                     <TooltipContent side="top" className="font-bold">
+                                                       <p>{u.accountStatus === 'active' ? 'Revoke Access' : 'Authorize Access'}</p>
+                                                     </TooltipContent>
+                                                   </Tooltip>
+                                                 </TooltipProvider>
                                               </>
                                             )}
                                          </div>
