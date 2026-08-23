@@ -23,6 +23,10 @@ router.post('/support', async (req, res) => {
       return res.status(400).json({ error: 'Subject and message are required.' });
     }
 
+    if (email && typeof email !== 'string') {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
     const ticketId = generateTicketId();
 
     const ticketData = {
