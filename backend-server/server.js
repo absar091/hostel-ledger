@@ -789,6 +789,10 @@ app.post('/api/2fa/initiate-reset', detectFraud, strictEmailLimiter, async (req,
       return res.status(400).json({ success: false, error: 'Email is required' });
     }
 
+    if (typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email must be a string' });
+    }
+
     // Verify user exists in Auth
     let userRecord;
     try {
@@ -1050,7 +1054,10 @@ app.post('/api/create-group', detectFraud, createLimiter, authenticate, async (r
       // Optimize: Deduplicate to prevent redundant DB calls
       const uniqueUsernames = [...new Set(invitedUsernames)];
 
-      const resolved = await Promise.all(uniqueUsernames.map(async (username) => {
+      // Type check to prevent crash on toLowerCase()
+      const validUsernames = uniqueUsernames.filter(u => typeof u === 'string');
+
+      const resolved = await Promise.all(validUsernames.map(async (username) => {
         const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
 
         // Optimize: Skip empty usernames to prevent fetching the entire 'usernames' node (major performance/security fix)
@@ -1295,6 +1302,10 @@ app.post('/api/get-valid-user-details', userSearchLimiter, authenticate, async (
 
     if (!username) {
       return res.status(400).json({ success: false, error: 'Username is required' });
+    }
+
+    if (typeof username !== 'string') {
+      return res.status(400).json({ success: false, error: 'Username must be a string' });
     }
 
     // Sanitize username to prevent path traversal (allow only alphanumeric, dots and underscores)
@@ -1959,6 +1970,9 @@ app.post('/api/send-temp-member-alert', emailLimiter, async (req, res) => {
     // Security: Only allow users to alert themselves
     // Must verify against the authenticated user's email to prevent open relay abuse
     const userEmail = req.user.email;
+    if (typeof to !== 'string') {
+      return res.status(400).json({ success: false, error: 'Recipient email must be a string' });
+    }
     if (!userEmail || userEmail.toLowerCase() !== to.toLowerCase()) {
       return res.status(403).json({ success: false, error: 'Unauthorized: You can only send alerts to your own email address.' });
     }
@@ -2097,6 +2111,9 @@ app.post('/api/send-welcome', emailLimiter, async (req, res) => {
     // Security: Only allow users to send welcome emails to themselves
     // Must verify against the authenticated user's email to prevent open relay abuse
     const userEmail = req.user?.email;
+    if (typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email must be a string' });
+    }
     if (!userEmail || userEmail.toLowerCase() !== email.toLowerCase()) {
       return res.status(403).json({ success: false, error: 'Unauthorized: You can only send welcome emails to your own email address.' });
     }
@@ -2144,6 +2161,12 @@ app.post('/api/verification/request', strictEmailLimiter, async (req, res) => {
     if (!email || !name || !type) {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, name, type' });
     }
+
+    if (typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email must be a string' });
+    }
+
+
 
     // Generate 6-digit code
     const code = crypto.randomInt(100000, 1000000).toString();
@@ -2270,6 +2293,10 @@ app.post('/api/verification/check', generalLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Email is required' });
     }
 
+    if (typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email must be a string' });
+    }
+
     const docId = Buffer.from(email.toLowerCase()).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
     const docRef = admin.firestore().collection('verificationCodes').doc(docId);
     const docSnap = await docRef.get();
@@ -2311,6 +2338,10 @@ app.post('/api/check-email-exists', strictEmailCheckLimiter, async (req, res) =>
 
     if (!email) {
       return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+
+    if (typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email must be a string' });
     }
 
     // Validate email format
@@ -3951,6 +3982,9 @@ app.post('/api/send-invitation', detectFraud, generalLimiter, async (req, res) =
 
     // 1. Resolve invitee username to UID
     // Using the 'usernames' index we created in Phase 1
+    if (typeof inviteeUsername !== 'string') {
+      return res.status(400).json({ success: false, error: 'inviteeUsername must be a string' });
+    }
     const normalizedUsername = inviteeUsername.toLowerCase().replace(/[^a-z0-9._]/g, '');
     const storageKey = normalizedUsername.replace(/\./g, ',');
     const usernameSnap = await db.ref(`usernames/${storageKey}`).get();
