@@ -785,7 +785,7 @@ app.post('/api/2fa/initiate-reset', detectFraud, strictEmailLimiter, async (req,
   try {
     const { email } = req.body;
 
-    if (!email) {
+    if (!email || typeof email !== 'string') {
       return res.status(400).json({ success: false, error: 'Email is required' });
     }
 
@@ -1293,7 +1293,7 @@ app.post('/api/get-valid-user-details', userSearchLimiter, authenticate, async (
   try {
     const { username } = req.body;
 
-    if (!username) {
+    if (!username || typeof username !== 'string') {
       return res.status(400).json({ success: false, error: 'Username is required' });
     }
 
@@ -1949,7 +1949,7 @@ app.post('/api/send-temp-member-alert', emailLimiter, async (req, res) => {
     const { to, memberName, groupName, expiryDate } = req.body;
 
     // Validate inputs
-    if (!to || !memberName || !groupName || !expiryDate) {
+    if (!to || !memberName || !groupName || !expiryDate || typeof to !== 'string') {
       return res.status(400).json({
         success: false,
         error: 'Missing required fields: to, memberName, groupName, expiryDate'
@@ -1996,7 +1996,7 @@ app.post('/api/send-email', emailLimiter, async (req, res) => {
 app.post('/api/send-verification', emailLimiter, async (req, res) => {
   try {
     const { email, code, name } = req.body;
-    if (!email || !code || !name) {
+    if (!email || !code || !name || typeof email !== 'string') {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, code, name' });
     }
 
@@ -2023,7 +2023,7 @@ app.post('/api/send-verification', emailLimiter, async (req, res) => {
 app.post('/api/send-verification-new', emailLimiter, async (req, res) => {
   try {
     const { email, code, name } = req.body;
-    if (!email || !code || !name) {
+    if (!email || !code || !name || typeof email !== 'string') {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
     }
 
@@ -2048,7 +2048,7 @@ app.post('/api/send-verification-new', emailLimiter, async (req, res) => {
 app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
   try {
     const { email, resetLink, name } = req.body;
-    if (!email || !resetLink || !name) {
+    if (!email || !resetLink || !name || typeof email !== 'string') {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, resetLink, name' });
     }
 
@@ -2090,7 +2090,7 @@ app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
 app.post('/api/send-welcome', emailLimiter, async (req, res) => {
   try {
     const { email, name } = req.body;
-    if (!email || !name) {
+    if (!email || !name || typeof email !== 'string') {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, name' });
     }
 
@@ -2141,7 +2141,7 @@ app.post('/api/verification/request', strictEmailLimiter, async (req, res) => {
   try {
     const { email, name, type, userId } = req.body;
 
-    if (!email || !name || !type) {
+    if (!email || !name || !type || typeof email !== 'string') {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, name, type' });
     }
 
@@ -2266,7 +2266,7 @@ app.post('/api/verification/check', generalLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email) {
+    if (!email || typeof email !== 'string') {
       return res.status(400).json({ success: false, error: 'Email is required' });
     }
 
@@ -2309,7 +2309,7 @@ app.post('/api/check-email-exists', strictEmailCheckLimiter, async (req, res) =>
   try {
     const { email } = req.body;
 
-    if (!email) {
+    if (!email || typeof email !== 'string') {
       return res.status(400).json({ success: false, error: 'Email is required' });
     }
 
@@ -3939,7 +3939,7 @@ app.post('/api/send-invitation', detectFraud, generalLimiter, async (req, res) =
     const { groupId, inviteeUsername } = req.body;
     const senderUid = req.user.uid;
 
-    if (!groupId || !inviteeUsername) {
+    if (!groupId || !inviteeUsername || typeof inviteeUsername !== 'string') {
       return res.status(400).json({ success: false, error: 'Group ID and username are required' });
     }
 
@@ -4140,7 +4140,7 @@ app.post('/api/send-external-invitation', strictEmailLimiter, async (req, res) =
     const { email, groupId } = req.body;
     const senderUid = req.user.uid;
 
-    if (!email || !groupId) {
+    if (!email || !groupId || typeof email !== 'string') {
       return res.status(400).json({ success: false, error: 'Email and Group ID are required' });
     }
 
