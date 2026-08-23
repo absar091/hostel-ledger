@@ -1,3 +1,5 @@
-## 2025-04-06 - Replacing Native Title Attributes with Radix Tooltips
-**Learning:** Native `title` attributes on interactive elements provide a delayed, inconsistently styled, and poorly accessible tooltip experience. When integrating Radix UI tooltips, it's critical to explicitly remove the native `title` attribute to prevent a "double-tooltip" effect where both the custom and native tooltips appear simultaneously, confusing users and screen readers. Additionally, tooltips must be globally wrapped in `<TooltipProvider>` to prevent application crashes due to missing context.
-**Action:** Always replace native `title` attributes on icon-only buttons with Radix `<Tooltip>` components, ensuring the native attribute is removed. Use `<TooltipTrigger asChild>` to prevent invalid HTML nesting, and wrap the component tree with `<TooltipProvider>`. Utilize `useTranslation` for the tooltip and `aria-label` content.
+## 2024-05-20 - Accessible tooltips in sidebar
+
+**Learning:** When replacing HTML `title` attributes with Radix UI Tooltips on icon-only buttons (like in the collapsed sidebar), it provides immediate visual feedback instead of a native tooltip delay and is more accessible. A critical constraint is that conditionally showing the tooltip based on state (e.g. `isOpen ? hidden : ""`) must be done on the `TooltipContent` visually, because conditionally removing the `Tooltip` altogether while leaving the `TooltipTrigger` causes a11y issues.
+
+**Action:** Replace `title` attributes on icon-only buttons with Radix UI `<Tooltip>` components wrapped in a `<TooltipProvider delayDuration={0}>` for better UX/a11y.
