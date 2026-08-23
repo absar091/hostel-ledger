@@ -784,6 +784,9 @@ app.post('/api/2fa/check-trust', detectFraud, authenticate, async (req, res) => 
 app.post('/api/2fa/initiate-reset', detectFraud, strictEmailLimiter, async (req, res) => {
   try {
     const { email } = req.body;
+    if (email && typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid email type' });
+    }
 
     if (!email) {
       return res.status(400).json({ success: false, error: 'Email is required' });
@@ -1996,6 +1999,9 @@ app.post('/api/send-email', emailLimiter, async (req, res) => {
 app.post('/api/send-verification', emailLimiter, async (req, res) => {
   try {
     const { email, code, name } = req.body;
+    if (email && typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid email type' });
+    }
     if (!email || !code || !name) {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, code, name' });
     }
@@ -2023,6 +2029,9 @@ app.post('/api/send-verification', emailLimiter, async (req, res) => {
 app.post('/api/send-verification-new', emailLimiter, async (req, res) => {
   try {
     const { email, code, name } = req.body;
+    if (email && typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid email type' });
+    }
     if (!email || !code || !name) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
     }
@@ -2048,6 +2057,9 @@ app.post('/api/send-verification-new', emailLimiter, async (req, res) => {
 app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
   try {
     const { email, resetLink, name } = req.body;
+    if (email && typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid email type' });
+    }
     if (!email || !resetLink || !name) {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, resetLink, name' });
     }
@@ -2090,6 +2102,9 @@ app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
 app.post('/api/send-welcome', emailLimiter, async (req, res) => {
   try {
     const { email, name } = req.body;
+    if (email && typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid email type' });
+    }
     if (!email || !name) {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, name' });
     }
@@ -2140,6 +2155,9 @@ app.use((err, req, res, next) => {
 app.post('/api/verification/request', strictEmailLimiter, async (req, res) => {
   try {
     const { email, name, type, userId } = req.body;
+    if (email && typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid email type' });
+    }
 
     if (!email || !name || !type) {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, name, type' });
@@ -2265,6 +2283,9 @@ app.post('/api/verification/verify', generalLimiter, async (req, res) => {
 app.post('/api/verification/check', generalLimiter, async (req, res) => {
   try {
     const { email } = req.body;
+    if (email && typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid email type' });
+    }
 
     if (!email) {
       return res.status(400).json({ success: false, error: 'Email is required' });
@@ -2308,6 +2329,9 @@ app.post('/api/check-email-exists', strictEmailCheckLimiter, async (req, res) =>
 
   try {
     const { email } = req.body;
+    if (email && typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid email type' });
+    }
 
     if (!email) {
       return res.status(400).json({ success: false, error: 'Email is required' });
@@ -4138,6 +4162,9 @@ app.post('/api/send-invitation', detectFraud, generalLimiter, async (req, res) =
 app.post('/api/send-external-invitation', strictEmailLimiter, async (req, res) => {
   try {
     const { email, groupId } = req.body;
+    if (email && typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid email type' });
+    }
     const senderUid = req.user.uid;
 
     if (!email || !groupId) {
