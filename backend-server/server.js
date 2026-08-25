@@ -785,8 +785,9 @@ app.post('/api/2fa/initiate-reset', detectFraud, strictEmailLimiter, async (req,
   try {
     const { email } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ success: false, error: 'Email is required' });
+    // Security Fix: Prevent DoS via TypeError by strictly enforcing string type
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Valid email string is required' });
     }
 
     // Verify user exists in Auth
@@ -1293,8 +1294,9 @@ app.post('/api/get-valid-user-details', userSearchLimiter, authenticate, async (
   try {
     const { username } = req.body;
 
-    if (!username) {
-      return res.status(400).json({ success: false, error: 'Username is required' });
+    // Security Fix: Prevent DoS via TypeError by strictly enforcing string type
+    if (!username || typeof username !== 'string') {
+      return res.status(400).json({ success: false, error: 'Valid username string is required' });
     }
 
     // Sanitize username to prevent path traversal (allow only alphanumeric, dots and underscores)
@@ -1949,10 +1951,11 @@ app.post('/api/send-temp-member-alert', emailLimiter, async (req, res) => {
     const { to, memberName, groupName, expiryDate } = req.body;
 
     // Validate inputs
-    if (!to || !memberName || !groupName || !expiryDate) {
+    // Security Fix: Prevent DoS via TypeError by strictly enforcing string type
+    if (!to || typeof to !== 'string' || !memberName || typeof memberName !== 'string' || !groupName || typeof groupName !== 'string' || !expiryDate) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: to, memberName, groupName, expiryDate'
+        error: 'Missing or invalid required fields: to, memberName, groupName, expiryDate'
       });
     }
 
@@ -1996,8 +1999,9 @@ app.post('/api/send-email', emailLimiter, async (req, res) => {
 app.post('/api/send-verification', emailLimiter, async (req, res) => {
   try {
     const { email, code, name } = req.body;
-    if (!email || !code || !name) {
-      return res.status(400).json({ success: false, error: 'Missing required fields: email, code, name' });
+    // Security Fix: Prevent DoS via TypeError by strictly enforcing string type
+    if (!email || typeof email !== 'string' || !code || typeof code !== 'string' || !name || typeof name !== 'string') {
+      return res.status(400).json({ success: false, error: 'Missing or invalid required fields: email, code, name' });
     }
 
     // Strict Input Validation to prevent Content Injection
@@ -2023,8 +2027,9 @@ app.post('/api/send-verification', emailLimiter, async (req, res) => {
 app.post('/api/send-verification-new', emailLimiter, async (req, res) => {
   try {
     const { email, code, name } = req.body;
-    if (!email || !code || !name) {
-      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    // Security Fix: Prevent DoS via TypeError by strictly enforcing string type
+    if (!email || typeof email !== 'string' || !code || typeof code !== 'string' || !name || typeof name !== 'string') {
+      return res.status(400).json({ success: false, error: 'Missing or invalid required fields' });
     }
 
     // Strict Input Validation
@@ -2048,8 +2053,9 @@ app.post('/api/send-verification-new', emailLimiter, async (req, res) => {
 app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
   try {
     const { email, resetLink, name } = req.body;
-    if (!email || !resetLink || !name) {
-      return res.status(400).json({ success: false, error: 'Missing required fields: email, resetLink, name' });
+    // Security Fix: Prevent DoS via TypeError by strictly enforcing string type
+    if (!email || typeof email !== 'string' || !resetLink || typeof resetLink !== 'string' || !name || typeof name !== 'string') {
+      return res.status(400).json({ success: false, error: 'Missing or invalid required fields: email, resetLink, name' });
     }
 
     // Security: Validate resetLink domain to prevent phishing/open redirect
@@ -2090,8 +2096,9 @@ app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
 app.post('/api/send-welcome', emailLimiter, async (req, res) => {
   try {
     const { email, name } = req.body;
-    if (!email || !name) {
-      return res.status(400).json({ success: false, error: 'Missing required fields: email, name' });
+    // Security Fix: Prevent DoS via TypeError by strictly enforcing string type
+    if (!email || typeof email !== 'string' || !name || typeof name !== 'string') {
+      return res.status(400).json({ success: false, error: 'Missing or invalid required fields: email, name' });
     }
 
     // Security: Only allow users to send welcome emails to themselves
@@ -2141,8 +2148,9 @@ app.post('/api/verification/request', strictEmailLimiter, async (req, res) => {
   try {
     const { email, name, type, userId } = req.body;
 
-    if (!email || !name || !type) {
-      return res.status(400).json({ success: false, error: 'Missing required fields: email, name, type' });
+    // Security Fix: Prevent DoS via TypeError by strictly enforcing string type
+    if (!email || typeof email !== 'string' || !name || typeof name !== 'string' || !type || typeof type !== 'string') {
+      return res.status(400).json({ success: false, error: 'Missing or invalid required fields: email, name, type' });
     }
 
     // Generate 6-digit code
@@ -2266,8 +2274,9 @@ app.post('/api/verification/check', generalLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ success: false, error: 'Email is required' });
+    // Security Fix: Prevent DoS via TypeError by strictly enforcing string type
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Valid email string is required' });
     }
 
     const docId = Buffer.from(email.toLowerCase()).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
@@ -2309,8 +2318,9 @@ app.post('/api/check-email-exists', strictEmailCheckLimiter, async (req, res) =>
   try {
     const { email } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ success: false, error: 'Email is required' });
+    // Security Fix: Prevent DoS via TypeError by strictly enforcing string type
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Valid email string is required' });
     }
 
     // Validate email format
@@ -3939,8 +3949,9 @@ app.post('/api/send-invitation', detectFraud, generalLimiter, async (req, res) =
     const { groupId, inviteeUsername } = req.body;
     const senderUid = req.user.uid;
 
-    if (!groupId || !inviteeUsername) {
-      return res.status(400).json({ success: false, error: 'Group ID and username are required' });
+    // Security Fix: Prevent DoS via TypeError by strictly enforcing string type
+    if (!groupId || typeof groupId !== 'string' || !inviteeUsername || typeof inviteeUsername !== 'string') {
+      return res.status(400).json({ success: false, error: 'Valid Group ID and username strings are required' });
     }
 
     if (!isValidFirebaseId(groupId)) {
@@ -4140,8 +4151,9 @@ app.post('/api/send-external-invitation', strictEmailLimiter, async (req, res) =
     const { email, groupId } = req.body;
     const senderUid = req.user.uid;
 
-    if (!email || !groupId) {
-      return res.status(400).json({ success: false, error: 'Email and Group ID are required' });
+    // Security Fix: Prevent DoS via TypeError by strictly enforcing string type
+    if (!email || typeof email !== 'string' || !groupId || typeof groupId !== 'string') {
+      return res.status(400).json({ success: false, error: 'Valid Email and Group ID strings are required' });
     }
 
     if (!isValidFirebaseId(groupId)) {
