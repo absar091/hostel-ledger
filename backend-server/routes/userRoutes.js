@@ -22,6 +22,10 @@ router.post('/support', async (req, res) => {
     if (!subject || !message) {
       return res.status(400).json({ error: 'Subject and message are required.' });
     }
+    // Security Fix: Prevent DoS/NoSQL injection by validating types
+    if (typeof subject !== 'string' || typeof message !== 'string' || (email && typeof email !== 'string')) {
+      return res.status(400).json({ error: 'Invalid input format.' });
+    }
 
     const ticketId = generateTicketId();
 
@@ -59,6 +63,11 @@ router.post('/report', async (req, res) => {
   try {
     const { targetId, targetType, reason, details } = req.body;
     const uid = req.user.uid;
+
+    // Security Fix: Prevent DoS/NoSQL injection by validating types
+    if (typeof targetId !== 'string' || typeof targetType !== 'string' || typeof reason !== 'string' || (details && typeof details !== 'string')) {
+      return res.status(400).json({ error: 'Invalid input format.' });
+    }
 
     if (!['user', 'group'].includes(targetType) || !targetId || !reason) {
       console.log('Report Validation Failed:', { targetId, targetType, reason, details }); return res.status(400).json({ error: 'Invalid report data.' });
