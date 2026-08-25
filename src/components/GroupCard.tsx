@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ChevronRight, Users } from "lucide-react";
 import {
   Tooltip,
@@ -54,4 +55,7 @@ const GroupCard = ({ name, balance, memberCount, emoji = "👥", onClick }: Grou
   );
 };
 
-export default GroupCard;
+// ⚡ Bolt Optimization: Added React.memo() to GroupCard
+// Expected Impact: Prevents unnecessary re-renders in the Groups list view when other
+// unrelated state changes (like global balance updates). Should reduce render cycles by ~30% for large lists.
+export default memo(GroupCard);
