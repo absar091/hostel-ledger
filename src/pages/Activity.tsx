@@ -18,6 +18,11 @@ import AppContainer from "@/components/AppContainer";
 import PageGuide from "@/components/PageGuide";
 import TransactionDetailModal from "@/components/TransactionDetailModal";
 import ExpenseThreadSheet from "@/components/ExpenseThreadSheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
@@ -372,17 +377,24 @@ const Activity = () => {
                       </div>
 
                       {transaction.type === 'expense' && (
-                        <button
+                        <Tooltip delayDuration={0}>
+                          <TooltipTrigger asChild>
+                            <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setChatTransaction(transaction);
                             setShowChat(true);
                           }}
                           className="w-10 h-10 rounded-full bg-[#4a6850]/5 flex items-center justify-center text-[#4a6850]/40 hover:text-primary hover:bg-primary/10 transition-all active:scale-90 ml-2"
-                          title={t('chat.discuss')}
+                          aria-label={t('chat.discuss')}
                         >
                           <MessageSquareText className="w-5 h-5" />
                         </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{t('chat.discuss')}</p>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                   </button>
