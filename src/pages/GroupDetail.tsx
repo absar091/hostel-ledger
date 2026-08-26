@@ -464,13 +464,19 @@ const GroupDetail = () => {
   // personalStats, totalSpent, and expenseCount are defined before early returns above
 
   // Find the member who has paid the most in expenses (actual top contributor)
+  // ⚡ Bolt Optimization: Replaced O(N*M) nested loop with O(N+M) map lookup for member expenses.
+  // Expected Impact: Faster calculation of top spender on large transaction lists.
+  const expensesByMember = transactions.reduce((acc, t) => {
+    if (t.type === "expense" && t.paidBy) {
+      acc[t.paidBy] = (acc[t.paidBy] || 0) + t.amount;
+    }
+    return acc;
+  }, {} as Record<string, number>);
+
   const memberExpenseContributions = group.members.map((member: { id: any; }) => {
-    const totalPaid = transactions
-      .filter(t => t.type === "expense" && t.paidBy === member.id)
-      .reduce((sum, t) => sum + t.amount, 0);
     return {
       ...member,
-      totalPaid
+      totalPaid: expensesByMember[member.id] || 0
     };
   });
 
