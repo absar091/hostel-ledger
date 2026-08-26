@@ -204,31 +204,8 @@ app.options('*', cors());
 app.use('/api/ai/parse-expense-audio', express.json({ limit: '10mb' }));
 // Global limit to prevent DoS attacks
 app.use(express.json({ limit: '100kb' }));
-app.use("/api/admin", adminRoutes);
-app.use("/api/user", userRoutes);
-app.use("/api/export", exportRoutes);
 
-const emailService = require('./services/emailService');
-const expenseLogic = require('./utils/expenseLogic');
-const { calculateMultiPayerSettlements } = require('./utils/expenseLogic');
-const { processTransactions, calculateDebtSummary } = require('./utils/debtLogic');
-const { verifyImageOwnership } = require('./utils/imageSecurity');
-const adminAuthMiddleware = require('./middleware/adminAuth').verifyAdmin;
-const adminAuth = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (!cronSecret) {
-    logger.error('CRON_SECRET is not configured.');
-    return res.status(500).json({ error: 'Server configuration error' });
-  }
-
-  if (authHeader && authHeader === `Bearer ${cronSecret}`) {
-    return next();
-  }
-  return res.status(401).json({ error: 'Unauthorized' });
-};
-
+// Security Fix: Prevent rate limiting bypass by mounting generalLimiter before routers.
 // Rate limiting for email endpoints - very generous limits for testing
 const emailLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -288,6 +265,34 @@ const userSearchLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+// Apply general rate limiting to API endpoints only
+app.use('/api', generalLimiter);
+
+app.use("/api/admin", adminRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/export", exportRoutes);
+
+const emailService = require('./services/emailService');
+const expenseLogic = require('./utils/expenseLogic');
+const { calculateMultiPayerSettlements } = require('./utils/expenseLogic');
+const { processTransactions, calculateDebtSummary } = require('./utils/debtLogic');
+const { verifyImageOwnership } = require('./utils/imageSecurity');
+const adminAuthMiddleware = require('./middleware/adminAuth').verifyAdmin;
+const adminAuth = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (!cronSecret) {
+    logger.error('CRON_SECRET is not configured.');
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+
+  if (authHeader && authHeader === `Bearer ${cronSecret}`) {
+    return next();
+  }
+  return res.status(401).json({ error: 'Unauthorized' });
+};
 
 // Verify email configuration on startup
 emailService.verifyConnection().then(connected => {
@@ -456,8 +461,6 @@ app.get('/api/push-test', (req, res) => {
   });
 });
 
-// Apply general rate limiting to API endpoints only
-app.use('/api', generalLimiter);
 
 // Stricter rate limiting for creation endpoints
 const createLimiter = rateLimit({
