@@ -185,7 +185,10 @@ export const TransactionItem = memo(({
         )}
       </div>
 
-      <ExpenseThreadSheet
+      {/* ⚡ Bolt Optimization: Conditionally mount ExpenseThreadSheet to prevent huge memory overhead and DOM bloat in long lists.
+          Expected Impact: Reduces memory usage and initial render time for lists significantly. */}
+      {showChat && (
+        <ExpenseThreadSheet
         isOpen={showChat}
         onClose={() => setShowChat(false)}
         groupId={transaction.groupId}
@@ -193,6 +196,7 @@ export const TransactionItem = memo(({
         expenseId={transaction.id}
         expenseTitle={transaction.title}
       />
+      )}
     </button>
   );
 });
