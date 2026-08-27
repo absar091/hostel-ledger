@@ -203,6 +203,21 @@ app.options('*', cors());
 app.use('/api/ai/parse-expense-audio', express.json({ limit: '10mb' }));
 // Global limit to prevent DoS attacks
 app.use(express.json({ limit: '100kb' }));
+// General rate limiter for API endpoints
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // limit each IP to 200 requests per windowMs
+  message: {
+    success: false,
+    error: 'Too many requests, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Security Fix: Prevent auth/rate limit bypass on admin/user routes
+app.use('/api', generalLimiter);
+
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/export", exportRoutes);
@@ -240,17 +255,6 @@ const emailLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// General rate limiter for API endpoints
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // limit each IP to 200 requests per windowMs
-  message: {
-    success: false,
-    error: 'Too many requests, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 // STRICT Rate Limiter for sensitive actions like non-user invitations
 const strictEmailLimiter = rateLimit({
@@ -455,8 +459,6 @@ app.get('/api/push-test', (req, res) => {
   });
 });
 
-// Apply general rate limiting to API endpoints only
-app.use('/api', generalLimiter);
 
 // Stricter rate limiting for creation endpoints
 const createLimiter = rateLimit({
