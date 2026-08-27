@@ -204,6 +204,9 @@ app.options('*', cors());
 app.use('/api/ai/parse-expense-audio', express.json({ limit: '10mb' }));
 // Global limit to prevent DoS attacks
 app.use(express.json({ limit: '100kb' }));
+
+// Security Fix: Move generalLimiter before router mounts to ensure rate limiting applies to all /api routes including /api/admin, /api/user, and /api/export.
+app.use('/api', generalLimiter);
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/export", exportRoutes);
@@ -456,8 +459,6 @@ app.get('/api/push-test', (req, res) => {
   });
 });
 
-// Apply general rate limiting to API endpoints only
-app.use('/api', generalLimiter);
 
 // Stricter rate limiting for creation endpoints
 const createLimiter = rateLimit({
