@@ -16,7 +16,7 @@ interface TimelineItemProps {
   amount: number;
   date: string;
   paidBy?: string;
-  payers?: { name: string; amount: number }[];
+  payers?: { id?: string; name: string; amount: number }[];
   participants?: Participant[];
   from?: string;
   to?: string;
@@ -201,7 +201,7 @@ const TimelineItemBase = ({
             <div className="mt-3 flex flex-wrap gap-2">
               {participants.map((p) => {
                 // Multi-payer aware: check if this participant is ANY payer
-                const payerEntry = payers?.find((py: any) => (py.id && (p as any).id && py.id === (p as any).id) || py.name === p.name);
+                const payerEntry = payers?.find((py) => (py.id && p.id && py.id === p.id) || py.name === p.name);
                 const isPayer = payerEntry || p.name === paidBy;
                 const amountPaid = payerEntry ? (payerEntry.amount || 0) : ((p.name === paidBy) ? amount : 0);
                 const netOwes = Number(p.amount || 0) - Number(amountPaid); // positive = owes, negative = lent
@@ -268,7 +268,9 @@ const TimelineItemBase = ({
         </div>
       </div>
 
-      {groupId && (
+      {/* ⚡ Bolt Optimization: Conditionally mount ExpenseThreadSheet to prevent huge memory overhead and DOM bloat in long lists.
+          Expected Impact: Reduces memory usage and initial render time for lists significantly. */}
+      {groupId && showChat && (
         <ExpenseThreadSheet
           isOpen={showChat}
           onClose={() => setShowChat(false)}
