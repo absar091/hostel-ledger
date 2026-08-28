@@ -11,15 +11,15 @@ test('verify copy id feedback', async ({ page }) => {
   // Wait for the modal to appear
   await expect(page.getByText('txn_1234567890')).toBeVisible();
 
-  // Find the Copy ID button (using the title attribute which is initially "Copy ID")
-  const copyButton = page.locator("button[title='Copy ID']");
+  // Find the Copy ID button (using the aria-label attribute which is initially "Copy Reference")
+  const copyButton = page.locator("button[aria-label='Copy Reference']");
 
   // Click the copy button
   await copyButton.click();
 
   // Wait for the feedback state (icon change and title update)
   // The button's title should change to "Copied!"
-  const copiedButton = page.locator("button[title='Copied!']");
+  const copiedButton = page.locator("button[aria-label='Copied!']");
   await expect(copiedButton).toBeVisible();
 
   // Optional: Verify the icon changed (checking for the check icon SVG or class if possible,
