@@ -1394,25 +1394,40 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user?.uid]);
 
-  const getTransactionsByGroup = (groupId: string): Transaction[] => {
-    return transactions.filter((t) => t.groupId === groupId);
-  };
+  // ⚡ Bolt Optimization: Replace O(N) array filter with O(1) hash map lookup for transactions by group
+  // Expected Impact: Significantly reduces processing time for getTransactionsByGroup calls, especially in large codebases
+  const transactionsByGroup = useMemo(() => {
+    const map = new Map<string, Transaction[]>();
+    for (const t of transactions) {
+      if (!t.groupId) continue;
+      let groupTx = map.get(t.groupId);
+      if (!groupTx) {
+        groupTx = [];
+        map.set(t.groupId, groupTx);
+      }
+      groupTx.push(t);
+    }
+    return map;
+  }, [transactions]);
 
-  const getTransactionsByMember = (groupId: string, memberId: string): Transaction[] => {
-    return transactions.filter((t) => {
-      if (t.groupId !== groupId) return false;
+  const getTransactionsByGroup = useCallback((groupId: string): Transaction[] => {
+    return transactionsByGroup.get(groupId) || [];
+  }, [transactionsByGroup]);
 
+  const getTransactionsByMember = useCallback((groupId: string, memberId: string): Transaction[] => {
+    const groupTx = transactionsByGroup.get(groupId) || [];
+    return groupTx.filter((t) => {
       if (t.type === "expense") {
         return t.paidBy === memberId || t.participants?.some((p) => p.id === memberId);
       } else {
         return t.from === memberId || t.to === memberId;
       }
     });
-  };
+  }, [transactionsByGroup]);
 
-  const getAllTransactions = (): Transaction[] => {
+  const getAllTransactions = useCallback((): Transaction[] => {
     return transactions;
-  };
+  }, [transactions]);
 
   const checkAccountDeletionEligibility = async (): Promise<{ eligible: boolean; reason?: string }> => {
     if (isLoading) return { eligible: false, reason: "Please wait for data to load..." };
