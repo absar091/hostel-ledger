@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2024-05-27 - Security Middleware Bypass
+**Vulnerability:** Global rate limiters (e.g., generalLimiter) were mounted after core sensitive API routes (/api/admin, /api/user, /api/export) in Express.
+**Learning:** In Express, middleware is executed sequentially. Mounting rate limiters after routes means those routes are completely unprotected from brute-force and DoS attacks.
+**Prevention:** Always mount security middleware (rate limiters, authentication handlers) globally before defining or mounting the routes they are intended to protect.
