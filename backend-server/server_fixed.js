@@ -203,15 +203,96 @@ app.options('*', cors());
 app.use('/api/ai/parse-expense-audio', express.json({ limit: '10mb' }));
 // Global limit to prevent DoS attacks
 app.use(express.json({ limit: '100kb' }));
-app.use("/api/admin", adminRoutes);
-app.use("/api/user", userRoutes);
-app.use("/api/export", exportRoutes);
 
-const emailService = require('./services/emailService');
-const expenseLogic = require('./utils/expenseLogic');
-const { calculateMultiPayerSettlements } = require('./utils/expenseLogic');
-const { processTransactions, calculateDebtSummary } = require('./utils/debtLogic');
-const { verifyImageOwnership } = require('./utils/imageSecurity');
+const emailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: {
+    success: false,
+    error: 'Too many email requests, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // limit each IP to 200 requests per windowMs
+  message: {
+    success: false,
+    error: 'Too many requests, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const strictEmailLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours
+  max: 20, // Limit to 20 invites per day per IP
+  message: {
+    success: false,
+    error: 'Daily invitation limit reached. Please try again tomorrow to protect against spam.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const strictEmailCheckLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // Limit to 10 checks per hour per IP
+  message: {
+    success: false,
+    error: 'Too many attempts. Please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const userSearchLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // Limit to 30 searches per 15 mins per IP
+  message: {
+    success: false,
+    error: 'Too many search attempts. Please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api', generalLimiter);
+
+
+/**
+ * Authentication Middleware
+ * Verifies Firebase ID Token in Authorization header
+ */
+const authenticate = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    logger.warn('⚠️ Missing or malformed Authorization header');
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized: Missing or malformed token'
+    });
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    req.user = decodedToken;
+    logger.info(`✅ Authenticated user: ${decodedToken.uid}`);
+    next();
+  } catch (error) {
+    logger.error('❌ Token verification failed:', error.message);
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized: Invalid or expired token'
+    });
+  }
+};
+
 const adminAuthMiddleware = require('./middleware/adminAuth').verifyAdmin;
 const adminAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -228,66 +309,15 @@ const adminAuth = async (req, res, next) => {
   return res.status(401).json({ error: 'Unauthorized' });
 };
 
-// Rate limiting for email endpoints - very generous limits for testing
-const emailLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: {
-    success: false,
-    error: 'Too many email requests, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+app.use("/api/admin", adminRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/export", exportRoutes);
 
-// General rate limiter for API endpoints
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // limit each IP to 200 requests per windowMs
-  message: {
-    success: false,
-    error: 'Too many requests, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// STRICT Rate Limiter for sensitive actions like non-user invitations
-const strictEmailLimiter = rateLimit({
-  windowMs: 24 * 60 * 60 * 1000, // 24 hours
-  max: 20, // Limit to 20 invites per day per IP
-  message: {
-    success: false,
-    error: 'Daily invitation limit reached. Please try again tomorrow to protect against spam.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// STRICT Rate Limiter for Email Existence Checks (Anti-Enumeration)
-const strictEmailCheckLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // Limit to 10 checks per hour per IP
-  message: {
-    success: false,
-    error: 'Too many attempts. Please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Rate Limiter for User Search (Anti-Scraping/Enumeration)
-const userSearchLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // Limit to 30 searches per 15 mins per IP
-  message: {
-    success: false,
-    error: 'Too many search attempts. Please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
+const emailService = require('./services/emailService');
+const expenseLogic = require('./utils/expenseLogic');
+const { calculateMultiPayerSettlements } = require('./utils/expenseLogic');
+const { processTransactions, calculateDebtSummary } = require('./utils/debtLogic');
+const { verifyImageOwnership } = require('./utils/imageSecurity');
 // Verify email configuration on startup
 emailService.verifyConnection().then(connected => {
   if (connected) {
@@ -456,7 +486,7 @@ app.get('/api/push-test', (req, res) => {
 });
 
 // Apply general rate limiting to API endpoints only
-app.use('/api', generalLimiter);
+
 
 // Stricter rate limiting for creation endpoints
 const createLimiter = rateLimit({
@@ -470,36 +500,7 @@ const createLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-/**
- * Authentication Middleware
- * Verifies Firebase ID Token in Authorization header
- */
-const authenticate = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    logger.warn('⚠️ Missing or malformed Authorization header');
-    return res.status(401).json({
-      success: false,
-      error: 'Unauthorized: Missing or malformed token'
-    });
-  }
-
-  const idToken = authHeader.split('Bearer ')[1];
-
-  try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    req.user = decodedToken;
-    logger.info(`✅ Authenticated user: ${decodedToken.uid}`);
-    next();
-  } catch (error) {
-    logger.error('❌ Token verification failed:', error.message);
-    return res.status(401).json({
-      success: false,
-      error: 'Unauthorized: Invalid or expired token'
-    });
-  }
-};
 
 /**
  * Get Transaction Preview
