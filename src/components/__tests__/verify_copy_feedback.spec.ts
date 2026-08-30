@@ -1,25 +1,24 @@
+import { test, expect } from "@playwright/test";
 
-import { test, expect } from '@playwright/test';
-
-test('verify copy id feedback', async ({ page }) => {
+test("verify copy id feedback", async ({ page }) => {
   // Navigate to the verification page
-  await page.goto('/verify-sheets');
+  await page.goto("/verify-sheets");
 
   // Open the Transaction Detail Modal
-  await page.getByRole('button', { name: 'Open Transaction Detail' }).click();
+  await page.getByRole("button", { name: "Open Transaction Detail" }).click();
 
   // Wait for the modal to appear
-  await expect(page.getByText('txn_1234567890')).toBeVisible();
+  await expect(page.getByText("txn_1234567890")).toBeVisible();
 
   // Find the Copy ID button (using the title attribute which is initially "Copy ID")
-  const copyButton = page.locator("button[title='Copy ID']");
+  const copyButton = page.locator("button[aria-label='Copy Reference']");
 
   // Click the copy button
   await copyButton.click();
 
   // Wait for the feedback state (icon change and title update)
   // The button's title should change to "Copied!"
-  const copiedButton = page.locator("button[title='Copied!']");
+  const copiedButton = page.locator("button[aria-label='Copied!']");
   await expect(copiedButton).toBeVisible();
 
   // Optional: Verify the icon changed (checking for the check icon SVG or class if possible,
