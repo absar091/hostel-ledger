@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, memo } from "react";
 
 interface AvatarProps {
   name: string;
@@ -83,4 +83,6 @@ const Avatar = ({ name, photoURL, size = "md", className }: AvatarProps) => {
   );
 };
 
-export default Avatar;
+// ⚡ Bolt Optimization: Wrapped Avatar component in React.memo to prevent unnecessary re-renders when parent components re-render, as Avatar props (name, photoURL) rarely change for a given user.
+// Expected Impact: Reduces re-renders of Avatar components in long lists like TransactionList or GroupDetail.
+export default memo(Avatar);
