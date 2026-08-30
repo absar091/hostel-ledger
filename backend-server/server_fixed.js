@@ -203,9 +203,6 @@ app.options('*', cors());
 app.use('/api/ai/parse-expense-audio', express.json({ limit: '10mb' }));
 // Global limit to prevent DoS attacks
 app.use(express.json({ limit: '100kb' }));
-app.use("/api/admin", adminRoutes);
-app.use("/api/user", userRoutes);
-app.use("/api/export", exportRoutes);
 
 const emailService = require('./services/emailService');
 const expenseLogic = require('./utils/expenseLogic');
@@ -1931,6 +1928,9 @@ app.use('/api', (req, res, next) => {
   }
   authenticate(req, res, next);
 });
+app.use("/api/admin", adminRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/export", exportRoutes);
 
 // Send Temporary Member Alert Endpoint (Secure - No raw HTML)
 app.post('/api/send-temp-member-alert', emailLimiter, async (req, res) => {
