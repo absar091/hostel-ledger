@@ -3,6 +3,8 @@ const router = express.Router();
 const admin = require('firebase-admin');
 const authenticate = require('../middleware/auth');
 const crypto = require('crypto');
+const { sanitize } = require('../utils/sanitize');
+const { isValidFirebaseId } = require('../utils/validation');
 // We need an email service to send ticket confirmation
 const emailService = require('../services/emailService');
 
@@ -19,7 +21,7 @@ router.post('/support', async (req, res) => {
     const { subject, message, email } = req.body;
     const uid = req.user.uid;
 
-    if (!subject || !message) {
+    if (!subject || !message || typeof subject !== 'string' || typeof message !== 'string') {
       return res.status(400).json({ error: 'Subject and message are required.' });
     }
 
@@ -27,9 +29,9 @@ router.post('/support', async (req, res) => {
 
     const ticketData = {
       userId: uid,
-      email: email || req.user.email || 'unknown',
-      subject,
-      message,
+      email: req.user.email || 'unknown',
+      subject: sanitize(subject),
+      message: sanitize(message),
       status: 'open',
       priority: 'medium',
       createdAt: admin.database.ServerValue.TIMESTAMP,
@@ -60,7 +62,7 @@ router.post('/report', async (req, res) => {
     const { targetId, targetType, reason, details } = req.body;
     const uid = req.user.uid;
 
-    if (!['user', 'group'].includes(targetType) || !targetId || !reason) {
+    if (!['user', 'group'].includes(targetType) || typeof targetId !== 'string' || typeof reason !== 'string' || (details && typeof details !== 'string') || !targetId || !reason || !isValidFirebaseId(targetId)) {
       console.log('Report Validation Failed:', { targetId, targetType, reason, details }); return res.status(400).json({ error: 'Invalid report data.' });
     }
 
@@ -71,8 +73,8 @@ router.post('/report', async (req, res) => {
       reporterName: req.user.displayName || 'Anonymous',
       targetId,
       targetType,
-      reason,
-      details: details || '',
+      reason: sanitize(reason),
+      details: details ? sanitize(details) : '',
       status: 'pending',
       createdAt: admin.database.ServerValue.TIMESTAMP
     });

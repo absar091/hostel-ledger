@@ -3,6 +3,7 @@ const router = express.Router();
 const { verifyAdmin } = require('../middleware/adminAuth');
 const adminService = require('../services/adminService');
 const { isValidFirebaseId } = require('../utils/validation');
+const { sanitize } = require('../utils/sanitize');
 
 // All admin routes must be protected
 router.use(verifyAdmin);
@@ -145,10 +146,10 @@ router.post('/system/maintenance', async (req, res) => {
 router.post('/system/broadcast', async (req, res) => {
   try {
     const { title, message } = req.body;
-    if (!title || !message) {
+    if (!title || !message || typeof title !== 'string' || typeof message !== 'string') {
       return res.status(400).json({ error: 'Title and message are required.' });
     }
-    const result = await adminService.broadcastMessage(title, message);
+    const result = await adminService.broadcastMessage(sanitize(title), sanitize(message));
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Failed to send broadcast' });
@@ -228,12 +229,12 @@ router.post('/tickets/:ticketId/reply', async (req, res) => {
 
     const { adminReply, userId } = req.body;
 
-    if (!adminReply || !userId) {
+    if (!adminReply || typeof adminReply !== 'string' || !userId) {
        return res.status(400).json({ error: 'Reply message and userId are required.' });
     }
     if (!isValidFirebaseId(userId)) return res.status(400).json({ error: 'Invalid user ID format' });
 
-    const result = await adminService.replyToTicket(userId, ticketId, adminReply);
+    const result = await adminService.replyToTicket(userId, ticketId, sanitize(adminReply));
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Failed to reply to ticket' });
