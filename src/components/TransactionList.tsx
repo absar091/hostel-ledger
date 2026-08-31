@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { type Transaction, type Group } from "@/contexts/FirebaseDataContext";
 import { TransactionItem } from "./TransactionItem";
+import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { cn } from "@/lib/utils";
 
 interface TransactionListProps {
@@ -25,11 +26,21 @@ export const TransactionList = ({
   dateFormat = "time",
 }: TransactionListProps) => {
   // Memoize group lookup map to O(1) access
+
+  // ⚡ Bolt Optimization: Lifted chat sheet state out of list items to prevent massive DOM bloat
+  // Expected Impact: Significantly reduces memory usage and initial render time for long lists
+  const [chatTransaction, setChatTransaction] = useState<Transaction | null>(
+    null,
+  );
+
   const groupMap = useMemo(() => {
-    return groups.reduce((acc, group) => {
-      acc[group.id] = group.name;
-      return acc;
-    }, {} as Record<string, string>);
+    return groups.reduce(
+      (acc, group) => {
+        acc[group.id] = group.name;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
   }, [groups]);
 
   if (transactions.length === 0) return null;
@@ -40,7 +51,7 @@ export const TransactionList = ({
         <div
           className={cn(
             "px-3 py-2 lg:px-4 lg:py-2",
-            showSeparator && "border-t border-slate-100 dark:border-slate-800"
+            showSeparator && "border-t border-slate-100 dark:border-slate-800",
           )}
         >
           <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">
@@ -56,11 +67,23 @@ export const TransactionList = ({
             groupName={groupMap[transaction.groupId]}
             userId={userId}
             onClick={onSelectTransaction}
+            onChatClick={setChatTransaction}
             formatAmount={formatAmount}
             dateFormat={dateFormat}
           />
         ))}
       </div>
+
+      <ExpenseThreadSheet
+        isOpen={!!chatTransaction}
+        onClose={() => setChatTransaction(null)}
+        groupId={chatTransaction?.groupId || ""}
+        groupName={
+          (chatTransaction && groupMap[chatTransaction.groupId]) || "Group"
+        }
+        expenseId={chatTransaction?.id || ""}
+        expenseTitle={chatTransaction?.title || ""}
+      />
     </div>
   );
 };
