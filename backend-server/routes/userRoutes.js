@@ -18,9 +18,26 @@ router.post('/support', async (req, res) => {
   try {
     const { subject, message, email } = req.body;
     const uid = req.user.uid;
+    const userEmail = req.user.email;
 
     if (!subject || !message) {
       return res.status(400).json({ error: 'Subject and message are required.' });
+    }
+
+    if (typeof subject !== 'string' || typeof message !== 'string') {
+      return res.status(400).json({ error: 'Subject and message must be strings.' });
+    }
+
+    if (email && typeof email !== 'string') {
+      return res.status(400).json({ error: 'Email must be a string.'});
+    }
+
+    if (email && userEmail && email.toLowerCase() !== userEmail.toLowerCase()) {
+      return res.status(403).json({ error: 'Unauthorized: Cannot create ticket for another user.'});
+    }
+
+    if (email && !userEmail) {
+      return res.status(403).json({ error: 'Unauthorized: Cannot specify email when account has no email.'});
     }
 
     const ticketId = generateTicketId();
