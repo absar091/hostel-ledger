@@ -1,9 +1,32 @@
 import { useState, useEffect, useRef } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Plus, Users, ChevronDown, ChevronUp, Phone, CreditCard, ChevronRight, Image as ImageIcon, Loader2 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  X,
+  Plus,
+  Users,
+  ChevronDown,
+  ChevronUp,
+  Phone,
+  CreditCard,
+  ChevronRight,
+  Image as ImageIcon,
+  Loader2,
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Avatar from "./Avatar";
 import { cn } from "@/lib/utils";
 import { uploadToCloudinary } from "@/lib/cloudinary";
@@ -12,15 +35,38 @@ import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useTranslation } from "react-i18next";
 
 const EMOJI_OPTIONS = [
-  "🏠", "🍽️", "✈️", "🎉", "🛒", "☕", "🎬", "🏋️",
-  "🎮", "📚", "🚗", "🏖️", "🎂", "💼", "🎸", "⚽"
+  "🏠",
+  "🍽️",
+  "✈️",
+  "🎉",
+  "🛒",
+  "☕",
+  "🎬",
+  "🏋️",
+  "🎮",
+  "📚",
+  "🚗",
+  "🏖️",
+  "🎂",
+  "💼",
+  "🎸",
+  "⚽",
 ];
 
 const BANKS = [
-  "Allied Bank", "Askari Bank", "Bank Alfalah", "Bank Al Habib",
-  "Faysal Bank", "Habib Bank Limited (HBL)", "JS Bank", "MCB Bank",
-  "Meezan Bank", "National Bank of Pakistan", "Standard Chartered",
-  "UBL", "Other"
+  "Allied Bank",
+  "Askari Bank",
+  "Bank Alfalah",
+  "Bank Al Habib",
+  "Faysal Bank",
+  "Habib Bank Limited (HBL)",
+  "JS Bank",
+  "MCB Bank",
+  "Meezan Bank",
+  "National Bank of Pakistan",
+  "Standard Chartered",
+  "UBL",
+  "Other",
 ];
 
 interface MemberData {
@@ -46,7 +92,11 @@ interface CreateGroupSheetProps {
   }) => void;
 }
 
-const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) => {
+const CreateGroupSheet = ({
+  open,
+  onClose,
+  onSubmit,
+}: CreateGroupSheetProps) => {
   const { t } = useTranslation();
   console.log("🚀 3-STEP CreateGroupSheet loaded!");
 
@@ -98,13 +148,17 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
     onClose();
   };
 
-  const handleCoverPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverPhotoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     // ... existing logic ...
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error(t('sheets.create_group.image_too_large'), { description: "Please select an image under 5MB" });
+      toast.error(t("sheets.create_group.image_too_large"), {
+        description: "Please select an image under 5MB",
+      });
       return;
     }
 
@@ -113,19 +167,26 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
       const result = await uploadToCloudinary(file);
       if (result.success && result.url) {
         setCoverPhoto(result.url);
-        toast.success(t('sheets.create_group.photo_uploaded'));
+        toast.success(t("sheets.create_group.photo_uploaded"));
       } else {
-        toast.error(t('sheets.create_group.upload_failed'), { description: result.error || "Please try again" });
+        toast.error(t("sheets.create_group.upload_failed"), {
+          description: result.error || "Please try again",
+        });
       }
     } catch (error) {
-      toast.error(t('sheets.create_group.upload_failed'), { description: "Please try again" });
+      toast.error(t("sheets.create_group.upload_failed"), {
+        description: "Please try again",
+      });
     } finally {
       setUploadingPhoto(false);
     }
   };
 
   const handleAddMember = () => {
-    if (memberName.trim() && !groupMembers.some(m => m.name === memberName.trim())) {
+    if (
+      memberName.trim() &&
+      !groupMembers.some((m) => m.name === memberName.trim())
+    ) {
       const paymentDetails: MemberData["paymentDetails"] = {};
       if (jazzCash) paymentDetails.jazzCash = jazzCash;
       if (easypaisa) paymentDetails.easypaisa = easypaisa;
@@ -136,7 +197,8 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
       const newMember: MemberData = {
         name: memberName.trim(),
         phone: memberPhone || undefined,
-        paymentDetails: Object.keys(paymentDetails).length > 0 ? paymentDetails : undefined,
+        paymentDetails:
+          Object.keys(paymentDetails).length > 0 ? paymentDetails : undefined,
       };
 
       setGroupMembers([...groupMembers, newMember]);
@@ -151,8 +213,6 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
     }
   };
 
-
-
   // New State for Email Invites
   const [invitedEmails, setInvitedEmails] = useState<string[]>([]);
   const [showEmailInvite, setShowEmailInvite] = useState(false);
@@ -162,18 +222,18 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
     if (!emailInput) return;
     // Basic validation
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput)) {
-      toast.error(t('errors.invalid_email'));
+      toast.error(t("errors.invalid_email"));
       return;
     }
     if (invitedEmails.includes(emailInput)) {
-      toast.error(t('errors.email_already_added'));
+      toast.error(t("errors.email_already_added"));
       return;
     }
     setInvitedEmails([...invitedEmails, emailInput]);
     setEmailInput("");
     setShowEmailInvite(false);
     setInviteInput(""); // Clear the username input that failed
-    toast.success(t('sheets.create_group.invite_sent'));
+    toast.success(t("sheets.create_group.invite_sent"));
   };
 
   const handleAddInvite = async () => {
@@ -181,7 +241,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
 
     // Check if already added
     if (invitedUsernames.includes(inviteInput.trim().toLowerCase())) {
-      toast.error(t('errors.user_already_invited'));
+      toast.error(t("errors.user_already_invited"));
       return;
     }
 
@@ -192,38 +252,41 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
 
       if (available) {
         // Username NOT found (available means it doesn't exist)
-        toast.error(t('errors.username_not_found'), {
+        toast.error(t("errors.username_not_found"), {
           description: "User does not exist on Hostel Ledger",
           action: {
-            label: t('sheets.create_group.invite_friend_email'),
-            onClick: () => setShowEmailInvite(true)
-          }
+            label: t("sheets.create_group.invite_friend_email"),
+            onClick: () => setShowEmailInvite(true),
+          },
         });
         // Also simpler: just show the UI
         setShowEmailInvite(true);
       } else {
-        setInvitedUsernames([...invitedUsernames, inviteInput.trim().toLowerCase()]);
+        setInvitedUsernames([
+          ...invitedUsernames,
+          inviteInput.trim().toLowerCase(),
+        ]);
         setInviteInput("");
-        toast.success(t('sheets.create_group.invite_sent'));
+        toast.success(t("sheets.create_group.invite_sent"));
       }
     } catch (e) {
       console.error("Check error", e);
-      toast.error(t('errors.generic_error'));
+      toast.error(t("errors.generic_error"));
     } finally {
       setIsCheckingUsername(false);
     }
   };
 
   const handleRemoveEmailInvite = (email: string) => {
-    setInvitedEmails(invitedEmails.filter(e => e !== email));
+    setInvitedEmails(invitedEmails.filter((e) => e !== email));
   };
 
   const handleRemoveInvite = (username: string) => {
-    setInvitedUsernames(invitedUsernames.filter(u => u !== username));
+    setInvitedUsernames(invitedUsernames.filter((u) => u !== username));
   };
 
   const handleRemoveMember = (memberName: string) => {
-    setGroupMembers(groupMembers.filter(m => m.name !== memberName));
+    setGroupMembers(groupMembers.filter((m) => m.name !== memberName));
   };
 
   // Update handleSubmit to include invitedEmails
@@ -233,7 +296,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
       emoji: groupEmoji,
       members: groupMembers,
       invitedUsernames: invitedUsernames,
-      invitedEmails: invitedEmails // Pass invited emails
+      invitedEmails: invitedEmails, // Pass invited emails
     };
 
     // Only add coverPhoto if it exists (Firebase doesn't allow undefined)
@@ -250,19 +313,22 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
+      <SheetContent
+        side="bottom"
+        className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]"
+      >
         <SheetHeader className="flex-shrink-0 mb-4 pt-2">
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
 
           <SheetTitle className="text-center text-2xl font-black text-gray-900">
-            {currentStep === 1 && t('sheets.create_group.step_start')}
-            {currentStep === 2 && t('sheets.create_group.step_invite')}
-            {currentStep === 3 && t('sheets.create_group.step_review')}
+            {currentStep === 1 && t("sheets.create_group.step_start")}
+            {currentStep === 2 && t("sheets.create_group.step_invite")}
+            {currentStep === 3 && t("sheets.create_group.step_review")}
           </SheetTitle>
           <SheetDescription className="text-center text-sm text-[#4a6850] font-bold">
-            {currentStep === 1 && t('sheets.create_group.subtitle_step1')}
-            {currentStep === 2 && t('sheets.create_group.subtitle_step2')}
-            {currentStep === 3 && t('sheets.create_group.subtitle_step3')}
+            {currentStep === 1 && t("sheets.create_group.subtitle_step1")}
+            {currentStep === 2 && t("sheets.create_group.subtitle_step2")}
+            {currentStep === 3 && t("sheets.create_group.subtitle_step3")}
           </SheetDescription>
         </SheetHeader>
 
@@ -276,21 +342,31 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                     className="w-24 h-24 mx-auto bg-gradient-to-br from-[#4a6850]/5 to-[#3d5643]/5 rounded-3xl flex items-center justify-center border-2 border-dashed border-[#4a6850]/20 relative overflow-hidden group hover:border-[#4a6850]/40 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:outline-none"
                     onClick={() => fileInputRef.current?.click()}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
+                      if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
                         fileInputRef.current?.click();
                       }
                     }}
                     role="button"
                     tabIndex={0}
-                    aria-label={coverPhoto ? t('sheets.create_group.change_photo') : t('sheets.create_group.add_photo')}
+                    aria-label={
+                      coverPhoto
+                        ? t("sheets.create_group.change_photo")
+                        : t("sheets.create_group.add_photo")
+                    }
                   >
                     {coverPhoto ? (
-                      <img src={coverPhoto} alt="Cover" className="w-full h-full object-cover" />
+                      <img
+                        src={coverPhoto}
+                        alt="Cover"
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <div className="flex flex-col items-center">
                         <ImageIcon className="w-8 h-8 text-[#4a6850]/40 mb-1" />
-                        <span className="text-[10px] font-bold text-[#4a6850] uppercase">{t('sheets.create_group.add_photo')}</span>
+                        <span className="text-[10px] font-bold text-[#4a6850] uppercase">
+                          {t("sheets.create_group.add_photo")}
+                        </span>
                       </div>
                     )}
                     <input
@@ -301,16 +377,23 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                       disabled={uploadingPhoto}
                       className="hidden"
                     />
-                    {coverPhoto && <div className="absolute inset-0 bg-black/20 hidden group-hover:flex items-center justify-center text-white font-bold text-xs">{t('sheets.create_group.change_photo')}</div>}
+                    {coverPhoto && (
+                      <div className="absolute inset-0 bg-black/20 hidden group-hover:flex items-center justify-center text-white font-bold text-xs">
+                        {t("sheets.create_group.change_photo")}
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <label htmlFor="group-name" className="text-xs font-black text-[#4a6850] mb-2 block uppercase mx-1">
-                  {t('sheets.create_group.group_name_label')}
+                <label
+                  htmlFor="group-name"
+                  className="text-xs font-black text-[#4a6850] mb-2 block uppercase mx-1"
+                >
+                  {t("sheets.create_group.group_name_label")}
                 </label>
                 <Input
                   id="group-name"
-                  placeholder={t('sheets.create_group.group_name_placeholder')}
+                  placeholder={t("sheets.create_group.group_name_placeholder")}
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                   className="h-14 rounded-2xl border-[#4a6850]/20 shadow-sm font-black text-lg text-center"
@@ -320,7 +403,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
 
               <div>
                 <label className="text-xs font-black text-[#4a6850] mb-2 block uppercase mx-1">
-                  {t('sheets.create_group.group_icon_label')}
+                  {t("sheets.create_group.group_icon_label")}
                 </label>
                 <div className="grid grid-cols-8 gap-2">
                   {EMOJI_OPTIONS.map((e) => (
@@ -333,7 +416,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                         "aspect-square rounded-xl flex items-center justify-center text-2xl transition-all shadow-sm focus-visible:ring-2 focus-visible:ring-[#4a6850] focus-visible:outline-none",
                         groupEmoji === e
                           ? "bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white scale-110 shadow-lg ring-2 ring-[#4a6850]/20"
-                          : "bg-white hover:bg-[#4a6850]/5 border border-[#4a6850]/10"
+                          : "bg-white hover:bg-[#4a6850]/5 border border-[#4a6850]/10",
                       )}
                     >
                       {e}
@@ -349,17 +432,28 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
               {/* PRIMARY ACTION: INVITE BY USERNAME */}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50/50 rounded-2xl p-4 border border-blue-100 shadow-sm">
                 <h4 className="text-sm font-black text-blue-900 mb-3 uppercase flex items-center gap-2">
-                  <Users className="w-4 h-4" /> {t('sheets.create_group.invite_by_username')}
+                  <Users className="w-4 h-4" />{" "}
+                  {t("sheets.create_group.invite_by_username")}
                 </h4>
 
                 <div className="flex gap-2 mb-2">
                   <div className="relative flex-1">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-900/40 font-bold text-lg">@</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-900/40 font-bold text-lg">
+                      @
+                    </span>
                     <Input
-                      placeholder={t('sheets.create_group.username_placeholder')}
-                      aria-label={t('sheets.create_group.username_placeholder')}
+                      placeholder={t(
+                        "sheets.create_group.username_placeholder",
+                      )}
+                      aria-label={t("sheets.create_group.username_placeholder")}
                       value={inviteInput}
-                      onChange={(e) => setInviteInput(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ""))}
+                      onChange={(e) =>
+                        setInviteInput(
+                          e.target.value
+                            .toLowerCase()
+                            .replace(/[^a-z0-9._]/g, ""),
+                        )
+                      }
                       className="h-12 pl-10 rounded-xl bg-white border-blue-200 focus:border-blue-400 font-bold text-base"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
@@ -374,39 +468,58 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                     disabled={isCheckingUsername || !inviteInput}
                     className="h-12 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black shadow-md shadow-blue-200"
                   >
-                    {isCheckingUsername ? <Loader2 className="w-4 h-4 animate-spin" /> : t('sheets.create_group.add_btn')}
+                    {isCheckingUsername ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      t("sheets.create_group.add_btn")
+                    )}
                   </Button>
                 </div>
 
                 {/* Email Invite UI */}
                 {showEmailInvite && (
                   <div className="mt-3 bg-white/80 rounded-xl p-3 border border-blue-200 animate-fade-in">
-                    <p className="text-xs font-bold text-blue-800 mb-2">{t('sheets.create_group.email_invite_subtitle')}</p>
+                    <p className="text-xs font-bold text-blue-800 mb-2">
+                      {t("sheets.create_group.email_invite_subtitle")}
+                    </p>
                     <div className="flex gap-2">
                       <Input
-                        placeholder={t('sheets.create_group.email_placeholder')}
-                        aria-label={t('sheets.create_group.email_placeholder')}
+                        placeholder={t("sheets.create_group.email_placeholder")}
+                        aria-label={t("sheets.create_group.email_placeholder")}
                         value={emailInput}
                         onChange={(e) => setEmailInput(e.target.value)}
                         className="h-10 rounded-lg text-sm bg-white"
                       />
-                      <Button onClick={handleAddEmailInvite} className="h-10 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg">
-                        {t('sheets.create_group.send_btn')}
+                      <Button
+                        onClick={handleAddEmailInvite}
+                        className="h-10 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg"
+                      >
+                        {t("sheets.create_group.send_btn")}
                       </Button>
                     </div>
                   </div>
                 )}
 
                 <p className="text-[11px] text-blue-800/60 font-bold pl-1 mt-1">
-                  {t('sheets.create_group.search_hint')}
+                  {t("sheets.create_group.search_hint")}
                 </p>
               </div>
 
               {/* LIST OF ADDED PEOPLE */}
               <div>
                 <p className="text-xs font-black text-[#4a6850] mb-3 uppercase mx-1 flex justify-between items-center">
-                  <span>{t('sheets.create_group.whos_in', { count: groupMembers.length + invitedUsernames.length + invitedEmails.length + 1 })}</span>
-                  <span className="text-[10px] bg-[#4a6850]/10 text-[#4a6850] px-2 py-0.5 rounded-full">Step 2 of 3</span>
+                  <span>
+                    {t("sheets.create_group.whos_in", {
+                      count:
+                        groupMembers.length +
+                        invitedUsernames.length +
+                        invitedEmails.length +
+                        1,
+                    })}
+                  </span>
+                  <span className="text-[10px] bg-[#4a6850]/10 text-[#4a6850] px-2 py-0.5 rounded-full">
+                    Step 2 of 3
+                  </span>
                 </p>
 
                 <div className="space-y-2">
@@ -414,79 +527,122 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                   <div className="flex items-center gap-3 p-3 bg-white border border-[#4a6850]/10 rounded-2xl">
                     <Avatar name="You" size="sm" />
                     <div className="flex-1">
-                      <span className="font-black text-sm text-gray-900">{t('common.you')}</span>
-                      <span className="text-xs text-[#4a6850] font-bold block">{t('sheets.create_group.admin')}</span>
+                      <span className="font-black text-sm text-gray-900">
+                        {t("common.you")}
+                      </span>
+                      <span className="text-xs text-[#4a6850] font-bold block">
+                        {t("sheets.create_group.admin")}
+                      </span>
                     </div>
                   </div>
 
                   {/* EMPTY STATE - Start Adding Friends */}
-                  {invitedEmails.length === 0 && invitedUsernames.length === 0 && groupMembers.length === 0 && (
-                    <div className="text-center py-4 px-2 animate-fade-in border border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
-                      <p className="text-xs text-gray-400 font-bold">
-                        👋 {t('sheets.create_group.invite_friends_tip', 'Start adding friends above!')}
-                      </p>
-                    </div>
-                  )}
+                  {invitedEmails.length === 0 &&
+                    invitedUsernames.length === 0 &&
+                    groupMembers.length === 0 && (
+                      <div className="text-center py-4 px-2 animate-fade-in border border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                        <p className="text-xs text-gray-400 font-bold">
+                          👋{" "}
+                          {t(
+                            "sheets.create_group.invite_friends_tip",
+                            "Start adding friends above!",
+                          )}
+                        </p>
+                      </div>
+                    )}
 
                   {/* INVITED EMAILS (New Users) */}
-                  {invitedEmails.map(email => (
-                    <div
-                      key={email}
-                      className="flex items-center gap-3 p-3 bg-purple-50/50 border border-purple-100 rounded-2xl animate-fade-in"
-                      title="This person will receive an email invitation to join Hostel Ledger and this group."
-                    >
-                      <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center text-sm font-bold text-purple-600">
-                        @
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="font-black text-sm text-gray-900 block truncate">{email}</span>
-                        <span className="text-[10px] text-purple-600 font-bold flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span> {t('sheets.create_group.email_invite')} • {t('sheets.create_group.new_user')}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleRemoveEmailInvite(email)}
-                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
-                        aria-label={`Remove ${email}`}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
+                  {invitedEmails.map((email) => (
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <div
+                          key={email}
+                          className="flex items-center gap-3 p-3 bg-purple-50/50 border border-purple-100 rounded-2xl animate-fade-in"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center text-sm font-bold text-purple-600">
+                            @
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-black text-sm text-gray-900 block truncate">
+                              {email}
+                            </span>
+                            <span className="text-[10px] text-purple-600 font-bold flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span>{" "}
+                              {t("sheets.create_group.email_invite")} •{" "}
+                              {t("sheets.create_group.new_user")}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveEmailInvite(email)}
+                            className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                            aria-label={`Remove ${email}`}
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>
+                          This person will receive an email invitation to join
+                          Hostel Ledger and this group.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
                   ))}
 
                   {/* INVITED USERS (Existing App Users) */}
-                  {invitedUsernames.map(username => (
-                    <div
-                      key={username}
-                      className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl animate-fade-in"
-                      title="This user already has a Hostel Ledger account. They'll receive an in-app invitation and email notification."
-                    >
-                      <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-600">
-                        {username.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1">
-                        <span className="font-black text-sm text-gray-900 block">@{username}</span>
-                        <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> {t('sheets.create_group.app_user')} • {t('sheets.create_group.invite_sent')}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleRemoveInvite(username)}
-                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
-                        aria-label={`Remove ${username}`}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
+                  {invitedUsernames.map((username) => (
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <div
+                          key={username}
+                          className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl animate-fade-in"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-600">
+                            {username.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1">
+                            <span className="font-black text-sm text-gray-900 block">
+                              @{username}
+                            </span>
+                            <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>{" "}
+                              {t("sheets.create_group.app_user")} •{" "}
+                              {t("sheets.create_group.invite_sent")}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveInvite(username)}
+                            className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                            aria-label={`Remove ${username}`}
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>
+                          This user already has a Hostel Ledger account. They'll
+                          receive an in-app invitation and email notification.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
                   ))}
 
                   {/* MANUAL MEMBERS */}
                   {groupMembers.map((member) => (
-                    <div key={member.name} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-2xl">
+                    <div
+                      key={member.name}
+                      className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-2xl"
+                    >
                       <Avatar name={member.name} size="sm" />
                       <div className="flex-1 min-w-0">
-                        <span className="font-black block text-gray-900 text-sm truncate">{member.name}</span>
-                        <span className="text-[10px] text-gray-400 font-bold">{t('sheets.create_group.temp_member')}</span>
+                        <span className="font-black block text-gray-900 text-sm truncate">
+                          {member.name}
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-bold">
+                          {t("sheets.create_group.temp_member")}
+                        </span>
                       </div>
                       <button
                         onClick={() => handleRemoveMember(member.name)}
@@ -500,17 +656,20 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                 </div>
               </div>
 
-
               {/* LEGACY / MANUAL ADD SECTION (Collapsible) */}
               <div className="pt-4 border-t border-[#4a6850]/10">
                 <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200/60">
                   <h4 className="text-xs font-black text-gray-500 mb-3 uppercase flex items-center gap-2">
-                    {t('sheets.create_group.cant_find_prompt')}
+                    {t("sheets.create_group.cant_find_prompt")}
                   </h4>
                   <div className="flex gap-2">
                     <Input
-                      aria-label={t('sheets.create_group.temp_name_placeholder')}
-                      placeholder={t('sheets.create_group.temp_name_placeholder')}
+                      aria-label={t(
+                        "sheets.create_group.temp_name_placeholder",
+                      )}
+                      placeholder={t(
+                        "sheets.create_group.temp_name_placeholder",
+                      )}
                       value={memberName}
                       onChange={(e) => setMemberName(e.target.value)}
                       className="h-10 rounded-xl bg-white border-gray-200 text-sm"
@@ -520,11 +679,11 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                       disabled={!memberName.trim()}
                       className="h-10 px-4 rounded-xl bg-gray-800 text-white font-bold text-xs"
                     >
-                      {t('sheets.create_group.add_btn')}
+                      {t("sheets.create_group.add_btn")}
                     </Button>
                   </div>
                   <p className="text-[10px] text-gray-400 font-medium mt-2 leading-tight">
-                    {t('sheets.create_group.temp_hint')}
+                    {t("sheets.create_group.temp_hint")}
                   </p>
                 </div>
               </div>
@@ -540,52 +699,95 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                   </div>
                   {coverPhoto && (
                     <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full border-4 border-white overflow-hidden shadow-lg">
-                      <img src={coverPhoto} className="w-full h-full object-cover" />
+                      <img
+                        src={coverPhoto}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   )}
                 </div>
-                <h2 className="text-2xl font-black text-gray-900 mb-1">{groupName}</h2>
+                <h2 className="text-2xl font-black text-gray-900 mb-1">
+                  {groupName}
+                </h2>
                 <p className="text-sm font-bold text-[#4a6850]">
-                  {t('sheets.create_group.whos_in', { count: groupMembers.length + invitedUsernames.length + 1 })}
+                  {t("sheets.create_group.whos_in", {
+                    count: groupMembers.length + invitedUsernames.length + 1,
+                  })}
                 </p>
               </div>
 
               <div className="bg-white border border-[#4a6850]/10 rounded-2xl p-1 divide-y divide-[#4a6850]/5">
                 <div className="p-3 flex items-center justify-between">
-                  <span className="text-sm font-bold text-gray-500">{t('common.you')} ({t('sheets.create_group.admin')})</span>
-                  <span className="text-xs font-black bg-[#4a6850]/10 text-[#4a6850] px-2 py-0.5 rounded-lg">{t('sheets.create_group.creator')}</span>
+                  <span className="text-sm font-bold text-gray-500">
+                    {t("common.you")} ({t("sheets.create_group.admin")})
+                  </span>
+                  <span className="text-xs font-black bg-[#4a6850]/10 text-[#4a6850] px-2 py-0.5 rounded-lg">
+                    {t("sheets.create_group.creator")}
+                  </span>
                 </div>
-                {invitedUsernames.map(u => (
-                  <div key={u} className="p-3 flex items-center justify-between">
-                    <span className="text-sm font-bold text-gray-900">@{u}</span>
-                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">{t('sheets.create_group.invite_sent')}</span>
+                {invitedUsernames.map((u) => (
+                  <div
+                    key={u}
+                    className="p-3 flex items-center justify-between"
+                  >
+                    <span className="text-sm font-bold text-gray-900">
+                      @{u}
+                    </span>
+                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">
+                      {t("sheets.create_group.invite_sent")}
+                    </span>
                   </div>
                 ))}
-                {groupMembers.map(m => (
-                  <div key={m.name} className="p-3 flex items-center justify-between">
-                    <span className="text-sm font-bold text-gray-900">{m.name}</span>
-                    <span className="text-xs font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-lg">{t('sheets.create_group.temp_member')}</span>
+                {groupMembers.map((m) => (
+                  <div
+                    key={m.name}
+                    className="p-3 flex items-center justify-between"
+                  >
+                    <span className="text-sm font-bold text-gray-900">
+                      {m.name}
+                    </span>
+                    <span className="text-xs font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-lg">
+                      {t("sheets.create_group.temp_member")}
+                    </span>
                   </div>
                 ))}
               </div>
 
               <div className="p-4 bg-green-50 border border-green-100 rounded-2xl">
                 <p className="text-xs text-green-800 font-medium text-center leading-relaxed">
-                  <strong>{t('sheets.create_group.almost_done')}</strong>
+                  <strong>{t("sheets.create_group.almost_done")}</strong>
                   {invitedUsernames.length > 0 ? (
                     <span className="block mt-1">
-                      {t('sheets.create_group.invite_notice_plural', { count: invitedUsernames.length })}
+                      {t("sheets.create_group.invite_notice_plural", {
+                        count: invitedUsernames.length,
+                      })}
                     </span>
                   ) : (
                     <span className="block mt-1">
-                      {t('sheets.create_group.invite_later_hint')}
+                      {t("sheets.create_group.invite_later_hint")}
                     </span>
                   )}
                 </p>
               </div>
 
               <p className="text-[10px] text-center text-gray-500 mt-2 px-4 leading-tight">
-                By creating a group, you agree to our <a href="/group-terms" target="_blank" className="font-bold text-[#4a6850] underline">Group Creation Terms</a> and <a href="/group-privacy" target="_blank" className="font-bold text-[#4a6850] underline">Group Privacy Policy</a>.
+                By creating a group, you agree to our{" "}
+                <a
+                  href="/group-terms"
+                  target="_blank"
+                  className="font-bold text-[#4a6850] underline"
+                >
+                  Group Creation Terms
+                </a>{" "}
+                and{" "}
+                <a
+                  href="/group-privacy"
+                  target="_blank"
+                  className="font-bold text-[#4a6850] underline"
+                >
+                  Group Privacy Policy
+                </a>
+                .
               </p>
             </div>
           )}
@@ -599,7 +801,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                 onClick={() => setCurrentStep(currentStep - 1)}
                 className="flex-1 h-14 rounded-2xl bg-gray-100 hover:bg-gray-200 font-black text-sm text-gray-600"
               >
-                {t('common.back')}
+                {t("common.back")}
               </Button>
             )}
             {currentStep < 3 ? (
@@ -608,14 +810,15 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                 disabled={currentStep === 1 && !canProceedToStep2}
                 className="flex-1 h-14 rounded-2xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white font-black disabled:opacity-50 text-base shadow-lg shadow-[#4a6850]/20"
               >
-                {t('common.continue')} <ChevronRight className="w-5 h-5 ml-1.5" />
+                {t("common.continue")}{" "}
+                <ChevronRight className="w-5 h-5 ml-1.5" />
               </Button>
             ) : (
               <Button
                 onClick={handleSubmit}
                 className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] text-white font-black text-lg shadow-xl shadow-[#4a6850]/30 hover:scale-[1.02] transition-transform"
               >
-                {t('sheets.create_group.submit_btn')}
+                {t("sheets.create_group.submit_btn")}
               </Button>
             )}
           </div>
