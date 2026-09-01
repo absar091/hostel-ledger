@@ -1,8 +1,7 @@
-import { memo, useState } from "react";
+import { memo } from "react";
 import { ArrowUpRight, ArrowDownLeft, CreditCard, MessageSquareText, MapPin } from "@/lib/icons";
 import { type Transaction } from "@/contexts/FirebaseDataContext";
 import { cn } from "@/lib/utils";
-import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -13,6 +12,7 @@ interface TransactionItemProps {
   onClick: (transaction: Transaction) => void;
   formatAmount: (amount: number) => string;
   dateFormat?: "time" | "date";
+  onOpenChat?: (transaction: Transaction) => void;
 }
 
 // Memoized to prevent re-renders when parent list updates but item data hasn't changed
@@ -23,9 +23,9 @@ export const TransactionItem = memo(({
   onClick,
   formatAmount,
   dateFormat = "time",
+  onOpenChat,
 }: TransactionItemProps) => {
   const { t } = useTranslation();
-  const [showChat, setShowChat] = useState(false);
   const isPayer = transaction.paidBy === userId;
   const userParticipant = transaction.participants?.find(
     (p) => p.id === userId
@@ -169,7 +169,9 @@ export const TransactionItem = memo(({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowChat(true);
+                    // ⚡ Bolt Optimization: Removed internal overlay. Open chat by calling lifted state handler.
+                    // Expected Impact: Prevents massive DOM bloat/memory issues from unconditional rendering in lists.
+                    onOpenChat?.(transaction);
                   }}
                   className="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90"
                   aria-label={t('chat.discuss')}
@@ -184,15 +186,6 @@ export const TransactionItem = memo(({
           </TooltipProvider>
         )}
       </div>
-
-      <ExpenseThreadSheet
-        isOpen={showChat}
-        onClose={() => setShowChat(false)}
-        groupId={transaction.groupId}
-        groupName={groupName || "Group"}
-        expenseId={transaction.id}
-        expenseTitle={transaction.title}
-      />
     </button>
   );
 });

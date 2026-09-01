@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
+import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { type Transaction, type Group } from "@/contexts/FirebaseDataContext";
 import { TransactionItem } from "./TransactionItem";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,16 @@ export const TransactionList = ({
   dateFormat = "time",
 }: TransactionListProps) => {
   // Memoize group lookup map to O(1) access
+  // ⚡ Bolt Optimization: Lifted overlay state to prevent rendering Modals inside mapped items.
+  // Expected Impact: Prevents massive DOM bloat/memory issues.
+  const [chatTransaction, setChatTransaction] = useState<Transaction | null>(null);
+
+  // ⚡ Bolt Optimization: Memoized callback to prevent breaking React.memo on TransactionItems
+  // Expected Impact: Prevents unnecessary re-renders of list items.
+  const handleOpenChat = useCallback((transaction: Transaction) => {
+    setChatTransaction(transaction);
+  }, []);
+
   const groupMap = useMemo(() => {
     return groups.reduce((acc, group) => {
       acc[group.id] = group.name;
@@ -56,11 +67,21 @@ export const TransactionList = ({
             groupName={groupMap[transaction.groupId]}
             userId={userId}
             onClick={onSelectTransaction}
+            onOpenChat={handleOpenChat}
             formatAmount={formatAmount}
             dateFormat={dateFormat}
           />
         ))}
       </div>
+
+      <ExpenseThreadSheet
+        isOpen={!!chatTransaction}
+        onClose={() => setChatTransaction(null)}
+        groupId={chatTransaction?.groupId || ""}
+        groupName={chatTransaction?.groupId ? groupMap[chatTransaction.groupId] || "Group" : "Group"}
+        expenseId={chatTransaction?.id || ""}
+        expenseTitle={chatTransaction?.title || ""}
+      />
     </div>
   );
 };
