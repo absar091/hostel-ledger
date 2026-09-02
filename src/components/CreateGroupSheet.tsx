@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { X, Plus, Users, ChevronDown, ChevronUp, Phone, CreditCard, ChevronRight, Image as ImageIcon, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -249,7 +250,8 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
   const hasPaymentInfo = jazzCash || easypaisa || bankName || raastId;
 
   return (
-    <Sheet open={open} onOpenChange={handleClose}>
+    <TooltipProvider>
+      <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col bg-white border-t border-[#4a6850]/10 z-[100]">
         <SheetHeader className="flex-shrink-0 mb-4 pt-2">
           <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
@@ -433,11 +435,17 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                     <div
                       key={email}
                       className="flex items-center gap-3 p-3 bg-purple-50/50 border border-purple-100 rounded-2xl animate-fade-in"
-                      title="This person will receive an email invitation to join Hostel Ledger and this group."
                     >
-                      <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center text-sm font-bold text-purple-600">
-                        @
-                      </div>
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center text-sm font-bold text-purple-600 cursor-help">
+                            @
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>This person will receive an email invitation to join Hostel Ledger and this group.</p>
+                        </TooltipContent>
+                      </Tooltip>
                       <div className="flex-1 min-w-0">
                         <span className="font-black text-sm text-gray-900 block truncate">{email}</span>
                         <span className="text-[10px] text-purple-600 font-bold flex items-center gap-1">
@@ -446,7 +454,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                       </div>
                       <button
                         onClick={() => handleRemoveEmailInvite(email)}
-                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors z-10 relative"
                         aria-label={`Remove ${email}`}
                       >
                         <X className="w-4 h-4" />
@@ -459,11 +467,17 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                     <div
                       key={username}
                       className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl animate-fade-in"
-                      title="This user already has a Hostel Ledger account. They'll receive an in-app invitation and email notification."
                     >
-                      <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-600">
-                        {username.charAt(0).toUpperCase()}
-                      </div>
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-600 cursor-help">
+                            {username.charAt(0).toUpperCase()}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>This user already has a Hostel Ledger account. They'll receive an in-app invitation and email notification.</p>
+                        </TooltipContent>
+                      </Tooltip>
                       <div className="flex-1">
                         <span className="font-black text-sm text-gray-900 block">@{username}</span>
                         <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
@@ -472,7 +486,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                       </div>
                       <button
                         onClick={() => handleRemoveInvite(username)}
-                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors"
+                        className="w-8 h-8 rounded-full bg-red-100/50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors z-10 relative"
                         aria-label={`Remove ${username}`}
                       >
                         <X className="w-4 h-4" />
@@ -622,6 +636,7 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
         </div>
       </SheetContent>
     </Sheet>
+    </TooltipProvider>
   );
 };
 
