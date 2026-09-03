@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { Share2, Copy, Check, MessageCircle, Send } from "@/lib/icons";
 import { toast } from "sonner";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 
 interface ShareButtonProps {
   className?: string;
@@ -9,13 +14,18 @@ interface ShareButtonProps {
   size?: "sm" | "md" | "lg";
 }
 
-const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareButtonProps) => {
+const ShareButton = ({
+  className = "",
+  variant = "button",
+  size = "md",
+}: ShareButtonProps) => {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const shareUrl = "https://hostelledger.aarx.online";
   const shareTitle = "Hostel Ledger - Split Expenses with Ease 💰";
-  const shareText = "🎯 Check out this amazing app for splitting expenses with friends and roommates! Perfect for students and groups. Track shared expenses and settle debts instantly! 💸✨";
+  const shareText =
+    "🎯 Check out this amazing app for splitting expenses with friends and roommates! Perfect for students and groups. Track shared expenses and settle debts instantly! 💸✨";
 
   const handleNativeShare = async () => {
     if (navigator.share) {
@@ -27,8 +37,8 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
         });
         toast.success("Thanks for sharing! 🎉");
       } catch (error) {
-        if ((error as Error).name !== 'AbortError') {
-          console.error('Error sharing:', error);
+        if ((error as Error).name !== "AbortError") {
+          console.error("Error sharing:", error);
           handleCopyLink();
         }
       }
@@ -51,7 +61,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
 
   const handleWhatsAppShare = () => {
     const whatsappText = encodeURIComponent(`${shareText}\n\n${shareUrl}`);
-    window.open(`https://wa.me/?text=${whatsappText}`, '_blank');
+    window.open(`https://wa.me/?text=${whatsappText}`, "_blank");
     setShowShareMenu(false);
     toast.success("Opening WhatsApp... 📱");
   };
@@ -59,21 +69,30 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
   const handleTelegramShare = () => {
     const telegramText = encodeURIComponent(shareText);
     const telegramUrl = encodeURIComponent(shareUrl);
-    window.open(`https://t.me/share/url?url=${telegramUrl}&text=${telegramText}`, '_blank');
+    window.open(
+      `https://t.me/share/url?url=${telegramUrl}&text=${telegramText}`,
+      "_blank",
+    );
     setShowShareMenu(false);
     toast.success("Opening Telegram... 📱");
   };
 
   const handleFacebookShare = () => {
     const facebookUrl = encodeURIComponent(shareUrl);
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${facebookUrl}`, '_blank');
+    window.open(
+      `https://www.facebook.com/sharer/sharer.php?u=${facebookUrl}`,
+      "_blank",
+    );
     setShowShareMenu(false);
     toast.success("Opening Facebook... 📘");
   };
 
   const handleTwitterShare = () => {
     const twitterText = encodeURIComponent(`${shareText} ${shareUrl}`);
-    window.open(`https://twitter.com/intent/tweet?text=${twitterText}`, '_blank');
+    window.open(
+      `https://twitter.com/intent/tweet?text=${twitterText}`,
+      "_blank",
+    );
     setShowShareMenu(false);
     toast.success("Opening Twitter... 🐦");
   };
@@ -82,20 +101,22 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
   if (variant === "icon") {
     return (
       <div className="relative">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={handleNativeShare}
-              aria-label="Share App"
-              className={`w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors ${className}`}
-            >
-              <Share2 className="w-5 h-5 text-gray-700" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Share App</p>
-          </TooltipContent>
-        </Tooltip>
+        <TooltipProvider>
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleNativeShare}
+                aria-label="Share App"
+                className={`w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors ${className}`}
+              >
+                <Share2 className="w-5 h-5 text-gray-700" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Share App</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     );
   }
@@ -103,14 +124,19 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
   // Card variant
   if (variant === "card") {
     return (
-      <div className={`bg-white rounded-2xl p-6 shadow-sm border border-gray-100 ${className}`}>
+      <div
+        className={`bg-white rounded-2xl p-6 shadow-sm border border-gray-100 ${className}`}
+      >
         <div className="text-center">
           <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Share2 className="w-8 h-8 text-white" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Share Hostel Ledger</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">
+            Share Hostel Ledger
+          </h3>
           <p className="text-sm text-gray-500 mb-6">
-            Help your friends discover the easiest way to split expenses and manage group finances!
+            Help your friends discover the easiest way to split expenses and
+            manage group finances!
           </p>
           <button
             onClick={handleNativeShare}
@@ -127,7 +153,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
   const sizeClasses = {
     sm: "px-3 py-2 text-sm",
     md: "px-4 py-3 text-sm",
-    lg: "px-6 py-4 text-base"
+    lg: "px-6 py-4 text-base",
   };
 
   return (
@@ -147,17 +173,22 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
             {/* Header */}
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-gray-900">Share Hostel Ledger</h3>
+                <h3 className="text-lg font-bold text-gray-900">
+                  Share Hostel Ledger
+                </h3>
                 <button
                   onClick={() => setShowShareMenu(false)}
                   aria-label="Close share menu"
                   className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
                 >
-                  <span className="text-gray-600 text-lg" aria-hidden="true">×</span>
+                  <span className="text-gray-600 text-lg" aria-hidden="true">
+                    ×
+                  </span>
                 </button>
               </div>
               <p className="text-sm text-gray-500 mt-2">
-                Choose how you'd like to share this amazing expense splitting app!
+                Choose how you'd like to share this amazing expense splitting
+                app!
               </p>
             </div>
 
@@ -179,7 +210,9 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
                     {copied ? "Link Copied!" : "Copy Link"}
                   </div>
                   <div className="text-sm text-gray-500">
-                    {copied ? "Ready to paste anywhere" : "Copy URL to clipboard"}
+                    {copied
+                      ? "Ready to paste anywhere"
+                      : "Copy URL to clipboard"}
                   </div>
                 </div>
               </button>
@@ -193,7 +226,9 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
                 </div>
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">WhatsApp</div>
-                  <div className="text-sm text-gray-500">Share with contacts</div>
+                  <div className="text-sm text-gray-500">
+                    Share with contacts
+                  </div>
                 </div>
               </button>
 
@@ -218,7 +253,9 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
                   <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-xs font-bold">f</span>
                   </div>
-                  <span className="text-sm font-medium text-blue-700">Facebook</span>
+                  <span className="text-sm font-medium text-blue-700">
+                    Facebook
+                  </span>
                 </button>
 
                 <button
@@ -228,7 +265,9 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
                   <div className="w-6 h-6 bg-sky-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-xs font-bold">𝕏</span>
                   </div>
-                  <span className="text-sm font-medium text-sky-700">Twitter</span>
+                  <span className="text-sm font-medium text-sky-700">
+                    Twitter
+                  </span>
                 </button>
               </div>
             </div>
