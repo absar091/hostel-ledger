@@ -16,18 +16,24 @@ function generateTicketId() {
 // User submitting a support ticket
 router.post('/support', async (req, res) => {
   try {
-    const { subject, message, email } = req.body;
+    const { subject, message } = req.body;
     const uid = req.user.uid;
+    const email = req.user.email; // 🛡️ Sentinel Security Fix: Prevent email spoofing / open relay
 
     if (!subject || !message) {
       return res.status(400).json({ error: 'Subject and message are required.' });
+    }
+
+    // 🛡️ Sentinel Security Fix: Strict type validation to prevent DoS/NoSQL injection
+    if (typeof subject !== 'string' || typeof message !== 'string') {
+      return res.status(400).json({ error: 'Invalid input types.' });
     }
 
     const ticketId = generateTicketId();
 
     const ticketData = {
       userId: uid,
-      email: email || req.user.email || 'unknown',
+      email: email || 'unknown',
       subject,
       message,
       status: 'open',
@@ -62,6 +68,11 @@ router.post('/report', async (req, res) => {
 
     if (!['user', 'group'].includes(targetType) || !targetId || !reason) {
       console.log('Report Validation Failed:', { targetId, targetType, reason, details }); return res.status(400).json({ error: 'Invalid report data.' });
+    }
+
+    // 🛡️ Sentinel Security Fix: Strict type validation to prevent DoS/NoSQL injection
+    if (typeof targetId !== 'string' || typeof reason !== 'string' || (details && typeof details !== 'string')) {
+        return res.status(400).json({ error: 'Invalid input types.' });
     }
 
     const reportRef = admin.database().ref('reports').push();
