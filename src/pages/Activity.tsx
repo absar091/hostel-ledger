@@ -106,40 +106,36 @@ const Activity = () => {
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const expenses = filteredTransactions.filter(t => t.type === "expense");
-    const payments = filteredTransactions.filter(t => t.type === "payment");
+    // ⚡ Bolt Optimization: Replace O(3n) filter and reduce with O(n) single pass
+    // Expected Impact: Reduces iterations and prevents unnecessary array allocations for large transaction lists
+    let totalSpent = 0;
+    let totalReceived = 0;
+    let expenseCount = 0;
+    let paymentCount = 0;
 
-
-    const totalSpent = expenses.reduce((sum, t) => {
-      // Use the denormalized userShare field which is always correct
-      if (t.userShare !== undefined && t.userShare > 0) return sum + t.userShare;
-
-      // Fallback: check if user is payer (creator whose member ID = uid)
-      if (t.paidBy === user?.uid) {
-        // User paid — their share is their participant amount, not total
-        const userPart = t.participants?.find((p: any) => p.id === user?.uid);
-        return sum + (userPart ? userPart.amount : 0);
+    for (const t of filteredTransactions) {
+      if (t.type === "expense") {
+        expenseCount++;
+        if (t.userShare !== undefined && t.userShare > 0) {
+          totalSpent += t.userShare;
+        } else {
+          const userPart = t.participants?.find((p: any) => p.id === user?.uid);
+          totalSpent += (userPart ? (userPart.amount || 0) : 0);
+        }
+      } else if (t.type === "payment") {
+        paymentCount++;
+        if (t.userRole === 'receiver' || t.to === user?.uid) {
+          totalReceived += (t.amount || 0);
+        }
       }
-
-      // Fallback: check participants array directly
-      const userPart = t.participants?.find((p: any) => p.id === user?.uid);
-      return sum + (userPart ? (userPart.amount || 0) : 0);
-    }, 0);
-
-    const totalReceived = payments.reduce((sum, t) => {
-      // 1. If you are the receiver
-      if (t.userRole === 'receiver') return sum + (t.amount || 0);
-      if (t.to === user?.uid) return sum + (t.amount || 0);
-      return sum;
-    }, 0);
-
+    }
 
     return {
       totalTransactions: filteredTransactions.length,
       totalSpent,
       totalReceived,
-      expenseCount: expenses.length,
-      paymentCount: payments.length,
+      expenseCount,
+      paymentCount,
     };
   }, [filteredTransactions, user?.uid]);
 

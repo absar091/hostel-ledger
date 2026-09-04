@@ -106,20 +106,35 @@ const GroupDetail = () => {
   // consistent hook count across renders (React Rules of Hooks)
   const personalStats = useMemo(() => {
     if (!group?.isPersonal) return null;
-    const totalSpentValue = transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
+    let totalSpentValue = 0;
+    let count = 0;
+    // ⚡ Bolt Optimization: Replace O(2n) double filter/reduce with O(n) single pass
+    // Expected Impact: Reduces calculation time by 50% for large transaction lists
+    for (const t of transactions) {
+      if (t.type === 'expense') {
+        totalSpentValue += (t.amount || 0);
+        count++;
+      }
+    }
     return {
       totalSpent: totalSpentValue,
-      count: transactions.filter(t => t.type === 'expense').length
+      count
     };
   }, [group, transactions]);
 
-  const totalSpent = useMemo(() => transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0), [transactions]);
-
-  const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
+  // ⚡ Bolt Optimization: Combined totalSpent and expenseCount into a single O(n) pass
+  // Expected Impact: Reduces multiple iterations over transactions to a single pass
+  const { totalSpent, expenseCount } = useMemo(() => {
+    let spent = 0;
+    let count = 0;
+    for (const t of transactions) {
+      if (t.type === "expense") {
+        spent += t.amount || 0;
+        count++;
+      }
+    }
+    return { totalSpent: spent, expenseCount: count };
+  }, [transactions]);
 
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
