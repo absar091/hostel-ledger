@@ -16,7 +16,8 @@ function generateTicketId() {
 // User submitting a support ticket
 router.post('/support', async (req, res) => {
   try {
-    const { subject, message, email } = req.body;
+    const { subject, message } = req.body;
+    const email = req.user.email;
     const uid = req.user.uid;
 
     if (!subject || !message) {
