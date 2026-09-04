@@ -23,6 +23,12 @@ router.post('/support', async (req, res) => {
       return res.status(400).json({ error: 'Subject and message are required.' });
     }
 
+    // 🛡️ Sentinel Security Fix: Prevent Open Relay by verifying email belongs to authenticated user
+    const userEmail = req.user.email;
+    if (email && userEmail && email.toLowerCase() !== userEmail.toLowerCase()) {
+      return res.status(403).json({ error: 'Unauthorized: You can only use your own email address.' });
+    }
+
     const ticketId = generateTicketId();
 
     const ticketData = {
