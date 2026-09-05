@@ -18,6 +18,7 @@ import {
     ImageIcon
 } from "@/lib/icons";
 import Avatar from "./Avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChatMessage {
     id: string;
@@ -490,26 +491,42 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                             accept="image/*"
                             className="hidden"
                         />
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isUploading || !!attachedImage}
-                            className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
-                        >
+                        <Tooltip delayDuration={0}>
+                            <TooltipTrigger asChild>
+                                <button
+                                    aria-label={t("chat.upload_image") || "Upload image"}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isUploading || !!attachedImage}
+                                    className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
+                                >
                             {isUploading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
                             ) : (
                                 <ImageIcon className="w-5 h-5" />
                             )}
-                        </button>
-                        <button
-                            onClick={() => setShowTxnHint(!showTxnHint)}
-                            className={cn(
-                                "p-2.5 rounded-xl transition-all shrink-0",
-                                showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
-                            )}
-                        >
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{t("chat.upload_image") || "Upload image"}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                        <Tooltip delayDuration={0}>
+                            <TooltipTrigger asChild>
+                                <button
+                                    aria-label="Transaction hint"
+                                    onClick={() => setShowTxnHint(!showTxnHint)}
+                                    className={cn(
+                                        "p-2.5 rounded-xl transition-all shrink-0",
+                                        showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
+                                    )}
+                                >
                             <Info className="w-5 h-5" />
-                        </button>
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Transaction hint</p>
+                            </TooltipContent>
+                        </Tooltip>
                     </div>
                     <input
                         ref={inputRef}
@@ -524,17 +541,25 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         maxLength={2000}
                         className="flex-1 bg-[#f0f4f1] border border-[#4a6850]/10 rounded-2xl px-4 py-3.5 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4a6850]/30 focus:border-[#4a6850]/30 transition-all min-w-0"
                     />
-                    <button
-                        onClick={handleSend}
-                        disabled={(!inputText.trim() && !attachedImage) || isSending}
-                        className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
-                    >
+                    <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                            <button
+                                aria-label={t("chat.send_message") || "Send message"}
+                                onClick={handleSend}
+                                disabled={(!inputText.trim() && !attachedImage) || isSending}
+                                className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
+                            >
                         {isSending ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
                         ) : (
                             <Send className="w-5 h-5" />
                         )}
-                    </button>
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>{t("chat.send_message") || "Send message"}</p>
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
             </div>
         </div>
