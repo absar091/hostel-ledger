@@ -1,0 +1,3 @@
+## 2024-11-20 - Lift state out of mapped lists for modals
+**Learning:** Placing complex overlay components like Modals or Sheets inside unconditionally rendered mapped list items causes massive DOM bloat and memory issues. Additionally, passing inline functions to `React.memo`-optimized components breaks memoization and causes O(n) re-renders.
+**Action:** Always lift the state and the single modal component out of the list to the parent component, and use `useCallback` for event handlers passed to list items. Provide fallback values when accessing the selected item's properties (e.g. `chatTx?.id || ''`) so Radix UI exit animations don't crash when the state is cleared.

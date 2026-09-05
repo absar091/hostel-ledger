@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { type Transaction, type Group } from "@/contexts/FirebaseDataContext";
 import { TransactionItem } from "./TransactionItem";
+import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { cn } from "@/lib/utils";
 
 interface TransactionListProps {
@@ -25,6 +26,14 @@ export const TransactionList = ({
   dateFormat = "time",
 }: TransactionListProps) => {
   // Memoize group lookup map to O(1) access
+  // ⚡ Bolt Optimization: Lifted ExpenseThreadSheet state out of the mapped list items and memoized the callback.
+  // Expected Impact: Reduces DOM node count significantly and prevents O(n) re-renders when toggling the sheet.
+  const [chatTx, setChatTx] = useState<Transaction | null>(null);
+
+  const handleOpenChat = useCallback((tx: Transaction) => {
+    setChatTx(tx);
+  }, []);
+
   const groupMap = useMemo(() => {
     return groups.reduce((acc, group) => {
       acc[group.id] = group.name;
@@ -56,11 +65,20 @@ export const TransactionList = ({
             groupName={groupMap[transaction.groupId]}
             userId={userId}
             onClick={onSelectTransaction}
+            onOpenChat={handleOpenChat}
             formatAmount={formatAmount}
             dateFormat={dateFormat}
           />
         ))}
       </div>
+      <ExpenseThreadSheet
+        isOpen={!!chatTx}
+        onClose={() => setChatTx(null)}
+        groupId={chatTx?.groupId || ""}
+        groupName={chatTx ? (groupMap[chatTx.groupId] || "Group") : "Group"}
+        expenseId={chatTx?.id || ""}
+        expenseTitle={chatTx?.title || ""}
+      />
     </div>
   );
 };
