@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from "react";
 import {
   User,
   signInWithEmailAndPassword,
@@ -964,29 +964,35 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Settlement management functions with group awareness
-  const getSettlements = (groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
+    // Pre-calculate aggregated settlements to avoid O(N^2) loops on every call without groupId
+  const aggregatedSettlements = useMemo(() => {
+    if (!user?.settlements) return {};
+    const aggregated: { [personId: string]: { toReceive: number; toPay: number } } = {};
+
+    Object.values(user.settlements).forEach(groupSettlements => {
+      Object.entries(groupSettlements).forEach(([personId, settlement]) => {
+        if (!aggregated[personId]) {
+          aggregated[personId] = { toReceive: 0, toPay: 0 };
+        }
+        aggregated[personId].toReceive += settlement.toReceive;
+        aggregated[personId].toPay += settlement.toPay;
+      });
+    });
+
+    return aggregated;
+  }, [user?.settlements]);
+
+  const getSettlements = useCallback((groupId?: string): { [personId: string]: { toReceive: number; toPay: number } } => {
     if (!user?.settlements) return {};
 
     if (groupId) {
       // Return settlements for specific group
       return user.settlements[groupId] || {};
     } else {
-      // Return aggregated settlements across all groups
-      const aggregated: { [personId: string]: { toReceive: number; toPay: number } } = {};
-
-      Object.values(user.settlements).forEach(groupSettlements => {
-        Object.entries(groupSettlements).forEach(([personId, settlement]) => {
-          if (!aggregated[personId]) {
-            aggregated[personId] = { toReceive: 0, toPay: 0 };
-          }
-          aggregated[personId].toReceive += settlement.toReceive;
-          aggregated[personId].toPay += settlement.toPay;
-        });
-      });
-
-      return aggregated;
+      // Return pre-calculated aggregated settlements
+      return aggregatedSettlements;
     }
-  };
+  }, [user?.settlements, aggregatedSettlements]);
 
   const getTotalToReceive = (groupId?: string): number => {
     const settlements = getSettlements(groupId);

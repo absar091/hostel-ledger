@@ -1,0 +1,3 @@
+## 2023-10-27 - Memoizing aggregated calculations in contexts
+**Learning:** Functions provided in Contexts that perform expensive calculations on state should be memoized (e.g. using `useMemo` and `useCallback`) to avoid recalculating the same values on every render in every consuming component. Here, `getSettlements` was iterating over all user settlements every time it was called without a `groupId`, which happens in components like Dashboard and Groups list.
+**Action:** Memoize expensive calculations in React Contexts using `useMemo` based on the context state, and wrap context methods in `useCallback` to maintain reference equality and prevent unnecessary re-renders in consuming components.
