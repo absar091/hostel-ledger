@@ -304,7 +304,7 @@ const { getStatusPageHTML } = require('./utils/statusPage');
 app.get('/', (req, res) => {
   const isHtml = req.accepts('html');
   
-  const firebaseActive = !!admin.apps.length;
+  const firebaseActive = !!(admin.apps && admin.apps.length);
   const smtpActive = emailService.isConnectionVerified;
   const oneSignalActive = !!(process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY);
   const aiActive = !!(genAI && aiModels.length > 0);
@@ -787,6 +787,10 @@ app.post('/api/2fa/initiate-reset', detectFraud, strictEmailLimiter, async (req,
 
     if (!email) {
       return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+
+    if (typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email must be a string' });
     }
 
     // Verify user exists in Auth
@@ -1295,6 +1299,10 @@ app.post('/api/get-valid-user-details', userSearchLimiter, authenticate, async (
 
     if (!username) {
       return res.status(400).json({ success: false, error: 'Username is required' });
+    }
+
+    if (typeof username !== 'string') {
+      return res.status(400).json({ success: false, error: 'Username must be a string' });
     }
 
     // Sanitize username to prevent path traversal (allow only alphanumeric, dots and underscores)
@@ -1956,6 +1964,10 @@ app.post('/api/send-temp-member-alert', emailLimiter, async (req, res) => {
       });
     }
 
+    if (typeof to !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email must be a string' });
+    }
+
     // Security: Only allow users to alert themselves
     // Must verify against the authenticated user's email to prevent open relay abuse
     const userEmail = req.user.email;
@@ -2094,6 +2106,10 @@ app.post('/api/send-welcome', emailLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, name' });
     }
 
+    if (typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email must be a string' });
+    }
+
     // Security: Only allow users to send welcome emails to themselves
     // Must verify against the authenticated user's email to prevent open relay abuse
     const userEmail = req.user?.email;
@@ -2143,6 +2159,10 @@ app.post('/api/verification/request', strictEmailLimiter, async (req, res) => {
 
     if (!email || !name || !type) {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, name, type' });
+    }
+
+    if (typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email must be a string' });
     }
 
     // Generate 6-digit code
@@ -2270,6 +2290,10 @@ app.post('/api/verification/check', generalLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Email is required' });
     }
 
+    if (typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email must be a string' });
+    }
+
     const docId = Buffer.from(email.toLowerCase()).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
     const docRef = admin.firestore().collection('verificationCodes').doc(docId);
     const docSnap = await docRef.get();
@@ -2311,6 +2335,10 @@ app.post('/api/check-email-exists', strictEmailCheckLimiter, async (req, res) =>
 
     if (!email) {
       return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+
+    if (typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email must be a string' });
     }
 
     // Validate email format
@@ -3943,6 +3971,10 @@ app.post('/api/send-invitation', detectFraud, generalLimiter, async (req, res) =
       return res.status(400).json({ success: false, error: 'Group ID and username are required' });
     }
 
+    if (typeof inviteeUsername !== 'string') {
+      return res.status(400).json({ success: false, error: 'Username must be a string' });
+    }
+
     if (!isValidFirebaseId(groupId)) {
       return res.status(400).json({ success: false, error: 'Invalid group ID format' });
     }
@@ -4142,6 +4174,10 @@ app.post('/api/send-external-invitation', strictEmailLimiter, async (req, res) =
 
     if (!email || !groupId) {
       return res.status(400).json({ success: false, error: 'Email and Group ID are required' });
+    }
+
+    if (typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email must be a string' });
     }
 
     if (!isValidFirebaseId(groupId)) {
@@ -5398,7 +5434,7 @@ const setupSupportListeners = () => {
 const { startWeeklyReportCron, startBudgetResetCron } = require('./services/cronService');
 
 // Initialize listeners
-if (admin.apps.length > 0) {
+if ((admin.apps && admin.apps.length) > 0) {
   setupSupportListeners();
   startWeeklyReportCron();
   startBudgetResetCron();
