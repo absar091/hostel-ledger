@@ -204,9 +204,6 @@ app.options('*', cors());
 app.use('/api/ai/parse-expense-audio', express.json({ limit: '10mb' }));
 // Global limit to prevent DoS attacks
 app.use(express.json({ limit: '100kb' }));
-app.use("/api/admin", adminRoutes);
-app.use("/api/user", userRoutes);
-app.use("/api/export", exportRoutes);
 
 const emailService = require('./services/emailService');
 const expenseLogic = require('./utils/expenseLogic');
@@ -1925,7 +1922,10 @@ app.post('/api/claim-email-invite', authenticate, async (req, res) => {
 
 
 // Apply authentication middleware to ALL /api routes EXCEPT public ones
+// Mount specific routes after authentication
+
 app.use('/api', (req, res, next) => {
+
   // Public endpoints that don't need auth
   // Note: Cleanup endpoints are "public" for user auth but secured by adminAuth middleware
   const publicEndpoints = [
@@ -1942,6 +1942,11 @@ app.use('/api', (req, res, next) => {
   }
   authenticate(req, res, next);
 });
+
+// Mount specific routes after authentication
+app.use("/api/admin", adminRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/export", exportRoutes);
 
 // Send Temporary Member Alert Endpoint (Secure - No raw HTML)
 app.post('/api/send-temp-member-alert', emailLimiter, async (req, res) => {
