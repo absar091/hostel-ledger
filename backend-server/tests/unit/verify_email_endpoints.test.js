@@ -197,6 +197,32 @@ async function runTests() {
     failures++;
   }
 
+
+  // TEST 4b: DoS Payload for 'to' field (Expect 400 Bad Request, NOT crash)
+  console.log('\n🔹 TEST 4b: Checking DoS payload (Expectation: 400)');
+  try {
+    currentUser = MOCK_USER_WITH_EMAIL;
+    const res = await request(app)
+      .post('/api/send-temp-member-alert')
+      .set('Authorization', 'Bearer valid-token')
+      .send({
+        to: { $ne: null }, // Malicious payload
+        memberName: 'Temp User',
+        groupName: 'My Group',
+        expiryDate: new Date().toISOString()
+      });
+
+    if (res.status === 400) {
+      console.log('✅ PASS: DoS payload returned 400');
+    } else {
+      console.log(`❌ FAIL: Expected 400, got ${res.status}`);
+      failures++;
+    }
+  } catch (err) {
+    console.error('❌ Error in Test 4b:', err);
+    failures++;
+  }
+
   // TEST 5: User without email (Expect 403 Forbidden)
   console.log('\n🔹 TEST 5: Checking user without email (Expectation: 403)');
   try {
