@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowUpRight,
@@ -108,6 +108,7 @@ const Dashboard = () => {
   const [initialGroupIdForSheet, setInitialGroupIdForSheet] = useState("");
   const [defaultAiMode, setDefaultAiMode] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const handleSelectTransaction = useCallback((tx: any) => setSelectedTransaction(tx), []);
   const [selectedMemberForPayment, setSelectedMemberForPayment] = useState<{
     id: string;
     name: string;
@@ -1019,7 +1020,7 @@ const Dashboard = () => {
                     transactions={allTransactions.slice(0, 5)}
                     groups={groups}
                     userId={user?.uid}
-                    onSelectTransaction={setSelectedTransaction}
+                    onSelectTransaction={handleSelectTransaction}
                     formatAmount={formatAmount}
                   />
                   {allTransactions.length > 5 && (

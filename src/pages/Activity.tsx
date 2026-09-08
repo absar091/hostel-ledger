@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowUpRight,
@@ -39,6 +39,7 @@ const Activity = () => {
   const [filterDate, setFilterDate] = useState<"all" | "today" | "week" | "month">("all");
   const [showActivityGuide, setShowActivityGuide] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const handleSelectTransaction = useCallback((tx: any) => setSelectedTransaction(tx), []);
   const [showChat, setShowChat] = useState(false);
   const [chatTransaction, setChatTransaction] = useState<any>(null);
 
@@ -332,7 +333,7 @@ const Activity = () => {
                 return (
                   <button
                     key={transaction.id}
-                    onClick={() => setSelectedTransaction(transaction)}
+                    onClick={() => handleSelectTransaction(transaction)}
                     aria-label={`View details for ${transaction.type}: ${transaction.title}, ${formatAmount(displayAmount)} on ${transaction.date}`}
                     className="w-full bg-white rounded-3xl p-5 border border-[#4a6850]/10 shadow-[0_20px_60px_rgba(74,104,80,0.08)] hover:shadow-[0_25px_70px_rgba(74,104,80,0.15)] hover:border-[#4a6850]/20 transition-all animate-slide-up group text-left"
                     style={{ animationDelay: `${index * 0.05}s` }}

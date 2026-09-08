@@ -1,0 +1,3 @@
+## 2024-05-18 - Memoize TransactionList to prevent expensive re-renders
+**Learning:** In React, when a parent component creates unmemoized handler functions (like `setSelectedTransaction`) in render and passes them to child components (like `TransactionList`), the child component will re-render completely even if its props semantically haven't changed. This is particularly problematic for list components.
+**Action:** When working with list structures (like `TransactionList` and `TransactionItem`), ensure that the list component itself is wrapped in `React.memo()`, and verify that the parent (like `Dashboard` and `Activity`) passes memoized `useCallback` versions of the event handlers to prevent catastrophic O(n) re-renders when unrelated parent state changes.
