@@ -27,7 +27,7 @@ router.post('/support', async (req, res) => {
 
     const ticketData = {
       userId: uid,
-      email: email || req.user.email || 'unknown',
+      email: req.user.email || 'unknown', // Prevent open relay by using authenticated email
       subject,
       message,
       status: 'open',
