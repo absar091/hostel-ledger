@@ -40,3 +40,8 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+
+## 2026-09-10 - Denial of Service via Unvalidated String Methods on Untrusted Payloads
+**Vulnerability:** Calling string methods like `.toLowerCase()` directly on fields extracted from `req.body` without verifying their type. If an attacker submits a JSON payload where the field is an object or array (e.g., `{ "email": {} }`), the string method will throw a `TypeError`. In async Express routes lacking explicit `try/catch` wrappers around the entire block, this causes an Unhandled Promise Rejection which can crash the Node.js server.
+**Learning:** Type validation is critical not just for business logic, but for application stability. Destructured fields from `req.body` cannot be assumed to be strings.
+**Prevention:** Always validate that expected string parameters are actually strings (e.g., `typeof param === 'string'`) before invoking any string-specific methods on them.
