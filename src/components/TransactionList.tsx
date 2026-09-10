@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { type Transaction, type Group } from "@/contexts/FirebaseDataContext";
 import { TransactionItem } from "./TransactionItem";
+import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { cn } from "@/lib/utils";
 
 interface TransactionListProps {
@@ -25,6 +26,17 @@ export const TransactionList = ({
   dateFormat = "time",
 }: TransactionListProps) => {
   // Memoize group lookup map to O(1) access
+
+  const [chatTransaction, setChatTransaction] = useState<Transaction | null>(null);
+
+  const handleOpenChat = useCallback((transaction: Transaction) => {
+    setChatTransaction(transaction);
+  }, []);
+
+  const handleCloseChat = useCallback(() => {
+    setChatTransaction(null);
+  }, []);
+
   const groupMap = useMemo(() => {
     return groups.reduce((acc, group) => {
       acc[group.id] = group.name;
@@ -58,9 +70,20 @@ export const TransactionList = ({
             onClick={onSelectTransaction}
             formatAmount={formatAmount}
             dateFormat={dateFormat}
+            onOpenChat={handleOpenChat}
           />
         ))}
       </div>
+
+      {/* Lifted state for ExpenseThreadSheet */}
+      <ExpenseThreadSheet
+        isOpen={!!chatTransaction}
+        onClose={handleCloseChat}
+        groupId={chatTransaction?.groupId || ""}
+        groupName={chatTransaction ? groupMap[chatTransaction.groupId] || "Group" : "Group"}
+        expenseId={chatTransaction?.id || ""}
+        expenseTitle={chatTransaction?.title || ""}
+      />
     </div>
   );
 };
