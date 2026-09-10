@@ -19,6 +19,10 @@ router.post('/support', async (req, res) => {
     const { subject, message, email } = req.body;
     const uid = req.user.uid;
 
+    if (email && req.user.email && typeof email === 'string' && typeof req.user.email === 'string' && email.toLowerCase() !== req.user.email.toLowerCase()) {
+      return res.status(403).json({ error: 'Unauthorized: You can only create support tickets for your own email address.' });
+    }
+
     if (!subject || !message) {
       return res.status(400).json({ error: 'Subject and message are required.' });
     }
@@ -27,7 +31,7 @@ router.post('/support', async (req, res) => {
 
     const ticketData = {
       userId: uid,
-      email: email || req.user.email || 'unknown',
+      email: req.user.email || 'unknown',
       subject,
       message,
       status: 'open',
