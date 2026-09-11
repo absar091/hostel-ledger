@@ -1297,6 +1297,10 @@ app.post('/api/get-valid-user-details', userSearchLimiter, authenticate, async (
       return res.status(400).json({ success: false, error: 'Username is required' });
     }
 
+    if (typeof username !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid input type' });
+    }
+
     // Sanitize username to prevent path traversal (allow only alphanumeric, dots and underscores)
     const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9._]/g, '');
     const storageKey = cleanUsername.replace(/\./g, ',');
@@ -1956,6 +1960,10 @@ app.post('/api/send-temp-member-alert', emailLimiter, async (req, res) => {
       });
     }
 
+    if (typeof to !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid input type' });
+    }
+
     // Security: Only allow users to alert themselves
     // Must verify against the authenticated user's email to prevent open relay abuse
     const userEmail = req.user.email;
@@ -2094,6 +2102,10 @@ app.post('/api/send-welcome', emailLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, name' });
     }
 
+    if (typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid input type' });
+    }
+
     // Security: Only allow users to send welcome emails to themselves
     // Must verify against the authenticated user's email to prevent open relay abuse
     const userEmail = req.user?.email;
@@ -2143,6 +2155,10 @@ app.post('/api/verification/request', strictEmailLimiter, async (req, res) => {
 
     if (!email || !name || !type) {
       return res.status(400).json({ success: false, error: 'Missing required fields: email, name, type' });
+    }
+
+    if (typeof email !== 'string' || typeof name !== 'string' || typeof type !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid input types' });
     }
 
     // Generate 6-digit code
@@ -2268,6 +2284,10 @@ app.post('/api/verification/check', generalLimiter, async (req, res) => {
 
     if (!email) {
       return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+
+    if (typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid input type' });
     }
 
     const docId = Buffer.from(email.toLowerCase()).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
@@ -3941,6 +3961,10 @@ app.post('/api/send-invitation', detectFraud, generalLimiter, async (req, res) =
 
     if (!groupId || !inviteeUsername) {
       return res.status(400).json({ success: false, error: 'Group ID and username are required' });
+    }
+
+    if (typeof inviteeUsername !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid input type' });
     }
 
     if (!isValidFirebaseId(groupId)) {
