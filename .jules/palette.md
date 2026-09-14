@@ -1,3 +1,7 @@
 ## 2025-04-06 - Replacing Native Title Attributes with Radix Tooltips
 **Learning:** Native `title` attributes on interactive elements provide a delayed, inconsistently styled, and poorly accessible tooltip experience. When integrating Radix UI tooltips, it's critical to explicitly remove the native `title` attribute to prevent a "double-tooltip" effect where both the custom and native tooltips appear simultaneously, confusing users and screen readers. Additionally, tooltips must be globally wrapped in `<TooltipProvider>` to prevent application crashes due to missing context.
 **Action:** Always replace native `title` attributes on icon-only buttons with Radix `<Tooltip>` components, ensuring the native attribute is removed. Use `<TooltipTrigger asChild>` to prevent invalid HTML nesting, and wrap the component tree with `<TooltipProvider>`. Utilize `useTranslation` for the tooltip and `aria-label` content.
+
+## 2023-11-20 - Adding z-index to Tooltips in Modals
+**Learning:** When using Radix `<TooltipContent>` inside components rendered within a high z-index stacking context (such as Modals or Sheets which often have high z-indexes like `z-50` or higher), the tooltip will render underneath the modal and be invisible unless an explicitly higher `z-index` (e.g. `className="z-[110]"`) is applied to the `<TooltipContent>`.
+**Action:** Always verify the z-index stacking context of the parent element, and append `z-[110]` (or higher as needed) to the Radix `<TooltipContent>` when used within Modals, Dialogs, or Sheets to ensure they remain visible on top.
