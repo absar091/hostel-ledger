@@ -1944,7 +1944,7 @@ app.use('/api', (req, res, next) => {
 });
 
 // Send Temporary Member Alert Endpoint (Secure - No raw HTML)
-app.post('/api/send-temp-member-alert', emailLimiter, async (req, res) => {
+app.post('/api/send-temp-member-alert', emailLimiter, authenticate, async (req, res) => {
   try {
     const { to, memberName, groupName, expiryDate } = req.body;
 
@@ -2087,7 +2087,7 @@ app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
 });
 
 // Welcome email endpoint
-app.post('/api/send-welcome', emailLimiter, async (req, res) => {
+app.post('/api/send-welcome', emailLimiter, authenticate, async (req, res) => {
   try {
     const { email, name } = req.body;
     if (!email || !name) {
@@ -2380,7 +2380,7 @@ app.post('/api/check-email-exists', strictEmailCheckLimiter, async (req, res) =>
 
 // Subscribe to push notifications (OneSignal handles this automatically)
 // This endpoint is kept for backward compatibility but is no longer needed
-app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
+app.post('/api/push-subscribe', generalLimiter, authenticate, async (req, res) => {
   try {
     console.log('ℹ️ Push subscribe endpoint called (OneSignal handles subscriptions automatically)');
 
@@ -2399,7 +2399,7 @@ app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
 });
 
 // Send push notification to a specific user using OneSignal REST API
-app.post('/api/push-notify', generalLimiter, async (req, res) => {
+app.post('/api/push-notify', generalLimiter, authenticate, async (req, res) => {
   try {
     let { userId, title, body, icon, badge, tag, data } = req.body;
 
@@ -2618,7 +2618,7 @@ const sendOneSignalNotificationInternal = async ({ userIds, title, body, icon, b
 };
 
 // Send push notification to multiple users using OneSignal REST API
-app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
+app.post('/api/push-notify-multiple', generalLimiter, authenticate, async (req, res) => {
   try {
     let { userIds, title, body, icon, badge, data } = req.body;
 
@@ -2671,7 +2671,7 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
 });
 
 // Get subscription status for a user (OneSignal handles this)
-app.get('/api/push-subscription/:userId', generalLimiter, async (req, res) => {
+app.get('/api/push-subscription/:userId', generalLimiter, authenticate, async (req, res) => {
   try {
     console.log('ℹ️ Push subscription status endpoint called (OneSignal handles this)');
 
@@ -2690,7 +2690,7 @@ app.get('/api/push-subscription/:userId', generalLimiter, async (req, res) => {
 });
 
 // Unsubscribe from push notifications (OneSignal handles this)
-app.delete('/api/push-unsubscribe/:userId', generalLimiter, async (req, res) => {
+app.delete('/api/push-unsubscribe/:userId', generalLimiter, authenticate, async (req, res) => {
   try {
     console.log('ℹ️ Push unsubscribe endpoint called (OneSignal handles this)');
 
@@ -4135,7 +4135,7 @@ app.post('/api/send-invitation', detectFraud, generalLimiter, async (req, res) =
 
 
 // Send External Invitation (to email)
-app.post('/api/send-external-invitation', strictEmailLimiter, async (req, res) => {
+app.post('/api/send-external-invitation', strictEmailLimiter, authenticate, async (req, res) => {
   try {
     const { email, groupId } = req.body;
     const senderUid = req.user.uid;
