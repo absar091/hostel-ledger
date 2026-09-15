@@ -277,7 +277,7 @@ const Dashboard = () => {
   };
 
   // Get all transactions including wallet transactions
-  const allTransactions = getAllTransactions();
+  const allTransactions = useMemo(() => getAllTransactions(), [getAllTransactions]);
 
   // Calculate time since last transaction
   const lastTransactionTime = useMemo(() => {

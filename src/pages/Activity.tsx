@@ -54,7 +54,7 @@ const Activity = () => {
     markPageGuideShown('activity');
   };
 
-  const allTransactions = getAllTransactions();
+  const allTransactions = useMemo(() => getAllTransactions(), [getAllTransactions]);
 
   // Filter transactions
   const filteredTransactions = useMemo(() => {

@@ -91,7 +91,7 @@ const GroupDetail = () => {
     ).filter((m: { id: any; }) => m && m.id) // Filter out any null/undefined members
   } : null;
 
-  const transactions = id ? getTransactionsByGroup(id) : [];
+  const transactions = useMemo(() => id ? getTransactionsByGroup(id) : [], [id, getTransactionsByGroup]);
   const settlements = id ? getSettlements(id) : {};
   const { invitations } = useInvitations();
   const favoriteGroups = getFavoriteGroups();
