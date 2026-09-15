@@ -1051,6 +1051,7 @@ app.post('/api/create-group', detectFraud, createLimiter, authenticate, async (r
       const uniqueUsernames = [...new Set(invitedUsernames)];
 
       const resolved = await Promise.all(uniqueUsernames.map(async (username) => {
+        if (typeof username !== 'string') return null;
         const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9_]/g, '');
 
         // Optimize: Skip empty usernames to prevent fetching the entire 'usernames' node (major performance/security fix)
@@ -1106,7 +1107,7 @@ app.post('/api/create-group', detectFraud, createLimiter, authenticate, async (r
         })),
         // Invited Emails (pure string array) - DEDUPLICATED
         ...(invitedEmails || [])
-          .filter(email => !members.some(m => m.email && m.email.toLowerCase() === email.toLowerCase()))
+          .filter(email => typeof email === 'string' && !members.some(m => m.email && typeof m.email === 'string' && m.email.toLowerCase() === email.toLowerCase()))
           .map(email => ({
             id: `member_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
             name: email.split('@')[0],
@@ -1298,6 +1299,7 @@ app.post('/api/get-valid-user-details', userSearchLimiter, authenticate, async (
     }
 
     // Sanitize username to prevent path traversal (allow only alphanumeric, dots and underscores)
+    if (typeof username !== 'string') return res.status(400).json({ success: false, error: 'Invalid username format' });
     const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9._]/g, '');
     const storageKey = cleanUsername.replace(/\./g, ',');
     const usernameRef = admin.database().ref(`usernames/${storageKey}`);
@@ -1720,7 +1722,7 @@ app.post('/api/respond-invitation', detectFraud, authenticate, async (req, res) 
         memberIndex = membersArray.findIndex(m =>
           (m.type === 'manual' || m.type === 'invited') &&
           m.email &&
-          m.email.toLowerCase() === userData.email.toLowerCase()
+          typeof m.email === 'string' && typeof userData.email === 'string' && m.email.toLowerCase() === userData.email.toLowerCase()
         );
         if (memberIndex !== -1) console.log(`🔗 Found matching member by EMAIL for merge: ${userData.email}`);
       }
@@ -1730,7 +1732,7 @@ app.post('/api/respond-invitation', detectFraud, authenticate, async (req, res) 
         memberIndex = membersArray.findIndex(m =>
           (m.type === 'manual' || m.type === 'invited') &&
           m.username &&
-          m.username.toLowerCase() === userData.username.toLowerCase()
+          typeof m.username === 'string' && typeof userData.username === 'string' && m.username.toLowerCase() === userData.username.toLowerCase()
         );
         if (memberIndex !== -1) console.log(`🔗 Found matching member by USERNAME for merge: ${userData.username}`);
       }
@@ -1856,7 +1858,7 @@ app.post('/api/claim-email-invite', authenticate, async (req, res) => {
     let matchedMember = null;
 
     for (const [memberId, member] of Object.entries(members)) {
-      if (member.email && member.email.toLowerCase() === userEmail.toLowerCase() && member.type === 'manual') {
+      if (member.email && typeof member.email === 'string' && typeof userEmail === 'string' && member.email.toLowerCase() === userEmail.toLowerCase() && member.type === 'manual') {
         matchedMemberId = memberId;
         matchedMember = member;
         break;
@@ -1959,7 +1961,7 @@ app.post('/api/send-temp-member-alert', emailLimiter, async (req, res) => {
     // Security: Only allow users to alert themselves
     // Must verify against the authenticated user's email to prevent open relay abuse
     const userEmail = req.user.email;
-    if (!userEmail || userEmail.toLowerCase() !== to.toLowerCase()) {
+    if (!userEmail || typeof userEmail !== 'string' || typeof to !== 'string' || userEmail.toLowerCase() !== to.toLowerCase()) {
       return res.status(403).json({ success: false, error: 'Unauthorized: You can only send alerts to your own email address.' });
     }
 
@@ -2097,7 +2099,7 @@ app.post('/api/send-welcome', emailLimiter, async (req, res) => {
     // Security: Only allow users to send welcome emails to themselves
     // Must verify against the authenticated user's email to prevent open relay abuse
     const userEmail = req.user?.email;
-    if (!userEmail || userEmail.toLowerCase() !== email.toLowerCase()) {
+    if (!userEmail || typeof userEmail !== 'string' || typeof email !== 'string' || userEmail.toLowerCase() !== email.toLowerCase()) {
       return res.status(403).json({ success: false, error: 'Unauthorized: You can only send welcome emails to your own email address.' });
     }
 
@@ -2165,6 +2167,7 @@ app.post('/api/verification/request', strictEmailLimiter, async (req, res) => {
     }
 
     // Hash email for document ID
+    if (typeof email !== 'string') return res.status(400).json({ success: false, error: 'Invalid email type' });
     const docId = Buffer.from(email.toLowerCase()).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
 
     // Store in Firestore using Admin SDK
@@ -2205,6 +2208,7 @@ app.post('/api/verification/verify', generalLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid verification code format (must be 6 digits)' });
     }
 
+    if (typeof email !== 'string') return res.status(400).json({ success: false, error: 'Invalid email type' });
     const docId = Buffer.from(email.toLowerCase()).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
     const docRef = admin.firestore().collection('verificationCodes').doc(docId);
     const docSnap = await docRef.get();
@@ -2270,6 +2274,7 @@ app.post('/api/verification/check', generalLimiter, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Email is required' });
     }
 
+    if (typeof email !== 'string') return res.status(400).json({ success: false, error: 'Invalid email type' });
     const docId = Buffer.from(email.toLowerCase()).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
     const docRef = admin.firestore().collection('verificationCodes').doc(docId);
     const docSnap = await docRef.get();
@@ -3951,6 +3956,7 @@ app.post('/api/send-invitation', detectFraud, generalLimiter, async (req, res) =
 
     // 1. Resolve invitee username to UID
     // Using the 'usernames' index we created in Phase 1
+    if (typeof inviteeUsername !== 'string') return res.status(400).json({ success: false, error: 'Invalid username format' });
     const normalizedUsername = inviteeUsername.toLowerCase().replace(/[^a-z0-9._]/g, '');
     const storageKey = normalizedUsername.replace(/\./g, ',');
     const usernameSnap = await db.ref(`usernames/${storageKey}`).get();
@@ -3961,7 +3967,8 @@ app.post('/api/send-invitation', detectFraud, generalLimiter, async (req, res) =
 
     const inviteeUid = usernameSnap.val().uid;
     const inviteeUserSnap = await db.ref(`users/${inviteeUid}`).get();
-    const inviteeEmail = inviteeUserSnap.exists() ? (inviteeUserSnap.val().email || '').toLowerCase() : '';
+    const inviteeEmailRaw = inviteeUserSnap.exists() ? inviteeUserSnap.val().email : '';
+    const inviteeEmail = typeof inviteeEmailRaw === 'string' ? inviteeEmailRaw.toLowerCase() : '';
 
     if (inviteeUid === senderUid) {
       return res.status(400).json({ success: false, error: 'You cannot invite yourself' });
@@ -3990,7 +3997,7 @@ app.post('/api/send-invitation', detectFraud, generalLimiter, async (req, res) =
     // Check if invitee is already in group as Manual Member (by Email)
     let existingManualMemberIndex = -1;
     if (inviteeEmail && !isInviteeAlreadyMember) {
-      existingManualMemberIndex = currentMembers.findIndex(m => m.email && m.email.toLowerCase() === inviteeEmail && m.type === 'manual');
+      existingManualMemberIndex = currentMembers.findIndex(m => m.email && typeof m.email === 'string' && m.email.toLowerCase() === inviteeEmail && m.type === 'manual');
     }
 
     if (isInviteeAlreadyMember) {
@@ -4179,7 +4186,7 @@ app.post('/api/send-external-invitation', strictEmailLimiter, async (req, res) =
 
     // 2b. Add Manual Member to Group (so they can be added to expenses immediately)
     const currentMembers = normalizeMembers(group.members);
-    const existingMember = currentMembers.find(m => m.email && m.email.toLowerCase() === email.toLowerCase());
+    const existingMember = currentMembers.find(m => m.email && typeof m.email === 'string' && typeof email === 'string' && m.email.toLowerCase() === email.toLowerCase());
 
     if (!existingMember) {
       const newMember = {
@@ -5365,7 +5372,7 @@ const setupSupportListeners = () => {
             
             if (data.isAIActive !== false && !data.talkToAgent) {
               const agentKeywords = ['live agent', 'human', 'speak with someone', 'admin', 'operator'];
-              const wantsAgent = agentKeywords.some(kw => msg.text.toLowerCase().includes(kw));
+              const wantsAgent = typeof msg.text === 'string' && agentKeywords.some(kw => msg.text.toLowerCase().includes(kw));
 
               if (wantsAgent) {
                 latestTicketSnap.ref.update({ 
