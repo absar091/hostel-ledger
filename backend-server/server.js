@@ -785,8 +785,8 @@ app.post('/api/2fa/initiate-reset', detectFraud, strictEmailLimiter, async (req,
   try {
     const { email } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ success: false, error: 'Email is required' });
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email must be a valid string' });
     }
 
     // Verify user exists in Auth
@@ -1293,8 +1293,8 @@ app.post('/api/get-valid-user-details', userSearchLimiter, authenticate, async (
   try {
     const { username } = req.body;
 
-    if (!username) {
-      return res.status(400).json({ success: false, error: 'Username is required' });
+    if (!username || typeof username !== 'string') {
+      return res.status(400).json({ success: false, error: 'Username must be a valid string' });
     }
 
     // Sanitize username to prevent path traversal (allow only alphanumeric, dots and underscores)
@@ -2141,8 +2141,8 @@ app.post('/api/verification/request', strictEmailLimiter, async (req, res) => {
   try {
     const { email, name, type, userId } = req.body;
 
-    if (!email || !name || !type) {
-      return res.status(400).json({ success: false, error: 'Missing required fields: email, name, type' });
+    if (!email || !name || !type || typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Missing or invalid fields' });
     }
 
     // Generate 6-digit code
@@ -2266,8 +2266,8 @@ app.post('/api/verification/check', generalLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ success: false, error: 'Email is required' });
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email must be a valid string' });
     }
 
     const docId = Buffer.from(email.toLowerCase()).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
@@ -3939,8 +3939,8 @@ app.post('/api/send-invitation', detectFraud, generalLimiter, async (req, res) =
     const { groupId, inviteeUsername } = req.body;
     const senderUid = req.user.uid;
 
-    if (!groupId || !inviteeUsername) {
-      return res.status(400).json({ success: false, error: 'Group ID and username are required' });
+    if (!groupId || !inviteeUsername || typeof inviteeUsername !== 'string') {
+      return res.status(400).json({ success: false, error: 'Group ID and username must be valid strings' });
     }
 
     if (!isValidFirebaseId(groupId)) {
@@ -4140,8 +4140,8 @@ app.post('/api/send-external-invitation', strictEmailLimiter, async (req, res) =
     const { email, groupId } = req.body;
     const senderUid = req.user.uid;
 
-    if (!email || !groupId) {
-      return res.status(400).json({ success: false, error: 'Email and Group ID are required' });
+    if (!email || !groupId || typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Email and Group ID must be valid strings' });
     }
 
     if (!isValidFirebaseId(groupId)) {
