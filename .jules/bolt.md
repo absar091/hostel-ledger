@@ -1,0 +1,3 @@
+## 2024-05-24 - Rules of Hooks and Early Returns
+**Learning:** When moving `useMemo` above early returns in React components to satisfy the Rules of Hooks, you MUST explicitly add safety guards for all dependencies accessed within the hook (e.g., `if (!group || !transactions) return [];`). Without the early returns, the hook will execute during the initial loading phase when dependencies may be null or undefined, causing fatal runtime crashes (like calling `.filter()` on an undefined array).
+**Action:** Always check the initialization state of variables accessed inside a hook if that hook has been hoisted above loading checks.
