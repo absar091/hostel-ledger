@@ -1,3 +1,4 @@
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -217,7 +218,10 @@ const GroupSettingsSheet = ({
                   <p className="text-[10px] font-bold text-[#4a6850]/30">{Array.isArray(group.members) ? group.members.length : 0} People in Group</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
+                  <TooltipProvider>
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <Button
                     variant="ghost"
                     size="icon"
                     onClick={handleCopyGroupInvite}
@@ -225,6 +229,12 @@ const GroupSettingsSheet = ({
                   >
                     <Link className="w-4 h-4" />
                   </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="z-[110]">
+                        <p>Copy Invite Link</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <Button
                     onClick={() => setShowAddMember(true)}
                     className="h-10 px-4 bg-[#4a6850] hover:bg-[#3d5643] text-white font-black rounded-2xl shadow-sm transition-all active:scale-95 flex items-center gap-2 text-[11px] uppercase tracking-wider"
@@ -254,7 +264,10 @@ const GroupSettingsSheet = ({
                         className="h-11 rounded-xl border-[#4a6850]/10 shadow-sm font-bold text-gray-900 placeholder:text-[#4a6850]/30 focus:border-[#4a6850]/40 bg-white focus:ring-0 pr-10"
                         autoFocus
                       />
-                      <Button
+                      <TooltipProvider>
+                        <Tooltip delayDuration={0}>
+                          <TooltipTrigger asChild>
+                            <Button
                         variant="ghost"
                         size="icon"
                         onClick={handleSearch}
@@ -267,8 +280,17 @@ const GroupSettingsSheet = ({
                           <Search className="w-4 h-4" />
                         )}
                       </Button>
+                          </TooltipTrigger>
+                          <TooltipContent className="z-[110]">
+                            <p>Search User</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
-                    <Button
+                    <TooltipProvider>
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => {
@@ -281,6 +303,12 @@ const GroupSettingsSheet = ({
                     >
                       <X className="w-4 h-4" />
                     </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="z-[110]">
+                          <p>Cancel</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
 
                   {/* Search Result */}
@@ -395,22 +423,40 @@ const GroupSettingsSheet = ({
 
                     <div className="flex items-center gap-1">
                       {!member.isCurrentUser && !member.userId && (
-                        <button
+                        <TooltipProvider>
+                          <Tooltip delayDuration={0}>
+                            <TooltipTrigger asChild>
+                              <button
                           onClick={() => handleInviteToClaim(member.id, member.name)}
                           aria-label={`Invite ${member.name} to claim account`}
                           className="w-10 h-10 flex items-center justify-center text-[#4a6850]/40 hover:text-[#4a6850] active:scale-90 transition-all rounded-xl hover:bg-[#4a6850]/5"
                         >
                           <Share2 className="w-4 h-4" />
                         </button>
+                            </TooltipTrigger>
+                            <TooltipContent className="z-[110]">
+                              <p>Invite to claim</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       )}
                       {isOwner && !member.isCurrentUser && (
-                        <button
+                        <TooltipProvider>
+                          <Tooltip delayDuration={0}>
+                            <TooltipTrigger asChild>
+                              <button
                           onClick={() => setMemberToRemove(member)}
                           aria-label={`Remove ${member.name} from group`}
                           className="w-10 h-10 flex items-center justify-center text-red-300 hover:text-red-500 active:scale-90 transition-all rounded-xl hover:bg-red-50"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
+                            </TooltipTrigger>
+                            <TooltipContent className="z-[110]">
+                              <p>Remove member</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       )}
                     </div>
                   </div>
