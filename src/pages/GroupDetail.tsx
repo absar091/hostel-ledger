@@ -113,13 +113,34 @@ const GroupDetail = () => {
       totalSpent: totalSpentValue,
       count: transactions.filter(t => t.type === 'expense').length
     };
-  }, [group, transactions]);
+  }, [group?.isPersonal, transactions]);
 
   const totalSpent = useMemo(() => transactions
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0), [transactions]);
 
   const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
+
+  // Find the member who has paid the most in expenses (actual top contributor)
+  const memberExpenseContributions = useMemo(() => {
+    if (!group?.members || !transactions) return [];
+    return group.members.map((member: { id: any; }) => {
+      const totalPaid = transactions
+        .filter(t => t.type === "expense" && t.paidBy === member.id)
+        .reduce((sum, t) => sum + t.amount, 0);
+      return {
+        ...member,
+        totalPaid
+      };
+    });
+  }, [group?.members, transactions]);
+
+  const topSpender = useMemo(() => {
+    if (!memberExpenseContributions || memberExpenseContributions.length === 0) return null;
+    return memberExpenseContributions.reduce((prev: { totalPaid: number; }, curr: { totalPaid: number; }) => {
+      return curr.totalPaid > prev.totalPaid ? curr : prev;
+    });
+  }, [memberExpenseContributions]);
 
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
@@ -463,22 +484,6 @@ const GroupDetail = () => {
 
   // personalStats, totalSpent, and expenseCount are defined before early returns above
 
-  // Find the member who has paid the most in expenses (actual top contributor)
-  const memberExpenseContributions = group.members.map((member: { id: any; }) => {
-    const totalPaid = transactions
-      .filter(t => t.type === "expense" && t.paidBy === member.id)
-      .reduce((sum, t) => sum + t.amount, 0);
-    return {
-      ...member,
-      totalPaid
-    };
-  });
-
-  const topSpender = memberExpenseContributions.length > 0
-    ? memberExpenseContributions.reduce((prev: { totalPaid: number; }, curr: { totalPaid: number; }) => {
-      return curr.totalPaid > prev.totalPaid ? curr : prev;
-    })
-    : null;
 
   return (
     <div className="min-h-screen bg-white pb-24">
