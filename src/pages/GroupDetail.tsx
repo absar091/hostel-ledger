@@ -104,22 +104,42 @@ const GroupDetail = () => {
 
   // NOTE: These useMemo hooks MUST be before the early returns below to maintain
   // consistent hook count across renders (React Rules of Hooks)
+  // Optimization: Memoize filtered expenses to avoid redundant O(N) array passes on every render
+  const expenseTransactions = useMemo(() => transactions.filter(t => t.type === 'expense'), [transactions]);
+
   const personalStats = useMemo(() => {
     if (!group?.isPersonal) return null;
-    const totalSpentValue = transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
+    const totalSpentValue = expenseTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
     return {
       totalSpent: totalSpentValue,
-      count: transactions.filter(t => t.type === 'expense').length
+      count: expenseTransactions.length
     };
-  }, [group, transactions]);
+  }, [group, expenseTransactions]);
 
-  const totalSpent = useMemo(() => transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0), [transactions]);
+  const totalSpent = useMemo(() => expenseTransactions.reduce((sum, t) => sum + t.amount, 0), [expenseTransactions]);
 
-  const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
+  const expenseCount = useMemo(() => expenseTransactions.length, [expenseTransactions]);
+
+  // Find the member who has paid the most in expenses (actual top contributor)
+  // Optimization: Replaced O(N*M) nested loop with single O(N) pass using a Map to accumulate expenses
+  const memberExpenseContributions = useMemo(() => {
+    if (!group) return [];
+    const paidByMap = expenseTransactions.reduce((acc, t) => {
+      acc[t.paidBy] = (acc[t.paidBy] || 0) + t.amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return group.members.map((member: { id: any; }) => ({
+      ...member,
+      totalPaid: paidByMap[member.id] || 0
+    }));
+  }, [group, expenseTransactions]);
+
+  const topSpender = useMemo(() => {
+    return memberExpenseContributions.length > 0
+      ? memberExpenseContributions.reduce((prev: { totalPaid: number; }, curr: { totalPaid: number; }) => curr.totalPaid > prev.totalPaid ? curr : prev)
+      : null;
+  }, [memberExpenseContributions]);
 
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
@@ -462,23 +482,6 @@ const GroupDetail = () => {
   }];
 
   // personalStats, totalSpent, and expenseCount are defined before early returns above
-
-  // Find the member who has paid the most in expenses (actual top contributor)
-  const memberExpenseContributions = group.members.map((member: { id: any; }) => {
-    const totalPaid = transactions
-      .filter(t => t.type === "expense" && t.paidBy === member.id)
-      .reduce((sum, t) => sum + t.amount, 0);
-    return {
-      ...member,
-      totalPaid
-    };
-  });
-
-  const topSpender = memberExpenseContributions.length > 0
-    ? memberExpenseContributions.reduce((prev: { totalPaid: number; }, curr: { totalPaid: number; }) => {
-      return curr.totalPaid > prev.totalPaid ? curr : prev;
-    })
-    : null;
 
   return (
     <div className="min-h-screen bg-white pb-24">
