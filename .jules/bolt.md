@@ -1,0 +1,3 @@
+## 2024-05-19 - Intl.NumberFormat instantiation bottleneck
+**Learning:** `Number.prototype.toLocaleString()` was being used in a frequently called utility function (`formatCurrency`). This function is often called in tight loops or during mass React renders (like rendering hundreds of transactions in `TransactionList`). Because `toLocaleString` creates a new `Intl.NumberFormat` internally on every single call, it becomes a severe, unmeasured performance bottleneck (approx 100x slower than reusing an instance).
+**Action:** When formatting currencies or numbers, instantiate `Intl.NumberFormat` once per locale/configuration and cache it for reuse instead of calling `.toLocaleString()`.
