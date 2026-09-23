@@ -1,83 +1,42 @@
-import json
 from playwright.sync_api import sync_playwright
-import time
+import os
 
-def run(playwright):
-    browser = playwright.chromium.launch(headless=True)
-    context = browser.new_context()
-    page = context.new_page()
+def run_cuj(page):
+    page.goto("http://localhost:4173")
 
-    # Mock user data
-    user_data = {
-        "uid": "test-user-123",
-        "email": "test@example.com",
-        "name": "Test User",
-        "username": "testuser",
-        "walletBalance": 1000,
-        "settlements": {},
-        "createdAt": "2023-01-01T00:00:00.000Z",
-        "emailVerified": True
-    }
+    page.wait_for_timeout(2000)
+    page.evaluate('''
+        localStorage.setItem('firebase:authUser:dummy', '{"uid":"123","email":"test@example.com"}');
+    ''')
+    page.reload()
+    page.wait_for_timeout(2000)
 
-    # Inject localStorage
-    page.add_init_script(f"""
-        localStorage.setItem('cachedUser', '{json.dumps(user_data)}');
-    """)
+    # Make the viewport smaller to ensure the sidebar collapses if it's responsive
+    page.set_viewport_size({"width": 800, "height": 600})
+    page.wait_for_timeout(1000)
 
-    print("Navigating to Security page (http://localhost:8080/security)...")
-    try:
-        page.goto("http://localhost:8080/security")
+    # Try to find the nav items and hover over the 2nd one (index 1 if 0-indexed)
+    # The sidebar has aria-label="Groups" or we can just find any button with a tooltip
+    buttons = page.get_by_role("button").all()
+    if len(buttons) > 1:
+        # We hover over the 2nd button which might be a sidebar nav item
+        buttons[1].hover()
+        page.wait_for_timeout(1000)
 
-        # Wait for page to load (look for "Security & Privacy")
-        print("Waiting for page content...")
-        try:
-            page.wait_for_selector("text=Security & Privacy", timeout=5000)
-            print("Found 'Security & Privacy' text!")
-        except Exception as e:
-            print("Could not find 'Security & Privacy'. Checking URL and content...")
-            print(f"Current URL: {page.url}")
-            # Check if redirected to login
-            if "/login" in page.url or "Sign In" in page.content():
-                print("Redirected to login page. Auth simulation failed.")
-            else:
-                print("Unknown state.")
-            page.screenshot(path="verification_failure_state.png")
-            raise e
-
-        # Find Export Data button
-        print("Looking for Export Data button...")
-        # Use a more generic selector if text fails
-        export_btn = page.locator("button:has-text('Export Your Data')")
-
-        if export_btn.count() > 0:
-            print("Clicking Export Data button...")
-            export_btn.click()
-
-            # Wait for toast
-            print("Waiting for toast...")
-            try:
-                # wait for any toast or specific text
-                page.wait_for_selector("text=Preparing your data...", timeout=5000)
-                print("Toast 'Preparing your data...' appeared!")
-            except:
-                print("Toast did not appear or was missed.")
-
-            # Wait a bit for the completion toast
-            time.sleep(2)
-
-            # Take screenshot of the success state
-            page.screenshot(path="verification_export.png")
-            print("Verification successful, screenshot saved to verification_export.png")
-        else:
-            print("Export button not found")
-            page.screenshot(path="verification_failure_btn.png")
-
-    except Exception as e:
-        print(f"Verification failed: {e}")
-        page.screenshot(path="verification_failure_final.png")
-
-    browser.close()
+    os.makedirs("/home/jules/verification/screenshots", exist_ok=True)
+    page.screenshot(path="/home/jules/verification/screenshots/verification2.png")
+    page.wait_for_timeout(1000)
 
 if __name__ == "__main__":
-    with sync_playwright() as playwright:
-        run(playwright)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(
+            record_video_dir="/home/jules/verification/videos"
+        )
+        page = context.new_page()
+        try:
+            run_cuj(page)
+        finally:
+            context.close()
+            browser.close()
+
