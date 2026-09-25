@@ -1,0 +1,3 @@
+## 2024-05-21 - Caching Intl.NumberFormat
+**Learning:** Calling `Number.prototype.toLocaleString()` inside loops or heavily reused formatters is extremely slow because it instantiates a new formatter internally on every call. In a simple loop, `toLocaleString` can be ~50x slower than using a cached `Intl.NumberFormat` instance.
+**Action:** When formatting numbers or currencies in utility functions that are called frequently (especially in `.map` or React render cycles), instantiate `Intl.NumberFormat` once, cache it (e.g. in a Map keyed by locale and options), and reuse its `.format()` method.
