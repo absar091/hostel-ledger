@@ -9,6 +9,8 @@ import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import PageGuide from "@/components/PageGuide";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { useTranslation } from "react-i18next";
+import Sidebar from "@/components/Sidebar";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 import LanguageSelector from "@/components/LanguageSelector";
 
 const Login = () => {
@@ -62,7 +64,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <SidebarProvider>
+<div className="flex">
+<Sidebar />
+<div className="min-h-screen bg-white flex flex-col flex-1">
       <div className="absolute top-4 right-4 z-50">
         <LanguageSelector />
       </div>

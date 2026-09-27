@@ -385,7 +385,8 @@ const App = () => {
                 </CurrencyProvider>
               </FirebaseAuthProvider>
             </SidebarProvider>
-          </BrowserRouter>
+          </SidebarProvider>
+</BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
     </div>
