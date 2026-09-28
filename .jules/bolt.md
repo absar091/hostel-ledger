@@ -1,0 +1,3 @@
+## 2025-02-12 - [Cached Intl.NumberFormat replaces toLocaleString]
+**Learning:** In JavaScript, `Number.prototype.toLocaleString()` implicitly instantiates a new `Intl.NumberFormat` on every call, which is computationally expensive (often ~10-100x slower) and heavily bottlenecks render loops when formatting currencies or numbers in lists.
+**Action:** When working in tight loops or React render cycles that format numbers repeatedly, create a cache (e.g., using a `Map`) to reuse initialized `Intl.NumberFormat` instances based on locale/options instead of relying on inline `toLocaleString()` calls.
