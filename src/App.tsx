@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import Sidebar from "@/components/Sidebar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -292,6 +293,7 @@ const AppRoutes = () => {
   <Routes>
     {/* Verification Routes */}
     <Route path="/verify-sheets" element={<VerificationPage />} />
+    <Route path="/test-sidebar" element={<div className="h-screen w-screen"><Sidebar /></div>} />
     <Route path="/verify-2fa" element={<TwoFactorVerification />} />
 
     <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
