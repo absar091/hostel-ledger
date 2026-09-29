@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { ArrowLeft, Settings, ChevronRight, Plus, HandCoins, Users, Share2, Star } from "lucide-react";
 import GroupPendingInvitations from "@/components/GroupPendingInvitations";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import TimelineItem from "@/components/TimelineItem";
 import Avatar from "@/components/Avatar";
 import PageGuide from "@/components/PageGuide";
@@ -500,12 +501,22 @@ const GroupDetail = () => {
             >
               <Star className={cn("w-5 h-5", isFavorite && "fill-current")} />
             </button>
-            <button
-              onClick={() => setShowGroupSettings(true)}
-              className="w-10 h-10 rounded-full bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
-            >
-              <Settings className="w-5 h-5 text-[#4a6850] font-bold" />
-            </button>
+            <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setShowGroupSettings(true)}
+                  className="w-10 h-10 rounded-full bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
+                  aria-label="Group settings"
+                >
+                  <Settings className="w-5 h-5 text-[#4a6850] font-bold" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Group Settings</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           </div>
         }
       />
@@ -546,13 +557,22 @@ const GroupDetail = () => {
               <Star className={cn("w-5 h-5", isFavorite && "fill-current")} />
             </button>
 
-            <button
-              onClick={() => setShowGroupSettings(true)}
-              className="w-11 h-11 rounded-2xl bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
-              aria-label="Group settings"
-            >
-              <Settings className="w-5 h-5 text-[#4a6850] font-bold" />
-            </button>
+            <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setShowGroupSettings(true)}
+                  className="w-11 h-11 rounded-2xl bg-[#4a6850]/10 shadow-sm border border-[#4a6850]/20 flex items-center justify-center hover:bg-[#4a6850]/20 transition-all"
+                  aria-label="Group settings"
+                >
+                  <Settings className="w-5 h-5 text-[#4a6850] font-bold" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Group Settings</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           </div>
         </div>
 

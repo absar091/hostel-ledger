@@ -47,6 +47,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
@@ -749,12 +750,22 @@ const Dashboard = () => {
                           <p className="text-[13px] font-bold text-white/70 capitalize leading-tight">{user.personalBudget.period} Limit</p>
                         </div>
                       </div>
-                      <button 
-                        onClick={() => setShowPersonalBudgetSheet(true)}
-                        className="w-8 h-8 rounded-full bg-white/[0.08] flex items-center justify-center border border-white/[0.05] hover:bg-white/[0.15] transition-colors active:scale-95"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5 text-white/40" />
-                      </button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => setShowPersonalBudgetSheet(true)}
+                              className="w-8 h-8 rounded-full bg-white/[0.08] flex items-center justify-center border border-white/[0.05] hover:bg-white/[0.15] transition-colors active:scale-95"
+                              aria-label="Set or update personal budget"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5 text-white/40" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Update Personal Budget</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
 
                     {/* Spent amount — responsive */}
