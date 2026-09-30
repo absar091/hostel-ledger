@@ -1384,6 +1384,13 @@ app.post('/api/ai/parse-expense', detectFraud, generalLimiter, authenticate, asy
     const members = normalizeMembers(groupData.members);
     const memberContext = members.map(m => `${m.name} (ID: ${m.id})`).join(', ');
 
+    // 🛡️ Sentinel Security Fix: Verify group membership to prevent IDOR
+    const isMember = members.some(m => m.userId === req.user.uid || m.id === req.user.uid);
+    if (!isMember) {
+      return res.status(403).json({ success: false, error: 'Forbidden: You are not a member of this group' });
+    }
+
+
     const prompt = `
       You are an expense parsing assistant for "Hostel Ledger".
       Extract expense details from the following text: "${text}"
@@ -1467,6 +1474,13 @@ app.post('/api/ai/parse-expense-audio', detectFraud, generalLimiter, authenticat
     const groupData = groupSnap.val();
     const members = normalizeMembers(groupData.members);
     const memberContext = members.map(m => `${m.name} (ID: ${m.id})`).join(', ');
+
+    // 🛡️ Sentinel Security Fix: Verify group membership to prevent IDOR
+    const isMember = members.some(m => m.userId === req.user.uid || m.id === req.user.uid);
+    if (!isMember) {
+      return res.status(403).json({ success: false, error: 'Forbidden: You are not a member of this group' });
+    }
+
 
     const promptText = `
       You are an expense parsing assistant for "Hostel Ledger".
