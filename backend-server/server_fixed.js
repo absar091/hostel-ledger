@@ -1090,7 +1090,7 @@ app.post('/api/create-group', detectFraud, createLimiter, authenticate, async (r
         })),
         // Manual Members from array
         ...members.map(m => ({
-          id: `member_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
+          id: `member_${crypto.randomUUID()}`,
           name: m.name,
           userId: m.uid || null,
           username: m.username || null,
@@ -1103,7 +1103,7 @@ app.post('/api/create-group', detectFraud, createLimiter, authenticate, async (r
         ...(invitedEmails || [])
           .filter(email => !members.some(m => m.email && m.email.toLowerCase() === email.toLowerCase()))
           .map(email => ({
-            id: `member_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
+            id: `member_${crypto.randomUUID()}`,
             name: email.split('@')[0],
             email: email,
             type: 'manual',
@@ -1725,7 +1725,7 @@ app.post('/api/respond-invitation', detectFraud, authenticate, async (req, res) 
       }
 
       const memberEntry = {
-        id: memberIndex !== -1 ? membersArray[memberIndex].id : `member_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
+        id: memberIndex !== -1 ? membersArray[memberIndex].id : `member_${crypto.randomUUID()}`,
         name: userData.name || (memberIndex !== -1 ? membersArray[memberIndex].name : 'Member'),
         email: userData.email || null,
         isRegistered: true,
@@ -4020,7 +4020,7 @@ app.post('/api/send-invitation', detectFraud, generalLimiter, async (req, res) =
       // ADD NEW: Add pending member to group list for visibility to owner
       // Use type: 'invited' so they are excluded from expense splitting until they accept
       const newMember = {
-        id: `member_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
+        id: `member_${crypto.randomUUID()}`,
         name: inviteeUsername || normalizedUsername,
         userId: inviteeUid,
         username: normalizedUsername,
@@ -4141,7 +4141,7 @@ app.post('/api/send-external-invitation', strictEmailLimiter, async (req, res) =
 
     if (!existingMember) {
       const newMember = {
-        id: `member_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
+        id: `member_${crypto.randomUUID()}`,
         name: email.split('@')[0],
         email: email,
         type: 'manual', // Correctly set as manual so they can be split with
@@ -4457,7 +4457,7 @@ app.post('/api/join-group', detectFraud, authenticate, async (req, res) => {
     const userData = userSnap.val();
 
     // Create new member object
-    const newMemberId = `member_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+    const newMemberId = `member_${crypto.randomUUID()}`;
     const newMember = {
       id: newMemberId,
       userId: userId,
