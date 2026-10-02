@@ -34,6 +34,9 @@ export const getCurrency = (code: string): Currency => {
     return CURRENCIES.find(c => c.code === code) || CURRENCIES[0];
 };
 
+// Cache for Intl.NumberFormat instances to prevent expensive re-instantiation
+const formattersCache = new Map<string, Intl.NumberFormat>();
+
 /**
  * Format an amount with the given currency.
  * Examples: formatCurrency(500, 'PKR') => "Rs 500"
@@ -44,12 +47,17 @@ export const formatCurrency = (amount: number, currencyCode: string = DEFAULT_CU
     const absAmount = Math.abs(amount);
 
     // Format the number
-    const formatted = currency.decimals > 0
-        ? absAmount.toLocaleString(currency.locale, {
+    let formatter = formattersCache.get(currency.code);
+    if (!formatter) {
+        const options: Intl.NumberFormatOptions | undefined = currency.decimals > 0 ? {
             minimumFractionDigits: currency.decimals,
             maximumFractionDigits: currency.decimals,
-        })
-        : absAmount.toLocaleString(currency.locale);
+        } : undefined;
+        formatter = new Intl.NumberFormat(currency.locale, options);
+        formattersCache.set(currency.code, formatter);
+    }
+
+    const formatted = formatter.format(absAmount);
 
     // Apply sign
     const sign = amount < 0 ? '-' : '';
