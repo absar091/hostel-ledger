@@ -1,3 +1,7 @@
 ## 2025-04-06 - Replacing Native Title Attributes with Radix Tooltips
 **Learning:** Native `title` attributes on interactive elements provide a delayed, inconsistently styled, and poorly accessible tooltip experience. When integrating Radix UI tooltips, it's critical to explicitly remove the native `title` attribute to prevent a "double-tooltip" effect where both the custom and native tooltips appear simultaneously, confusing users and screen readers. Additionally, tooltips must be globally wrapped in `<TooltipProvider>` to prevent application crashes due to missing context.
 **Action:** Always replace native `title` attributes on icon-only buttons with Radix `<Tooltip>` components, ensuring the native attribute is removed. Use `<TooltipTrigger asChild>` to prevent invalid HTML nesting, and wrap the component tree with `<TooltipProvider>`. Utilize `useTranslation` for the tooltip and `aria-label` content.
+
+## 2025-04-06 - Stable Component Trees with Radix Tooltips
+**Learning:** When conditionally displaying Radix UI tooltips (like in a responsive or collapsible sidebar), conditionally rendering the tooltip wrapper (`isOpen ? <Button/> : <Tooltip><Button/></Tooltip>`) causes React to unmount and remount the trigger element. This destroys keyboard focus and creates a jarring UX.
+**Action:** Unconditionally wrap the trigger element in the `<Tooltip>` and use the `open` prop (`open={isOpen ? false : undefined}`) to programmatically disable the tooltip popover when it shouldn't appear, ensuring the DOM tree remains stable and focus is preserved.
