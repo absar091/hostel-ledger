@@ -1,4 +1,5 @@
 import { ChevronRight, Users } from "lucide-react";
+import { formatNumber } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -37,7 +38,7 @@ const GroupCard = ({ name, balance, memberCount, emoji = "👥", onClick }: Grou
             
             <div className="text-right">
               <div className={`font-bold ${isPositive ? "text-positive" : "text-negative"}`}>
-                {isPositive ? "+" : ""}Rs {Math.abs(balance).toLocaleString()}
+                {isPositive ? "+" : ""}Rs {formatNumber(Math.abs(balance))}
               </div>
               <div className="text-xs text-muted-foreground">
                 {isPositive ? "you'll receive" : "you owe"}

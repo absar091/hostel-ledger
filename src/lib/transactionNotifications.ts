@@ -1,4 +1,5 @@
 import { sendTransactionAlertEmail } from './email';
+import { formatNumber } from "./utils";
 
 export interface TransactionData {
   id: string;
@@ -35,7 +36,7 @@ export const sendTransactionNotifications = async (
 
     // Format transaction details
     const transactionType = getTransactionTypeDisplay(transaction.type);
-    const amount = `Rs ${transaction.amount.toLocaleString()}`;
+    const amount = `Rs ${formatNumber(transaction.amount)}`;
     const date = new Date(transaction.date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -133,7 +134,7 @@ export const sendTransactionNotificationToUser = async (
     console.log(`📧 Sending transaction notification to ${user.email}`);
 
     const transactionType = getTransactionTypeDisplay(transaction.type);
-    const amount = `Rs ${transaction.amount.toLocaleString()}`;
+    const amount = `Rs ${formatNumber(transaction.amount)}`;
     const date = new Date(transaction.date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -197,7 +198,7 @@ export const shouldSendTransactionNotification = (
 export const formatTransactionForEmail = (transaction: TransactionData) => {
   return {
     type: getTransactionTypeDisplay(transaction.type),
-    amount: `Rs ${transaction.amount.toLocaleString()}`,
+    amount: `Rs ${formatNumber(transaction.amount)}`,
     date: new Date(transaction.date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',

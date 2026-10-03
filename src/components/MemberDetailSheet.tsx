@@ -4,6 +4,7 @@ import Avatar from "./Avatar";
 import { ArrowDownLeft, ArrowUpRight, HandCoins, Calendar, MapPin, CreditCard, Banknote, ArrowRight, Wallet, ShieldAlert } from "lucide-react";
 import { ReportSheet } from "./ReportSheet";
 import { useState } from "react";
+import { formatNumber } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -169,12 +170,12 @@ const MemberDetailSheet = ({
             <div className="mt-3 space-y-2 text-center">
               {theyOweYou > 0 && (
                 <div className="text-[#4a6850] font-black text-lg">
-                  {member.name} owes you: Rs {theyOweYou.toLocaleString()}
+                  {member.name} owes you: Rs {formatNumber(theyOweYou)}
                 </div>
               )}
               {youOweThem > 0 && (
                 <div className="text-red-600 font-black text-lg">
-                  You owe {member.name}: Rs {youOweThem.toLocaleString()}
+                  You owe {member.name}: Rs {formatNumber(youOweThem)}
                 </div>
               )}
               {theyOweYou === 0 && youOweThem === 0 && (
@@ -249,7 +250,7 @@ const MemberDetailSheet = ({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="bg-gray-900 text-white border-gray-800 max-w-xs">
-                  <p>Pay the full amount (Rs {youOweThem.toLocaleString()}) you owe to {member.name}</p>
+                  <p>Pay the full amount (Rs {formatNumber(youOweThem)}) you owe to {member.name}</p>
                 </TooltipContent>
               </Tooltip>
             )}
@@ -351,7 +352,7 @@ const MemberDetailSheet = ({
 
                     <div className={`font-black text-xl tracking-tight ${transaction.direction === "received" ? "text-[#4a6850]" : "text-red-600"
                       }`}>
-                      {transaction.direction === "received" ? "+" : "-"}Rs {transaction.amount.toLocaleString()}
+                      {transaction.direction === "received" ? "+" : "-"}Rs {formatNumber(transaction.amount)}
                     </div>
                   </div>
 
@@ -363,12 +364,12 @@ const MemberDetailSheet = ({
                         <div className="space-y-0.5">
                           {theyOweYouBefore > 0 && (
                             <p className="font-black text-[#4a6850] text-xs">
-                              They owe<br />Rs {theyOweYouBefore.toLocaleString()}
+                              They owe<br />Rs {formatNumber(theyOweYouBefore)}
                             </p>
                           )}
                           {youOweThemBefore > 0 && (
                             <p className="font-black text-red-600 text-xs">
-                              You owe<br />Rs {youOweThemBefore.toLocaleString()}
+                              You owe<br />Rs {formatNumber(youOweThemBefore)}
                             </p>
                           )}
                           {theyOweYouBefore === 0 && youOweThemBefore === 0 && (
@@ -389,12 +390,12 @@ const MemberDetailSheet = ({
                         <div className="space-y-0.5">
                           {theyOweYouAfter > 0 && (
                             <p className="font-black text-[#4a6850] text-xs">
-                              They owe<br />Rs {theyOweYouAfter.toLocaleString()}
+                              They owe<br />Rs {formatNumber(theyOweYouAfter)}
                             </p>
                           )}
                           {youOweThemAfter > 0 && (
                             <p className="font-black text-red-600 text-xs">
-                              You owe<br />Rs {youOweThemAfter.toLocaleString()}
+                              You owe<br />Rs {formatNumber(youOweThemAfter)}
                             </p>
                           )}
                           {theyOweYouAfter === 0 && youOweThemAfter === 0 && (

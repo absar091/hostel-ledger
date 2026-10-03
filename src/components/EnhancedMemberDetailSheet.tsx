@@ -5,6 +5,7 @@ import Avatar from "./Avatar";
 import { ArrowDownLeft, ArrowUpRight, HandCoins, Calendar, MapPin, CreditCard, Banknote, ArrowRight, CheckCircle, XCircle } from "lucide-react";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { calculateDebtSummary, generateSettlementOptions, SettlementOption, DebtSummary } from "@/lib/debtTracking";
+import { formatNumber } from "@/lib/utils";
 
 interface Transaction {
   id: string;
@@ -104,7 +105,7 @@ const EnhancedMemberDetailSheet = ({
               <div className={`text-2xl font-bold mt-2 ${
                 debtSummary.netAmount > 0 ? "text-green-400" : "text-red-400"
               }`}>
-                Rs {Math.abs(debtSummary.netAmount).toLocaleString()}
+                Rs {formatNumber(Math.abs(debtSummary.netAmount))}
               </div>
             )}
           </div>
@@ -141,7 +142,7 @@ const EnhancedMemberDetailSheet = ({
                 <div>
                   <h3 className="font-semibold text-red-400 mb-3 flex items-center gap-2">
                     <ArrowUpRight className="w-4 h-4" />
-                    You owe {member.name} (Rs {debtSummary.totalYouOwe.toLocaleString()})
+                    You owe {member.name} (Rs {formatNumber(debtSummary.totalYouOwe)})
                   </h3>
                   <div className="space-y-2">
                     {debtSummary.youOwe.map((debt) => (
@@ -155,7 +156,7 @@ const EnhancedMemberDetailSheet = ({
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="font-bold text-red-400">Rs {debt.amount.toLocaleString()}</div>
+                            <div className="font-bold text-red-400">Rs {formatNumber(debt.amount)}</div>
                             {debt.settled && (
                               <div className="text-xs text-green-400 flex items-center gap-1">
                                 <CheckCircle className="w-3 h-3" />
@@ -175,7 +176,7 @@ const EnhancedMemberDetailSheet = ({
                 <div>
                   <h3 className="font-semibold text-green-400 mb-3 flex items-center gap-2">
                     <ArrowDownLeft className="w-4 h-4" />
-                    {member.name} owes you (Rs {debtSummary.totalTheyOwe.toLocaleString()})
+                    {member.name} owes you (Rs {formatNumber(debtSummary.totalTheyOwe)})
                   </h3>
                   <div className="space-y-2">
                     {debtSummary.theyOwe.map((debt) => (
@@ -189,7 +190,7 @@ const EnhancedMemberDetailSheet = ({
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="font-bold text-green-400">Rs {debt.amount.toLocaleString()}</div>
+                            <div className="font-bold text-green-400">Rs {formatNumber(debt.amount)}</div>
                             {debt.settled && (
                               <div className="text-xs text-green-400 flex items-center gap-1">
                                 <CheckCircle className="w-3 h-3" />
@@ -296,7 +297,7 @@ const EnhancedMemberDetailSheet = ({
                         <div className={`font-bold ${
                           transaction.direction === "received" ? "text-green-400" : "text-red-400"
                         }`}>
-                          {transaction.direction === "received" ? "+" : "-"}Rs {transaction.amount.toLocaleString()}
+                          {transaction.direction === "received" ? "+" : "-"}Rs {formatNumber(transaction.amount)}
                         </div>
                         {transaction.method && (
                           <div className="text-xs text-muted-foreground capitalize">
@@ -360,7 +361,7 @@ const EnhancedMemberDetailSheet = ({
                     >
                       <div className="font-medium text-foreground">{option.description}</div>
                       <div className="text-sm text-muted-foreground mt-1">
-                        Amount: Rs {option.amount.toLocaleString()}
+                        Amount: Rs {formatNumber(option.amount)}
                       </div>
                     </button>
                   ))}

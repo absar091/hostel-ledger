@@ -1,3 +1,4 @@
+import { formatNumber } from "./utils";
 /**
  * Multi-Currency Support
  * Display-only currency formatting — amounts in DB remain raw numbers.
@@ -43,13 +44,13 @@ export const formatCurrency = (amount: number, currencyCode: string = DEFAULT_CU
     const currency = getCurrency(currencyCode);
     const absAmount = Math.abs(amount);
 
-    // Format the number
+    // Format the number using cached Intl.NumberFormat for performance
     const formatted = currency.decimals > 0
-        ? absAmount.toLocaleString(currency.locale, {
+        ? formatNumber(absAmount, currency.locale, {
             minimumFractionDigits: currency.decimals,
             maximumFractionDigits: currency.decimals,
         })
-        : absAmount.toLocaleString(currency.locale);
+        : formatNumber(absAmount, currency.locale);
 
     // Apply sign
     const sign = amount < 0 ? '-' : '';

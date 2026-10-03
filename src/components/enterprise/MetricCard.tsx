@@ -1,3 +1,4 @@
+import { formatNumber } from "@/lib/utils";
 interface MetricCardProps {
   label: string;
   amount: string | number;
@@ -34,7 +35,7 @@ const MetricCard = ({
         {label}
       </div>
       <div className={`${getAmountSize()} ${getAmountColor()} font-semibold`}>
-        {typeof amount === 'number' ? `Rs ${amount.toLocaleString()}` : amount}
+        {typeof amount === 'number' ? `Rs ${formatNumber(amount)}` : amount}
       </div>
       {helperText && (
         <div className="text-caption text-text-muted">
