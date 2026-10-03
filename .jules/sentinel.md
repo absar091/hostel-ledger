@@ -40,3 +40,8 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+
+## 2024-05-20 - Prevent Error Information Leakage in API Responses
+**Vulnerability:** API endpoints were returning raw error messages (`error.message`) in JSON responses when catching exceptions. This could expose internal paths, stack traces, database schema details, or other sensitive information to attackers.
+**Learning:** Detailed error messages are useful in development but must be suppressed in production to prevent information disclosure.
+**Prevention:** In API error handlers, always check the environment using `process.env.NODE_ENV === 'production'` before deciding what error string to return. In production, return a generic message (like 'Internal Server Error' or a safe contextual string) rather than appending the raw `error.message`.

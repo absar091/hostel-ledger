@@ -1002,7 +1002,7 @@ app.post('/api/delete-image', authenticate, async (req, res) => {
 
   } catch (error) {
     logger.error('❌ Delete image error: %O', error);
-    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Internal server error' : 'Internal server error: ' + error.message });
   }
 });
 
@@ -1428,7 +1428,7 @@ app.post('/api/ai/parse-expense', detectFraud, generalLimiter, authenticate, asy
 
   } catch (error) {
     console.error('❌ AI Parsing Error:', error);
-    res.status(500).json({ success: false, error: 'Failed to parse expense: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Failed to parse expense' : 'Failed to parse expense: ' + error.message });
   }
 });
 
@@ -1519,7 +1519,7 @@ app.post('/api/ai/parse-expense-audio', detectFraud, generalLimiter, authenticat
 
   } catch (error) {
     console.error('❌ AI Audio Parsing Error:', error);
-    res.status(500).json({ success: false, error: 'Failed to parse audio expense: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Failed to parse audio expense' : 'Failed to parse audio expense: ' + error.message });
   }
 });
 
@@ -1639,7 +1639,7 @@ app.get('/api/ai/insights', generalLimiter, authenticate, async (req, res) => {
 
   } catch (error) {
     console.error('❌ AI Insights Error:', error);
-    res.status(500).json({ success: false, error: 'Failed to generate insights: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Failed to generate insights' : 'Failed to generate insights: ' + error.message });
   }
 });
 
@@ -1966,7 +1966,7 @@ app.post('/api/send-temp-member-alert', emailLimiter, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Temp member alert error:', error);
-    res.status(500).json({ success: false, error: 'Failed to send alert: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Failed to send alert' : 'Failed to send alert: ' + error.message });
   }
 });
 
@@ -2004,7 +2004,7 @@ app.post('/api/send-verification', emailLimiter, async (req, res) => {
     res.json({ success: true, message: 'Verification email sent successfully' });
   } catch (error) {
     console.error('❌ Verification email error:', error);
-    res.status(500).json({ success: false, error: 'Failed to send verification email: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Failed to send verification email' : 'Failed to send verification email: ' + error.message });
   }
 });
 
@@ -2071,7 +2071,7 @@ app.post('/api/send-password-reset', emailLimiter, async (req, res) => {
     res.json({ success: true, message: 'Password reset email sent' });
   } catch (error) {
     console.error('❌ Password reset email error:', error);
-    res.status(500).json({ success: false, error: 'Failed to send password reset email: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Failed to send password reset email' : 'Failed to send password reset email: ' + error.message });
   }
 });
 
@@ -2095,7 +2095,7 @@ app.post('/api/send-welcome', emailLimiter, async (req, res) => {
     res.json({ success: true, message: 'Welcome email sent' });
   } catch (error) {
     console.error('❌ Welcome email error:', error);
-    res.status(500).json({ success: false, error: 'Failed to send welcome email: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Failed to send welcome email' : 'Failed to send welcome email: ' + error.message });
   }
 });
 
@@ -2382,7 +2382,7 @@ app.post('/api/push-subscribe', generalLimiter, async (req, res) => {
     console.error('❌ Push subscribe error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to process subscription: ' + error.message
+      error: process.env.NODE_ENV === 'production' ? 'Failed to process subscription' : 'Failed to process subscription: ' + error.message
     });
   }
 });
@@ -2514,7 +2514,7 @@ app.post('/api/push-notify', generalLimiter, async (req, res) => {
     console.error('❌ Push notify error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to send push notification: ' + error.message
+      error: process.env.NODE_ENV === 'production' ? 'Failed to send push notification' : 'Failed to send push notification: ' + error.message
     });
   }
 });
@@ -2655,7 +2655,7 @@ app.post('/api/push-notify-multiple', generalLimiter, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Push notify multiple error:', error);
-    res.status(500).json({ success: false, error: 'Failed to send push notifications: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Failed to send push notifications' : 'Failed to send push notifications: ' + error.message });
   }
 });
 
@@ -2673,7 +2673,7 @@ app.get('/api/push-subscription/:userId', generalLimiter, async (req, res) => {
     console.error('❌ Get subscription error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get subscription status: ' + error.message
+      error: process.env.NODE_ENV === 'production' ? 'Failed to get subscription status' : 'Failed to get subscription status: ' + error.message
     });
   }
 });
@@ -2692,7 +2692,7 @@ app.delete('/api/push-unsubscribe/:userId', generalLimiter, async (req, res) => 
     console.error('❌ Push unsubscribe error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to process unsubscription: ' + error.message
+      error: process.env.NODE_ENV === 'production' ? 'Failed to process unsubscription' : 'Failed to process unsubscription: ' + error.message
     });
   }
 });
@@ -3389,7 +3389,7 @@ app.post('/api/add-expense', generalLimiter, authenticate, detectFraud, async (r
 
   } catch (error) {
     console.error('❌ Add expense error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Internal server error' : 'Internal server error: ' + error.message });
   }
 });
 
@@ -3759,7 +3759,7 @@ app.post('/api/record-payment', generalLimiter, authenticate, detectFraud, async
 
   } catch (error) {
     console.error('❌ Record payment error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Internal server error' : 'Internal server error: ' + error.message });
   }
 });
 
@@ -3882,7 +3882,7 @@ app.post('/api/cleanup-temp-members', generalLimiter, adminAuth, async (req, res
 
   } catch (error) {
     console.error('❌ Member cleanup error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Internal server error' : 'Internal server error: ' + error.message });
   }
 });
 
@@ -4252,7 +4252,7 @@ app.post('/api/delete-group', detectFraud, authenticate, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Delete group error:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete group: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Failed to delete group' : 'Failed to delete group: ' + error.message });
   }
 });
 
@@ -4330,7 +4330,7 @@ app.post('/api/remove-member', detectFraud, authenticate, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Remove member error:', error);
-    res.status(500).json({ success: false, error: 'Failed to remove member: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Failed to remove member' : 'Failed to remove member: ' + error.message });
   }
 });
 
@@ -4412,7 +4412,7 @@ app.post('/api/update-group', detectFraud, authenticate, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Update group error:', error);
-    res.status(500).json({ success: false, error: 'Failed to update group: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Failed to update group' : 'Failed to update group: ' + error.message });
   }
 });
 
@@ -4494,7 +4494,7 @@ app.post('/api/join-group', detectFraud, authenticate, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Join group error:', error);
-    res.status(500).json({ success: false, error: 'Failed to join group: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Failed to join group' : 'Failed to join group: ' + error.message });
   }
 });
 
@@ -4524,7 +4524,7 @@ app.post('/api/sync-balance-to-groups', authenticate, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Sync balance error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Internal server error' : 'Internal server error: ' + error.message });
   }
 });
 
@@ -4684,7 +4684,7 @@ app.post('/api/merge-members', detectFraud, authenticate, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Merge members error:', error);
-    res.status(500).json({ success: false, error: 'Failed to merge members: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Failed to merge members' : 'Failed to merge members: ' + error.message });
   }
 });
 
@@ -4807,7 +4807,7 @@ app.post('/api/cleanup-unverified-users', adminAuth, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Cleanup unverified users error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error: ' + error.message });
+    res.status(500).json({ success: false, error: process.env.NODE_ENV === 'production' ? 'Internal server error' : 'Internal server error: ' + error.message });
   }
 });
 
