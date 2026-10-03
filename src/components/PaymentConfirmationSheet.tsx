@@ -94,7 +94,7 @@ const PaymentConfirmationSheet = ({
             <h3 className="text-2xl font-black mt-4 text-gray-900 tracking-tight">{member.name}</h3>
             <p className="text-[#4a6850]/80 font-bold">Settlement Amount</p>
             <div className="text-3xl font-black text-[#4a6850] mt-3 tracking-tighter tabular-nums">
-              Rs {amountToPay.toLocaleString()}
+              Rs {formatNumber(amountToPay)}
             </div>
           </div>
 
@@ -118,7 +118,7 @@ const PaymentConfirmationSheet = ({
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[#4a6850]/80 font-bold">Amount</span>
-                <span className="font-black text-gray-900 tabular-nums">Rs {amountToPay.toLocaleString()}</span>
+                <span className="font-black text-gray-900 tabular-nums">Rs {formatNumber(amountToPay)}</span>
               </div>
               <div className="flex justify-between items-center border-t border-gray-100 pt-4">
                 <span className="text-[#4a6850]/80 font-bold">Status</span>

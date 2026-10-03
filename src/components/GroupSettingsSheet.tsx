@@ -48,6 +48,7 @@ interface GroupSettingsSheetProps {
 
 import { toast } from "sonner";
 import { Share2 } from "lucide-react";
+import { formatNumber } from "@/lib/utils";
 
 const EMOJIS = ["🏠", "🍕", "🎮", "📚", "🏖️", "⚽", "🎸", "🚗", "✈️"];
 
@@ -388,7 +389,7 @@ const GroupSettingsSheet = ({
                       </p>
                       {(member.balance !== undefined && member.balance !== 0 && !isNaN(member.balance)) && (
                         <p className={`text-[10px] font-black uppercase tracking-tight ${member.balance > 0 ? "text-[#4a6850]" : "text-red-500"}`}>
-                          {member.balance > 0 ? `Owes Rs ${member.balance.toLocaleString()}` : `Owed Rs ${Math.abs(member.balance).toLocaleString()}`}
+                          {member.balance > 0 ? `Owes Rs ${formatNumber(member.balance)}` : `Owed Rs ${formatNumber(Math.abs(member.balance))}`}
                         </p>
                       )}
                     </div>
@@ -542,7 +543,7 @@ const GroupSettingsSheet = ({
                       Unsettled Balance
                     </div>
                     <p className="text-sm text-red-700 font-bold">
-                      You have an unsettled balance of <span className="underline italic">Rs {Math.abs(userBalance).toLocaleString()}</span>. 
+                      You have an unsettled balance of <span className="underline italic">Rs {formatNumber(Math.abs(userBalance))}</span>.
                       You must settle all expenses before leaving the group.
                     </p>
                   </div>

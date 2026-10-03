@@ -13,6 +13,7 @@ import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { useTranslation } from "react-i18next";
+import { formatNumber } from "@/lib/utils";
 
 const Groups = () => {
   const { t } = useTranslation();
@@ -372,10 +373,10 @@ const Groups = () => {
                     ) : (
                       <div className="space-y-1">
                         {hasReceivable && (
-                          <p className="text-emerald-600 font-bold text-sm lg:text-lg">You will receive Rs {toReceive.toLocaleString()}</p>
+                          <p className="text-emerald-600 font-bold text-sm lg:text-lg">You will receive Rs {formatNumber(toReceive)}</p>
                         )}
                         {hasPayable && (
-                          <p className="text-rose-500 font-bold text-sm lg:text-lg">You owe Rs {toPay.toLocaleString()}</p>
+                          <p className="text-rose-500 font-bold text-sm lg:text-lg">You owe Rs {formatNumber(toPay)}</p>
                         )}
                       </div>
                     )}

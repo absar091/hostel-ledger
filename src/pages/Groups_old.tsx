@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useFirebaseData } from "@/contexts/FirebaseDataContext";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { formatNumber } from "@/lib/utils";
 
 const Groups = () => {
   const navigate = useNavigate();
@@ -209,7 +210,7 @@ const Groups = () => {
                                   <span className="text-xs text-[#4a6850]/80 font-black">You'll receive</span>
                                 </div>
                                 <span className="text-sm font-black text-[#4a6850] tabular-nums">
-                                  Rs {toReceive.toLocaleString()}
+                                  Rs {formatNumber(toReceive)}
                                 </span>
                               </div>
                             )}
@@ -220,7 +221,7 @@ const Groups = () => {
                                   <span className="text-xs text-orange-600 font-black">You owe</span>
                                 </div>
                                 <span className="text-sm font-black text-orange-600 tabular-nums">
-                                  Rs {toPay.toLocaleString()}
+                                  Rs {formatNumber(toPay)}
                                 </span>
                               </div>
                             )}

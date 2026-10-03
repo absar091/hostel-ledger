@@ -1,3 +1,4 @@
+import { formatNumber } from "@/lib/utils";
 interface TransactionItemProps {
   title: string;
   metaLine1: string;
@@ -29,7 +30,7 @@ const TransactionItem = ({
         )}
       </div>
       <div className="text-body text-text-primary font-medium ml-4">
-        Rs {amount.toLocaleString()}
+        Rs {formatNumber(amount)}
       </div>
     </div>
   );

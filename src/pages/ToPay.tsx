@@ -11,6 +11,7 @@ import { useUserPreferences } from "@/hooks/useUserPreferences";
 import Avatar from "@/components/Avatar";
 import { useTranslation } from "react-i18next";
 import MobileHeader from "@/components/MobileHeader";
+import { formatNumber } from "@/lib/utils";
 
 interface PersonToPay {
   id: string;
@@ -160,7 +161,7 @@ const ToPay = () => {
                 <span className="text-sm text-rose-500/70 font-black tracking-wide uppercase">{t('to_pay.total_amount')}</span>
               </div>
               <div className="text-4xl md:text-5xl font-black mb-3 tracking-tighter tabular-nums text-rose-500">
-                Rs {totalToPay.toLocaleString()}
+                Rs {formatNumber(totalToPay)}
               </div>
               <div className="text-sm text-rose-500 font-bold">
                 {t('to_pay.to_count_people', {
@@ -193,7 +194,7 @@ const ToPay = () => {
                           )}
                         </div>
                         <div className="text-xl md:text-2xl font-black text-rose-500 tabular-nums">
-                          Rs {person.amount.toLocaleString()}
+                          Rs {formatNumber(person.amount)}
                         </div>
                       </div>
 

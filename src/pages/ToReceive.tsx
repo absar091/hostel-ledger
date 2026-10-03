@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import MobileHeader from "@/components/MobileHeader";
 import { callSecureApi } from "@/lib/api";
 import { toast } from "sonner";
+import { formatNumber } from "@/lib/utils";
 
 interface PersonToReceiveFrom {
   id: string;
@@ -190,7 +191,7 @@ const ToReceive = () => {
                 <span className="text-sm text-[#4a6850]/70 font-black tracking-wide uppercase">{t('to_receive.total_amount')}</span>
               </div>
               <div className="text-4xl md:text-5xl font-black mb-3 tracking-tighter tabular-nums text-[#4a6850]">
-                Rs {totalToReceive.toLocaleString()}
+                Rs {formatNumber(totalToReceive)}
               </div>
               <div className="text-sm text-[#4a6850] font-bold">
                 {t('to_receive.from_count_people', {
@@ -239,7 +240,7 @@ const ToReceive = () => {
                           )}
                         </div>
                         <div className="text-2xl md:text-3xl font-black text-[#4a6850] tabular-nums tracking-tighter">
-                          Rs {person.amount.toLocaleString()}
+                          Rs {formatNumber(person.amount)}
                         </div>
                       </div>
 
