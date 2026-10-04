@@ -48,6 +48,12 @@ interface GroupSettingsSheetProps {
 
 import { toast } from "sonner";
 import { Share2 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const EMOJIS = ["🏠", "🍕", "🎮", "📚", "🏖️", "⚽", "🎸", "🚗", "✈️"];
 
@@ -141,6 +147,7 @@ const GroupSettingsSheet = ({
   return (
     <>
       <Sheet open={open} onOpenChange={onClose}>
+        <TooltipProvider>
         <SheetContent side="bottom" className="h-[90vh] rounded-t-[32px] flex flex-col bg-white border-t border-[#4a6850]/10 z-[100] px-0">
           <div className="mx-auto w-12 h-1.5 bg-gray-200/80 rounded-full mt-4 flex-shrink-0" />
           
@@ -217,14 +224,22 @@ const GroupSettingsSheet = ({
                   <p className="text-[10px] font-bold text-[#4a6850]/30">{Array.isArray(group.members) ? group.members.length : 0} People in Group</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleCopyGroupInvite}
-                    className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90"
-                  >
-                    <Link className="w-4 h-4" />
-                  </Button>
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleCopyGroupInvite}
+                        className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90"
+                        aria-label="Copy invite link"
+                      >
+                        <Link className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p>Copy invite link</p>
+                    </TooltipContent>
+                  </Tooltip>
                   <Button
                     onClick={() => setShowAddMember(true)}
                     className="h-10 px-4 bg-[#4a6850] hover:bg-[#3d5643] text-white font-black rounded-2xl shadow-sm transition-all active:scale-95 flex items-center gap-2 text-[11px] uppercase tracking-wider"
@@ -254,33 +269,49 @@ const GroupSettingsSheet = ({
                         className="h-11 rounded-xl border-[#4a6850]/10 shadow-sm font-bold text-gray-900 placeholder:text-[#4a6850]/30 focus:border-[#4a6850]/40 bg-white focus:ring-0 pr-10"
                         autoFocus
                       />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleSearch}
-                        disabled={isSearching || !newMemberName.trim()}
-                        className="absolute right-1 top-1 h-9 w-9 text-[#4a6850] hover:bg-[#4a6850]/10 rounded-lg"
-                      >
-                        {isSearching ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Search className="w-4 h-4" />
-                        )}
-                      </Button>
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleSearch}
+                            disabled={isSearching || !newMemberName.trim()}
+                            className="absolute right-1 top-1 h-9 w-9 text-[#4a6850] hover:bg-[#4a6850]/10 rounded-lg"
+                            aria-label="Search members"
+                          >
+                            {isSearching ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Search className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <p>Search</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setShowAddMember(false);
-                        setNewMemberName("");
-                        setSearchResult(null);
-                        setSearchError(false);
-                      }}
-                      className="h-11 w-11 rounded-xl hover:bg-gray-100 shadow-sm hover:shadow-md transition-all flex-shrink-0 bg-white"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setShowAddMember(false);
+                            setNewMemberName("");
+                            setSearchResult(null);
+                            setSearchError(false);
+                          }}
+                          className="h-11 w-11 rounded-xl hover:bg-gray-100 shadow-sm hover:shadow-md transition-all flex-shrink-0 bg-white"
+                          aria-label="Close search"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p>Close</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
 
                   {/* Search Result */}
@@ -395,22 +426,36 @@ const GroupSettingsSheet = ({
 
                     <div className="flex items-center gap-1">
                       {!member.isCurrentUser && !member.userId && (
-                        <button
-                          onClick={() => handleInviteToClaim(member.id, member.name)}
-                          aria-label={`Invite ${member.name} to claim account`}
-                          className="w-10 h-10 flex items-center justify-center text-[#4a6850]/40 hover:text-[#4a6850] active:scale-90 transition-all rounded-xl hover:bg-[#4a6850]/5"
-                        >
-                          <Share2 className="w-4 h-4" />
-                        </button>
+                        <Tooltip delayDuration={0}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => handleInviteToClaim(member.id, member.name)}
+                              aria-label={`Invite ${member.name} to claim account`}
+                              className="w-10 h-10 flex items-center justify-center text-[#4a6850]/40 hover:text-[#4a6850] active:scale-90 transition-all rounded-xl hover:bg-[#4a6850]/5"
+                            >
+                              <Share2 className="w-4 h-4" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            <p>Invite to claim</p>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                       {isOwner && !member.isCurrentUser && (
-                        <button
-                          onClick={() => setMemberToRemove(member)}
-                          aria-label={`Remove ${member.name} from group`}
-                          className="w-10 h-10 flex items-center justify-center text-red-300 hover:text-red-500 active:scale-90 transition-all rounded-xl hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <Tooltip delayDuration={0}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => setMemberToRemove(member)}
+                              aria-label={`Remove ${member.name} from group`}
+                              className="w-10 h-10 flex items-center justify-center text-red-300 hover:text-red-500 active:scale-90 transition-all rounded-xl hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            <p>Remove member</p>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                   </div>
@@ -466,6 +511,7 @@ const GroupSettingsSheet = ({
             </Button>
           </div>
         </SheetContent>
+        </TooltipProvider>
       </Sheet>
 
       {/* Remove Member Confirmation */}

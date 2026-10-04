@@ -1,0 +1,3 @@
+## 2024-10-04 - Sidebar tooltips
+**Learning:** Collapsed sidebar icon-only buttons lacked aria-labels and tooltips, which are necessary to communicate the function of the navigation items. Conditionally wrapping buttons inside tooltips only when the sidebar is collapsed led to component remounts or DOM inconsistencies, and could ruin layout.
+**Action:** When conditionally displaying tooltips in responsive components, maintain a stable React component tree to prevent the trigger element from unmounting and destroying focus. Wrap the trigger unconditionally in `<Tooltip>` and use the `open` prop (e.g., `open={isOpen ? false : undefined}`) to programmatically disable the popover when it shouldn't appear.
