@@ -3,6 +3,7 @@ const router = express.Router();
 const admin = require('firebase-admin');
 const authenticate = require('../middleware/auth');
 const crypto = require('crypto');
+const { sanitize } = require('../utils/sanitize');
 // We need an email service to send ticket confirmation
 const emailService = require('../services/emailService');
 
@@ -16,7 +17,10 @@ function generateTicketId() {
 // User submitting a support ticket
 router.post('/support', async (req, res) => {
   try {
-    const { subject, message, email } = req.body;
+    let { subject, message, email } = req.body;
+    subject = sanitize(subject);
+    message = sanitize(message);
+    if (email) email = sanitize(email);
     const uid = req.user.uid;
 
     if (!subject || !message) {
@@ -57,7 +61,11 @@ router.post('/support', async (req, res) => {
 // User reporting another user or group
 router.post('/report', async (req, res) => {
   try {
-    const { targetId, targetType, reason, details } = req.body;
+    let { targetId, targetType, reason, details } = req.body;
+    targetId = sanitize(targetId);
+    targetType = sanitize(targetType);
+    reason = sanitize(reason);
+    if (details) details = sanitize(details);
     const uid = req.user.uid;
 
     if (!['user', 'group'].includes(targetType) || !targetId || !reason) {
