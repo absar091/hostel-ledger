@@ -1,6 +1,7 @@
 import { Home, Users, Clock, Settings, LogOut, ChevronLeft, ChevronRight, Mail } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useInvitations } from "@/hooks/useInvitations";
@@ -65,17 +66,26 @@ const Sidebar = () => {
       </div>
 
       {/* Toggle Button */}
-      <button
-        onClick={toggleSidebar}
-        aria-label={isOpen ? t('sidebar.collapse') : t('sidebar.expand')}
-        className="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
-      >
-        {isOpen ? (
-          <ChevronLeft className="w-4 h-4 text-gray-600" />
-        ) : (
-          <ChevronRight className="w-4 h-4 text-gray-600" />
-        )}
-      </button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={toggleSidebar}
+              aria-label={isOpen ? t('sidebar.collapse') : t('sidebar.expand')}
+              className="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm z-50"
+            >
+              {isOpen ? (
+                <ChevronLeft className="w-4 h-4 text-gray-600" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-gray-600" />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={10}>
+            <p>{isOpen ? t('sidebar.collapse', 'Collapse sidebar') : t('sidebar.expand', 'Expand sidebar')}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
