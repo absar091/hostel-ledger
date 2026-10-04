@@ -34,6 +34,22 @@ export const getCurrency = (code: string): Currency => {
     return CURRENCIES.find(c => c.code === code) || CURRENCIES[0];
 };
 
+// ⚡ Bolt: Cache Intl.NumberFormat instances to prevent expensive re-initializations
+// during frequent currency rendering (e.g., in lists or tables).
+const formatterCache = new Map<string, Intl.NumberFormat>();
+
+function getFormatter(locale: string | undefined = undefined, decimals: number): Intl.NumberFormat {
+    const key = `${locale || 'default'}-${decimals}`;
+    if (!formatterCache.has(key)) {
+        const options: Intl.NumberFormatOptions = decimals > 0 ? {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+        } : {};
+        formatterCache.set(key, new Intl.NumberFormat(locale, options));
+    }
+    return formatterCache.get(key)!;
+}
+
 /**
  * Format an amount with the given currency.
  * Examples: formatCurrency(500, 'PKR') => "Rs 500"
@@ -44,12 +60,8 @@ export const formatCurrency = (amount: number, currencyCode: string = DEFAULT_CU
     const absAmount = Math.abs(amount);
 
     // Format the number
-    const formatted = currency.decimals > 0
-        ? absAmount.toLocaleString(currency.locale, {
-            minimumFractionDigits: currency.decimals,
-            maximumFractionDigits: currency.decimals,
-        })
-        : absAmount.toLocaleString(currency.locale);
+    const formatter = getFormatter(currency.locale, currency.decimals);
+    const formatted = formatter.format(absAmount);
 
     // Apply sign
     const sign = amount < 0 ? '-' : '';
