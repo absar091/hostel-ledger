@@ -97,7 +97,7 @@ router.get('/group-report/:groupId', async (req, res) => {
   } catch (error) {
     logger.error(`Export Error for Group ${groupId}:`, error);
     res.status(error.message === 'Unauthorized access to group' ? 403 : 500)
-       .json({ error: error.message || 'Failed to export report' });
+       .json({ error: 'Failed to export report' });
   }
 });
 
