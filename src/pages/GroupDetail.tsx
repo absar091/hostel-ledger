@@ -121,6 +121,27 @@ const GroupDetail = () => {
 
   const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
 
+  // Find the member who has paid the most in expenses (actual top contributor)
+  const topSpender = useMemo(() => {
+    if (!group?.members || !transactions) return null;
+
+    const memberExpenseContributions = group.members.map((member: { id: any; }) => {
+      const totalPaid = transactions
+        .filter((t: any) => t.type === "expense" && t.paidBy === member.id)
+        .reduce((sum: number, t: any) => sum + t.amount, 0);
+      return {
+        ...member,
+        totalPaid
+      };
+    });
+
+    return memberExpenseContributions.length > 0
+      ? memberExpenseContributions.reduce((prev: { totalPaid: number; }, curr: { totalPaid: number; }) => {
+        return curr.totalPaid > prev.totalPaid ? curr : prev;
+      })
+      : null;
+  }, [group?.members, transactions]);
+
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
     if (!group || !selectedMember) return [];
@@ -463,22 +484,7 @@ const GroupDetail = () => {
 
   // personalStats, totalSpent, and expenseCount are defined before early returns above
 
-  // Find the member who has paid the most in expenses (actual top contributor)
-  const memberExpenseContributions = group.members.map((member: { id: any; }) => {
-    const totalPaid = transactions
-      .filter(t => t.type === "expense" && t.paidBy === member.id)
-      .reduce((sum, t) => sum + t.amount, 0);
-    return {
-      ...member,
-      totalPaid
-    };
-  });
 
-  const topSpender = memberExpenseContributions.length > 0
-    ? memberExpenseContributions.reduce((prev: { totalPaid: number; }, curr: { totalPaid: number; }) => {
-      return curr.totalPaid > prev.totalPaid ? curr : prev;
-    })
-    : null;
 
   return (
     <div className="min-h-screen bg-white pb-24">
