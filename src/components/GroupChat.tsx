@@ -526,6 +526,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                     />
                     <button
                         onClick={handleSend}
+                        aria-label={t("chat.send_message", "Send message")}
                         disabled={(!inputText.trim() && !attachedImage) || isSending}
                         className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
                     >
