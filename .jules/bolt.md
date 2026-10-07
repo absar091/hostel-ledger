@@ -1,0 +1,3 @@
+## 2024-05-14 - React Context Re-renders Optimization
+**Learning:** Found multiple context providers (`SidebarContext`, `FirebaseAuthContext`, `DataContext`) passing new object references in their `value` props on every render. Because the context values were not memoized, any state change in the provider component (even unrelated ones) would trigger a re-render of all consumer components, leading to cascading performance issues in React.
+**Action:** Always wrap context `value` objects with `useMemo`, and memoize any functions passed in the context with `useCallback` to ensure stable references across renders.
