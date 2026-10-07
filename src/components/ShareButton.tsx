@@ -87,7 +87,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
             <button
               onClick={handleNativeShare}
               aria-label="Share App"
-              className={`w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors ${className}`}
+              className={`w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4a6850] ${className}`}
             >
               <Share2 className="w-5 h-5 text-gray-700" />
             </button>
@@ -114,7 +114,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
           </p>
           <button
             onClick={handleNativeShare}
-            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg"
+            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500"
           >
             Share with Friends 🎉
           </button>
@@ -134,7 +134,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
     <div className="relative">
       <button
         onClick={handleNativeShare}
-        className={`bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg hover:shadow-xl inline-flex items-center gap-2 ${sizeClasses[size]} ${className}`}
+        className={`bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all shadow-lg hover:shadow-xl inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500 ${sizeClasses[size]} ${className}`}
       >
         <Share2 className="w-4 h-4" />
         Share App
@@ -151,7 +151,7 @@ const ShareButton = ({ className = "", variant = "button", size = "md" }: ShareB
                 <button
                   onClick={() => setShowShareMenu(false)}
                   aria-label="Close share menu"
-                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
                 >
                   <span className="text-gray-600 text-lg" aria-hidden="true">×</span>
                 </button>
