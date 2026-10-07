@@ -21,7 +21,7 @@ const QuickActions = ({ onAddExpense, onReceivedMoney, onNewGroup }: QuickAction
         <TooltipTrigger asChild>
           <Button
             onClick={onAddExpense}
-            className="flex flex-col items-center gap-2 h-auto py-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-card"
+            className="flex flex-col items-center gap-2 h-auto py-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
           >
             <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
               <Plus className="w-5 h-5" />
@@ -39,7 +39,7 @@ const QuickActions = ({ onAddExpense, onReceivedMoney, onNewGroup }: QuickAction
           <Button
             onClick={onReceivedMoney}
             variant="secondary"
-            className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl shadow-card"
+            className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-positive"
           >
             <div className="w-10 h-10 rounded-full bg-positive/10 flex items-center justify-center">
               <HandCoins className="w-5 h-5 text-positive" />
@@ -57,7 +57,7 @@ const QuickActions = ({ onAddExpense, onReceivedMoney, onNewGroup }: QuickAction
           <Button
             onClick={onNewGroup}
             variant="secondary"
-            className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl shadow-card"
+            className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent"
           >
             <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
               <Users className="w-5 h-5 text-accent" />
