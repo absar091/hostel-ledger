@@ -1,0 +1,3 @@
+## 2024-05-18 - Improved Collapsed Sidebar Tooltips
+**Learning:** Native HTML `title` attributes on icon buttons in collapsed sidebars create a poor UX due to delayed rendering, lack of styling, and inadequate screen reader support compared to standard accessible tooltips. Wrapping them in Radix UI Tooltip components (managing visibility via `open` state based on sidebar expansion) provides robust keyboard accessibility and immediate visual feedback.
+**Action:** For all navigation components with collapsed states where labels are hidden, always use an accessible Tooltip component instead of relying on the native `title` attribute.
