@@ -40,3 +40,8 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+
+## 2024-12-10 - Unvalidated identifier parameter in admin user lookup
+**Vulnerability:** The `/users/:identifier` endpoint in `adminRoutes.js` accepted raw strings from `req.params.identifier` and passed them directly to Firebase Auth (`getUserByEmail` or `getUser`).
+**Learning:** While Firebase Auth throws an error on malformed UIDs, relying on backend services for input validation is poor practice, exposes internal error states, and wastes resources.
+**Prevention:** Always validate all path and query parameters at the routing layer using strict regex or helper functions (like `isValidFirebaseId`) before passing them to internal services.

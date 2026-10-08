@@ -11,6 +11,16 @@ router.use(verifyAdmin);
 router.get('/users/:identifier', async (req, res) => {
   try {
     const { identifier } = req.params;
+
+    // 🛡️ Sentinel Security Fix: Validate identifier format
+    if (identifier.includes('@')) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(identifier)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+      }
+    } else if (!isValidFirebaseId(identifier)) {
+      return res.status(400).json({ error: 'Invalid user ID format' });
+    }
     const userData = await adminService.getUserByEmailOrUid(identifier);
     res.json(userData);
   } catch (error) {
