@@ -1,0 +1,3 @@
+## 2024-05-24 - Missing ARIA Labels on Icon-only Transaction Buttons
+**Learning:** High-level interactive elements (like the TransactionDetailModal which receives significant user focus) often contain action clusters (Share, Close, Copy) implemented entirely as icon-only buttons. The use of standard HTML `title` attributes alone is often insufficient for proper screen reader accessibility without explicit `aria-label`s.
+**Action:** Always scan modal headers and action bars for unlabelled SVG/Lucide icons wrapped in `<button>` elements, ensuring `aria-label` attributes provide descriptive context mapping exactly to the intended action, avoiding reliance solely on visual metaphors.
