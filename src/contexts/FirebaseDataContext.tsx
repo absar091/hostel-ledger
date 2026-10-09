@@ -1394,11 +1394,16 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user?.uid]);
 
-  const getTransactionsByGroup = (groupId: string): Transaction[] => {
+  /* ⚡ Bolt Optimization: Wrap transaction lookup functions in useCallback
+   * This prevents these functions from being recreated on every context render,
+   * avoiding cascading re-renders in consumer components that depend on them.
+   * Expected Impact: Reduces unnecessary component re-renders when data updates.
+   */
+  const getTransactionsByGroup = useCallback((groupId: string): Transaction[] => {
     return transactions.filter((t) => t.groupId === groupId);
-  };
+  }, [transactions]);
 
-  const getTransactionsByMember = (groupId: string, memberId: string): Transaction[] => {
+  const getTransactionsByMember = useCallback((groupId: string, memberId: string): Transaction[] => {
     return transactions.filter((t) => {
       if (t.groupId !== groupId) return false;
 
@@ -1408,11 +1413,11 @@ export const FirebaseDataProvider = ({ children }: { children: ReactNode }) => {
         return t.from === memberId || t.to === memberId;
       }
     });
-  };
+  }, [transactions]);
 
-  const getAllTransactions = (): Transaction[] => {
+  const getAllTransactions = useCallback((): Transaction[] => {
     return transactions;
-  };
+  }, [transactions]);
 
   const checkAccountDeletionEligibility = async (): Promise<{ eligible: boolean; reason?: string }> => {
     if (isLoading) return { eligible: false, reason: "Please wait for data to load..." };
