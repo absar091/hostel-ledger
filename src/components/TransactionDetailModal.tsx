@@ -5,6 +5,7 @@ import ExpenseThreadSheet from "./ExpenseThreadSheet";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TransactionDetailModalProps {
     transaction: any;
@@ -222,11 +223,13 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                         </div>
                         <div className="flex items-center gap-2 lg:gap-3 ml-3 lg:ml-4">
                             {/* Share as Image button */}
-                            <button
+                            <TooltipProvider delayDuration={0}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button aria-label="Share as Image"
                                 onClick={handleShareAsImage}
                                 disabled={isGenerating}
                                 className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
-                                title="Share as Image"
                             >
                                 {isGenerating ? (
                                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -234,12 +237,27 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                     <Image className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" />
                                 )}
                             </button>
-                            <button
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" className="bg-gray-900 text-white text-xs border-gray-800">
+                                        <p>Share as Image</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider delayDuration={0}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button aria-label="Close transaction details"
                                 onClick={onClose}
                                 className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
                             >
                                 <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
                             </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" className="bg-gray-900 text-white text-xs border-gray-800">
+                                        <p>Close</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                     </div>
 
@@ -488,7 +506,10 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                     <span className="text-xs text-[#4a6850]/80 font-mono font-bold bg-[#4a6850]/5 px-2 py-1 rounded-lg border border-[#4a6850]/10">
                                                         {transaction.location.lat.toFixed(4)}, {transaction.location.lng.toFixed(4)}
                                                     </span>
-                                                    <button
+                                                    <TooltipProvider delayDuration={0}>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <button aria-label="Open location in Google Maps"
                                                         onClick={() => {
                                                             const url = `https://www.google.com/maps/search/?api=1&query=${transaction.location?.lat},${transaction.location?.lng}`;
                                                             window.open(url, '_blank');
@@ -497,6 +518,12 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                     >
                                                         View on Maps <ArrowUpRight className="w-3 h-3" />
                                                     </button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="top" className="bg-gray-900 text-white text-xs border-gray-800">
+                                                                <p>View on Google Maps</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
                                                 </div>
                                             </div>
                                         )}
