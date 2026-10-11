@@ -237,6 +237,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             <button
                                 onClick={onClose}
                                 className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+                                aria-label="Close"
                             >
                                 <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
                             </button>
@@ -269,6 +270,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                 : "bg-white text-slate-400 hover:text-emerald-600 shadow-sm border border-slate-100 group-hover:border-emerald-200"
                                                 }`}
                                             title={isCopied ? "Copied!" : "Copy Reference"}
+                                            aria-label="Copy Reference"
                                         >
                                             {isCopied ? (
                                                 <Check className="w-3.5 h-3.5" />
@@ -494,6 +496,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                             window.open(url, '_blank');
                                                         }}
                                                         className="inline-flex items-center gap-1.5 text-xs text-blue-600 font-black uppercase tracking-wider hover:underline w-fit"
+                                                        aria-label="View location on Maps"
                                                     >
                                                         View on Maps <ArrowUpRight className="w-3 h-3" />
                                                     </button>
