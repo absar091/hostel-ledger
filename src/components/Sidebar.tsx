@@ -1,3 +1,4 @@
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Home, Users, Clock, Settings, LogOut, ChevronLeft, ChevronRight, Mail } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ const Sidebar = () => {
   };
 
   return (
+    <TooltipProvider>
     <aside className={cn(
       "hidden lg:flex lg:flex-col fixed left-0 top-0 h-screen bg-white border-r border-gray-200 z-40 transition-all duration-300",
       isOpen ? "w-64" : "w-20"
@@ -65,17 +67,24 @@ const Sidebar = () => {
       </div>
 
       {/* Toggle Button */}
-      <button
-        onClick={toggleSidebar}
-        aria-label={isOpen ? t('sidebar.collapse') : t('sidebar.expand')}
-        className="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
-      >
-        {isOpen ? (
-          <ChevronLeft className="w-4 h-4 text-gray-600" />
-        ) : (
-          <ChevronRight className="w-4 h-4 text-gray-600" />
-        )}
-      </button>
+      <Tooltip delayDuration={300}>
+        <TooltipTrigger asChild>
+          <button
+            onClick={toggleSidebar}
+            aria-label={isOpen ? t('sidebar.collapse') : t('sidebar.expand')}
+            className="absolute -right-3 top-24 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
+          >
+            {isOpen ? (
+              <ChevronLeft className="w-4 h-4 text-gray-600" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-gray-600" />
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          {isOpen ? t('sidebar.collapse') : t('sidebar.expand')}
+        </TooltipContent>
+      </Tooltip>
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
@@ -90,7 +99,7 @@ const Sidebar = () => {
           const Icon = item.icon;
           const active = isActive(item.path);
 
-          return (
+          const buttonContent = (
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
@@ -122,6 +131,19 @@ const Sidebar = () => {
               )}
             </button>
           );
+
+          return (
+            <Tooltip key={item.id} delayDuration={300}>
+              <TooltipTrigger asChild>
+                {buttonContent}
+              </TooltipTrigger>
+              {!isOpen && (
+                <TooltipContent side="right">
+                  {item.label}
+                </TooltipContent>
+              )}
+            </Tooltip>
+          );
         })}
       </nav>
 
@@ -151,28 +173,42 @@ const Sidebar = () => {
           </>
         ) : (
           <>
-            <button
-              onClick={() => navigate("/profile")}
-              className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center mx-auto mb-3"
-              aria-label={user?.name || "Profile"}
-              title={user?.name || "Profile"}
-            >
-              <span className="text-lg font-black text-white">
-                {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-              </span>
-            </button>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200"
-              aria-label={t('sidebar.logout')}
-              title={t('sidebar.logout')}
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => navigate("/profile")}
+                  className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a6850] to-[#3d5643] flex items-center justify-center mx-auto mb-3"
+                  aria-label={user?.name || "Profile"}
+                >
+                  <span className="text-lg font-black text-white">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  </span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {user?.name || "Profile"}
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-red-600 transition-all duration-200"
+                  aria-label={t('sidebar.logout')}
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {t('sidebar.logout')}
+              </TooltipContent>
+            </Tooltip>
           </>
         )}
       </div>
     </aside>
+    </TooltipProvider>
   );
 };
 
