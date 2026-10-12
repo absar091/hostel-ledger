@@ -1,0 +1,3 @@
+## 2025-04-06 - Tooltip Accessibility
+**Learning:** Native title attributes on UI elements like buttons provide delayed, inconsistently styled tooltips and can cause a "double-tooltip" effect when combined with custom ones. When using Radix UI `<Tooltip>`, it's essential to remove native `title` attributes and wrap the components in a `<TooltipProvider>`.
+**Action:** Replaced native `title` attributes with Radix `<Tooltip>` components for LanguageSelector, Sidebar, CreateGroupSheet, and TransactionDetailModal, preserving `aria-label` attributes where appropriate to ensure both sighted and screen-reader users have equal access to the same information.
