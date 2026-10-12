@@ -36,8 +36,8 @@ const GroupDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { formatAmount, currencyCode } = useCurrency();
-  const { getGroupById, fetchGroupDetail, getTransactionsByGroup, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup, mergeMembers, updateGroupBudget } = useFirebaseData();
-  const { getSettlements, user, toggleFavoriteGroup, getFavoriteGroups } = useFirebaseAuth();
+  const { getGroupById, fetchGroupDetail, transactions: allTransactions, addExpense, recordPayment, payMyDebt, markPaymentAsPaid, addMemberToGroup, removeMemberFromGroup, updateGroup, deleteGroup, mergeMembers, updateGroupBudget } = useFirebaseData();
+  const { user, toggleFavoriteGroup, getFavoriteGroups } = useFirebaseAuth();
   const { shouldShowPageGuide, markPageGuideShown } = useUserPreferences(user?.uid);
 
   const [activeTab, setActiveTab] = useState<"ledger" | "chat" | "members" | "summary">("ledger");
@@ -83,16 +83,18 @@ const GroupDetail = () => {
   const rawGroup = fullGroup || partialGroup;
 
   // Defensive: Ensure members is always an array (Firebase may return object)
-  const group = rawGroup ? {
-    ...rawGroup,
-    members: (Array.isArray(rawGroup.members)
-      ? rawGroup.members
-      : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
-    ).filter((m: { id: any; }) => m && m.id) // Filter out any null/undefined members
-  } : null;
+  const group = useMemo(() => {
+    return rawGroup ? {
+      ...rawGroup,
+      members: (Array.isArray(rawGroup.members)
+        ? rawGroup.members
+        : Object.entries(rawGroup.members || {}).map(([key, value]: [string, any]) => ({ ...value, id: key }))
+      ).filter((m: { id: any; }) => m && m.id) // Filter out any null/undefined members
+    } : null;
+  }, [rawGroup]);
 
-  const transactions = id ? getTransactionsByGroup(id) : [];
-  const settlements = id ? getSettlements(id) : {};
+  const transactions = useMemo(() => id ? allTransactions.filter(t => t.groupId === id) : [], [id, allTransactions]);
+  const settlements = useMemo(() => (id && user?.settlements?.[id]) ? user.settlements[id] : {}, [id, user?.settlements]);
   const { invitations } = useInvitations();
   const favoriteGroups = getFavoriteGroups();
   const isFavorite = id && favoriteGroups.includes(id);
