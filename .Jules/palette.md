@@ -1,0 +1,3 @@
+## 2026-10-12 - Enhance Sidebar Expand/Collapse with Tooltips
+**Learning:** Added tooltips to icon-only nav items in collapsed sidebar. This required wrapping the sidebar root in `<TooltipProvider>` to supply context to Radix tooltips and ensuring `<TooltipTrigger>` receives children natively instead of raw fragments. Found that for custom UI structures, conditionally rendering tooltips must be carefully checked since tooltips on custom UI might need a wrapping `<div>` or explicit passing of `asChild`.
+**Action:** Always wrap Radix Tooltips within `<TooltipProvider>`, handle TooltipTrigger nested DOM properly, and ensure native titles are removed when implementing custom Tooltips to prevent double tooltips.
