@@ -1,3 +1,4 @@
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, useEffect, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -456,10 +457,11 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
 
                   {/* INVITED USERS (Existing App Users) */}
                   {invitedUsernames.map(username => (
+                    <TooltipProvider key={username} delayDuration={300}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
                     <div
-                      key={username}
                       className="flex items-center gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl animate-fade-in"
-                      title="This user already has a Hostel Ledger account. They'll receive an in-app invitation and email notification."
                     >
                       <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-600">
                         {username.charAt(0).toUpperCase()}
@@ -478,6 +480,12 @@ const CreateGroupSheet = ({ open, onClose, onSubmit }: CreateGroupSheetProps) =>
                         <X className="w-4 h-4" />
                       </button>
                     </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p>This user already has a Hostel Ledger account. They'll receive an in-app invitation and email notification.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    </TooltipProvider>
                   ))}
 
                   {/* MANUAL MEMBERS */}
