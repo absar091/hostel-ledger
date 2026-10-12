@@ -1,0 +1,3 @@
+## 2024-10-12 - Missing accessible names on secondary action clusters
+**Learning:** Secondary interactive icon clusters (like attach image, toggle info, send message in a chat input bar) often lack `aria-label`s because they are densely packed and their visual icons provide obvious context to sighted users, but they become completely opaque to screen reader users if no text or title is provided.
+**Action:** Always ensure every icon-only button within dense interaction clusters receives an explicit `aria-label` (and often a `title` for sighted user tooltip affordance) regardless of how "obvious" the icon seems visually.
