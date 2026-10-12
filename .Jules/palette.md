@@ -1,0 +1,3 @@
+## 2024-05-18 - Added Tooltips to Group Settings Actions
+**Learning:** Icon-only buttons without tooltips or ARIA labels make it difficult for users (especially new or visually impaired users) to understand their function. In `GroupSettingsSheet.tsx`, there were three such buttons (Copy Invite, Search User, Cancel Search).
+**Action:** Always wrap icon-only buttons with Radix UI `TooltipProvider` and `Tooltip` with a descriptive `TooltipContent`, and add a clear `aria-label` to the `TooltipTrigger` for screen readers. This improves both discoverability for sighted users and accessibility for visually impaired users.
