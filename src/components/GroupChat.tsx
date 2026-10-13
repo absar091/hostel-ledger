@@ -451,6 +451,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                     <div className="mb-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200 relative animate-in slide-in-from-bottom-2">
                         <button 
                             onClick={() => setReferencedTxn(null)}
+                            aria-label="Remove Referenced Transaction"
                             className="absolute top-2 right-2 p-1 hover:bg-emerald-100 rounded-full"
                         >
                             <X className="w-4 h-4 text-emerald-600" />
@@ -474,6 +475,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         />
                         <button 
                             onClick={() => setAttachedImage(null)}
+                            aria-label="Remove Attached Image"
                             className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
                         >
                             <X className="w-3 h-3" />
@@ -492,6 +494,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         />
                         <button
                             onClick={() => fileInputRef.current?.click()}
+                            aria-label="Attach Image"
                             disabled={isUploading || !!attachedImage}
                             className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
                         >
@@ -503,6 +506,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         </button>
                         <button
                             onClick={() => setShowTxnHint(!showTxnHint)}
+                            aria-label="Toggle Transaction Hint"
                             className={cn(
                                 "p-2.5 rounded-xl transition-all shrink-0",
                                 showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
@@ -526,6 +530,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                     />
                     <button
                         onClick={handleSend}
+                        aria-label="Send Message"
                         disabled={(!inputText.trim() && !attachedImage) || isSending}
                         className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
                     >
