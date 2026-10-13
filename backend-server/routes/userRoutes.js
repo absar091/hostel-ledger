@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const admin = require('firebase-admin');
+const { sanitize } = require('../utils/sanitize');
 const authenticate = require('../middleware/auth');
 const crypto = require('crypto');
 // We need an email service to send ticket confirmation
@@ -16,12 +17,16 @@ function generateTicketId() {
 // User submitting a support ticket
 router.post('/support', async (req, res) => {
   try {
-    const { subject, message, email } = req.body;
+    let { subject, message, email } = req.body;
     const uid = req.user.uid;
 
     if (!subject || !message) {
       return res.status(400).json({ error: 'Subject and message are required.' });
     }
+
+    subject = sanitize(subject);
+    message = sanitize(message);
+    email = sanitize(email);
 
     const ticketId = generateTicketId();
 
