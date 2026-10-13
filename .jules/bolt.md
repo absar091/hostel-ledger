@@ -1,0 +1,3 @@
+## 2024-10-13 - Memoized SidebarContext Value
+**Learning:** Found an unmemoized context provider `value` object in `src/contexts/SidebarContext.tsx`. This is a common codebase-specific React anti-pattern that creates a new object reference on every render, causing all context consumers to unnecessarily re-render even if the underlying context state hasn't changed.
+**Action:** When adding or modifying React context providers, always wrap the context `value` object with `useMemo` and memoize member functions using `useCallback` (using functional state updates where possible to minimize dependency arrays) to prevent cascading consumer re-renders.
