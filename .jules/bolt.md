@@ -1,0 +1,3 @@
+## 2024-10-24 - Memoizing Context Provider Functions
+**Learning:** In React Contexts that provide utility functions (e.g., `getGroupById`, `getAllTransactions`) wrapped in a `useMemo` context value, defining those functions as inline arrow functions without `useCallback` causes them to have unstable references. This triggers unnecessary re-renders in all consumer components that utilize these functions or place them in their dependency arrays.
+**Action:** Always wrap utility functions exposed through React Context with `useCallback` and specify their correct dependencies (like state values they read) before including them in the context value's `useMemo` dependency array.
