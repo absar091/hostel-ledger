@@ -1,0 +1,3 @@
+## 2025-02-28 - Tooltips on Collapsed Nav Items
+**Learning:** Native HTML `title` attributes act as poor tooltips for icon-only navigation buttons in collapsed sidebars, as they are slow to appear and lack visual consistency with the design system. Additionally, conditionally rendering tooltips must be done carefully to ensure Radix Tooltips don't activate or bind ARIA attributes inappropriately when the sidebar is expanded.
+**Action:** Always replace `title` attributes with Radix UI Tooltip components on icon-only nav items. Ensure to conditionally wrap or carefully manage state to prevent empty or broken ARIA references when the labels become visible (e.g. expanded sidebar).
