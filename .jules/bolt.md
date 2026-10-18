@@ -1,0 +1,3 @@
+## 2025-02-18 - Memoizing SidebarContext for Performance
+**Learning:** Derived state (or dynamically creating new object references directly in the context provider value) causes cascading re-renders in all components that consume the context. SidebarContext in particular was creating a new `{ isOpen, toggleSidebar, openSidebar, closeSidebar }` object on every render.
+**Action:** Wrapped the exported context value in a `useMemo` block and memoized the component's internal functions using `useCallback`, taking care to use functional state updates where possible to minimize dependency array variables.
