@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Avatar from "./Avatar";
@@ -268,19 +270,29 @@ const GroupSettingsSheet = ({
                         )}
                       </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setShowAddMember(false);
-                        setNewMemberName("");
-                        setSearchResult(null);
-                        setSearchError(false);
-                      }}
-                      className="h-11 w-11 rounded-xl hover:bg-gray-100 shadow-sm hover:shadow-md transition-all flex-shrink-0 bg-white"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setShowAddMember(false);
+                              setNewMemberName("");
+                              setSearchResult(null);
+                              setSearchError(false);
+                            }}
+                            aria-label="Close search"
+                            className="h-11 w-11 rounded-xl hover:bg-gray-100 shadow-sm hover:shadow-md transition-all flex-shrink-0 bg-white"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <p>Close search</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
 
                   {/* Search Result */}
