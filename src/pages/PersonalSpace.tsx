@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useP2PTransactions } from "@/hooks/useP2PTransactions";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Plus, Check, X, Clock, Banknote, History, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -40,9 +42,18 @@ export default function PersonalSpace() {
             {/* Header */}
             <div className="bg-white px-4 pt-12 pb-4 shadow-sm sticky top-0 z-10">
                 <div className="flex items-center gap-3 mb-2">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="-ml-2" aria-label="Go back">
-                        <ArrowLeft className="w-6 h-6 text-gray-700" />
-                    </Button>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="-ml-2" aria-label="Go back">
+                                    <ArrowLeft className="w-6 h-6 text-gray-700" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                                <p>Go back</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                     <h1 className="text-2xl font-bold text-gray-900">{t('money_transfer.title')}</h1>
                 </div>
                 <p className="text-gray-500 text-sm ml-10">{t('money_transfer.subtitle')}</p>
