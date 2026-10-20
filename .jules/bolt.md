@@ -1,0 +1,3 @@
+## 2024-05-18 - Missing Memoization in SidebarContext
+**Learning:** React context values passed as unmemoized object literals (e.g., `value={{ isOpen, toggleSidebar, ... }}`) cause all consumers to re-render whenever the provider's parent re-renders, even if the state itself (`isOpen`) hasn't changed. In `SidebarContext.tsx`, this meant that any consumer of `useSidebar` was forced to re-render unnecessarily.
+**Action:** When adding or modifying React context providers, wrap the context `value` object with `useMemo` and memoize the exposed functions using `useCallback`. Ensure all state values and functions referenced within the memoized object are properly included in the dependency array (or correctly memoized themselves).
