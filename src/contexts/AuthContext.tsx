@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from "react";
 
 export interface PaymentDetails {
   jazzCash?: string;
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem(USERS_KEY, JSON.stringify(users));
   };
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const users = getUsers();
     const foundUser = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
     
@@ -75,9 +75,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem(CURRENT_USER_KEY, foundUser.id);
     
     return { success: true };
-  };
+  }, []);
 
-  const signup = async (data: { email: string; password: string; name: string; phone?: string }): Promise<{ success: boolean; error?: string }> => {
+  const signup = useCallback(async (data: { email: string; password: string; name: string; phone?: string }): Promise<{ success: boolean; error?: string }> => {
     const users = getUsers();
     
     if (users.some((u) => u.email.toLowerCase() === data.email.toLowerCase())) {
@@ -101,14 +101,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem(CURRENT_USER_KEY, newUser.id);
     
     return { success: true };
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem(CURRENT_USER_KEY);
-  };
+  }, []);
 
-  const updateProfile = (data: Partial<UserProfile>) => {
+  const updateProfile = useCallback((data: Partial<UserProfile>) => {
     if (!user) return;
 
     const users = getUsers();
@@ -122,17 +122,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const { password: _, ...userWithoutPassword } = updatedUser;
     setUser(userWithoutPassword);
-  };
+  }, [user]);
+
+  const contextValue = useMemo(() => ({
+    user,
+    isLoading,
+    login,
+    signup,
+    logout,
+    updateProfile
+  }), [user, isLoading, login, signup, logout, updateProfile]);
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isLoading, 
-      login, 
-      signup, 
-      logout, 
-      updateProfile
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
