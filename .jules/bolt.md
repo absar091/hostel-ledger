@@ -1,0 +1,3 @@
+## 2023-10-22 - [Context Provider Performance Optimization]
+**Learning:** React context providers that do not memoize their `value` object can trigger unnecessary cascading re-renders in all consuming components every time the provider's local state changes. Inline functions in the context value also cause new object references.
+**Action:** When creating or modifying React Context Providers, always wrap the context `value` object in `useMemo` and memoize any exported functions using `useCallback`. Ensure you use functional state updates (e.g., `setIsOpen(prev => !prev)`) in `useCallback` to avoid depending on the state variable itself, which prevents stale closures while keeping the dependency array empty.
