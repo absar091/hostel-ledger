@@ -237,6 +237,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                             <button
                                 onClick={onClose}
                                 className="w-9 lg:w-10 h-9 lg:h-10 rounded-full bg-gray-900 hover:bg-gray-800 flex items-center justify-center transition-all shadow-lg hover:shadow-xl active:scale-95"
+                                aria-label="Close transaction details"
                             >
                                 <X className="w-4 lg:w-5 h-4 lg:h-5 text-white font-bold" strokeWidth={3} />
                             </button>
@@ -269,6 +270,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                                 : "bg-white text-slate-400 hover:text-emerald-600 shadow-sm border border-slate-100 group-hover:border-emerald-200"
                                                 }`}
                                             title={isCopied ? "Copied!" : "Copy Reference"}
+                                            aria-label="Copy share reference"
                                         >
                                             {isCopied ? (
                                                 <Check className="w-3.5 h-3.5" />
@@ -518,6 +520,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                                         setShowChat(true);
                                     }}
                                     className="w-full flex items-center justify-between p-4 lg:p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl lg:rounded-3xl border border-blue-200 shadow-lg group hover:from-blue-100 hover:to-blue-200 transition-all active:scale-[0.98]"
+                                    aria-label="Discuss this expense"
                                 >
                                     <div className="flex items-center gap-3 lg:gap-4">
                                         <div className="w-10 h-10 rounded-2xl bg-blue-500 flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
@@ -595,6 +598,7 @@ const TransactionDetailModal = ({ transaction, onClose, groups, user }: Transact
                         <button
                             onClick={onClose}
                             className="w-full h-14 rounded-3xl bg-gradient-to-r from-[#4a6850] to-[#3d5643] hover:from-[#3d5643] hover:to-[#2f4a35] text-white font-black border-0 shadow-[0_8px_32px_rgba(74,104,80,0.3)] hover:shadow-[0_12px_40px_rgba(74,104,80,0.4)] transition-all"
+                            aria-label="Close transaction details modal"
                         >
                             Close
                         </button>
