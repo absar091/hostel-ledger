@@ -1,0 +1,3 @@
+## 2024-05-14 - Memoization of React Contexts
+**Learning:** Massive context providers (like `FirebaseAuthContext` or `FirebaseDataContext`) with many unmemoized functions and state values will cause cascading re-renders across the entire app if the `value` prop is not properly memoized using `useMemo`. However, attempting to fully memoize massive contexts exceeds the < 50 lines optimization constraint and introduces a high risk of missing dependencies (stale closures).
+**Action:** Target smaller, measurable context providers (like `SidebarContext` or `AuthContext`) to implement memoization for measurable quick wins without significant risk of bugs.
