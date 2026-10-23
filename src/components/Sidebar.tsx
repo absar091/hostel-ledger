@@ -1,6 +1,8 @@
 import { Home, Users, Clock, Settings, LogOut, ChevronLeft, ChevronRight, Mail } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import React, { Fragment } from "react";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { useInvitations } from "@/hooks/useInvitations";
@@ -90,9 +92,8 @@ const Sidebar = () => {
           const Icon = item.icon;
           const active = isActive(item.path);
 
-          return (
+          const content = (
             <button
-              key={item.id}
               onClick={() => navigate(item.path)}
               aria-current={active ? "page" : undefined}
               className={cn(
@@ -102,7 +103,6 @@ const Sidebar = () => {
                   : "text-gray-600 hover:bg-gray-100",
                 !isOpen && "justify-center"
               )}
-              title={!isOpen ? item.label : undefined}
             >
               {/* Active indicator bar */}
               {active && (
@@ -121,6 +121,23 @@ const Sidebar = () => {
                 </div>
               )}
             </button>
+          );
+
+          return (
+            <Fragment key={item.id}>
+              {!isOpen ? (
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    {content}
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    {item.label}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                content
+              )}
+            </Fragment>
           );
         })}
       </nav>
