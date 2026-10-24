@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Avatar from "./Avatar";
@@ -217,14 +218,22 @@ const GroupSettingsSheet = ({
                   <p className="text-[10px] font-bold text-[#4a6850]/30">{Array.isArray(group.members) ? group.members.length : 0} People in Group</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleCopyGroupInvite}
-                    className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90"
-                  >
-                    <Link className="w-4 h-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleCopyGroupInvite}
+                        className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90"
+                        aria-label="Copy group invite link"
+                      >
+                        <Link className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Copy group invite link</p>
+                    </TooltipContent>
+                  </Tooltip>
                   <Button
                     onClick={() => setShowAddMember(true)}
                     className="h-10 px-4 bg-[#4a6850] hover:bg-[#3d5643] text-white font-black rounded-2xl shadow-sm transition-all active:scale-95 flex items-center gap-2 text-[11px] uppercase tracking-wider"
@@ -395,22 +404,36 @@ const GroupSettingsSheet = ({
 
                     <div className="flex items-center gap-1">
                       {!member.isCurrentUser && !member.userId && (
-                        <button
-                          onClick={() => handleInviteToClaim(member.id, member.name)}
-                          aria-label={`Invite ${member.name} to claim account`}
-                          className="w-10 h-10 flex items-center justify-center text-[#4a6850]/40 hover:text-[#4a6850] active:scale-90 transition-all rounded-xl hover:bg-[#4a6850]/5"
-                        >
-                          <Share2 className="w-4 h-4" />
-                        </button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => handleInviteToClaim(member.id, member.name)}
+                              aria-label={`Invite ${member.name} to claim account`}
+                              className="w-10 h-10 flex items-center justify-center text-[#4a6850]/40 hover:text-[#4a6850] active:scale-90 transition-all rounded-xl hover:bg-[#4a6850]/5"
+                            >
+                              <Share2 className="w-4 h-4" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Invite {member.name} to claim account</p>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                       {isOwner && !member.isCurrentUser && (
-                        <button
-                          onClick={() => setMemberToRemove(member)}
-                          aria-label={`Remove ${member.name} from group`}
-                          className="w-10 h-10 flex items-center justify-center text-red-300 hover:text-red-500 active:scale-90 transition-all rounded-xl hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => setMemberToRemove(member)}
+                              aria-label={`Remove ${member.name} from group`}
+                              className="w-10 h-10 flex items-center justify-center text-red-300 hover:text-red-500 active:scale-90 transition-all rounded-xl hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Remove {member.name} from group</p>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                   </div>
