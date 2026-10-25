@@ -58,7 +58,16 @@ const ChartContainer = React.forwardRef<
 });
 ChartContainer.displayName = "Chart";
 
+
+// Sanitize inputs to prevent CSS injection
+const sanitizeForCSS = (value: string | undefined) => {
+  if (!value) return "";
+  // Strip CSS structural characters to prevent escaping out of properties/selectors
+  return String(value).replace(/[<>;{}[\]'"]/g, "");
+};
+
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
+
   const colorConfig = Object.entries(config).filter(([_, config]) => config.theme || config.color);
 
   if (!colorConfig.length) {
@@ -71,11 +80,11 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
         __html: Object.entries(THEMES)
           .map(
             ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
+${prefix} [data-chart=${sanitizeForCSS(id)}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
     const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
-    return color ? `  --color-${key}: ${color};` : null;
+    return color ? `  --color-${sanitizeForCSS(key)}: ${sanitizeForCSS(color)};` : null;
   })
   .join("\n")}
 }
