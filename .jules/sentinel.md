@@ -40,3 +40,11 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2025-02-20 - Prevent CSS Injection in Chart Components
+**Vulnerability:** Found unescaped user configuration keys and values injected into a style block via `dangerouslySetInnerHTML` in `src/components/ui/chart.tsx`.
+**Learning:** Radix UI / Shadcn chart components dynamically generate CSS variables from configuration. If the config keys or values are not stripped of structural/quote characters, attackers can inject arbitrary CSS properties or break out of the style block.
+**Prevention:** Always strip structural and quote characters (e.g. `{`, `}`, `;`, `'`, `"`) from dynamically generated CSS injected via `dangerouslySetInnerHTML`.
+## 2025-02-20 - Prevent HTML/CSS Injection in Chart Components (Revised)
+**Vulnerability:** Found unescaped user configuration keys and values injected into a style block via `dangerouslySetInnerHTML` in `src/components/ui/chart.tsx`.
+**Learning:** Radix UI / Shadcn chart components dynamically generate CSS variables from configuration. If the config keys or values are not stripped of HTML tags (`<`, `>`) and structural/quote characters, attackers can inject arbitrary CSS properties or break out of the style block (e.g., using `</style><script>alert(1)</script>`).
+**Prevention:** Always strip both HTML tags and structural/quote characters (e.g. `<`, `>`, `{`, `}`, `;`, `'`, `"`) from dynamically generated CSS injected via `dangerouslySetInnerHTML`.
