@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2026-10-28 - Privilege Escalation in Admin Routes
+**Vulnerability:** A standard `admin` could change the password, update status, or delete the account of a `superadmin` or another `admin` because role verification wasn't enforced for target users in `backend-server/routes/adminRoutes.js`.
+**Learning:** `adminRoutes.js` globally applied `verifyAdmin` without restricting destructive endpoints for administrative accounts.
+**Prevention:** Always verify the target's role against the requester's role when modifying user accounts in multi-tier administrative systems.
