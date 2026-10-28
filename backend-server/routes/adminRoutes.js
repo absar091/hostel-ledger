@@ -37,6 +37,12 @@ router.post('/users/:uid/status', async (req, res) => {
         return res.status(400).json({ error: 'Cannot alter your own status.' });
     }
 
+    const targetUser = await adminService.getUserByEmailOrUid(uid);
+    const targetRole = targetUser._database?.role || 'user';
+    if ((targetRole === 'superadmin' || targetRole === 'admin') && req.adminRole !== 'superadmin') {
+      return res.status(403).json({ error: 'Forbidden: Insufficient privileges to modify this account.' });
+    }
+
     const result = await adminService.updateUserStatus(uid, status);
     res.json(result);
   } catch (error) {
@@ -56,6 +62,12 @@ router.post('/users/:uid/password', async (req, res) => {
         return res.status(400).json({ error: 'Cannot reset your own password here. Use standard reset flow.' });
     }
 
+    const targetUser = await adminService.getUserByEmailOrUid(uid);
+    const targetRole = targetUser._database?.role || 'user';
+    if ((targetRole === 'superadmin' || targetRole === 'admin') && req.adminRole !== 'superadmin') {
+      return res.status(403).json({ error: 'Forbidden: Insufficient privileges to modify this account.' });
+    }
+
     const result = await adminService.updateUserPassword(uid, newPassword);
     res.json(result);
   } catch (error) {
@@ -71,6 +83,12 @@ router.delete('/users/:uid', async (req, res) => {
 
     if (uid === req.user.uid) {
         return res.status(400).json({ error: 'Cannot delete your own account here.' });
+    }
+
+    const targetUser = await adminService.getUserByEmailOrUid(uid);
+    const targetRole = targetUser._database?.role || 'user';
+    if ((targetRole === 'superadmin' || targetRole === 'admin') && req.adminRole !== 'superadmin') {
+      return res.status(403).json({ error: 'Forbidden: Insufficient privileges to modify this account.' });
     }
 
     const result = await adminService.deleteUser(uid);
