@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from "react";
 
 interface SidebarContextType {
   isOpen: boolean;
@@ -12,12 +12,22 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 export const SidebarProvider = ({ children }: { children: ReactNode }) => {
   const [isOpen, setIsOpen] = useState(true);
 
-  const toggleSidebar = () => setIsOpen(!isOpen);
-  const openSidebar = () => setIsOpen(true);
-  const closeSidebar = () => setIsOpen(false);
+  // Memoize state updater functions to prevent unnecessary re-renders in consumers
+  // using the functional state update pattern for toggleSidebar to keep the dependency array empty
+  const toggleSidebar = useCallback(() => setIsOpen(prev => !prev), []);
+  const openSidebar = useCallback(() => setIsOpen(true), []);
+  const closeSidebar = useCallback(() => setIsOpen(false), []);
+
+  // Memoize the context value to prevent unnecessary re-renders of consuming components
+  const contextValue = useMemo(() => ({
+    isOpen,
+    toggleSidebar,
+    openSidebar,
+    closeSidebar
+  }), [isOpen, toggleSidebar, openSidebar, closeSidebar]);
 
   return (
-    <SidebarContext.Provider value={{ isOpen, toggleSidebar, openSidebar, closeSidebar }}>
+    <SidebarContext.Provider value={contextValue}>
       {children}
     </SidebarContext.Provider>
   );
