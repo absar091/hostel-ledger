@@ -44,6 +44,7 @@ import { database } from "@/lib/firebase";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import * as api from "@/lib/api";
 
 // --- TYPES ---
@@ -756,7 +757,14 @@ const AdminDashboard = () => {
                                       </td>
                                       <td className="px-8 py-6 hidden md:table-cell">
                                          <div className="flex flex-col gap-2">
-                                            <span className="text-[10px] font-black px-3 py-1 rounded-xl bg-gray-100/50 w-fit text-gray-500 border border-gray-200/50 uppercase tracking-tighter" title={u.uid}>HEX: {u.uid?.substring(0, 12)}</span>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <span className="text-[10px] font-black px-3 py-1 rounded-xl bg-gray-100/50 w-fit text-gray-500 border border-gray-200/50 uppercase tracking-tighter" >HEX: {u.uid?.substring(0, 12)}</span>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                {u.uid}
+                                              </TooltipContent>
+                                            </Tooltip>
                                             <div className="flex items-center gap-2">
                                                <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
                                                   <Zap className="w-4 h-4" />
@@ -780,22 +788,35 @@ const AdminDashboard = () => {
                                               <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
                                             ) : (
                                               <>
-                                                 <button 
-                                                   title="Protocol Breakdown"
+                                                 <Tooltip>
+                                                   <TooltipTrigger asChild>
+                                                     <button
                                                    onClick={() => setSelectedUser(u)}
                                                    className="w-10 h-10 rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-blue-600 hover:border-blue-100 hover:shadow-lg hover:shadow-blue-100 transition-all flex items-center justify-center"
                                                  >
                                                    <Info className="w-5 h-5" />
                                                  </button>
-                                                 <button 
-                                                   title="Liquidate Wallet"
+                                                   </TooltipTrigger>
+                                                   <TooltipContent>
+                                                     Protocol Breakdown
+                                                   </TooltipContent>
+                                                 </Tooltip>
+                                                 <Tooltip>
+                                                   <TooltipTrigger asChild>
+                                                     <button
                                                    onClick={() => handleResetUserWallet(u.uid)}
                                                    className="w-10 h-10 rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-emerald-600 hover:border-emerald-100 hover:shadow-lg hover:shadow-emerald-100 transition-all flex items-center justify-center"
                                                  >
                                                    <RefreshCw className="w-5 h-5" />
                                                  </button>
-                                                 <button 
-                                                   title={u.accountStatus === 'active' ? 'Revoke Access' : 'Authorize Access'}
+                                                   </TooltipTrigger>
+                                                   <TooltipContent>
+                                                     Liquidate Wallet
+                                                   </TooltipContent>
+                                                 </Tooltip>
+                                                 <Tooltip>
+                                                   <TooltipTrigger asChild>
+                                                     <button
                                                    onClick={() => handleUpdateUserStatus(u.uid, u.accountStatus === 'active' ? 'banned' : 'active')}
                                                    className={cn(
                                                      "w-10 h-10 rounded-xl border transition-all flex items-center justify-center",
@@ -804,6 +825,11 @@ const AdminDashboard = () => {
                                                  >
                                                    {u.accountStatus === 'active' ? <Lock className="w-5 h-5" /> : <Shield className="w-5 h-5" />}
                                                  </button>
+                                                   </TooltipTrigger>
+                                                   <TooltipContent>
+                                                     {u.accountStatus === 'active' ? 'Revoke Access' : 'Authorize Access'}
+                                                   </TooltipContent>
+                                                 </Tooltip>
                                               </>
                                             )}
                                          </div>
