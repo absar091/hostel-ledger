@@ -3,6 +3,10 @@ import * as RechartsPrimitive from "recharts";
 
 import { cn } from "@/lib/utils";
 
+// 🛡️ Sentinel: Sanitize dynamic CSS values to prevent CSS injection and style tag breakout
+const sanitizeCss = (str: string | undefined) => str ? str.replace(/[<>;{}[\]'"]/g, "") : "";
+
+
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const;
 
@@ -71,11 +75,11 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
         __html: Object.entries(THEMES)
           .map(
             ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
+${prefix} [data-chart=${sanitizeCss(id)}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
     const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
-    return color ? `  --color-${key}: ${color};` : null;
+    return color ? `  --color-${sanitizeCss(key)}: ${sanitizeCss(color)};` : null;
   })
   .join("\n")}
 }
