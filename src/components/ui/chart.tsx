@@ -65,17 +65,21 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null;
   }
 
+  // 🛡️ Sentinel: Sanitize dynamic inputs before injecting into dangerouslySetInnerHTML
+  // We strip both HTML tags (<, >) and CSS structural/quote characters
+  const sanitize = (val: string) => val.replace(/[<>;{}[\]'"]/g, "");
+
   return (
     <style
       dangerouslySetInnerHTML={{
         __html: Object.entries(THEMES)
           .map(
             ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
+${prefix} [data-chart=${sanitize(id)}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
     const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
-    return color ? `  --color-${key}: ${color};` : null;
+    return color ? `  --color-${sanitize(key)}: ${sanitize(color)};` : null;
   })
   .join("\n")}
 }
