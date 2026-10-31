@@ -1,3 +1,6 @@
 ## 2025-04-06 - Replacing Native Title Attributes with Radix Tooltips
 **Learning:** Native `title` attributes on interactive elements provide a delayed, inconsistently styled, and poorly accessible tooltip experience. When integrating Radix UI tooltips, it's critical to explicitly remove the native `title` attribute to prevent a "double-tooltip" effect where both the custom and native tooltips appear simultaneously, confusing users and screen readers. Additionally, tooltips must be globally wrapped in `<TooltipProvider>` to prevent application crashes due to missing context.
 **Action:** Always replace native `title` attributes on icon-only buttons with Radix `<Tooltip>` components, ensuring the native attribute is removed. Use `<TooltipTrigger asChild>` to prevent invalid HTML nesting, and wrap the component tree with `<TooltipProvider>`. Utilize `useTranslation` for the tooltip and `aria-label` content.
+## 2024-10-31 - Missing Tooltips and ARIA Labels on Chat Icon Buttons
+**Learning:** Icon-only buttons within complex chat input areas are frequently overlooked for ARIA labels and tooltips, making them inaccessible to screen readers and confusing to users who do not understand the icon context.
+**Action:** Always wrap icon-only primary actions (like upload, send, hint) in Tooltips with descriptive ARIA labels to ensure both usability and accessibility.
