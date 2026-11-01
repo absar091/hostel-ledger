@@ -75,7 +75,9 @@ ${prefix} [data-chart=${id}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
     const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
-    return color ? `  --color-${key}: ${color};` : null;
+    // Sanitize user input to prevent XSS breakout of the <style> tag or CSS rule injection
+    const sanitizedColor = color ? color.replace(/[<>;{}[\]'"]/g, "") : "";
+    return sanitizedColor ? `  --color-${key}: ${sanitizedColor};` : null;
   })
   .join("\n")}
 }
