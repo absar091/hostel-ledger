@@ -40,3 +40,8 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+
+## 2024-05-26 - XSS breakout in dangerouslySetInnerHTML for CSS
+**Vulnerability:** In `src/components/ui/chart.tsx`, a dynamically generated CSS string was injected into a `<style>` block using `dangerouslySetInnerHTML`. The string concatenation allowed the `color` property from user configuration to be directly interpolated, presenting an XSS and CSS injection vector.
+**Learning:** Even when interpolating values into a CSS `<style>` block context, user input must be strictly sanitized. Unsanitized input allows breaking out of the style block (e.g., using `</style><script>`) or breaking CSS rules (e.g., using `;`, `{`, `}`).
+**Prevention:** Always sanitize dynamically generated CSS values or selectors injected into `<style>` blocks (e.g., within React's `dangerouslySetInnerHTML`) by stripping HTML tags (`<`, `>`) and CSS structural characters (`{`, `}`, `;`, `[`, `]`, `'`, `"`).
