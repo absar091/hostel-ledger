@@ -40,3 +40,8 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+
+## 2026-07-01 - XSS and CSS Injection via dangerouslySetInnerHTML
+**Vulnerability:** The `id` attribute on `ChartContainer` was injected unsanitized into a `<style>` block using `dangerouslySetInnerHTML` inside `src/components/ui/chart.tsx`.
+**Learning:** Even fields used for CSS selection (`id`) can be exploited for CSS injection or Cross-Site Scripting (XSS) if they are interpolated into `<style>` blocks without stripping structural HTML/CSS characters (e.g., `<>`, `{}`, `;`, `""`).
+**Prevention:** Always strictly sanitize dynamic identifiers used within `<style>` blocks by stripping out HTML brackets and CSS structure characters before rendering.
