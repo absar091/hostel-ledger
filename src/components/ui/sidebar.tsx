@@ -246,14 +246,16 @@ const SidebarRail = React.forwardRef<HTMLButtonElement, React.ComponentProps<"bu
     const { toggleSidebar } = useSidebar();
 
     return (
-      <button
-        ref={ref}
-        data-sidebar="rail"
-        aria-label="Toggle Sidebar"
-        tabIndex={-1}
-        onClick={toggleSidebar}
-        title="Toggle Sidebar"
-        className={cn(
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              ref={ref}
+              data-sidebar="rail"
+              aria-label="Toggle Sidebar"
+              tabIndex={-1}
+              onClick={toggleSidebar}
+              className={cn(
           "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] group-data-[side=left]:-right-4 group-data-[side=right]:left-0 hover:after:bg-sidebar-border sm:flex",
           "[[data-side=left]_&]:cursor-w-resize [[data-side=right]_&]:cursor-e-resize",
           "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
@@ -264,6 +266,12 @@ const SidebarRail = React.forwardRef<HTMLButtonElement, React.ComponentProps<"bu
         )}
         {...props}
       />
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>Toggle Sidebar</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   },
 );
