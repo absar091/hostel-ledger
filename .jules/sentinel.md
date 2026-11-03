@@ -40,3 +40,8 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+
+## 2026-11-03 - Cross-Site Scripting (XSS) in Chart Component
+**Vulnerability:** The ChartStyle component in `src/components/ui/chart.tsx` uses `dangerouslySetInnerHTML` to inject generated CSS. This allows XSS if an attacker controls a key in the chart config (e.g. `config={{'</style><script>alert(1)</script>': {color: 'red'}}}`).
+**Learning:** Even within `<style>` tags, unsanitized input injected via `dangerouslySetInnerHTML` can break out of the tag (e.g., using `</style>`) and execute arbitrary JavaScript.
+**Prevention:** Use React's standard children prop (e.g., `<style>{...}</style>`) to generate text content. React automatically HTML-escapes children, preventing tag breakout and eliminating the XSS vector while maintaining identical functionality.
