@@ -223,8 +223,12 @@ const adminAuth = async (req, res, next) => {
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
-  if (authHeader && authHeader === `Bearer ${cronSecret}`) {
-    return next();
+  if (authHeader) {
+    const expectedHeader = Buffer.from(`Bearer ${cronSecret}`);
+    const providedHeader = Buffer.from(String(authHeader));
+    if (expectedHeader.byteLength === providedHeader.byteLength && crypto.timingSafeEqual(expectedHeader, providedHeader)) {
+      return next();
+    }
   }
   return res.status(401).json({ error: 'Unauthorized' });
 };
@@ -863,7 +867,9 @@ app.post('/api/2fa/complete-reset', detectFraud, generalLimiter, async (req, res
 
     const data = snapshot.val();
 
-    if (data.token !== token) {
+    const expectedTokenBuffer = Buffer.from(String(data.token || ''));
+    const providedTokenBuffer = Buffer.from(String(token || ''));
+    if (expectedTokenBuffer.byteLength !== providedTokenBuffer.byteLength || !crypto.timingSafeEqual(expectedTokenBuffer, providedTokenBuffer)) {
       return res.status(400).json({ success: false, error: 'Invalid token' });
     }
 
@@ -2229,7 +2235,9 @@ app.post('/api/verification/verify', generalLimiter, async (req, res) => {
     }
 
     // Check code
-    if (record.code !== code) {
+    const expectedCodeBuffer = Buffer.from(String(record.code || ''));
+    const providedCodeBuffer = Buffer.from(String(code || ''));
+    if (expectedCodeBuffer.byteLength !== providedCodeBuffer.byteLength || !crypto.timingSafeEqual(expectedCodeBuffer, providedCodeBuffer)) {
       const newAttempts = record.attempts + 1;
       await docRef.update({ attempts: newAttempts });
       return res.status(400).json({
