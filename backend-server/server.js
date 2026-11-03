@@ -214,6 +214,7 @@ const { calculateMultiPayerSettlements } = require('./utils/expenseLogic');
 const { processTransactions, calculateDebtSummary } = require('./utils/debtLogic');
 const { verifyImageOwnership } = require('./utils/imageSecurity');
 const adminAuthMiddleware = require('./middleware/adminAuth').verifyAdmin;
+const crypto = require('crypto');
 const adminAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   const cronSecret = process.env.CRON_SECRET;
@@ -223,9 +224,16 @@ const adminAuth = async (req, res, next) => {
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
-  if (authHeader && authHeader === `Bearer ${cronSecret}`) {
-    return next();
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const providedToken = authHeader.substring(7);
+    const buf1 = Buffer.from(cronSecret);
+    const buf2 = Buffer.from(providedToken);
+
+    if (buf1.byteLength === buf2.byteLength && crypto.timingSafeEqual(buf1, buf2)) {
+      return next();
+    }
   }
+
   return res.status(401).json({ error: 'Unauthorized' });
 };
 
