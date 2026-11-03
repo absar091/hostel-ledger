@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2024-05-24 - Stop Information Disclosure in Express Error Handlers
+**Vulnerability:** API endpoints were returning raw error messages (`error.message`) directly to clients in 500 status responses.
+**Learning:** Returning `error.message` can leak internal stack details, configuration specifics, or environment context to unauthorized users, representing an information disclosure vulnerability.
+**Prevention:** Ensure that 500 error responses always use generic, safe error messages and keep raw error details in server logs instead of the API response.
