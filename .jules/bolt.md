@@ -1,0 +1,3 @@
+## 2024-11-04 - Stabilized SidebarContext Context Value
+**Learning:** `SidebarContext` was passing a new object inline every render via `value={{ isOpen, toggleSidebar, ... }}`. Since the sidebar context is consumed high up in the component tree by `AppContainer` and `Sidebar`, this was causing unnecessary re-renders of the sidebar and app wrapper every time any state in the provider updated, or even when the parent component re-rendered.
+**Action:** Always wrap context values in `useMemo` and state updaters in `useCallback([])` using the functional state update pattern (`setIsOpen(prev => !prev)`) when creating React Context providers to guarantee stable references and prevent cascading re-renders across the consumer tree.
