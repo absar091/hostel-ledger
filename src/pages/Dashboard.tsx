@@ -846,7 +846,7 @@ const Dashboard = () => {
                     )}
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center hover:bg-[#EAF5EF] transition-colors">
+                        <button aria-label="Net Balance Information" className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center hover:bg-[#EAF5EF] transition-colors">
                           <Info className="w-3 h-3 text-gray-400" />
                         </button>
                       </TooltipTrigger>
@@ -917,9 +917,9 @@ const Dashboard = () => {
                 </h3>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <button aria-label="Quick Shortcuts Information" onClick={(e) => e.stopPropagation()} className="appearance-none bg-transparent border-none p-0 flex items-center justify-center">
                       <Info className="w-3 h-3 text-gray-400/60 hover:text-gray-500 cursor-help transition-colors" />
-                    </div>
+                    </button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Commonly used actions for quick access</p>
@@ -997,9 +997,9 @@ const Dashboard = () => {
                 </h3>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <button aria-label="Recent Activity Information" onClick={(e) => e.stopPropagation()} className="appearance-none bg-transparent border-none p-0 flex items-center justify-center">
                       <Info className="w-3 h-3 text-gray-400/60 hover:text-gray-500 cursor-help transition-colors" />
-                    </div>
+                    </button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Recent transactions and payments involving you</p>
