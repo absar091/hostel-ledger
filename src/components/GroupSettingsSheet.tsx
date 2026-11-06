@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +74,7 @@ const GroupSettingsSheet = ({
   const [isSearching, setIsSearching] = useState(false);
   const [searchResult, setSearchResult] = useState<any>(null);
   const [searchError, setSearchError] = useState(false);
+  const { t } = useTranslation();
   const [inviteEmail, setInviteEmail] = useState("");
 
   const currentUserMember = group.members.find(m => m.isCurrentUser);
@@ -221,6 +223,7 @@ const GroupSettingsSheet = ({
                     variant="ghost"
                     size="icon"
                     onClick={handleCopyGroupInvite}
+                    aria-label={t("group.settings.copyInvite", "Copy group invite link")}
                     className="w-10 h-10 text-[#4a6850] bg-[#4a6850]/5 hover:bg-[#4a6850]/10 rounded-2xl transition-all active:scale-90"
                   >
                     <Link className="w-4 h-4" />
@@ -259,6 +262,7 @@ const GroupSettingsSheet = ({
                         size="icon"
                         onClick={handleSearch}
                         disabled={isSearching || !newMemberName.trim()}
+                        aria-label={t("group.settings.searchMember", "Search for member")}
                         className="absolute right-1 top-1 h-9 w-9 text-[#4a6850] hover:bg-[#4a6850]/10 rounded-lg"
                       >
                         {isSearching ? (
@@ -277,6 +281,7 @@ const GroupSettingsSheet = ({
                         setSearchResult(null);
                         setSearchError(false);
                       }}
+                      aria-label={t("group.settings.closeSearch", "Close search")}
                       className="h-11 w-11 rounded-xl hover:bg-gray-100 shadow-sm hover:shadow-md transition-all flex-shrink-0 bg-white"
                     >
                       <X className="w-4 h-4" />
