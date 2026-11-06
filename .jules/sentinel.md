@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2024-11-06 - Fixed timing attack vulnerability in token verification
+**Vulnerability:** The `adminAuth` middleware in `backend-server/server.js` used a standard string equality check (`===`) to verify the secret token.
+**Learning:** Standard string comparisons stop at the first non-matching character, allowing an attacker to iteratively guess the secret by measuring response times (timing attack).
+**Prevention:** Always use `crypto.timingSafeEqual(buf1, buf2)` for comparing secrets, and ensure both buffers have the same `.byteLength` before calling it to prevent DoS via length-mismatch exceptions.
