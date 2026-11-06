@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from "react";
 import { useAuth, PaymentDetails } from "./AuthContext";
 
 export interface GroupMember {
@@ -111,7 +111,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const createGroup = (data: { name: string; emoji: string; members: { name: string; paymentDetails?: PaymentDetails; phone?: string }[] }): Group => {
+  const createGroup = useCallback((data: { name: string; emoji: string; members: { name: string; paymentDetails?: PaymentDetails; phone?: string }[] }): Group => {
     const newGroup: Group = {
       id: crypto.randomUUID(),
       name: data.name,
@@ -139,21 +139,21 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
     saveGroups([...groups, newGroup]);
     return newGroup;
-  };
+  }, [groups]);
 
-  const updateGroup = (groupId: string, data: Partial<Group>) => {
+  const updateGroup = useCallback((groupId: string, data: Partial<Group>) => {
     const updatedGroups = groups.map((g) =>
       g.id === groupId ? { ...g, ...data } : g
     );
     saveGroups(updatedGroups);
-  };
+  }, [groups]);
 
-  const deleteGroup = (groupId: string) => {
+  const deleteGroup = useCallback((groupId: string) => {
     saveGroups(groups.filter((g) => g.id !== groupId));
     saveTransactions(transactions.filter((t) => t.groupId !== groupId));
-  };
+  }, [groups, transactions]);
 
-  const addMemberToGroup = (groupId: string, member: { name: string; paymentDetails?: PaymentDetails; phone?: string }) => {
+  const addMemberToGroup = useCallback((groupId: string, member: { name: string; paymentDetails?: PaymentDetails; phone?: string }) => {
     const updatedGroups = groups.map((g) => {
       if (g.id === groupId) {
         return {
@@ -173,9 +173,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       return g;
     });
     saveGroups(updatedGroups);
-  };
+  }, [groups]);
 
-  const removeMemberFromGroup = (groupId: string, memberId: string) => {
+  const removeMemberFromGroup = useCallback((groupId: string, memberId: string) => {
     const group = groups.find((g) => g.id === groupId);
     if (!group) return;
 
@@ -218,9 +218,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       return t;
     });
     saveTransactions(updatedTransactions);
-  };
+  }, [groups, transactions]);
 
-  const updateMemberPaymentDetails = (groupId: string, memberId: string, paymentDetails: PaymentDetails, phone?: string) => {
+  const updateMemberPaymentDetails = useCallback((groupId: string, memberId: string, paymentDetails: PaymentDetails, phone?: string) => {
     const updatedGroups = groups.map((g) => {
       if (g.id === groupId) {
         return {
@@ -233,9 +233,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       return g;
     });
     saveGroups(updatedGroups);
-  };
+  }, [groups]);
 
-  const addExpense = (data: { groupId: string; amount: number; paidBy: string; participants: string[]; note: string; place: string }): { success: boolean; error?: string } => {
+  const addExpense = useCallback((data: { groupId: string; amount: number; paidBy: string; participants: string[]; note: string; place: string }): { success: boolean; error?: string } => {
     const group = groups.find((g) => g.id === data.groupId);
     if (!group) return { success: false, error: "Group not found" };
 
@@ -343,9 +343,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     saveGroups(updatedGroups);
 
     return { success: true };
-  };
+  }, [groups, transactions]);
 
-  const recordPayment = (data: { groupId: string; fromMember: string; toMember: string; amount: number; method: "cash" | "online"; note?: string }) => {
+  const recordPayment = useCallback((data: { groupId: string; fromMember: string; toMember: string; amount: number; method: "cash" | "online"; note?: string }) => {
     const group = groups.find((g) => g.id === data.groupId);
     if (!group) return;
 
@@ -429,17 +429,17 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       return g;
     });
     saveGroups(updatedGroups);
-  };
+  }, [groups]);
 
-  const getGroupById = (groupId: string): Group | undefined => {
+  const getGroupById = useCallback((groupId: string): Group | undefined => {
     return groups.find((g) => g.id === groupId);
-  };
+  }, [groups]);
 
-  const getTransactionsByGroup = (groupId: string): Transaction[] => {
+  const getTransactionsByGroup = useCallback((groupId: string): Transaction[] => {
     return transactions.filter((t) => t.groupId === groupId);
-  };
+  }, [transactions]);
 
-  const getTransactionsByMember = (groupId: string, memberId: string): Transaction[] => {
+  const getTransactionsByMember = useCallback((groupId: string, memberId: string): Transaction[] => {
     return transactions.filter((t) => {
       if (t.groupId !== groupId) return false;
       
@@ -449,34 +449,51 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         return t.from === memberId || t.to === memberId;
       }
     });
-  };
+  }, [transactions]);
 
 
 
-  const getAllTransactions = (): Transaction[] => {
+  const getAllTransactions = useCallback((): Transaction[] => {
     return transactions;
-  };
+  }, [transactions]);
+
+  // ⚡ Bolt Optimization: Wrap context value in useMemo and handlers in useCallback to prevent unnecessary cascading re-renders of consumers
+  const value = useMemo(() => ({
+    groups,
+    transactions,
+    createGroup,
+    updateGroup,
+    deleteGroup,
+    addMemberToGroup,
+    removeMemberFromGroup,
+    updateMemberPaymentDetails,
+    addExpense,
+    recordPayment,
+
+    getGroupById,
+    getTransactionsByGroup,
+    getTransactionsByMember,
+    getAllTransactions,
+  }), [
+    groups,
+    transactions,
+    createGroup,
+    updateGroup,
+    deleteGroup,
+    addMemberToGroup,
+    removeMemberFromGroup,
+    updateMemberPaymentDetails,
+    addExpense,
+    recordPayment,
+
+    getGroupById,
+    getTransactionsByGroup,
+    getTransactionsByMember,
+    getAllTransactions
+  ]);
 
   return (
-    <DataContext.Provider
-      value={{
-        groups,
-        transactions,
-        createGroup,
-        updateGroup,
-        deleteGroup,
-        addMemberToGroup,
-        removeMemberFromGroup,
-        updateMemberPaymentDetails,
-        addExpense,
-        recordPayment,
-
-        getGroupById,
-        getTransactionsByGroup,
-        getTransactionsByMember,
-        getAllTransactions,
-      }}
-    >
+    <DataContext.Provider value={value}>
       {children}
     </DataContext.Provider>
   );
