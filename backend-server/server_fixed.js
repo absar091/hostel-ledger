@@ -746,6 +746,9 @@ app.post('/api/2fa/check-trust', detectFraud, authenticate, async (req, res) => 
     if (!deviceToken) {
       return res.status(400).json({ success: false, error: 'Device token is required' });
     }
+    if (!isValidFirebaseId(deviceToken)) {
+      return res.status(400).json({ success: false, error: 'Invalid device token format' });
+    }
 
     const deviceRef = admin.database().ref(`users/${userId}/trustedDevices/${deviceToken}`);
     const snapshot = await deviceRef.get();
@@ -847,6 +850,9 @@ app.post('/api/2fa/complete-reset', detectFraud, generalLimiter, async (req, res
 
     if (!uid || !token) {
       return res.status(400).json({ success: false, error: 'Missing parameters' });
+    }
+    if (!isValidFirebaseId(uid)) {
+      return res.status(400).json({ success: false, error: 'Invalid user ID format' });
     }
 
     const secretRef = admin.database().ref(`userSecrets/${uid}/resetToken`);
