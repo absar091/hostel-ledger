@@ -43,7 +43,7 @@ const runTests = () => {
     // Silence error log for this expected error
     const originalError = console.error;
     console.error = () => {};
-    adminAuth(req, res, next);
+    adminAuth.verifyApiKey(req, res, next);
     console.error = originalError;
 
     if (res.statusCode === 500 && res.body.error === 'Server configuration error') {
@@ -70,7 +70,7 @@ const runTests = () => {
     // Silence warn log
     const originalWarn = console.warn;
     console.warn = () => {};
-    adminAuth(req, res, next);
+    adminAuth.verifyApiKey(req, res, next);
     console.warn = originalWarn;
 
     if (res.statusCode === 401 && res.body.error === 'Unauthorized: Invalid or missing admin key') {
@@ -94,7 +94,7 @@ const runTests = () => {
     // Silence warn log
     const originalWarn = console.warn;
     console.warn = () => {};
-    adminAuth(req, res, next);
+    adminAuth.verifyApiKey(req, res, next);
     console.warn = originalWarn;
 
     if (res.statusCode === 401 && res.body.error === 'Unauthorized: Invalid or missing admin key') {
@@ -115,10 +115,10 @@ const runTests = () => {
     const res = createMockRes();
     const next = createMockNext();
 
-    adminAuth(req, res, next);
+    const result = adminAuth.verifyApiKey(req, res, next);
 
-    if (next.isCalled() && !res.statusCode) {
-      console.log('✅ Scenario 4 Passed: Calls next() when single key is valid');
+    if (result === true && !res.statusCode) {
+      console.log('✅ Scenario 4 Passed: Returns true when single key is valid');
       passed++;
     } else {
       console.error('❌ Scenario 4 Failed');
@@ -138,10 +138,10 @@ const runTests = () => {
     const res = createMockRes();
     const next = createMockNext();
 
-    adminAuth(req, res, next);
+    const result = adminAuth.verifyApiKey(req, res, next);
 
-    if (next.isCalled() && !res.statusCode) {
-      console.log('✅ Scenario 5a Passed: Calls next() when first key in list is valid');
+    if (result === true && !res.statusCode) {
+      console.log('✅ Scenario 5a Passed: Returns true when first key in list is valid');
       passed++;
     } else {
       console.error('❌ Scenario 5a Failed');
@@ -158,10 +158,10 @@ const runTests = () => {
     const res = createMockRes();
     const next = createMockNext();
 
-    adminAuth(req, res, next);
+    const result = adminAuth.verifyApiKey(req, res, next);
 
-    if (next.isCalled() && !res.statusCode) {
-      console.log('✅ Scenario 5b Passed: Calls next() when second key (trimmed) is valid');
+    if (result === true && !res.statusCode) {
+      console.log('✅ Scenario 5b Passed: Returns true when second key (trimmed) is valid');
       passed++;
     } else {
       console.error('❌ Scenario 5b Failed');
@@ -180,7 +180,7 @@ const runTests = () => {
 
     const originalWarn = console.warn;
     console.warn = () => {};
-    adminAuth(req, res, next);
+    adminAuth.verifyApiKey(req, res, next);
     console.warn = originalWarn;
 
     if (res.statusCode === 401) {
