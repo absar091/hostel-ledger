@@ -3,6 +3,7 @@ const router = express.Router();
 const admin = require('firebase-admin');
 const authenticate = require('../middleware/auth');
 const crypto = require('crypto');
+const { isValidFirebaseId } = require('../utils/validation');
 // We need an email service to send ticket confirmation
 const emailService = require('../services/emailService');
 
@@ -60,7 +61,7 @@ router.post('/report', async (req, res) => {
     const { targetId, targetType, reason, details } = req.body;
     const uid = req.user.uid;
 
-    if (!['user', 'group'].includes(targetType) || !targetId || !reason) {
+    if (!['user', 'group'].includes(targetType) || !targetId || !reason || !isValidFirebaseId(targetId)) {
       console.log('Report Validation Failed:', { targetId, targetType, reason, details }); return res.status(400).json({ error: 'Invalid report data.' });
     }
 
