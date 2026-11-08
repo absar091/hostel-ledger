@@ -1,0 +1,3 @@
+## 2024-05-18 - [Optimize normalizeMembers in FirebaseDataContext]
+**Learning:** Chained `.map()` operations and `console.log()` traversals in frequently-called Firebase Context data transformation functions (like `normalizeMembers`) can cause unnecessary O(N) overhead per pass and excess memory allocations.
+**Action:** Consolidate array and object conversions, transformations, and normalizations into a single-pass `for` loop, especially when mapping raw Firebase data arrays/objects to internal state, to reduce memory allocations and avoid redundant prototype iteration overhead.
