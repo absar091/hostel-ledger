@@ -98,9 +98,11 @@ const GroupDetail = () => {
   const isFavorite = id && favoriteGroups.includes(id);
 
   // Calculate total amount to receive in this group
-  const groupTotalToReceive = Object.values(settlements).reduce((total, settlement) => {
-    return total + (settlement.toReceive || 0);
-  }, 0);
+  const groupTotalToReceive = useMemo(() => {
+    return Object.values(settlements).reduce((total, settlement) => {
+      return total + (settlement.toReceive || 0);
+    }, 0);
+  }, [settlements]);
 
   // NOTE: These useMemo hooks MUST be before the early returns below to maintain
   // consistent hook count across renders (React Rules of Hooks)
@@ -120,6 +122,27 @@ const GroupDetail = () => {
     .reduce((sum, t) => sum + t.amount, 0), [transactions]);
 
   const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
+
+  // Find the member who has paid the most in expenses (actual top contributor)
+  const topSpender = useMemo(() => {
+    if (!group?.members || transactions.length === 0) return null;
+
+    const memberExpenseContributions = group.members.map((member: { id: any; }) => {
+      const totalPaid = transactions
+        .filter(t => t.type === "expense" && t.paidBy === member.id)
+        .reduce((sum, t) => sum + t.amount, 0);
+      return {
+        ...member,
+        totalPaid
+      };
+    });
+
+    return memberExpenseContributions.length > 0
+      ? memberExpenseContributions.reduce((prev: { totalPaid: number; }, curr: { totalPaid: number; }) => {
+        return curr.totalPaid > prev.totalPaid ? curr : prev;
+      })
+      : null;
+  }, [group?.members, transactions]);
 
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
@@ -462,23 +485,6 @@ const GroupDetail = () => {
   }];
 
   // personalStats, totalSpent, and expenseCount are defined before early returns above
-
-  // Find the member who has paid the most in expenses (actual top contributor)
-  const memberExpenseContributions = group.members.map((member: { id: any; }) => {
-    const totalPaid = transactions
-      .filter(t => t.type === "expense" && t.paidBy === member.id)
-      .reduce((sum, t) => sum + t.amount, 0);
-    return {
-      ...member,
-      totalPaid
-    };
-  });
-
-  const topSpender = memberExpenseContributions.length > 0
-    ? memberExpenseContributions.reduce((prev: { totalPaid: number; }, curr: { totalPaid: number; }) => {
-      return curr.totalPaid > prev.totalPaid ? curr : prev;
-    })
-    : null;
 
   return (
     <div className="min-h-screen bg-white pb-24">
