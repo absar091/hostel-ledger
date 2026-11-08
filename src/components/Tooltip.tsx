@@ -101,7 +101,7 @@ const Tooltip = ({
     md: "w-5 h-5"
   };
 
-  const toggleTooltip = (e: React.MouseEvent | React.TouchEvent) => {
+  const toggleTooltip = (e: React.MouseEvent | React.TouchEvent | React.KeyboardEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -124,9 +124,21 @@ const Tooltip = ({
   return (
     <div className={`relative inline-flex items-center ${className}`} ref={triggerRef}>
       <div
-        className="cursor-pointer touch-target flex items-center justify-center select-none"
+        role="button"
+        tabIndex={0}
+        aria-expanded={isVisible}
+        className="cursor-pointer touch-target flex items-center justify-center select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
         onClick={toggleTooltip}
         onTouchEnd={toggleTooltip}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            toggleTooltip(e);
+          } else if (e.key === 'Escape' && isVisible) {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsVisible(false);
+          }
+        }}
       >
         {children || (
           showIcon && (
