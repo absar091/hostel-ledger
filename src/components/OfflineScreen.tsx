@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getCacheStatus } from "@/lib/offlineDB";
 
 interface OfflineScreenProps {
@@ -15,6 +15,16 @@ export const OfflineScreen = ({ onRetry }: OfflineScreenProps) => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isFirstTime, setIsFirstTime] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const retryTimerRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    return () => {
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const checkCache = async () => {
@@ -178,10 +188,24 @@ export const OfflineScreen = ({ onRetry }: OfflineScreenProps) => {
         {/* Retry Button */}
         {onRetry && (
           <button
-            onClick={onRetry}
-            className="w-full h-12 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95"
+            onClick={() => {
+              setIsRetrying(true);
+              onRetry();
+              // In case onRetry doesn't navigate away or reload the page immediately,
+              // we reset the visual state after a short delay so the user isn't stuck.
+              retryTimerRef.current = setTimeout(() => setIsRetrying(false), 2000);
+            }}
+            disabled={isRetrying}
+            className={`w-full h-12 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 ${isRetrying ? 'opacity-80 cursor-not-allowed' : 'active:scale-95'}`}
           >
-            Try Again
+            {isRetrying ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>Retrying...</span>
+              </>
+            ) : (
+              "Try Again"
+            )}
           </button>
         )}
         
