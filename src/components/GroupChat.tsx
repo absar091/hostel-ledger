@@ -27,11 +27,13 @@ interface ChatMessage {
     type: "text" | "system";
     event?: string;
     actorName?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data?: Record<string, any>;
     timestamp: number;
     image?: string;
     transactionRef?: {
         id: string;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         details?: any;
     };
 }
@@ -141,6 +143,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
     const [initialLoad, setInitialLoad] = useState(true);
     const [attachedImage, setAttachedImage] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [referencedTxn, setReferencedTxn] = useState<any>(null);
     const [txnGroupId, setTxnGroupId] = useState<string | null>(null);
     const [showTxnHint, setShowTxnHint] = useState(false);
@@ -237,6 +240,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                 // Filter out duplicates that might have come via real-time listener
                 setMessages((prev) => {
                     const newMsgs = result.messages.filter(
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         (nm: any) => !prev.some((pm) => pm.id === nm.id)
                     );
                     return [...newMsgs, ...prev];
@@ -261,6 +265,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
         setInputText("");
 
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const payload: any = { groupId, expenseId, text };
             if (attachedImage) payload.image = attachedImage;
             if (referencedTxn) {
@@ -276,6 +281,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
             setReferencedTxn(null);
             setTxnGroupId(null);
             setTimeout(() => inputRef.current?.focus(), 100);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error("Failed to send message:", err);
             setInputText(text); // Restore on failure
@@ -305,7 +311,7 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
 
     const detectTransactionId = async (text: string) => {
         // Robust detection: handles GROUP/ID, GROUP / ID, GROUP \ ID
-        const fullMatch = text.match(/([a-zA-Z0-9_-]+)\s*[\/\\]\s*([-a-zA-Z0-9_]{10,})/i);
+        const fullMatch = text.match(/([a-zA-Z0-9_-]+)\s*[/\\]\s*([-a-zA-Z0-9_]{10,})/i);
         const singleMatch = text.match(/(txn-[a-f0-9]{6,}|TXN-[a-f0-9]{6,}|-[-a-zA-Z0-9_]{15,})/i);
         
         if (fullMatch) {
@@ -440,8 +446,8 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                                     A preview card will automatically appear!
                                 </p>
                             </div>
-                            <button onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5">
-                                <X className="w-3 h-3" />
+                            <button aria-label="Dismiss hint" onClick={() => setShowTxnHint(false)} className="text-gray-400 hover:text-gray-600 mt-0.5">
+                                <X className="w-3 h-3" aria-hidden="true" />
                             </button>
                         </div>
                     </div>
@@ -450,10 +456,11 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                 {referencedTxn && (
                     <div className="mb-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200 relative animate-in slide-in-from-bottom-2">
                         <button 
+                            aria-label="Remove referenced transaction"
                             onClick={() => setReferencedTxn(null)}
                             className="absolute top-2 right-2 p-1 hover:bg-emerald-100 rounded-full"
                         >
-                            <X className="w-4 h-4 text-emerald-600" />
+                            <X className="w-4 h-4 text-emerald-600" aria-hidden="true" />
                         </button>
                         <div className="flex items-center gap-2 mb-1">
                             <FileText className="w-4 h-4 text-emerald-600" />
@@ -473,10 +480,11 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                             className="w-20 h-20 object-cover rounded-xl border border-[#4a6850]/10"
                         />
                         <button 
+                            aria-label="Remove attached image"
                             onClick={() => setAttachedImage(null)}
                             className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
                         >
-                            <X className="w-3 h-3" />
+                            <X className="w-3 h-3" aria-hidden="true" />
                         </button>
                     </div>
                 )}
@@ -491,24 +499,26 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                             className="hidden"
                         />
                         <button
+                            aria-label="Upload image"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading || !!attachedImage}
                             className="p-2.5 text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5 rounded-xl transition-all disabled:opacity-50 shrink-0"
                         >
                             {isUploading ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
                             ) : (
-                                <ImageIcon className="w-5 h-5" />
+                                <ImageIcon className="w-5 h-5" aria-hidden="true" />
                             )}
                         </button>
                         <button
+                            aria-label="Toggle transaction hint"
                             onClick={() => setShowTxnHint(!showTxnHint)}
                             className={cn(
                                 "p-2.5 rounded-xl transition-all shrink-0",
                                 showTxnHint ? "bg-emerald-100 text-emerald-600" : "text-[#4a6850]/60 hover:text-[#4a6850] hover:bg-[#4a6850]/5"
                             )}
                         >
-                            <Info className="w-5 h-5" />
+                            <Info className="w-5 h-5" aria-hidden="true" />
                         </button>
                     </div>
                     <input
@@ -525,14 +535,15 @@ const GroupChat = ({ groupId, groupName, expenseId, fullHeight = false }: GroupC
                         className="flex-1 bg-[#f0f4f1] border border-[#4a6850]/10 rounded-2xl px-4 py-3.5 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#4a6850]/30 focus:border-[#4a6850]/30 transition-all min-w-0"
                     />
                     <button
+                        aria-label="Send message"
                         onClick={handleSend}
                         disabled={(!inputText.trim() && !attachedImage) || isSending}
                         className="w-12 h-12 bg-gradient-to-br from-[#4a6850] to-[#3d5643] text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 shrink-0"
                     >
                         {isSending ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
                         ) : (
-                            <Send className="w-5 h-5" />
+                            <Send className="w-5 h-5" aria-hidden="true" />
                         )}
                     </button>
                 </div>
