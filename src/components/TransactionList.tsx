@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { type Transaction, type Group } from "@/contexts/FirebaseDataContext";
 import { TransactionItem } from "./TransactionItem";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,11 @@ interface TransactionListProps {
   dateFormat?: "time" | "date";
 }
 
-export const TransactionList = ({
+// ⚡ Bolt Performance Optimization:
+// Wrapped TransactionList in React.memo to prevent expensive re-renders
+// of the entire list DOM tree when parent components re-render,
+// as the props (transactions, groups) are often already memoized.
+export const TransactionList = memo(({
   title,
   transactions,
   groups,
@@ -63,4 +67,6 @@ export const TransactionList = ({
       </div>
     </div>
   );
-};
+});
+
+TransactionList.displayName = "TransactionList";
