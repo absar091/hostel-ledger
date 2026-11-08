@@ -78,6 +78,12 @@ export const TransactionItem = memo(({
 
   const ariaLabel = `${transaction.title}${groupName ? ` in ${groupName}` : ""}, ${typeLabel} ${formatAmount(displayAmount)} on ${dateDisplay}`;
 
+  const formattedDisplayAmount = transaction.type === "expense" && !isPayer && !isParticipant
+    ? "0"
+    : formatAmount(displayAmount);
+
+  const ariaLabel = `${transaction.title}. ${typeLabel}${groupName ? ` in ${groupName}` : ""}. Date: ${dateDisplay}. Amount: ${formattedDisplayAmount}. ${extraDescription}.`;
+
   return (
     <button
       onClick={() => onClick(transaction)}
