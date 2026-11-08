@@ -22,23 +22,20 @@ const generateAndSendUserReport = async (uid, userEmail, userName, currencyCode 
         const groupIds = Object.keys(userGroupsSnap.val());
 
         for (const groupId of groupIds) {
-            // Fetch group name and emoji
-            const groupMetaSnap = await db.ref(`groups/${groupId}`).once('value');
+            // Fetch group details and transactions concurrently
+            const [groupMetaSnap, txSnap] = await Promise.all([
+                db.ref(`groups/${groupId}`).once('value'),
+                db.ref('transactions').orderByChild('groupId').equalTo(groupId).once('value')
+            ]);
+
             if (!groupMetaSnap.exists()) continue;
             const groupMeta = groupMetaSnap.val();
 
-            // Fetch transactions for this group
-            const txSnap = await db.ref('transactions')
-                .orderByChild('groupId')
-                .equalTo(groupId)
-                .once('value');
-            
             const transactions = [];
             txSnap.forEach(s => transactions.push({ id: s.key, ...s.val() }));
 
-            // Calculate debts with everyone in the group
-            const membersSnap = await db.ref(`groups/${groupId}/members`).once('value');
-            const members = membersSnap.val() || {};
+            // Extract members from the already fetched groupMeta
+            const members = groupMeta.members || {};
             
             let groupBalance = 0;
 
