@@ -254,6 +254,8 @@ const TimelineItemBase = ({
           {/* Phase 2: Discuss Button */}
           {groupId && (
             <button
+              type="button"
+              aria-label="Discuss expense"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowChat(true);
