@@ -116,19 +116,30 @@ const Groups = () => {
   }, [groups, searchQuery, activeFilter, groupSettlementsMap, favoriteGroups]);
 
   // Ensure member details are loaded for groups with settlements
-  useEffect(() => {
+
+  // Memoize member settlements to avoid recalculating in render and useEffect
+  const memberSettlements = useMemo(() => {
+    const settlements: Record<string, { memberId: string, settlement: any }> = {};
     filteredGroups.forEach(group => {
       const groupSettlements = groupSettlementsMap[group.id] || {};
-
-      // Calculate member to settle with logic (same as render)
-      const memberToSettle = Object.entries(groupSettlements).reduce((max, [memberId, settlement]: [string, any]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      settlements[group.id] = Object.entries(groupSettlements).reduce((max, [memberId, settlement]: [string, any]) => {
         const totalAmount = (settlement.toReceive || 0) + (settlement.toPay || 0);
         const maxAmount = (max.settlement?.toReceive || 0) + (max.settlement?.toPay || 0);
         return totalAmount > maxAmount ? { memberId, settlement } : max;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }, { memberId: '', settlement: null as any });
+    });
+    return settlements;
+  }, [filteredGroups, groupSettlementsMap]);
+
+  // Ensure member details are loaded for groups with settlements
+  useEffect(() => {
+    filteredGroups.forEach(group => {
+      const memberToSettle = memberSettlements[group.id];
 
       // If we have a member to settle but they aren't in the loaded members list
-      if (memberToSettle.memberId) {
+      if (memberToSettle?.memberId) {
         const memberLoaded = group.members && group.members.some(m => m.id === memberToSettle.memberId);
         if (!memberLoaded) {
           // Fetch full group details to get member names
@@ -136,7 +147,7 @@ const Groups = () => {
         }
       }
     });
-  }, [filteredGroups, groupSettlementsMap, fetchGroupDetail]);
+  }, [filteredGroups, memberSettlements, fetchGroupDetail]);
 
   // Get gradient colors for group cards
   const getGroupGradient = (group: any, index: number) => {
@@ -257,11 +268,7 @@ const Groups = () => {
               const isSettled = toReceive === 0 && toPay === 0;
 
               // Find the member to settle with (the one with the highest amount)
-              const memberToSettle = Object.entries(groupSettlements).reduce((max, [memberId, settlement]: [string, any]) => {
-                const totalAmount = (settlement.toReceive || 0) + (settlement.toPay || 0);
-                const maxAmount = (max.settlement?.toReceive || 0) + (max.settlement?.toPay || 0);
-                return totalAmount > maxAmount ? { memberId, settlement } : max;
-              }, { memberId: '', settlement: null as any });
+              const memberToSettle = memberSettlements[group.id] || { memberId: '', settlement: null as any };
 
               const memberObj = group.members.find(m => m.id === memberToSettle.memberId);
               // Use translated fallback string instead of hardcoded english
