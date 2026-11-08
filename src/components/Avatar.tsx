@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, memo } from "react";
 
 interface AvatarProps {
   name: string;
@@ -83,4 +83,7 @@ const Avatar = ({ name, photoURL, size = "md", className }: AvatarProps) => {
   );
 };
 
-export default Avatar;
+// ⚡ Bolt Performance Optimization:
+// Memoized Avatar to prevent expensive re-renders in large lists
+// (e.g., TransactionList) when parent state changes but props haven't.
+export default memo(Avatar);
