@@ -82,6 +82,10 @@ router.get('/group-report/:groupId', async (req, res) => {
   const { format, currency } = req.query;
   const uid = req.user.uid;
 
+  if (!isValidFirebaseId(groupId)) {
+    return res.status(400).json({ error: 'Invalid group ID format' });
+  }
+
   try {
     const { group, transactions } = await getGroupDataForExport(groupId, uid);
 
