@@ -1,0 +1,4 @@
+
+## 2024-03-10 - Optimize normalizeMembers single-pass logic
+**Learning:** Found an app-specific performance bottleneck where incoming Firebase member structures (which can arrive as large arrays or key-value objects) were being converted via multiple chained `O(N)` mapping functions (`Object.entries().map().map()` and a nested `console.log` map). This caused multiple unnecessary intermediate memory allocations for large datasets.
+**Action:** When converting or normalizing data structures received from Firebase, immediately pre-allocate fixed-size destination arrays when `length` is known and iterate via a single `for` loop to avoid intermediate `Array` allocations and minimize garbage collection pauses.
