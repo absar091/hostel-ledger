@@ -1578,14 +1578,16 @@ app.get('/api/ai/insights', generalLimiter, authenticate, async (req, res) => {
     }
 
     // Fetch user's groups names
+    // ⚡ Bolt Optimization: Parallelize N+1 group name fetches using Promise.all
+    // Expected impact: Reduces latency linearly with the number of groups the user belongs to.
     const userGroupsSnap = await admin.database().ref(`userGroups/${userId}`).get();
     const groupNames = {};
     if (userGroupsSnap.exists()) {
       const groupIds = Object.keys(userGroupsSnap.val());
-      for (const gid of groupIds) {
+      await Promise.all(groupIds.map(async (gid) => {
         const gSnap = await admin.database().ref(`groups/${gid}/name`).get();
         if (gSnap.exists()) groupNames[gid] = gSnap.val();
-      }
+      }));
     }
 
     const context = {
