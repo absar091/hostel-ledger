@@ -1,0 +1,3 @@
+## 2025-04-06 - Batched Parent Node DB Fetches
+**Learning:** In the Firebase Realtime Database setup for this application, making isolated requests to nested properties (like `email` or `settlements`) inside map loops leads to the N+1 query problem, severely throttling endpoint performance. Because of the limited SDK bulk-query features, fetching the entire parent node for an involved user (e.g. `users/UID`) is actually significantly more performant than making multiple targeted requests for its children.
+**Action:** Always batch necessary parent node fetches concurrently at the start of complex endpoints using `Promise.all`, then parse the retrieved objects for properties sequentially later in the endpoint logic.
