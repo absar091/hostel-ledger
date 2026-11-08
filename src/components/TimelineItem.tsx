@@ -201,6 +201,7 @@ const TimelineItemBase = ({
             <div className="mt-3 flex flex-wrap gap-2">
               {participants.map((p) => {
                 // Multi-payer aware: check if this participant is ANY payer
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const payerEntry = payers?.find((py: any) => (py.id && (p as any).id && py.id === (p as any).id) || py.name === p.name);
                 const isPayer = payerEntry || p.name === paidBy;
                 const amountPaid = payerEntry ? (payerEntry.amount || 0) : ((p.name === paidBy) ? amount : 0);
@@ -254,12 +255,13 @@ const TimelineItemBase = ({
           {/* Phase 2: Discuss Button */}
           {groupId && (
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowChat(true);
               }}
               aria-expanded={showChat}
-              className="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all border border-blue-200/50 shadow-sm flex items-center gap-1.5"
+              className="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all border border-blue-200/50 shadow-sm flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             >
               <MessageSquareText className="w-3.5 h-3.5" />
               <span className="text-[10px] font-black uppercase tracking-wider">Discuss</span>
