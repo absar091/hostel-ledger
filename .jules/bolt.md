@@ -1,0 +1,3 @@
+## 2025-01-20 - Unused O(N) Iterations in Dashboard
+**Learning:** The Dashboard component contained an expensive `useMemo` block that iterated over all transactions (O(N)) to categorize them by date (`todayTransactions`, `yesterdayTransactions`, etc.), but these categorized lists were completely unused in the render function. This causes an unnecessary performance hit on every transaction update.
+**Action:** Always verify if derived state calculated inside `useMemo` or `useEffect` is actually consumed by the component before adding it. If not, remove the calculation to avoid blocking the main thread.
