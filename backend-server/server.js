@@ -215,18 +215,38 @@ const { processTransactions, calculateDebtSummary } = require('./utils/debtLogic
 const { verifyImageOwnership } = require('./utils/imageSecurity');
 const adminAuthMiddleware = require('./middleware/adminAuth').verifyAdmin;
 const adminAuth = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
+  const authHeader = req.headers.authorization || req.headers['x-admin-key'];
   const cronSecret = process.env.CRON_SECRET;
+  const adminKey = process.env.ADMIN_API_KEY;
 
-  if (!cronSecret) {
-    logger.error('CRON_SECRET is not configured.');
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    return next();
+  }
+
+  if (!adminKey) {
+    logger.error('ADMIN_API_KEY is not configured.');
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
-  if (authHeader && authHeader === `Bearer ${cronSecret}`) {
+  if (!authHeader) {
+      logger.warn('Unauthorized attempt: Missing admin key');
+      return res.status(401).json({ error: 'Unauthorized: Invalid or missing admin key' });
+  }
+
+  const validKeys = adminKey.split(',').map(k => k.trim());
+
+  let keyToCheck = authHeader;
+
+  if(authHeader.startsWith("Bearer ")){
+      keyToCheck = authHeader.split(" ")[1]
+  }
+
+  if (validKeys.includes(keyToCheck)) {
     return next();
   }
-  return res.status(401).json({ error: 'Unauthorized' });
+
+  logger.warn('Unauthorized attempt: Invalid admin key provided');
+  return res.status(401).json({ error: 'Unauthorized: Invalid or missing admin key' });
 };
 
 // Rate limiting for email endpoints - very generous limits for testing
