@@ -106,20 +106,36 @@ const GroupDetail = () => {
   // consistent hook count across renders (React Rules of Hooks)
   const personalStats = useMemo(() => {
     if (!group?.isPersonal) return null;
-    const totalSpentValue = transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+    // ⚡ Bolt Optimization: Only filter transactions once and avoid unnecessary iterations
+    let totalSpentValue = 0;
+    let expenseCount = 0;
+
+    for (const t of transactions) {
+      if (t.type === 'expense') {
+        totalSpentValue += (t.amount || 0);
+        expenseCount++;
+      }
+    }
+
     return {
       totalSpent: totalSpentValue,
-      count: transactions.filter(t => t.type === 'expense').length
+      count: expenseCount
     };
   }, [group, transactions]);
 
-  const totalSpent = useMemo(() => transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0), [transactions]);
-
-  const expenseCount = useMemo(() => transactions.filter((t) => t.type === "expense").length, [transactions]);
+  // ⚡ Bolt Optimization: Calculate totalSpent and expenseCount in a single pass instead of filtering array multiple times
+  const { totalSpent, expenseCount } = useMemo(() => {
+    let spent = 0;
+    let count = 0;
+    for (const t of transactions) {
+      if (t.type === "expense") {
+        spent += t.amount;
+        count++;
+      }
+    }
+    return { totalSpent: spent, expenseCount: count };
+  }, [transactions]);
 
   // Get transactions between "You" and the selected member
   const memberTransactions = useMemo(() => {
@@ -464,13 +480,18 @@ const GroupDetail = () => {
   // personalStats, totalSpent, and expenseCount are defined before early returns above
 
   // Find the member who has paid the most in expenses (actual top contributor)
+  // ⚡ Bolt Optimization: Calculate member contributions efficiently with a single pass through transactions
+  const paymentsByMember = new Map<string, number>();
+  for (const t of transactions) {
+    if (t.type === "expense" && t.paidBy) {
+      paymentsByMember.set(t.paidBy, (paymentsByMember.get(t.paidBy) || 0) + t.amount);
+    }
+  }
+
   const memberExpenseContributions = group.members.map((member: { id: any; }) => {
-    const totalPaid = transactions
-      .filter(t => t.type === "expense" && t.paidBy === member.id)
-      .reduce((sum, t) => sum + t.amount, 0);
     return {
       ...member,
-      totalPaid
+      totalPaid: paymentsByMember.get(member.id) || 0
     };
   });
 
