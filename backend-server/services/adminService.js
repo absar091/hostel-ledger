@@ -288,22 +288,25 @@ class AdminService {
       if (!snapshot.exists()) return [];
 
       const groupIds = Object.keys(snapshot.val());
-      const groups = [];
-
-      for (const groupId of groupIds) {
-        const groupSnap = await admin.database().ref(`groups/${groupId}`).once('value');
-        if (groupSnap.exists()) {
-          const data = groupSnap.val();
-          groups.push({
-            id: groupId,
-            name: data.name,
-            emoji: data.emoji,
-            memberCount: Object.keys(data.members || {}).length,
-            createdAt: data.createdAt,
-            isPersonal: data.isPersonal || false
-          });
-        }
-      }
+      // ⚡ Bolt Optimization: Parallelize Firebase fetching for N+1 query problem
+      // Expected impact: Drastically reduces total query time when a user belongs to multiple groups by executing requests concurrently.
+      const groups = (await Promise.all(
+        groupIds.map(async (groupId) => {
+          const groupSnap = await admin.database().ref(`groups/${groupId}`).once('value');
+          if (groupSnap.exists()) {
+            const data = groupSnap.val();
+            return {
+              id: groupId,
+              name: data.name,
+              emoji: data.emoji,
+              memberCount: Object.keys(data.members || {}).length,
+              createdAt: data.createdAt,
+              isPersonal: data.isPersonal || false
+            };
+          }
+          return null;
+        })
+      )).filter(Boolean);
       return groups;
     } catch (error) {
       console.error(`Error fetching user groups for ${uid}:`, error);
