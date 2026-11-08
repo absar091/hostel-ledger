@@ -223,8 +223,13 @@ const adminAuth = async (req, res, next) => {
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
-  if (authHeader && authHeader === `Bearer ${cronSecret}`) {
-    return next();
+  if (authHeader) {
+    const expectedToken = `Bearer ${cronSecret}`;
+    const givenBuf = Buffer.from(String(authHeader));
+    const expectedBuf = Buffer.from(String(expectedToken));
+    if (givenBuf.byteLength === expectedBuf.byteLength && crypto.timingSafeEqual(givenBuf, expectedBuf)) {
+      return next();
+    }
   }
   return res.status(401).json({ error: 'Unauthorized' });
 };
@@ -863,7 +868,9 @@ app.post('/api/2fa/complete-reset', detectFraud, generalLimiter, async (req, res
 
     const data = snapshot.val();
 
-    if (data.token !== token) {
+    const expectedBuf = Buffer.from(String(data.token));
+    const givenBuf = Buffer.from(String(token));
+    if (givenBuf.byteLength !== expectedBuf.byteLength || !crypto.timingSafeEqual(givenBuf, expectedBuf)) {
       return res.status(400).json({ success: false, error: 'Invalid token' });
     }
 
@@ -2229,7 +2236,9 @@ app.post('/api/verification/verify', generalLimiter, async (req, res) => {
     }
 
     // Check code
-    if (record.code !== code) {
+    const expectedBuf = Buffer.from(String(record.code));
+    const givenBuf = Buffer.from(String(code));
+    if (givenBuf.byteLength !== expectedBuf.byteLength || !crypto.timingSafeEqual(givenBuf, expectedBuf)) {
       const newAttempts = record.attempts + 1;
       await docRef.update({ attempts: newAttempts });
       return res.status(400).json({
