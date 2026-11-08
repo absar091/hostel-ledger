@@ -846,8 +846,8 @@ const Dashboard = () => {
                     )}
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center hover:bg-[#EAF5EF] transition-colors">
-                          <Info className="w-3 h-3 text-gray-400" />
+                        <button className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center hover:bg-[#EAF5EF] transition-colors" aria-label="More information">
+                          <Info className="w-3 h-3 text-gray-400" aria-hidden="true" />
                         </button>
                       </TooltipTrigger>
                       <TooltipContent>
