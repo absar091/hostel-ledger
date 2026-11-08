@@ -320,36 +320,6 @@ const Dashboard = () => {
     ];
   }, [groups.length, allTransactions.length, offline, pendingCount]);
 
-  // Group transactions by date (Today, Yesterday, Older)
-  const { todayTransactions, yesterdayTransactions, olderTransactions } = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    const todayTransactions: Transaction[] = [];
-    const yesterdayTransactions: Transaction[] = [];
-    const olderTransactions: Transaction[] = [];
-
-    allTransactions.forEach((transaction) => {
-      const transactionDate = new Date(
-        transaction.timestamp || transaction.date,
-      );
-      transactionDate.setHours(0, 0, 0, 0);
-
-      if (transactionDate.getTime() === today.getTime()) {
-        todayTransactions.push(transaction);
-      } else if (transactionDate.getTime() === yesterday.getTime()) {
-        yesterdayTransactions.push(transaction);
-      } else {
-        olderTransactions.push(transaction);
-      }
-    });
-
-    return { todayTransactions, yesterdayTransactions, olderTransactions };
-  }, [allTransactions]);
-
   // Calculate totals using new settlement system
   const settlementDelta = getSettlementDelta();
   const totalToReceive = getTotalToReceive();
