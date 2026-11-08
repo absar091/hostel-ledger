@@ -222,8 +222,15 @@ const adminAuth = async (req, res, next) => {
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
-  if (authHeader && authHeader === `Bearer ${cronSecret}`) {
-    return next();
+  if (authHeader) {
+    const providedToken = authHeader.replace(/^Bearer\s+/i, '').trim();
+    if (providedToken) {
+      const providedBuffer = Buffer.from(String(providedToken));
+      const expectedBuffer = Buffer.from(String(cronSecret));
+      if (providedBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(providedBuffer, expectedBuffer)) {
+        return next();
+      }
+    }
   }
   return res.status(401).json({ error: 'Unauthorized' });
 };
