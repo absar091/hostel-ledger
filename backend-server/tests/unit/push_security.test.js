@@ -165,11 +165,10 @@ if (process.env.VITEST) {
                         .post('/api/push-notify')
                         .set('Authorization', 'Bearer valid-token')
                         .send({
-                            userId: 'test-user',
+                            userId: 'test-user-123',
                             title: 'A'.repeat(101),
                             body: 'Valid body'
                         });
-                    // Expect failure (status 200 currently because logic is not implemented)
                     if (typeof expect !== 'undefined') {
                          expect(res.status).toBe(400);
                     } else {
@@ -182,7 +181,7 @@ if (process.env.VITEST) {
                         .post('/api/push-notify')
                         .set('Authorization', 'Bearer valid-token')
                         .send({
-                            userId: 'test-user',
+                            userId: 'test-user-123',
                             title: 'Valid Title',
                             body: 'A'.repeat(501)
                         });
@@ -198,7 +197,7 @@ if (process.env.VITEST) {
                         .post('/api/push-notify')
                         .set('Authorization', 'Bearer valid-token')
                         .send({
-                            userId: 'test-user',
+                            userId: 'test-user-123',
                             title: 12345,
                             body: 'Valid body'
                         });
@@ -214,7 +213,7 @@ if (process.env.VITEST) {
                         .post('/api/push-notify')
                         .set('Authorization', 'Bearer valid-token')
                         .send({
-                            userId: 'test-user',
+                            userId: 'test-user-123',
                             title: 'Valid Title',
                             body: 'Valid Body'
                         });
