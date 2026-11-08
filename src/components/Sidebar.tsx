@@ -86,6 +86,7 @@ const Sidebar = () => {
           </div>
         )}
 
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {navItems.map((item: any) => {
           const Icon = item.icon;
           const active = isActive(item.path);
@@ -95,6 +96,7 @@ const Sidebar = () => {
               key={item.id}
               onClick={() => navigate(item.path)}
               aria-current={active ? "page" : undefined}
+              aria-label={item.label}
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative",
                 active
