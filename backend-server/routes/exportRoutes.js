@@ -44,18 +44,17 @@ async function getGroupDataForExport(groupId, uid) {
     throw new Error('Unauthorized access to group');
   }
 
-  // Fetch group details
-  const groupSnap = await db.ref(`groups/${groupId}`).once('value');
+  // ⚡ Bolt Optimization: Parallelize fetching group metadata and transactions to reduce export latency.
+  // Expected impact: Reduces backend processing time for generating exports by up to 50% depending on latency.
+  const [groupSnap, transactionsSnap] = await Promise.all([
+    db.ref(`groups/${groupId}`).once('value'),
+    db.ref('transactions').orderByChild('groupId').equalTo(groupId).once('value')
+  ]);
+
   if (!groupSnap.exists()) {
     throw new Error('Group not found');
   }
   const group = groupSnap.val();
-
-  // Fetch transactions
-  const transactionsSnap = await db.ref('transactions')
-    .orderByChild('groupId')
-    .equalTo(groupId)
-    .once('value');
     
   const transactions = [];
   transactionsSnap.forEach(snap => {
