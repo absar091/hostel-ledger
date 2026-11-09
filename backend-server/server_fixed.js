@@ -858,7 +858,11 @@ app.post('/api/2fa/complete-reset', detectFraud, generalLimiter, async (req, res
 
     const data = snapshot.val();
 
-    if (data.token !== token) {
+    try {
+      if (!crypto.timingSafeEqual(Buffer.from(String(data.token)), Buffer.from(String(token)))) {
+        return res.status(400).json({ success: false, error: 'Invalid token' });
+      }
+    } catch (e) {
       return res.status(400).json({ success: false, error: 'Invalid token' });
     }
 

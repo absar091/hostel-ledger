@@ -40,3 +40,7 @@
 **Vulnerability:** The `/api/budgets/group/:groupId` endpoints (GET and POST) did not validate `req.params.groupId` with `isValidFirebaseId()`, exposing the paths to NoSQL Injection. They also did not verify if the authenticated user (`req.user.uid`) actually belonged to the specified group (by checking `userGroups/${req.user.uid}/${groupId}`) before resolving the group's budget data, exposing the endpoints to Insecure Direct Object Reference (IDOR).
 **Learning:** Endpoints that handle group-scoped data must always explicitly validate the path parameter formatting and verify the requesting user's authorization to access the referenced object.
 **Prevention:** Always use `isValidFirebaseId()` to validate path parameters and verify user membership against `userGroups/${req.user.uid}/${groupId}` prior to querying group-scoped data.
+## 2026-11-09 - Prevent Timing Attacks in Token Verification
+**Vulnerability:** The `/api/2fa/complete-reset` endpoint was using standard string comparison (`data.token !== token`) to verify reset tokens, making it susceptible to timing attacks.
+**Learning:** In Node.js, standard equality operators leak timing information based on character matches. Failing to convert types correctly before hashing/comparing with `Buffer.from(String(...))` can cause DoS if external inputs are unexpected types like numbers.
+**Prevention:** Always use `crypto.timingSafeEqual` with explicitly stringified buffers (`Buffer.from(String(value))`) for comparing sensitive strings, secrets, and tokens to ensure constant-time verification.
