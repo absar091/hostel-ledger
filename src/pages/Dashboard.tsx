@@ -846,7 +846,7 @@ const Dashboard = () => {
                     )}
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center hover:bg-[#EAF5EF] transition-colors">
+                        <button aria-label="Net balance information" className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center hover:bg-[#EAF5EF] transition-colors">
                           <Info className="w-3 h-3 text-gray-400" />
                         </button>
                       </TooltipTrigger>
@@ -917,9 +917,9 @@ const Dashboard = () => {
                 </h3>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <button type="button" aria-label="Quick Shortcuts information" onClick={(e) => e.stopPropagation()} className="p-0 border-none bg-transparent">
                       <Info className="w-3 h-3 text-gray-400/60 hover:text-gray-500 cursor-help transition-colors" />
-                    </div>
+                    </button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Commonly used actions for quick access</p>
@@ -997,9 +997,9 @@ const Dashboard = () => {
                 </h3>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <button type="button" aria-label="Recent Activity information" onClick={(e) => e.stopPropagation()} className="p-0 border-none bg-transparent">
                       <Info className="w-3 h-3 text-gray-400/60 hover:text-gray-500 cursor-help transition-colors" />
-                    </div>
+                    </button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Recent transactions and payments involving you</p>
