@@ -863,7 +863,14 @@ app.post('/api/2fa/complete-reset', detectFraud, generalLimiter, async (req, res
 
     const data = snapshot.val();
 
-    if (data.token !== token) {
+    try {
+      const dbTokenBuffer = Buffer.from(String(data.token));
+      const userInputBuffer = Buffer.from(String(token));
+
+      if (!require('crypto').timingSafeEqual(dbTokenBuffer, userInputBuffer)) {
+        return res.status(400).json({ success: false, error: 'Invalid token' });
+      }
+    } catch (e) {
       return res.status(400).json({ success: false, error: 'Invalid token' });
     }
 
