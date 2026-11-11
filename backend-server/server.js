@@ -15,6 +15,22 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const logger = require('./utils/logger');
 const os = require('os');
 
+function secureCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  try {
+    const aBuf = Buffer.from(a);
+    const bBuf = Buffer.from(b);
+    if (aBuf.length !== bBuf.length) return false;
+    return crypto.timingSafeEqual(aBuf, bBuf);
+  } catch (e) {
+    logger.error('Error during secure comparison:', e);
+    return false;
+  }
+}
+
+
+
+
 // --- STABILITY MEASURES ---
 process.on('uncaughtException', (err) => {
     logger.error('❌ Uncaught Exception:', err);
@@ -223,7 +239,7 @@ const adminAuth = async (req, res, next) => {
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
-  if (authHeader && authHeader === `Bearer ${cronSecret}`) {
+  if (authHeader && secureCompare(authHeader, `Bearer ${cronSecret}`)) {
     return next();
   }
   return res.status(401).json({ error: 'Unauthorized' });
@@ -863,7 +879,7 @@ app.post('/api/2fa/complete-reset', detectFraud, generalLimiter, async (req, res
 
     const data = snapshot.val();
 
-    if (data.token !== token) {
+    if (!secureCompare(data.token, token)) {
       return res.status(400).json({ success: false, error: 'Invalid token' });
     }
 
@@ -2229,7 +2245,7 @@ app.post('/api/verification/verify', generalLimiter, async (req, res) => {
     }
 
     // Check code
-    if (record.code !== code) {
+    if (!secureCompare(record.code, code)) {
       const newAttempts = record.attempts + 1;
       await docRef.update({ attempts: newAttempts });
       return res.status(400).json({
