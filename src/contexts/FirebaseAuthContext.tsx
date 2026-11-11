@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo } from "react";
 import {
   User,
   signInWithEmailAndPassword,
@@ -1289,8 +1289,8 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  return (
-    <FirebaseAuthContext.Provider value={{
+  // ⚡ Bolt Optimization: Memoize context value to prevent unnecessary re-renders of consumers
+  const value = useMemo(() => ({
       user,
       firebaseUser,
       isLoading,
@@ -1326,7 +1326,16 @@ export const FirebaseAuthProvider = ({ children }: { children: ReactNode }) => {
       setup2FA,
       confirm2FASetup,
       disable2FA
-    }}>
+  }), [
+    user,
+    firebaseUser,
+    isLoading,
+    is2FAVerified
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ]);
+
+  return (
+    <FirebaseAuthContext.Provider value={value}>
       {children}
     </FirebaseAuthContext.Provider>
   );
