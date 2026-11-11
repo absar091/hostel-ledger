@@ -223,8 +223,20 @@ const adminAuth = async (req, res, next) => {
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
-  if (authHeader && authHeader === `Bearer ${cronSecret}`) {
-    return next();
+  // 🛡️ Sentinel: Fix timing attack vulnerability in auth header comparison
+  if (authHeader) {
+    try {
+      const expectedToken = `Bearer ${cronSecret}`;
+      const actualTokenBuffer = Buffer.from(String(authHeader));
+      const expectedTokenBuffer = Buffer.from(String(expectedToken));
+
+      if (actualTokenBuffer.length === expectedTokenBuffer.length &&
+          crypto.timingSafeEqual(actualTokenBuffer, expectedTokenBuffer)) {
+        return next();
+      }
+    } catch (error) {
+      // Let it fall through to unauthorized to not expose internal errors
+    }
   }
   return res.status(401).json({ error: 'Unauthorized' });
 };
